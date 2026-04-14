@@ -1,0 +1,236 @@
+.security-page {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-7);
+}
+
+.security-hero {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: var(--space-6);
+  align-items: stretch;
+  padding-top: var(--space-4);
+}
+
+.security-hero__content {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-5);
+}
+
+.security-hero__eyebrow {
+  width: fit-content;
+  max-width: 100%;
+  min-height: 40px;
+  padding: 0 14px;
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+  border-radius: 999px;
+}
+
+.security-hero__eyebrow-dot {
+  width: 9px;
+  height: 9px;
+  border-radius: 999px;
+  background: var(--glow-teal);
+  box-shadow: 0 0 14px rgba(29, 233, 182, 0.5);
+  flex-shrink: 0;
+}
+
+.security-hero__eyebrow-text {
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--text-secondary);
+}
+
+.security-hero__text-block {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-4);
+}
+
+.security-hero__title {
+  font-size: clamp(1.9rem, 6vw, 3.5rem);
+  line-height: 1.06;
+  letter-spacing: -0.03em;
+  font-weight: 800;
+  color: var(--text-primary);
+}
+
+.security-hero__description {
+  font-size: 15px;
+  line-height: 1.7;
+  max-width: 620px;
+}
+
+.security-hero__chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+}
+
+.security-hero__chip {
+  min-height: 36px;
+  padding: 0 14px;
+  border-radius: 999px;
+  display: inline-flex;
+  align-items: center;
+  font-size: 12px;
+  font-weight: 700;
+  color: var(--text-secondary);
+}
+
+.security-hero__visual,
+.security-checklist,
+.security-risks,
+.security-status,
+.security-visual {
+  padding: 18px;
+  background: var(--glass-bg-strong);
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.security-hero__visual-box,
+.security-visual__box {
+  min-height: 220px;
+  border-radius: 18px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  text-align: center;
+  background:
+    radial-gradient(circle at center, rgba(77, 163, 255, 0.08), transparent 60%),
+    rgba(255, 255, 255, 0.03);
+  border: 1px dashed var(--border-strong);
+  color: var(--text-secondary);
+  font-size: 14px;
+  font-weight: 600;
+}
+
+.security-hero__visual-note,
+.security-visual__note {
+  font-size: 12px;
+  line-height: 1.6;
+}
+
+.security-section-heading {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.security-section-heading__eyebrow {
+  font-size: 11px;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+}
+
+.security-section-heading__title {
+  font-size: clamp(1.2rem, 4vw, 1.8rem);
+  line-height: 1.15;
+  font-weight: 800;
+  letter-spacing: -0.03em;
+  color: var(--text-primary);
+}
+
+.security-main-grid {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 14px;
+}
+
+.security-main-grid__left,
+.security-main-grid__right {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+
+.security-checklist__list,
+.security-status__list {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.security-checklist__item,
+.security-risk,
+.security-status__card {
+  padding: 14px;
+  background: var(--surface-1);
+}
+
+.security-checklist__item {
+  display: flex;
+  align-items: flex-start;
+  gap: 12px;
+}
+
+.security-checklist__icon {
+  width: 40px;
+  height: 40px;
+  border-radius: 14px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  background: var(--surface-2);
+  border: 1px solid var(--border-soft);
+  font-size: 18px;
+  flex-shrink: 0;
+}
+
+.security-checklist__title {
+  font-size: 15px;
+  font-weight: 700;
+  color: var(--text-primary);
+  margin-bottom: 6px;
+}
+
+.security-checklist__text {
+  font-size: 13px;
+  line-height: 1.6;
+}
+
+.security-risks__grid {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 12px;
+}
+
+.security-risk__label,
+.security-status__label {
+  font-size: 11px;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  color: var(--text-muted);
+}
+
+.security-risk__value,
+.security-status__value {
+  display: block;
+  margin-top: 6px;
+  font-size: 15px;
+  font-weight: 700;
+  color: var(--text-primary);
+}
+
+@media (min-width: 640px) {
+  .security-risks__grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+
+@media (min-width: 1024px) {
+  .security-hero {
+    grid-template-columns: minmax(0, 1.02fr) minmax(360px, 0.98fr);
+    gap: var(--space-7);
+  }
+
+  .security-main-grid {
+    grid-template-columns: minmax(0, 1.15fr) minmax(320px, 0.85fr);
+    align-items: start;
+  }
+}

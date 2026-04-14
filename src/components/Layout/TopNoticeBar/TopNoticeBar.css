@@ -1,0 +1,212 @@
+.top-notice {
+  position: relative;
+  z-index: 50;
+  border-bottom: 1px solid var(--border-soft);
+  backdrop-filter: blur(var(--blur-md));
+  -webkit-backdrop-filter: blur(var(--blur-md));
+  background: var(--glass-bg);
+}
+
+.top-notice--info {
+  box-shadow: inset 0 -1px 0 rgba(56, 189, 248, 0.18);
+}
+
+.top-notice--success {
+  box-shadow: inset 0 -1px 0 rgba(34, 197, 94, 0.18);
+}
+
+.top-notice--warning {
+  box-shadow: inset 0 -1px 0 rgba(245, 158, 11, 0.22);
+}
+
+.top-notice--danger {
+  box-shadow: inset 0 -1px 0 rgba(239, 68, 68, 0.2);
+}
+
+.top-notice__inner {
+  min-height: var(--notice-height);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-3);
+  padding: 10px 0;
+}
+
+.top-notice__left {
+  min-width: 0;
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+}
+
+.top-notice__icon {
+  width: 22px;
+  height: 22px;
+  border-radius: 999px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  font-size: 12px;
+  margin-top: 1px;
+  background: var(--surface-2);
+  border: 1px solid var(--border-soft);
+}
+
+.top-notice__text-group {
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.top-notice__label {
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  color: var(--text-secondary);
+}
+
+.top-notice__message {
+  font-size: 13px;
+  line-height: 1.35;
+  color: var(--text-primary);
+  word-break: break-word;
+}
+
+.top-notice__dismiss {
+  width: 28px;
+  height: 28px;
+  flex-shrink: 0;
+  border-radius: 999px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--text-secondary);
+  background: transparent;
+  border: 1px solid transparent;
+  transition:
+    background var(--transition-fast),
+    border-color var(--transition-fast),
+    color var(--transition-fast),
+    transform var(--transition-fast);
+}
+
+.top-notice__dismiss:active {
+  transform: scale(0.96);
+}
+
+@media (hover: hover) {
+  .top-notice__dismiss:hover {
+    background: var(--surface-1);
+    border-color: var(--border-soft);
+    color: var(--text-primary);
+  }
+}
+
+@media (min-width: 768px) {
+  .top-notice__inner {
+    padding: 9px 0;
+  }
+
+  .top-notice__message {
+    font-size: 14px;
+  }
+}
+
+
+.top-notice__right {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-shrink: 0;
+}
+
+.top-notice__action {
+  min-height: 30px;
+  padding: 0 12px;
+  border-radius: 999px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  background: var(--surface-1);
+  border: 1px solid var(--border-soft);
+  color: var(--text-primary);
+  font-size: 12px;
+  font-weight: 700;
+  transition:
+    background var(--transition-fast),
+    border-color var(--transition-fast),
+    color var(--transition-fast),
+    transform var(--transition-fast);
+}
+
+.top-notice__action:active {
+  transform: scale(0.97);
+}
+
+.top-notice__progress {
+  height: 2px;
+  width: 100%;
+  transform-origin: left center;
+  background: linear-gradient(
+    90deg,
+    rgba(29, 233, 182, 0.9),
+    rgba(77, 163, 255, 0.95),
+    rgba(139, 92, 246, 0.9)
+  );
+  animation-name: top-notice-progress-shrink;
+  animation-timing-function: linear;
+  animation-fill-mode: forwards;
+  opacity: 0.95;
+}
+
+.top-notice--warning .top-notice__progress {
+  background: linear-gradient(
+    90deg,
+    rgba(245, 158, 11, 0.95),
+    rgba(251, 191, 36, 0.95)
+  );
+}
+
+.top-notice--danger .top-notice__progress {
+  background: linear-gradient(
+    90deg,
+    rgba(239, 68, 68, 0.95),
+    rgba(248, 113, 113, 0.95)
+  );
+}
+
+@keyframes top-notice-progress-shrink {
+  from {
+    transform: scaleX(1);
+  }
+  to {
+    transform: scaleX(0);
+  }
+}
+
+@media (hover: hover) {
+  .top-notice__action:hover {
+    background: var(--surface-2);
+    border-color: var(--border-strong);
+    color: var(--text-primary);
+  }
+}
+
+@media (max-width: 767px) {
+  .top-notice__inner {
+    align-items: flex-start;
+  }
+
+  .top-notice__right {
+    align-self: flex-start;
+  }
+
+  .top-notice__action {
+    min-height: 28px;
+    padding: 0 10px;
+    font-size: 11px;
+  }
+}

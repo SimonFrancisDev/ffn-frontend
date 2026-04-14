@@ -1,0 +1,103 @@
+.orbits-page {
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+}
+
+.orbits-hero {
+  display: grid;
+  gap: 16px;
+}
+
+.orbits-hero__visual {
+  min-height: 180px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border: 1px dashed var(--border-strong);
+}
+
+.orbits-tabs {
+  display: flex;
+  gap: 10px;
+  padding: 10px;
+}
+
+.orbits-tab {
+  padding: 10px 14px;
+  border-radius: 10px;
+  background: var(--surface-1);
+}
+
+.orbits-tab.is-active {
+  background: var(--glow-blue);
+  color: black;
+}
+
+.orbits-main-grid {
+  display: grid;
+  gap: 16px;
+}
+
+.orbits-overview__grid {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 10px;
+}
+
+.orbits-overview__card {
+  padding: 12px;
+}
+
+.orbits-visual__placeholder {
+  height: 260px;
+  border: 1px dashed var(--border-strong);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  text-align: center;
+}
+
+.orbits-activity__item {
+  display: flex;
+  gap: 10px;
+  padding: 10px;
+  background: var(--surface-1);
+}
+
+.orbits-position__card {
+  padding: 10px;
+  margin-bottom: 8px;
+}
+
+.orbits-progress__bar {
+  height: 10px;
+  background: var(--surface-1);
+  border-radius: 10px;
+  overflow: hidden;
+}
+
+.orbits-progress__fill {
+  height: 100%;
+  background: var(--glow-teal);
+}
+
+.dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+}
+
+.dot.warning {
+  background: orange;
+}
+
+.dot.info {
+  background: blue;
+}
+
+@media (min-width: 1024px) {
+  .orbits-main-grid {
+    grid-template-columns: 1.2fr 0.8fr;
+  }
+}

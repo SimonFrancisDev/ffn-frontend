@@ -1,0 +1,12 @@
+[
+  {
+    "id": "activation-1",
+    "type": "activation",
+    "title": "Level 1 Activated",
+    "description": "Successfully activated Level 1",
+    "amount": null,
+    "level": 1,
+    "timestamp": 1775493848.243,
+    "status": "completed"
+  }
+]

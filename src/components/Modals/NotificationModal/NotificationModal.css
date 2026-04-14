@@ -1,0 +1,96 @@
+.notification-modal .modal-content {
+  background: var(--bg-primary);
+  border: 1px solid var(--border-strong);
+  border-radius: 24px;
+  overflow: hidden;
+}
+
+.notification-modal .modal-header {
+  background: linear-gradient(135deg, rgba(29, 233, 182, 0.08), rgba(77, 163, 255, 0.04));
+  border-bottom: 1px solid var(--border-soft);
+  padding: 20px 24px;
+}
+
+.notification-modal .modal-title {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  color: var(--text-primary);
+  font-size: 1.2rem;
+  font-weight: 700;
+}
+
+.notification-modal__icon {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.notification-modal .modal-body {
+  padding: 24px;
+  color: var(--text-primary);
+}
+
+.notification-modal__time {
+  font-size: 12px;
+  color: var(--text-muted);
+  margin-bottom: 16px;
+}
+
+.notification-modal__content {
+  line-height: 1.7;
+  white-space: pre-wrap;
+  color: var(--text-secondary);
+}
+
+.notification-modal__cta {
+  margin-top: 24px;
+  padding-top: 16px;
+  border-top: 1px solid var(--border-soft);
+}
+
+.notification-modal__cta a {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  color: var(--glow-teal);
+  text-decoration: none;
+  font-weight: 600;
+  transition: opacity 0.2s ease;
+}
+
+.notification-modal__cta a:hover {
+  opacity: 0.8;
+}
+
+.notification-modal .modal-footer {
+  background: rgba(0, 0, 0, 0.2);
+  border-top: 1px solid var(--border-soft);
+  padding: 16px 24px;
+}
+
+.notification-modal__close-btn {
+  padding: 10px 24px;
+  border-radius: 12px;
+  background: var(--surface-1);
+  border: 1px solid var(--border-soft);
+  color: var(--text-primary);
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.notification-modal__close-btn:hover {
+  background: var(--surface-2);
+  border-color: var(--border-strong);
+}
+
+/* Light theme adjustments */
+[data-theme="light"] .notification-modal .modal-content {
+  background: var(--bg-primary);
+  box-shadow: 0 20px 60px rgba(0, 0, 0, 0.15);
+}
+
+[data-theme="light"] .notification-modal__content {
+  color: var(--text-primary);
+}

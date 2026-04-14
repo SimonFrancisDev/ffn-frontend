@@ -1,5 +1,5 @@
 import './OrbitsPage.css'
-import { useEffect, useLayoutEffect, useState, useCallback, useRef } from 'react'
+import { useEffect, useState, useCallback, useRef } from 'react'
 import { useWallet } from '../../hooks/useWallet'
 import { useContracts } from '../../hooks/useContracts'
 import { ethers } from 'ethers'
@@ -311,16 +311,6 @@ const resolveOccupantReferrer = useCallback(async (occupantAddress, backendItem 
     }
   }
 
-  const getSpilloverRecipients = useCallback((position) => {
-    const info = position?.positionInfo || {}
-    return {
-      spillover1Recipient: info.spillover1Recipient || null,
-      spillover2Recipient: info.spillover2Recipient || null,
-      spillover1Amount: Number(info.exactToSpillover1 || 0),
-      spillover2Amount: Number(info.exactToSpillover2 || 0)
-    }
-  }, [])
-
   const getPlanetBadgeValue = useCallback((position) => {
     if (!position?.occupant) return 0
     if (receiptsSupported && position.viewerReceiptBreakdown) {
@@ -383,7 +373,7 @@ const resolveOccupantReferrer = useCallback(async (occupantAddress, backendItem 
         const occupant = pos.occupant || null
         const resolvedReferrer = await resolveOccupantReferrer(occupant, pos)
         const occupantType = deriveOccupantType(occupant, viewAddress, { ...pos, originalReferrer: resolvedReferrer, occupantReferrer: resolvedReferrer })
-        const positionInfo = buildPositionInfoFromRuleView(orbitType, pos.number, level, pos.ruleView || null, viewAddress)
+        const positionInfo = buildPositionInfoFromRuleView(orbitType, pos.number, level, null, viewAddress)
         return {
           number: pos.number, level, cycleNumber, isHistoricalPosition: true, occupantType, occupant,
           amount: pos.amount || '0', timestamp: Number(pos.timestamp || 0), positionInfo,
@@ -428,7 +418,7 @@ const resolveOccupantReferrer = useCallback(async (occupantAddress, backendItem 
 
     loadingLevelsRef.current.add(fetchKey)
     setLoadingLevelsMap(prev => ({ ...prev, [level]: true }))
-    if (!silent) { setOrbitError('') }
+    if (!silent) { setOrbitError(''); setIsLoadingOrbits(true) }
 
 
     try {
@@ -444,7 +434,7 @@ const resolveOccupantReferrer = useCallback(async (occupantAddress, backendItem 
         const occupant = pos.occupant || null
         const resolvedReferrer = await resolveOccupantReferrer(occupant, pos)
         const occupantType = deriveOccupantType(occupant, viewAddress, { ...pos, originalReferrer: resolvedReferrer, occupantReferrer: resolvedReferrer })
-        const positionInfo = buildPositionInfoFromRuleView(orbitType, pos.number, level, pos.ruleView || null, viewAddress)
+        const positionInfo = buildPositionInfoFromRuleView(orbitType, pos.number, level, null, viewAddress)
         return {
           number: pos.number, level, occupantType, occupant, amount: pos.amount || '0', timestamp: pos.timestamp || 0,
           positionInfo, line: pos.line || positionInfo.line, spillsTo: positionInfo.spillsTo,
@@ -511,7 +501,7 @@ const resolveOccupantReferrer = useCallback(async (occupantAddress, backendItem 
       const occupant = details?.occupant || null
       const resolvedReferrer = await resolveOccupantReferrer(occupant, details)
       const occupantType = deriveOccupantType(occupant, viewAddress, { ...details, originalReferrer: resolvedReferrer, occupantReferrer: resolvedReferrer })
-      const positionInfo = buildPositionInfoFromRuleView(orbitType, positionNumber, level, details.ruleView || null, viewAddress)
+      const positionInfo = buildPositionInfoFromRuleView(orbitType, positionNumber, level, null, viewAddress)
       const hydrated = { ...position, ...details, level, orbitType, occupantType, occupant, amount: details.amount || '0', timestamp: Number(details.timestamp || 0), positionInfo, receiptsHydrated: true }
       positionDetailsCacheRef.current.set(cacheKey, hydrated)
       setOrbitData(prev => {
@@ -546,14 +536,6 @@ const resolveOccupantReferrer = useCallback(async (occupantAddress, backendItem 
       ...details,
       level,
       cycleNumber,
-      orbitType,
-      positionInfo: buildPositionInfoFromRuleView(
-        orbitType,
-        positionNumber,
-        level,
-        details.ruleView || null,
-        viewAddress
-      ),
       isHistoricalPosition: true,
       receiptsHydrated: true
     }
@@ -662,41 +644,19 @@ const resolveOccupantReferrer = useCallback(async (occupantAddress, backendItem 
   }, [activeTab, contracts, viewAddress, fetchOrbitLevelData])
 
   // Update container size for galaxy rendering
-  useLayoutEffect(() => {
+  useEffect(() => {
     const updateSize = () => {
-      if (!galaxyRef.current) return
-      const rect = galaxyRef.current.getBoundingClientRect()
-      const width = Math.round(rect.width)
-      const height = Math.round(rect.height)
-      if (width > 0 && height > 0) {
-        setContainerSize(prev => (
-          prev.width === width && prev.height === height
-            ? prev
-            : { width, height }
-        ))
+      if (galaxyRef.current) {
+        const { width, height } = galaxyRef.current.getBoundingClientRect()
+        if (width > 0 && height > 0 && (width !== containerSize.width || height !== containerSize.height)) setContainerSize({ width, height })
       }
     }
-
-    updateSize()
-
-    let frame = requestAnimationFrame(updateSize)
+    const timer = setTimeout(updateSize, 120)
     window.addEventListener('resize', updateSize)
     let resizeObserver
-
-    if (window.ResizeObserver && galaxyRef.current) {
-      resizeObserver = new ResizeObserver(() => {
-        cancelAnimationFrame(frame)
-        frame = requestAnimationFrame(updateSize)
-      })
-      resizeObserver.observe(galaxyRef.current)
-    }
-
-    return () => {
-      cancelAnimationFrame(frame)
-      window.removeEventListener('resize', updateSize)
-      if (resizeObserver) resizeObserver.disconnect()
-    }
-  }, [activeTab, orbitData, cycleHistoryData, selectedCycleByLevel])
+    if (window.ResizeObserver) { resizeObserver = new ResizeObserver(updateSize); if (galaxyRef.current) resizeObserver.observe(galaxyRef.current) }
+    return () => { window.removeEventListener('resize', updateSize); if (resizeObserver) resizeObserver.disconnect(); clearTimeout(timer) }
+  }, [activeTab, orbitData, cycleHistoryData, selectedCycleByLevel, containerSize.width, containerSize.height])
 
   // Clear caches when viewAddress changes
   useEffect(() => {
@@ -719,34 +679,13 @@ const resolveOccupantReferrer = useCallback(async (occupantAddress, backendItem 
         </div>
       )
     }
-
     const viewerBreakdown = position.viewerReceiptBreakdown || { totalGross: 0, totalLiquid: 0, totalEscrow: 0 }
-    const {
-      spillover1Recipient,
-      spillover2Recipient,
-      spillover1Amount,
-      spillover2Amount
-    } = getSpilloverRecipients(position)
-
     return (
       <div className="custom-tooltip">
         <div><strong>Position #{position.number}</strong> (Line {position.line})</div>
         <div><strong>Occupant:</strong> {shortAddress(position.occupant)}</div>
         <div><strong>Amount:</strong> {formatUsdtDisplay(getNetAmount(Number(position.amount)))} USDT</div>
         {position.parentPosition && <div className="text-warning">Parent: Position {position.parentPosition}</div>}
-
-        {(spillover1Recipient || spillover2Recipient) && (
-          <>
-            <hr />
-            {spillover1Recipient && spillover1Recipient !== ethers.ZeroAddress && (
-              <div><strong>Spillover 1:</strong> {shortAddress(spillover1Recipient)} · {formatUsdtDisplay(spillover1Amount)} USDT</div>
-            )}
-            {spillover2Recipient && spillover2Recipient !== ethers.ZeroAddress && (
-              <div><strong>Spillover 2:</strong> {shortAddress(spillover2Recipient)} · {formatUsdtDisplay(spillover2Amount)} USDT</div>
-            )}
-          </>
-        )}
-
         <hr />
         <div><strong>You received:</strong> {formatUsdtDisplay(viewerBreakdown.totalLiquid)} USDT</div>
       </div>
@@ -782,7 +721,6 @@ const resolveOccupantReferrer = useCallback(async (occupantAddress, backendItem 
   const totalSpillover = Object.values(spilloverData).reduce((sum, arr) => sum + arr.length, 0)
   const isViewingSelf = !!account && !!viewAddress && account.toLowerCase() === viewAddress.toLowerCase()
   const highestViewedActiveLevel = getHighestViewedActiveLevel()
-  const hasMeasuredGalaxy = containerSize.width > 0 && containerSize.height > 0
 
   return (
     <section className="orbits-page">
@@ -894,11 +832,9 @@ const resolveOccupantReferrer = useCallback(async (occupantAddress, backendItem 
                     {starConfig.map((star) => (<span key={star.id} className="star" style={{ left: star.left, top: star.top, width: star.size, height: star.size, opacity: star.opacity, animationDelay: `${star.delay}, ${star.delay}`, animationDuration: `${star.duration}, ${star.drift}` }} />))}
                   </div>
                   <div className="galaxy-inner">
-                    {!hasMeasuredGalaxy ? (
-                      <div className="galaxy-stage galaxy-stage--loading" />
-                    ) : (() => {
-                      const outerWidth = containerSize.width
-                      const outerHeight = containerSize.height
+                    {(() => {
+                      const outerWidth = containerSize.width > 0 ? containerSize.width : 560
+                      const outerHeight = containerSize.height > 0 ? containerSize.height : 560
                       const usableSize = Math.max(Math.min(outerWidth, outerHeight) * 0.86, 240)
                       const stageSize = usableSize
                       const centerX = stageSize / 2
@@ -996,7 +932,6 @@ const resolveOccupantReferrer = useCallback(async (occupantAddress, backendItem 
                                 onMouseLeave={() => setHoveredPosition(null)}
                                 title={pos.occupant ? shortAddress(pos.occupant) : 'Empty'}
                               >
-                                {hoveredPosition?.number === pos.number && renderPositionTooltip(pos)}
                                 <div className="planet-content">
                                   <span className="node-number">{pos.number}</span>
                                   {pos.occupant && pos.occupantType === 'mine' && <span className="planet-icon">👤</span>}
@@ -1143,36 +1078,6 @@ const resolveOccupantReferrer = useCallback(async (occupantAddress, backendItem 
                 {selectedPosition.timestamp > 0 && <div className="modal-detail"><span className="modal-label">Filled</span><span>{new Date(selectedPosition.timestamp * 1000).toLocaleString()}</span></div>}
               </>
             ) : <div className="modal-detail"><span className="modal-label">Status</span><span>Empty - Available</span></div>}
-
-            {(() => {
-              const {
-                spillover1Recipient,
-                spillover2Recipient,
-                spillover1Amount,
-                spillover2Amount
-              } = getSpilloverRecipients(selectedPosition)
-
-              if (!spillover1Recipient && !spillover2Recipient) return null
-
-              return (
-                <>
-                  <div className="modal-section-title">Spillover Recipients</div>
-                  {spillover1Recipient && spillover1Recipient !== ethers.ZeroAddress && (
-                    <div className="modal-detail">
-                      <span className="modal-label">Spillover 1</span>
-                      <span>{shortAddress(spillover1Recipient)} · {formatUsdtDisplay(spillover1Amount)} USDT</span>
-                    </div>
-                  )}
-                  {spillover2Recipient && spillover2Recipient !== ethers.ZeroAddress && (
-                    <div className="modal-detail">
-                      <span className="modal-label">Spillover 2</span>
-                      <span>{shortAddress(spillover2Recipient)} · {formatUsdtDisplay(spillover2Amount)} USDT</span>
-                    </div>
-                  )}
-                </>
-              )
-            })()}
-
             {selectedPosition.detailsLoading && <div className="loading-detail">Loading full details...</div>}
           </div>
         </div>
@@ -1282,11 +1187,8 @@ const resolveOccupantReferrer = useCallback(async (occupantAddress, backendItem 
         .spinner { width: 40px; height: 40px; border: 3px solid rgba(77,163,255,0.2); border-top-color: #4da3ff; border-radius: 50%; animation: spin 0.8s linear infinite; margin: 0 auto 16px; }
         @keyframes spin { to { transform: rotate(360deg); } }
         .loading-level { text-align: center; padding: 60px; color: rgba(255,255,255,0.5); }
-        .custom-tooltip { background: #1a1a2e; padding: 12px; border-radius: 12px; max-width: 300px; font-size: 12px; border: 1px solid rgba(255,255,255,0.1); position: absolute; top: calc(100% + 10px); left: 50%; transform: translateX(-50%); z-index: 120; width: max-content; min-width: 220px; max-width: 280px; box-shadow: 0 18px 50px rgba(0,0,0,0.4); pointer-events: none; }
+        .custom-tooltip { background: #1a1a2e; padding: 12px; border-radius: 12px; max-width: 300px; font-size: 12px; border: 1px solid rgba(255,255,255,0.1); }
         .text-warning { color: #f59e0b; }
-        .modal-section-title { margin-top: 16px; margin-bottom: 8px; font-size: 12px; font-weight: 700; letter-spacing: 0.08em; text-transform: uppercase; color: #1de9b6; }
-        .galaxy-stage--loading { width: 100%; height: 100%; min-height: 420px; }
-        .galaxy-container { min-height: 420px; }
         @media (max-width: 768px) {
           .orbits-page { padding: 16px; }
           .planet-node { width: 30px !important; height: 30px !important; }

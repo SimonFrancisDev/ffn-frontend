@@ -649,7 +649,7 @@ const CommunityPage = ({ onNavigate }) => {
       <section className="community-page">
         <div className="loading-container">
           <div className="spinner"></div>
-          <p>Loading community insights...</p>
+          <p>Loading community data...</p>
         </div>
       </section>
     )
@@ -657,25 +657,52 @@ const CommunityPage = ({ onNavigate }) => {
 
   return (
     <section className="community-page">
-      <div className="community-hero community-hero--featured">
-        <div className="community-hero__bg" />
-        <div className="community-hero__overlay" />
-
-        <div className="community-hero__content">
+      {/* Hero section with full-width background image and fade effect */}
+      <div className="community-hero" style={{
+        position: 'relative',
+        isolation: 'isolate',
+        borderRadius: '18px',
+        overflow: 'hidden',
+      }}>
+        {/* Full-width background image */}
+        <div style={{
+          position: 'absolute',
+          inset: 0,
+          backgroundImage: 'url("/images/program-f-freedom.jpg")',
+          backgroundSize: 'cover',
+          backgroundPosition: 'center',
+          zIndex: 0,
+        }} />
+        
+        {/* Gradient fade overlay - left to right */}
+        <div style={{
+          position: 'absolute',
+          inset: 0,
+          background: `linear-gradient(90deg, 
+            var(--bg-primary) 0%, 
+            color-mix(in srgb, var(--bg-primary) 90%, transparent) 15%,
+            color-mix(in srgb, var(--bg-primary) 60%, transparent) 40%,
+            color-mix(in srgb, var(--bg-primary) 25%, transparent) 70%,
+            transparent 100%)`,
+          zIndex: 1,
+          pointerEvents: 'none',
+        }} />
+        
+        <div className="community-hero__content" style={{ position: 'relative', zIndex: 2 }}>
           <div className="community-hero__eyebrow glass-panel">
             <span className="community-hero__eyebrow-dot" />
             <span className="community-hero__eyebrow-text">
-              Live ecosystem visibility, progress, and participation
+              Ecosystem visibility, participation, and momentum
             </span>
           </div>
 
           <div className="community-hero__text-block">
             <h1 className="community-hero__title">Community Hub</h1>
             <p className="community-hero__description soft-text">
-              Track community momentum, monitor your network, and stay close to the latest ecosystem activity.
+              Connect, compete, and grow together in the FFN ecosystem.
             </p>
             <div className="small muted-text">
-              Last updated: {lastUpdated} • Viewing: {isOwnSpace ? 'your connected space' : 'visitor space'}
+              Last updated: {lastUpdated} • Viewing: {isOwnSpace ? 'your connected space' : 'public visitor space'}
             </div>
           </div>
 
@@ -695,9 +722,9 @@ const CommunityPage = ({ onNavigate }) => {
           </div>
         </div>
 
-        <div className="community-hero__visual glass-panel">
-          <div className="community-hero__visual-box">
-            <div className="hero-network-viz" aria-hidden="true">
+        <div className="community-hero__visual glass-panel" style={{ position: 'relative', zIndex: 2, background: 'transparent', border: 'none' }}>
+          <div className="community-hero__visual-box" style={{ background: 'transparent' }}>
+            <div className="hero-network-viz" aria-hidden="true" style={{ position: 'relative', zIndex: 2 }}>
               <div className="hero-network-viz__ring hero-network-viz__ring--one" />
               <div className="hero-network-viz__ring hero-network-viz__ring--two" />
               <div className="hero-network-viz__ring hero-network-viz__ring--three" />
@@ -772,7 +799,7 @@ const CommunityPage = ({ onNavigate }) => {
           <section className="community-referral glass-panel">
             <div className="community-section-heading">
               <span className="community-section-heading__eyebrow muted-text">Your Referral Arsenal</span>
-              <h2 className="community-section-heading__title">Share your link, welcome new members, and track your referral performance</h2>
+              <h2 className="community-section-heading__title">Share, invite, and earn together</h2>
             </div>
 
             {isOwnSpace ? (
@@ -795,9 +822,11 @@ const CommunityPage = ({ onNavigate }) => {
                   <div className="referral-stat" style={{ background: 'linear-gradient(135deg, rgba(77, 163, 255, 0.08), rgba(139, 92, 246, 0.04))' }}>
                     <span className="referral-stat-label">
                       <TrendingUp size={14} style={{ marginRight: '4px', color: 'var(--glow-blue)' }} />
-                      Active Levels
+                      Conversion
                     </span>
-                    <strong className="referral-stat-value">{memberSummary.activeLevelsCount}</strong>
+                    <strong className="referral-stat-value">
+                      ~{userReferralCount > 0 ? Math.floor((userReferralCount / (userReferralCount + 50)) * 100) : 0}%
+                    </strong>
                   </div>
                 </div>
 
@@ -834,7 +863,7 @@ const CommunityPage = ({ onNavigate }) => {
             <div className="community-section-heading community-section-heading--row">
               <div>
                 <span className="community-section-heading__eyebrow muted-text">Your Network Tree</span>
-                <h2 className="community-section-heading__title">Monitor your referral network clearly across all visible levels</h2>
+                <h2 className="community-section-heading__title">Watch your team grow</h2>
               </div>
               <button className="section-action-btn" onClick={() => handleRoute('orbits')}>
                 <Orbit size={14} />
@@ -894,7 +923,7 @@ const CommunityPage = ({ onNavigate }) => {
           <section className="community-growth glass-panel">
             <div className="community-section-heading">
               <span className="community-section-heading__eyebrow muted-text">Growth Overview</span>
-              <h2 className="community-section-heading__title">Registration activity and growth trends from the read layer</h2>
+              <h2 className="community-section-heading__title">Community movement and momentum</h2>
             </div>
 
             {communityGrowth.series.length ? (
@@ -932,7 +961,7 @@ const CommunityPage = ({ onNavigate }) => {
                 </div>
                 <div className="community-empty-state__body">
                   <strong>Growth history is initializing</strong>
-                  <p className="chart-note">This view will populate as fresh growth data is indexed.</p>
+                  <p className="chart-note">Data will appear as community activity grows.</p>
                 </div>
               </div>
             )}
@@ -942,7 +971,7 @@ const CommunityPage = ({ onNavigate }) => {
             <div className="community-section-heading community-section-heading--row">
               <div>
                 <span className="community-section-heading__eyebrow muted-text">Highlights</span>
-                <h2 className="community-section-heading__title">Important updates, notices, and community headlines</h2>
+                <h2 className="community-section-heading__title">Recent ecosystem moments</h2>
               </div>
               <button className="section-refresh-btn" onClick={refreshAnnouncements}>
                 <RefreshCw size={14} />
@@ -983,7 +1012,7 @@ const CommunityPage = ({ onNavigate }) => {
           <section className="community-leaderboard glass-panel">
             <div className="community-section-heading">
               <span className="community-section-heading__eyebrow muted-text">Global Leaderboard</span>
-              <h2 className="community-section-heading__title">See the strongest performers across earnings, referrals, and activity</h2>
+              <h2 className="community-section-heading__title">Top earners & referrers</h2>
             </div>
 
             <div className="leaderboard-tabs">
@@ -1052,7 +1081,7 @@ const CommunityPage = ({ onNavigate }) => {
                   <div>
                     <strong className="community-panel-empty__title">Leaderboard loading</strong>
                     <p className="community-panel-empty__text soft-text">
-                      The leaderboard will populate as indexed activity becomes available.
+                      Rankings will appear as community activity grows.
                     </p>
                   </div>
                 </div>
@@ -1073,7 +1102,7 @@ const CommunityPage = ({ onNavigate }) => {
             <div className="community-section-heading community-section-heading--row">
               <div>
                 <span className="community-section-heading__eyebrow muted-text">Upcoming Events</span>
-                <h2 className="community-section-heading__title">Upcoming sessions and notices</h2>
+                <h2 className="community-section-heading__title">Don't miss out</h2>
               </div>
               <button className="section-refresh-btn" onClick={refreshEvents}>
                 <RefreshCw size={14} />
@@ -1113,7 +1142,7 @@ const CommunityPage = ({ onNavigate }) => {
                   <div className="community-empty-state__body">
                     <strong>No scheduled events yet</strong>
                     <p className="soft-text">
-                      Check back soon for AMAs, contests, and official community sessions.
+                      AMAs, contests, and community sessions coming soon.
                     </p>
                   </div>
                 </div>
@@ -1124,7 +1153,7 @@ const CommunityPage = ({ onNavigate }) => {
           <section className="community-spotlight glass-panel">
             <div className="community-section-heading">
               <span className="community-section-heading__eyebrow muted-text">Spotlight</span>
-              <h2 className="community-section-heading__title">Key milestones and your current standing</h2>
+              <h2 className="community-section-heading__title">Community achievements</h2>
             </div>
 
             <div className="community-spotlight__card glass-panel" style={{ background: 'linear-gradient(135deg, rgba(29, 233, 182, 0.06), rgba(77, 163, 255, 0.03))' }}>
@@ -1166,7 +1195,7 @@ const CommunityPage = ({ onNavigate }) => {
           <section className="community-resources glass-panel">
             <div className="community-section-heading">
               <span className="community-section-heading__eyebrow muted-text">Resources & Support</span>
-              <h2 className="community-section-heading__title">Find support materials and official community channels</h2>
+              <h2 className="community-section-heading__title">Get help and stay connected</h2>
             </div>
 
             <div className="resources-grid">

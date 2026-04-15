@@ -16,16 +16,14 @@ import {
   RefreshCw,
   Receipt,
   UserPlus,
+  Orbit,
   Users,
   Megaphone,
-  Link2,
 } from 'lucide-react'
 
 const API_BASE_URL =
   import.meta.env.VITE_API_BASE_URL?.replace(/\/$/, '') ||
   'https://fin-freedom-backend-3.onrender.com'
-
-const AMOY_EXPLORER_BASE = 'https://amoy.polygonscan.com/address'
 
 const formatNumber = (value, decimals = 2) => {
   const num = Number(value)
@@ -57,11 +55,6 @@ const formatRelativeTime = (timestamp) => {
   if (diffMins < 60) return `${diffMins}m ago`
   if (diffHours < 24) return `${diffHours}h ago`
   return `${diffDays}d ago`
-}
-
-const shortenAddress = (value) => {
-  if (!value) return 'Unavailable'
-  return `${value.slice(0, 6)}...${value.slice(-4)}`
 }
 
 async function fetchJson(path, options = {}) {
@@ -108,6 +101,12 @@ const emptySystemHealth = {
   indexerStatus: 'idle',
   latestBlock: 0,
   lastSyncedBlock: 0,
+}
+
+const emptyOrbitStats = {
+  P4: { balance: '0.00', status: 'Loading...', role: 'Compact orbit layer' },
+  P12: { balance: '0.00', status: 'Loading...', role: 'Growth orbit layer' },
+  P39: { balance: '0.00', status: 'Loading...', role: 'Expansion orbit layer' },
 }
 
 const DashboardLineChart = ({ series = [] }) => {
@@ -208,6 +207,7 @@ const DashboardPage = () => {
   const [growthData, setGrowthData] = useState(emptyGrowthData)
   const [systemHealth, setSystemHealth] = useState(emptySystemHealth)
   const [announcements, setAnnouncements] = useState([])
+  const [orbitStats, setOrbitStats] = useState(emptyOrbitStats)
 
   const safeReadContract = useCallback(async (fn, fallback) => {
     try {
@@ -215,70 +215,6 @@ const DashboardPage = () => {
     } catch {
       return fallback
     }
-  }, [])
-
-  const contractDirectory = useMemo(() => {
-    const env = import.meta.env || {}
-
-    return [
-      {
-        key: 'registration',
-        label: 'Registration Contract',
-        address:
-          CONTRACT_ADDRESSES?.REGISTRATION ||
-          env.VITE_REGISTRATION_ADDRESS ||
-          '0x782FE376de66a3866e972D119a4a5D6E6B897Bac',
-        note: 'Identity entry, registration state, and participant lookup.',
-      },
-      {
-        key: 'level-manager',
-        label: 'Level Manager',
-        address:
-          CONTRACT_ADDRESSES?.LEVEL_MANAGER ||
-          env.VITE_LEVELMANAGER_ADDRESS ||
-          '0xb4605C2a9B7e591240Eff49B13D7B638C15e6168',
-        note: 'Level progression control, treasury routing, and system orchestration.',
-      },
-      {
-        key: 'escrow',
-        label: 'Auto-Upgrade Escrow',
-        address:
-          CONTRACT_ADDRESSES?.ESCROW ||
-          env.VITE_ESCROW_ADDRESS ||
-          '0x605B01408548655b5C73AF48c5f5B4A780BbB7eB',
-        note: 'Reserved upgrade liquidity held for deterministic release paths.',
-      },
-      {
-        key: 'p4',
-        label: 'P4 Orbit',
-        address:
-          CONTRACT_ADDRESSES?.P4_ORBIT ||
-          env.VITE_P4_ORBIT_ADDRESS ||
-          '0x147d5b7269f9BC6c27E31a3BDF352fe4d315847F',
-        note: 'Compact orbit structure used for fast-entry positioning.',
-      },
-      {
-        key: 'p12',
-        label: 'P12 Orbit',
-        address:
-          CONTRACT_ADDRESSES?.P12_ORBIT ||
-          env.VITE_P12_ORBIT_ADDRESS ||
-          '0xd2E2605e5b2326272B53A5A9a7f5F0e3F648E6Ce',
-        note: 'Growth orbit structure with broader layered movement.',
-      },
-      {
-        key: 'p39',
-        label: 'P39 Orbit',
-        address:
-          CONTRACT_ADDRESSES?.P39_ORBIT ||
-          env.VITE_P39_ORBIT_ADDRESS ||
-          '0xFDb2dbfb5D86bf05BEa334F84F8672aEb0eafe6a',
-        note: 'Expansion orbit structure designed for deeper progression visibility.',
-      },
-    ].map((item) => ({
-      ...item,
-      href: item.address ? `${AMOY_EXPLORER_BASE}/${item.address}` : '#',
-    }))
   }, [])
 
   const fetchCommunityStats = useCallback(async () => {
@@ -323,7 +259,7 @@ const DashboardPage = () => {
     const data = payload?.data || {}
     const items = Array.isArray(data.items) ? data.items : []
 
-    setAnnouncements(items.slice(0, 4))
+    setAnnouncements(items.slice(0, 3))
   }, [])
 
   const fetchSystemHealth = useCallback(async () => {
@@ -425,6 +361,24 @@ const DashboardPage = () => {
       setNftBalance(nft.toFixed(2))
       setOpsBalance(ops.toFixed(2))
       setTotalFees((nft + ops).toFixed(2))
+
+      setOrbitStats({
+        P4: {
+          balance: balances.P4 || '0.00',
+          status: Number(balances.P4 || 0) > 0 ? 'Active' : 'Ready',
+          role: 'Compact orbit layer',
+        },
+        P12: {
+          balance: balances.P12 || '0.00',
+          status: Number(balances.P12 || 0) > 0 ? 'Active' : 'Ready',
+          role: 'Growth orbit layer',
+        },
+        P39: {
+          balance: balances.P39 || '0.00',
+          status: Number(balances.P39 || 0) > 0 ? 'Growing' : 'Ready',
+          role: 'Expansion orbit layer',
+        },
+      })
     } catch (err) {
       console.error('Failed to fetch blockchain data:', err)
       setError('Failed to load blockchain data')
@@ -566,23 +520,23 @@ const DashboardPage = () => {
     <section className="dashboard-page">
       <div className="dashboard-hero">
         <div className="dashboard-hero__content">
-          <div className="dashboard-hero__eyebrow dashboard-surface dashboard-surface--chip">
+          <div className="dashboard-hero__eyebrow glass-panel">
             <span className="dashboard-hero__eyebrow-dot" />
             <span className="dashboard-hero__eyebrow-text">
-              Real-time protocol intelligence
+              Real-time system metrics
             </span>
           </div>
 
           <div className="dashboard-hero__text-block">
             <h1 className="dashboard-hero__title">Protocol Intelligence Dashboard</h1>
             <p className="dashboard-hero__description soft-text">
-              Production-grade visibility into contract state, treasury routing, participant growth,
-              announcements, and live network health across the Fin Freedom ecosystem.
+              Real-time system metrics, treasury visibility, growth signals, and network health
+              across the ecosystem.
             </p>
           </div>
 
           <div className="dashboard-hero__chips">
-            <span className="dashboard-hero__chip dashboard-surface dashboard-surface--chip">
+            <span className="dashboard-hero__chip glass-panel">
               <Wifi
                 size={14}
                 className={systemHealth.network === 'Connected' ? 'text-success' : 'text-warning'}
@@ -590,7 +544,7 @@ const DashboardPage = () => {
               <span>{systemHealth.network}</span>
             </span>
 
-            <span className="dashboard-hero__chip dashboard-surface dashboard-surface--chip">
+            <span className="dashboard-hero__chip glass-panel">
               <Shield
                 size={14}
                 className={systemHealth.contracts === 'Healthy' ? 'text-success' : 'text-warning'}
@@ -598,7 +552,7 @@ const DashboardPage = () => {
               <span>Contracts: {systemHealth.contracts}</span>
             </span>
 
-            <span className="dashboard-hero__chip dashboard-surface dashboard-surface--chip">
+            <span className="dashboard-hero__chip glass-panel">
               <Activity
                 size={14}
                 className={
@@ -614,7 +568,7 @@ const DashboardPage = () => {
 
             <button
               type="button"
-              className="dashboard-hero__chip dashboard-surface dashboard-surface--chip"
+              className="dashboard-hero__chip glass-panel"
               onClick={refreshAllData}
               disabled={isRefreshing}
               style={{ cursor: 'pointer' }}
@@ -625,7 +579,7 @@ const DashboardPage = () => {
           </div>
         </div>
 
-        <div className="dashboard-hero__visual dashboard-surface">
+        <div className="dashboard-hero__visual glass-panel">
           <div className="dashboard-hero__visual-header">
             <span className="dashboard-hero__visual-title">Network Overview</span>
             <span className="dashboard-hero__visual-status">
@@ -634,14 +588,18 @@ const DashboardPage = () => {
           </div>
 
           <div className="dashboard-hero__visual-grid">
-            <div className="dashboard-hero__mini-card dashboard-surface dashboard-surface--inner">
+            <div className="dashboard-hero__mini-card glass-panel">
               <span className="dashboard-hero__mini-label soft-text">
                 <Users size={12} /> Community Members
               </span>
-              <strong className="dashboard-hero__mini-value">{formatNumber(totalParticipants, 0)}</strong>
+              <strong className="dashboard-hero__mini-value">
+                {/* {formatNumber(communityStats.totalUsers, 0)}
+                 */}
+              {formatNumber(totalParticipants, 0)}
+              </strong>
             </div>
 
-            <div className="dashboard-hero__mini-card dashboard-surface dashboard-surface--inner">
+            <div className="dashboard-hero__mini-card glass-panel">
               <span className="dashboard-hero__mini-label soft-text">
                 <Receipt size={12} /> Receipts
               </span>
@@ -650,7 +608,7 @@ const DashboardPage = () => {
               </strong>
             </div>
 
-            <div className="dashboard-hero__mini-card dashboard-surface dashboard-surface--inner">
+            <div className="dashboard-hero__mini-card glass-panel">
               <span className="dashboard-hero__mini-label soft-text">
                 <Coins size={12} /> Liquid Paid
               </span>
@@ -659,7 +617,7 @@ const DashboardPage = () => {
               </strong>
             </div>
 
-            <div className="dashboard-hero__mini-card dashboard-surface dashboard-surface--inner">
+            <div className="dashboard-hero__mini-card glass-panel">
               <span className="dashboard-hero__mini-label soft-text">
                 <PiggyBank size={12} /> Current Escrow
               </span>
@@ -678,47 +636,51 @@ const DashboardPage = () => {
 
       <section className="dashboard-stats">
         <div className="dashboard-stats__grid">
-          <div className="dashboard-stats__card dashboard-surface">
+          <div className="dashboard-stats__card glass-panel">
             <span className="dashboard-stats__icon">
               <CircleDollarSign size={20} className="text-glow-teal" />
             </span>
             <span className="dashboard-stats__label soft-text">Protocol Volume</span>
-            <strong className="dashboard-stats__value">${formatNumber(totalProtocolVolume)}</strong>
+            <strong className="dashboard-stats__value">
+              ${formatNumber(totalProtocolVolume)}
+            </strong>
             <small className="dashboard-stats__note soft-text">
-              Combined operational, pool, and liquid flow visibility.
+              Operations + NFT pool + liquid paid
             </small>
           </div>
 
-          <div className="dashboard-stats__card dashboard-surface">
+          <div className="dashboard-stats__card glass-panel">
             <span className="dashboard-stats__icon">
               <Users size={20} className="text-glow-blue" />
             </span>
             <span className="dashboard-stats__label soft-text">Total Participants</span>
-            <strong className="dashboard-stats__value">{formatNumber(totalParticipants, 0)}</strong>
+            <strong className="dashboard-stats__value">
+              {formatNumber(totalParticipants, 0)}
+            </strong>
             <small className="dashboard-stats__note soft-text">
-              Registered members currently visible through the read layer.
+              Registered members
             </small>
           </div>
 
-          <div className="dashboard-stats__card dashboard-surface">
+          <div className="dashboard-stats__card glass-panel">
             <span className="dashboard-stats__icon">
               <Building2 size={20} style={{ color: '#f59e0b' }} />
             </span>
             <span className="dashboard-stats__label soft-text">NFT Pool (80%)</span>
             <strong className="dashboard-stats__value">${formatNumber(nftBalance)}</strong>
             <small className="dashboard-stats__note soft-text">
-              Founder distribution pool visibility.
+              Founder distribution pool
             </small>
           </div>
 
-          <div className="dashboard-stats__card dashboard-surface">
+          <div className="dashboard-stats__card glass-panel">
             <span className="dashboard-stats__icon">
               <Wallet size={20} style={{ color: '#8b5cf6' }} />
             </span>
             <span className="dashboard-stats__label soft-text">Operations (20%)</span>
             <strong className="dashboard-stats__value">${formatNumber(opsBalance)}</strong>
             <small className="dashboard-stats__note soft-text">
-              Operational treasury routing balance.
+              Operational treasury
             </small>
           </div>
         </div>
@@ -726,65 +688,72 @@ const DashboardPage = () => {
 
       <div className="dashboard-main-grid">
         <div className="dashboard-main-grid__left">
-          <section className="dashboard-contracts dashboard-surface">
+          <section className="dashboard-orbits glass-panel">
             <div className="dashboard-section-heading">
-              <span className="dashboard-section-heading__eyebrow soft-text">Contract Directory</span>
-              <h2 className="dashboard-section-heading__title">Core Smart Contract Addresses</h2>
+              <span className="dashboard-section-heading__eyebrow soft-text">Orbit Status</span>
+              <h2 className="dashboard-section-heading__title">Orbit Visibility</h2>
             </div>
 
-            <div className="dashboard-contracts__grid">
-              {contractDirectory.map((item) => (
-                <article key={item.key} className="dashboard-contracts__card dashboard-surface dashboard-surface--inner">
-                  <div className="dashboard-contracts__header">
-                    <span className="dashboard-contracts__label">{item.label}</span>
-                    <a
-                      className="dashboard-contracts__link"
-                      href={item.href}
-                      target="_blank"
-                      rel="noreferrer"
-                      aria-label={`Verify ${item.label} on Amoy explorer`}
+            <div className="dashboard-orbits__grid">
+              {Object.entries(orbitStats).map(([key, data]) => (
+                <div key={key} className="dashboard-orbits__card glass-panel">
+                  <div className="dashboard-orbits__header">
+                    <span className="dashboard-orbits__label">
+                      <Orbit size={14} /> {key}
+                    </span>
+                    <span
+                      className={`dashboard-orbits__status ${
+                        data.status === 'Active'
+                          ? 'text-success'
+                          : data.status === 'Growing'
+                          ? 'text-warning'
+                          : 'soft-text'
+                      }`}
                     >
-                      <Link2 size={14} />
-                      <span>View on Amoy</span>
-                    </a>
+                      {data.status}
+                    </span>
                   </div>
 
-                  <strong className="dashboard-contracts__value">{shortenAddress(item.address)}</strong>
-                  <code className="dashboard-contracts__address">{item.address}</code>
-                  <p className="dashboard-contracts__note soft-text">{item.note}</p>
-                </article>
-              ))}
-            </div>
-          </section>
+                  <strong className="dashboard-orbits__value">
+                    ${formatNumber(data.balance)}
+                  </strong>
 
-          <section className="dashboard-treasury dashboard-surface">
-            <div className="dashboard-section-heading">
-              <span className="dashboard-section-heading__eyebrow soft-text">Treasury Visibility</span>
-              <h2 className="dashboard-section-heading__title">Contract Balances</h2>
-            </div>
-
-            <div className="dashboard-treasury__grid">
-              {Object.entries(contractBalances).map(([key, val]) => (
-                <div key={key} className="dashboard-treasury__card dashboard-surface dashboard-surface--inner">
-                  <span className="dashboard-treasury__label soft-text">{key}</span>
-                  <strong className="dashboard-treasury__value">${formatNumber(val)}</strong>
+                  <small className="soft-text">{data.role}</small>
                 </div>
               ))}
             </div>
           </section>
 
-          {/* <section className="dashboard-guidance dashboard-surface">
+          <section className="dashboard-orbits glass-panel">
+            <div className="dashboard-section-heading">
+              <span className="dashboard-section-heading__eyebrow soft-text">Treasury</span>
+              <h2 className="dashboard-section-heading__title">Contract Balances</h2>
+            </div>
+
+            <div className="dashboard-orbits__grid">
+              {Object.entries(contractBalances).map(([key, val]) => (
+                <div key={key} className="dashboard-orbits__card glass-panel">
+                  <span className="dashboard-orbits__label soft-text">{key}</span>
+                  <strong className="dashboard-orbits__value">
+                    ${formatNumber(val)}
+                  </strong>
+                </div>
+              ))}
+            </div>
+          </section>
+
+          <section className="dashboard-guidance glass-panel">
             <div className="dashboard-section-heading">
               <span className="dashboard-section-heading__eyebrow soft-text">Growth</span>
               <h2 className="dashboard-section-heading__title">Recent Activity</h2>
             </div>
 
             <DashboardLineChart series={growthData.series} />
-          </section> */}
+          </section>
         </div>
 
         <div className="dashboard-main-grid__right">
-          <section className="dashboard-activity dashboard-surface">
+          <section className="dashboard-activity glass-panel">
             <div className="dashboard-section-heading">
               <span className="dashboard-section-heading__eyebrow soft-text">Live Feed</span>
               <h2 className="dashboard-section-heading__title">Network Activity</h2>
@@ -796,7 +765,7 @@ const DashboardPage = () => {
                   const Icon = item.icon
 
                   return (
-                    <div key={item.id} className="dashboard-activity__item dashboard-surface dashboard-surface--inner">
+                    <div key={item.id} className="dashboard-activity__item">
                       <span className="dashboard-activity__icon">
                         <Icon size={18} style={{ color: item.iconColor }} />
                       </span>
@@ -806,7 +775,9 @@ const DashboardPage = () => {
                         <p className="dashboard-activity__text soft-text">{item.description}</p>
 
                         {item.amount ? (
-                          <span className="dashboard-activity__amount">${formatNumber(item.amount)}</span>
+                          <span className="dashboard-activity__amount">
+                            ${formatNumber(item.amount)}
+                          </span>
                         ) : null}
                       </div>
 
@@ -821,98 +792,98 @@ const DashboardPage = () => {
               )}
             </div>
           </section>
-        </div>
-      </div>
 
-      <section className="dashboard-notices dashboard-surface dashboard-notices--wide">
-        <div className="dashboard-section-heading">
-          <span className="dashboard-section-heading__eyebrow soft-text">Updates & Status</span>
-          <h2 className="dashboard-section-heading__title">Announcements & System Health</h2>
-        </div>
+          <section className="dashboard-notices glass-panel">
+            <div className="dashboard-section-heading">
+              <span className="dashboard-section-heading__eyebrow soft-text">Updates & Status</span>
+              <h2 className="dashboard-section-heading__title">Announcements & System Health</h2>
+            </div>
 
-        <div className="dashboard-notices__list dashboard-notices__list--wide">
-          {announcements.length > 0 ? (
-            announcements.map((item) => (
+            <div className="dashboard-notices__list">
+              {announcements.length > 0 ? (
+                announcements.map((item) => (
+                  <div
+                    key={item._id}
+                    className="dashboard-notices__item dashboard-notices__item--info"
+                  >
+                    <span className="dashboard-notices__dot" />
+                    <div>
+                      <h4 className="dashboard-notices__title">{item.title}</h4>
+                      <p className="dashboard-notices__text soft-text">{item.content}</p>
+                      <span className="dashboard-notices__meta soft-text">
+                        {item.date || formatRelativeTime(item.createdAt)}
+                      </span>
+                    </div>
+                  </div>
+                ))
+              ) : (
+                <div className="dashboard-notices__item dashboard-notices__item--success">
+                  <span className="dashboard-notices__dot" />
+                  <div>
+                    <h4 className="dashboard-notices__title">System Operational</h4>
+                    <p className="dashboard-notices__text soft-text">
+                      No public announcement right now.
+                    </p>
+                  </div>
+                </div>
+              )}
+
               <div
-                key={item._id}
-                className="dashboard-notices__item dashboard-notices__item--info dashboard-surface dashboard-surface--inner"
+                className={`dashboard-notices__item dashboard-notices__item--${
+                  systemHealth.contracts === 'Healthy' ? 'success' : 'warning'
+                }`}
               >
                 <span className="dashboard-notices__dot" />
                 <div>
-                  <h4 className="dashboard-notices__title">{item.title}</h4>
-                  <p className="dashboard-notices__text soft-text">{item.content}</p>
+                  <h4 className="dashboard-notices__title">Contracts</h4>
+                  <p className="dashboard-notices__text soft-text">{systemHealth.contracts}</p>
+                </div>
+              </div>
+
+              <div className="dashboard-notices__item dashboard-notices__item--success">
+                <span className="dashboard-notices__dot" />
+                <div>
+                  <h4 className="dashboard-notices__title">Network</h4>
+                  <p className="dashboard-notices__text soft-text">
+                    Polygon Amoy • {systemHealth.network}
+                  </p>
+                </div>
+              </div>
+
+              <div
+                className={`dashboard-notices__item dashboard-notices__item--${
+                  systemHealth.sync === 'Live'
+                    ? 'success'
+                    : systemHealth.sync === 'Syncing'
+                    ? 'info'
+                    : 'warning'
+                }`}
+              >
+                <span className="dashboard-notices__dot" />
+                <div>
+                  <h4 className="dashboard-notices__title">Indexer Sync</h4>
+                  <p className="dashboard-notices__text soft-text">
+                    {systemHealth.sync} • Synced block {systemHealth.lastSyncedBlock || '—'}
+                  </p>
                   <span className="dashboard-notices__meta soft-text">
-                    {item.date || formatRelativeTime(item.createdAt)}
+                    Latest block {systemHealth.latestBlock || '—'}
                   </span>
                 </div>
               </div>
-            ))
-          ) : (
-            <div className="dashboard-notices__item dashboard-notices__item--success dashboard-surface dashboard-surface--inner">
-              <span className="dashboard-notices__dot" />
-              <div>
-                <h4 className="dashboard-notices__title">System Operational</h4>
-                <p className="dashboard-notices__text soft-text">
-                  No public announcement is active at the moment.
-                </p>
-              </div>
-            </div>
-          )}
 
-          <div
-            className={`dashboard-notices__item dashboard-notices__item--${
-              systemHealth.contracts === 'Healthy' ? 'success' : 'warning'
-            } dashboard-surface dashboard-surface--inner`}
-          >
-            <span className="dashboard-notices__dot" />
-            <div>
-              <h4 className="dashboard-notices__title">Contract Status</h4>
-              <p className="dashboard-notices__text soft-text">{systemHealth.contracts}</p>
+              {error ? (
+                <div className="dashboard-notices__item dashboard-notices__item--warning">
+                  <span className="dashboard-notices__dot" />
+                  <div>
+                    <h4 className="dashboard-notices__title">Notice</h4>
+                    <p className="dashboard-notices__text soft-text">{error}</p>
+                  </div>
+                </div>
+              ) : null}
             </div>
-          </div>
-
-          <div className="dashboard-notices__item dashboard-notices__item--success dashboard-surface dashboard-surface--inner">
-            <span className="dashboard-notices__dot" />
-            <div>
-              <h4 className="dashboard-notices__title">Network</h4>
-              <p className="dashboard-notices__text soft-text">
-                Polygon Amoy • {systemHealth.network}
-              </p>
-            </div>
-          </div>
-
-          <div
-            className={`dashboard-notices__item dashboard-notices__item--${
-              systemHealth.sync === 'Live'
-                ? 'success'
-                : systemHealth.sync === 'Syncing'
-                ? 'info'
-                : 'warning'
-            } dashboard-surface dashboard-surface--inner`}
-          >
-            <span className="dashboard-notices__dot" />
-            <div>
-              <h4 className="dashboard-notices__title">Indexer Sync</h4>
-              <p className="dashboard-notices__text soft-text">
-                {systemHealth.sync} • Synced block {systemHealth.lastSyncedBlock || '—'}
-              </p>
-              <span className="dashboard-notices__meta soft-text">
-                Latest block {systemHealth.latestBlock || '—'}
-              </span>
-            </div>
-          </div>
-
-          {error ? (
-            <div className="dashboard-notices__item dashboard-notices__item--warning dashboard-surface dashboard-surface--inner">
-              <span className="dashboard-notices__dot" />
-              <div>
-                <h4 className="dashboard-notices__title">Notice</h4>
-                <p className="dashboard-notices__text soft-text">{error}</p>
-              </div>
-            </div>
-          ) : null}
+          </section>
         </div>
-      </section>
+      </div>
 
       <style>{`
         @keyframes spin {

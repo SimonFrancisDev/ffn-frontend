@@ -24,6 +24,9 @@
   --blur-md: 14px;
   --blur-lg: 24px;
 
+  --drawer-bg-dark: rgba(23, 20, 20, 0.96);
+  --drawer-bg-light: rgba(255, 255, 255, 0.96);
+
   --glow-teal: #1de9b6;
   --glow-blue: #4da3ff;
   --glow-purple: #8b5cf6;
@@ -142,6 +145,22 @@
   --stellar-bloom: rgba(255, 255, 255, 0.2);
   --milky-way-mist: rgba(29, 233, 182, 0.05);
   --grid-line: rgba(77, 115, 168, 0.055);
+
+
+ 
+  
+  /* Make cosmic elements more visible in light mode */
+  --cosmic-glow-1: rgba(77, 163, 255, 0.18);
+  --cosmic-glow-2: rgba(139, 92, 246, 0.14);
+  --milky-way-mist: rgba(29, 233, 182, 0.08);
+  
+  /* Grid should be more present */
+  --grid-line: rgba(77, 115, 168, 0.12);
+  
+  /* Glass panels need better definition */
+  --glass-bg: rgba(255, 255, 255, 0.86);
+  --glass-border: rgba(150, 170, 205, 0.28);
+  --glass-shadow: 0 12px 28px rgba(44, 72, 112, 0.1);
 }
 
 @media (prefers-reduced-motion: reduce) {
@@ -151,3 +170,6 @@
     animation: none;
   }
 }
+
+
+

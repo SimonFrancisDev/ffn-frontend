@@ -31,7 +31,13 @@
   flex-direction: column;
   gap: var(--space-4);
   overflow-y: auto;
-  background: var(--glass-bg-strong);
+  background: var(--drawer-bg-dark);
+  box-shadow: 24px 0 60px rgba(0, 0, 0, 0.35);
+}
+
+
+[data-theme="light"] .mobile-drawer {
+  background: var(--drawer-bg-light);
 }
 
 .mobile-drawer.is-open {

@@ -158,90 +158,15 @@ const ActivationCenterPage = () => {
   }
 
   const getLevelBackground = (level) => {
-    const orbitType = levelToOrbitType[level]
-
-    if (orbitType === 'P4') {
-      return `
-        radial-gradient(circle at 50% 18%, rgba(29, 233, 182, 0.95) 0 4px, transparent 5px),
-        radial-gradient(circle at 82% 50%, rgba(77, 163, 255, 0.92) 0 4px, transparent 5px),
-        radial-gradient(circle at 50% 82%, rgba(139, 92, 246, 0.92) 0 4px, transparent 5px),
-        radial-gradient(circle at 18% 50%, rgba(29, 233, 182, 0.92) 0 4px, transparent 5px),
-        radial-gradient(circle at center, transparent 0 57px, rgba(255,255,255,0.12) 58px 59px, transparent 60px),
-        radial-gradient(circle at center, rgba(255,255,255,0.07) 0 18px, transparent 19px),
-        linear-gradient(180deg, rgba(7, 17, 31, 0.18), rgba(7, 17, 31, 0.74))
-      `
+    if (level === 1 || level === 4 || level === 7 || level === 10) {
+      return `url('/assets/p4-image.png')`
     }
-
-    if (orbitType === 'P12') {
-      return `
-        radial-gradient(circle at 50% 30%, rgba(29, 233, 182, 0.9) 0 3px, transparent 4px),
-        radial-gradient(circle at 68% 60%, rgba(77, 163, 255, 0.9) 0 3px, transparent 4px),
-        radial-gradient(circle at 32% 60%, rgba(139, 92, 246, 0.9) 0 3px, transparent 4px),
-        radial-gradient(circle at 50% 14%, rgba(29, 233, 182, 0.9) 0 3px, transparent 4px),
-        radial-gradient(circle at 73% 20%, rgba(77, 163, 255, 0.9) 0 3px, transparent 4px),
-        radial-gradient(circle at 86% 40%, rgba(139, 92, 246, 0.9) 0 3px, transparent 4px),
-        radial-gradient(circle at 82% 66%, rgba(29, 233, 182, 0.9) 0 3px, transparent 4px),
-        radial-gradient(circle at 64% 84%, rgba(77, 163, 255, 0.9) 0 3px, transparent 4px),
-        radial-gradient(circle at 36% 84%, rgba(139, 92, 246, 0.9) 0 3px, transparent 4px),
-        radial-gradient(circle at 18% 66%, rgba(29, 233, 182, 0.9) 0 3px, transparent 4px),
-        radial-gradient(circle at 14% 40%, rgba(77, 163, 255, 0.9) 0 3px, transparent 4px),
-        radial-gradient(circle at 27% 20%, rgba(139, 92, 246, 0.9) 0 3px, transparent 4px),
-        radial-gradient(circle at center, transparent 0 38px, rgba(255,255,255,0.11) 39px 40px, transparent 41px),
-        radial-gradient(circle at center, transparent 0 66px, rgba(255,255,255,0.10) 67px 68px, transparent 69px),
-        radial-gradient(circle at center, rgba(255,255,255,0.06) 0 17px, transparent 18px),
-        linear-gradient(180deg, rgba(7, 17, 31, 0.18), rgba(7, 17, 31, 0.74))
-      `
+    if (level === 2 || level === 5 || level === 8) {
+      return `url('/assets/p12-image.png')`
     }
-
-    if (orbitType === 'P39') {
-      return `
-        radial-gradient(circle at 50.00% 34.00%, rgba(29, 233, 182, 0.9) 0 2.5px, transparent 3.5px),
-        radial-gradient(circle at 63.86% 58.00%, rgba(29, 233, 182, 0.9) 0 2.5px, transparent 3.5px),
-        radial-gradient(circle at 36.14% 58.00%, rgba(29, 233, 182, 0.9) 0 2.5px, transparent 3.5px),
-        radial-gradient(circle at 50.00% 22.00%, rgba(77, 163, 255, 0.88) 0 2.4px, transparent 3.4px),
-        radial-gradient(circle at 68.00% 28.55%, rgba(77, 163, 255, 0.88) 0 2.4px, transparent 3.4px),
-        radial-gradient(circle at 77.57% 45.14%, rgba(77, 163, 255, 0.88) 0 2.4px, transparent 3.4px),
-        radial-gradient(circle at 74.25% 64.00%, rgba(77, 163, 255, 0.88) 0 2.4px, transparent 3.4px),
-        radial-gradient(circle at 59.58% 76.31%, rgba(77, 163, 255, 0.88) 0 2.4px, transparent 3.4px),
-        radial-gradient(circle at 40.42% 76.31%, rgba(77, 163, 255, 0.88) 0 2.4px, transparent 3.4px),
-        radial-gradient(circle at 25.75% 64.00%, rgba(77, 163, 255, 0.88) 0 2.4px, transparent 3.4px),
-        radial-gradient(circle at 22.43% 45.14%, rgba(77, 163, 255, 0.88) 0 2.4px, transparent 3.4px),
-        radial-gradient(circle at 32.00% 28.55%, rgba(77, 163, 255, 0.88) 0 2.4px, transparent 3.4px),
-        radial-gradient(circle at 50.00% 11.00%, rgba(139, 92, 246, 0.84) 0 2.1px, transparent 3px),
-        radial-gradient(circle at 58.99% 12.05%, rgba(139, 92, 246, 0.84) 0 2.1px, transparent 3px),
-        radial-gradient(circle at 67.50% 15.15%, rgba(139, 92, 246, 0.84) 0 2.1px, transparent 3px),
-        radial-gradient(circle at 75.07% 20.12%, rgba(139, 92, 246, 0.84) 0 2.1px, transparent 3px),
-        radial-gradient(circle at 81.28% 26.71%, rgba(139, 92, 246, 0.84) 0 2.1px, transparent 3px),
-        radial-gradient(circle at 85.81% 34.55%, rgba(139, 92, 246, 0.84) 0 2.1px, transparent 3px),
-        radial-gradient(circle at 88.41% 43.23%, rgba(139, 92, 246, 0.84) 0 2.1px, transparent 3px),
-        radial-gradient(circle at 88.93% 52.27%, rgba(139, 92, 246, 0.84) 0 2.1px, transparent 3px),
-        radial-gradient(circle at 87.36% 61.19%, rgba(139, 92, 246, 0.84) 0 2.1px, transparent 3px),
-        radial-gradient(circle at 83.77% 69.50%, rgba(139, 92, 246, 0.84) 0 2.1px, transparent 3px),
-        radial-gradient(circle at 78.37% 76.76%, rgba(139, 92, 246, 0.84) 0 2.1px, transparent 3px),
-        radial-gradient(circle at 71.43% 82.58%, rgba(139, 92, 246, 0.84) 0 2.1px, transparent 3px),
-        radial-gradient(circle at 63.34% 86.65%, rgba(139, 92, 246, 0.84) 0 2.1px, transparent 3px),
-        radial-gradient(circle at 54.53% 88.74%, rgba(139, 92, 246, 0.84) 0 2.1px, transparent 3px),
-        radial-gradient(circle at 45.47% 88.74%, rgba(139, 92, 246, 0.84) 0 2.1px, transparent 3px),
-        radial-gradient(circle at 36.66% 86.65%, rgba(139, 92, 246, 0.84) 0 2.1px, transparent 3px),
-        radial-gradient(circle at 28.57% 82.58%, rgba(139, 92, 246, 0.84) 0 2.1px, transparent 3px),
-        radial-gradient(circle at 21.63% 76.76%, rgba(139, 92, 246, 0.84) 0 2.1px, transparent 3px),
-        radial-gradient(circle at 16.23% 69.50%, rgba(139, 92, 246, 0.84) 0 2.1px, transparent 3px),
-        radial-gradient(circle at 12.64% 61.19%, rgba(139, 92, 246, 0.84) 0 2.1px, transparent 3px),
-        radial-gradient(circle at 11.07% 52.27%, rgba(139, 92, 246, 0.84) 0 2.1px, transparent 3px),
-        radial-gradient(circle at 11.59% 43.23%, rgba(139, 92, 246, 0.84) 0 2.1px, transparent 3px),
-        radial-gradient(circle at 14.19% 34.55%, rgba(139, 92, 246, 0.84) 0 2.1px, transparent 3px),
-        radial-gradient(circle at 18.72% 26.71%, rgba(139, 92, 246, 0.84) 0 2.1px, transparent 3px),
-        radial-gradient(circle at 24.93% 20.12%, rgba(139, 92, 246, 0.84) 0 2.1px, transparent 3px),
-        radial-gradient(circle at 32.50% 15.15%, rgba(139, 92, 246, 0.84) 0 2.1px, transparent 3px),
-        radial-gradient(circle at 41.01% 12.05%, rgba(139, 92, 246, 0.84) 0 2.1px, transparent 3px),
-        radial-gradient(circle at center, transparent 0 28px, rgba(255,255,255,0.11) 29px 30px, transparent 31px),
-        radial-gradient(circle at center, transparent 0 48px, rgba(255,255,255,0.10) 49px 50px, transparent 51px),
-        radial-gradient(circle at center, transparent 0 68px, rgba(255,255,255,0.09) 69px 70px, transparent 71px),
-        radial-gradient(circle at center, rgba(255,255,255,0.05) 0 15px, transparent 16px),
-        linear-gradient(180deg, rgba(7, 17, 31, 0.18), rgba(7, 17, 31, 0.74))
-      `
+    if (level === 3 || level === 6 || level === 9) {
+      return `url('/assets/p39-image.png')`
     }
-
     return 'none'
   }
 
@@ -595,45 +520,19 @@ const ActivationCenterPage = () => {
     }
   }, [contracts, viewer, fetchTokenSummary])
 
-  // useEffect(() => {
-  //   if (typeof document === 'undefined') return
-
-  //   const shouldLock = isEligibilityModalOpen || isNextActionModalOpen
-  //   if (!shouldLock) return
-
-  //   const previousOverflow = document.body.style.overflow
-  //   document.body.style.overflow = 'hidden'
-
-  //   return () => {
-  //     document.body.style.overflow = previousOverflow
-  //   }
-  // }, [isEligibilityModalOpen, isNextActionModalOpen])
-
-
   useEffect(() => {
-  if (typeof document === 'undefined') return
+    if (typeof document === 'undefined') return
 
-  const shouldLock = isEligibilityModalOpen || isNextActionModalOpen
+    const shouldLock = isEligibilityModalOpen || isNextActionModalOpen
+    if (!shouldLock) return
 
-  const previousBodyOverflow = document.body.style.overflow
-  const previousBodyTouchAction = document.body.style.touchAction
-  const previousHtmlOverflow = document.documentElement.style.overflow
-  const previousHtmlScrollBehavior = document.documentElement.style.scrollBehavior
-
-  if (shouldLock) {
+    const previousOverflow = document.body.style.overflow
     document.body.style.overflow = 'hidden'
-    document.body.style.touchAction = 'none'
-    document.documentElement.style.overflow = 'hidden'
-    document.documentElement.style.scrollBehavior = 'auto'
-  }
 
-  return () => {
-    document.body.style.overflow = previousBodyOverflow
-    document.body.style.touchAction = previousBodyTouchAction
-    document.documentElement.style.overflow = previousHtmlOverflow
-    document.documentElement.style.scrollBehavior = previousHtmlScrollBehavior
-  }
-}, [isEligibilityModalOpen, isNextActionModalOpen])
+    return () => {
+      document.body.style.overflow = previousOverflow
+    }
+  }, [isEligibilityModalOpen, isNextActionModalOpen])
 
   const getHighestActiveLevel = useCallback(() => {
     const active = Object.entries(activeLevels)
@@ -1325,8 +1224,7 @@ const ActivationCenterPage = () => {
               <div
                 key={level}
                 className={`activation-levels__card premium-card compact-level-card ${isActive ? 'activated' : ''} ${isNext ? 'next' : ''}`}
-                // style={{ backgroundImage: getLevelBackground(level) }}
-                style={{ background: getLevelBackground(level), backgroundAttachment: 'scroll' }}
+                style={{ backgroundImage: getLevelBackground(level) }}
               >
                 <div className="compact-level-card__header">
                   <div className="compact-level-card__header-left">
@@ -1345,30 +1243,22 @@ const ActivationCenterPage = () => {
                 </div>
 
                 <div className="compact-level-card__actions">
-                  {isActive ? (
-                    <button type="button" className="view-orbit-btn compact-action-btn compact-action-btn--single" onClick={navigateToOrbits}>
-                      View Orbit <GoArrow />
+                  <button type="button" className="view-orbit-btn compact-action-btn" onClick={navigateToOrbits}>
+                    View Orbit <GoArrow />
+                  </button>
+
+                  {isNext && canActivate && canWriteHere ? (
+                    <button
+                      className="activate-btn compact-action-btn"
+                      onClick={() => handleApproveAndActivate(level)}
+                      disabled={!canWriteHere || txStatus.loading || !hasEnoughBalance || networkWarning}
+                    >
+                      {txStatus.loading ? 'Processing...' : 'Activate Orbit'}
                     </button>
                   ) : (
-                    <>
-                      <button type="button" className="view-orbit-btn compact-action-btn" onClick={navigateToOrbits}>
-                        View Orbit <GoArrow />
-                      </button>
-
-                      {isNext && canActivate && canWriteHere ? (
-                        <button
-                          className="activate-btn compact-action-btn"
-                          onClick={() => handleApproveAndActivate(level)}
-                          disabled={!canWriteHere || txStatus.loading || !hasEnoughBalance || networkWarning}
-                        >
-                          {txStatus.loading ? 'Processing...' : 'Activate Orbit'}
-                        </button>
-                      ) : (
-                        <button className="locked-btn compact-action-btn" disabled>
-                          {canWriteHere ? 'Locked' : 'Read-Only'}
-                        </button>
-                      )}
-                    </>
+                    <button className="locked-btn compact-action-btn" disabled>
+                      {canWriteHere ? 'Locked' : 'Read-Only'}
+                    </button>
                   )}
                 </div>
 
@@ -1656,108 +1546,98 @@ const ActivationCenterPage = () => {
         </div>
 
         <div className="activation-main-grid__right">
-          <section className="activation-side-panel glass-panel">
-            <div className="activation-side-panel__grid">
-              <div className="activation-side-panel__column">
-                <div className="activation-section-heading">
-                  <span className="activation-section-heading__eyebrow muted-text">Notices</span>
-                  <h2 className="activation-section-heading__title">Important warnings and platform guidance</h2>
-                </div>
+          <section className="activation-notices glass-panel">
+            <div className="activation-section-heading">
+              <span className="activation-section-heading__eyebrow muted-text">Notices</span>
+              <h2 className="activation-section-heading__title">Important warnings and platform guidance</h2>
+            </div>
 
-                <div className="activation-notices__list">
-                  <div className="activation-notices__item is-warning">
-                    <span className="activation-notices__dot" />
-                    <div>
-                      <h3 className="activation-notices__title">
-                        {nextLevel ? `Level ${nextLevel}: ${levelPrices[nextLevel]} USDT required` : 'Maximum level achieved'}
-                      </h3>
-                      <p className="activation-notices__text soft-text">
-                        {nextLevel
-                          ? `Balance: ${usdtBalance} USDT. ${
-                              parseFloat(usdtBalance) >= parseFloat(levelPrices[nextLevel])
-                                ? 'Sufficient funds available.'
-                                : `Need ${(parseFloat(levelPrices[nextLevel]) - parseFloat(usdtBalance)).toFixed(2)} more USDT.`
-                            }`
-                          : 'All 10 levels are active. Open the Orbits page for deeper visibility into structure, receipts, and earnings flow.'}
-                      </p>
-                    </div>
-                  </div>
-
-                  <div className="activation-notices__item is-info">
-                    <span className="activation-notices__dot" />
-                    <div>
-                      <h3 className="activation-notices__title">
-                        {isId1Wallet ? 'ID1 Wallet Status' : referrer ? 'Sponsor confirmed' : 'No Referrer'}
-                      </h3>
-                      <p className="activation-notices__text soft-text">
-                        {isId1Wallet
-                          ? 'You are the ID1 wallet. All levels remain active by protocol design.'
-                          : referrer
-                          ? `Sponsored by ${referrer.slice(0, 8)}...${referrer.slice(-6)}`
-                          : 'No referrer provided. You are connected directly to the protocol.'}
-                      </p>
-                    </div>
-                  </div>
-
-                  {(parseFloat(totalEarnings) > 0 || highestLevel > 0) && (
-                    <div className="activation-notices__item is-info">
-                      <span className="activation-notices__dot" />
-                      <div>
-                        <h3 className="activation-notices__title">
-                          Total earnings: {parseFloat(totalEarnings || '0').toFixed(2)} USDT
-                        </h3>
-                        <p className="activation-notices__text soft-text">
-                          Receipt-derived earnings are synced for this wallet. Current active level: {highestLevel || '—'}.
-                        </p>
-                      </div>
-                    </div>
-                  )}
+            <div className="activation-notices__list">
+              <div className="activation-notices__item is-warning">
+                <span className="activation-notices__dot" />
+                <div>
+                  <h3 className="activation-notices__title">
+                    {nextLevel ? `Level ${nextLevel}: ${levelPrices[nextLevel]} USDT required` : 'Maximum level achieved'}
+                  </h3>
+                  <p className="activation-notices__text soft-text">
+                    {nextLevel
+                      ? `Balance: ${usdtBalance} USDT. ${
+                          parseFloat(usdtBalance) >= parseFloat(levelPrices[nextLevel])
+                            ? 'Sufficient funds available.'
+                            : `Need ${(parseFloat(levelPrices[nextLevel]) - parseFloat(usdtBalance)).toFixed(2)} more USDT.`
+                        }`
+                      : 'All 10 levels activated. View the Orbits page for earnings and structure details.'}
+                  </p>
                 </div>
               </div>
 
-              <div className="activation-side-panel__column">
-                <div className="activation-section-heading">
-                  <span className="activation-section-heading__eyebrow muted-text">FFN Space Portal</span>
-                  <h2 className="activation-section-heading__title">Explore your orbit network</h2>
+              <div className="activation-notices__item is-info">
+                <span className="activation-notices__dot" />
+                <div>
+                  <h3 className="activation-notices__title">
+                    {isId1Wallet ? 'ID1 Wallet Status' : referrer ? 'Sponsor confirmed' : 'No Referrer'}
+                  </h3>
+                  <p className="activation-notices__text soft-text">
+                    {isId1Wallet
+                      ? 'You are the ID1 wallet. All levels are automatically activated.'
+                      : referrer
+                      ? `Sponsored by ${referrer.slice(0, 8)}...${referrer.slice(-6)}`
+                      : 'No referrer provided. You are connected directly to the protocol.'}
+                  </p>
                 </div>
-
-                <div className="activation-visual__box orbit-preview" onClick={navigateToOrbits}>
-                  {orbitDataLoading ? (
-                    <div className="orbit-loading">Loading orbit data...</div>
-                  ) : highestLevel > 0 && orbitLevelData[highestLevel] ? (
-                    <div className="mini-orbit">
-                      <div className="mini-orbit-core">
-                        <span>L{highestLevel}</span>
-                        <span className="mini-orbit-type">{levelToOrbitType[highestLevel]}</span>
-                      </div>
-                      <div className="mini-orbit-stats">
-                        <div className="mini-stat"><FaLayerGroup /> {orbitLevelData[highestLevel].positionsFilled}/{orbitLevelData[highestLevel].totalPositions}</div>
-                        <div className="mini-stat"><FaUsers /> {downlineData[highestLevel] || 0}</div>
-                        <div className="mini-stat"><FaSyncAlt /> {spilloverData[highestLevel] || 0}</div>
-                      </div>
-                      <div className="mini-orbit-earn">
-                        {parseFloat(totalEarnings || '0').toFixed(2)} USDT total earned
-                      </div>
-                      <div className="mini-orbit-subearn">
-                        Level {highestLevel}: {parseFloat(levelEarnings[highestLevel] || 0).toFixed(2)} USDT • Cycles {cycleData[highestLevel]?.total || 0}
-                      </div>
-                    </div>
-                  ) : (
-                    <div style={{ textAlign: 'center' }}>
-                      <div style={{ fontSize: '48px', marginBottom: '12px' }}>🌌</div>
-                      <div style={{ fontWeight: 'bold', marginBottom: '8px' }}>FFN Space</div>
-                      <div style={{ fontSize: '12px', opacity: 0.7 }}>Click to explore your orbit ecosystem</div>
-                    </div>
-                  )}
-                </div>
-
-                <p className="activation-visual__note muted-text">
-                  Open FFN Space to inspect orbit structure, downline positions, spillover visibility, and earnings flow.
-                </p>
               </div>
+
+              {parseFloat(totalEarnings) > 0 && (
+                <div className="activation-notices__item is-info">
+                  <span className="activation-notices__dot" />
+                  <div>
+                    <h3 className="activation-notices__title">Total earnings: {totalEarnings} USDT</h3>
+                    <p className="activation-notices__text soft-text">
+                      Receipt-derived earnings visible for this wallet. View Orbits for a deeper breakdown.
+                    </p>
+                  </div>
+                </div>
+              )}
             </div>
           </section>
-<button
+
+          <section className="activation-visual glass-panel">
+            <div className="activation-section-heading">
+              <span className="activation-section-heading__eyebrow muted-text">FFN Space Portal</span>
+              <h2 className="activation-section-heading__title">Explore your orbit network</h2>
+            </div>
+
+            <div className="activation-visual__box orbit-preview" onClick={navigateToOrbits}>
+              {orbitDataLoading ? (
+                <div className="orbit-loading">Loading orbit data...</div>
+              ) : highestLevel > 0 && orbitLevelData[highestLevel] ? (
+                <div className="mini-orbit">
+                  <div className="mini-orbit-core">
+                    <span>L{highestLevel}</span>
+                    <span className="mini-orbit-type">{levelToOrbitType[highestLevel]}</span>
+                  </div>
+                  <div className="mini-orbit-stats">
+                    <div className="mini-stat"><FaLayerGroup /> {orbitLevelData[highestLevel].positionsFilled}/{orbitLevelData[highestLevel].totalPositions}</div>
+                    <div className="mini-stat"><FaUsers /> {downlineData[highestLevel] || 0}</div>
+                    <div className="mini-stat"><FaSyncAlt /> {spilloverData[highestLevel] || 0}</div>
+                  </div>
+                  <div className="mini-orbit-earn">{orbitLevelData[highestLevel].totalEarned} USDT earned</div>
+                </div>
+              ) : (
+                <div style={{ textAlign: 'center' }}>
+                  <div style={{ fontSize: '48px', marginBottom: '12px' }}>🌌</div>
+                  <div style={{ fontWeight: 'bold', marginBottom: '8px' }}>FFN Space</div>
+                  <div style={{ fontSize: '12px', opacity: 0.7 }}>Click to explore your orbit ecosystem</div>
+                </div>
+              )}
+            </div>
+
+            <p className="activation-visual__note muted-text">
+              Open FFN Space to inspect orbit structure, downline positions, spillover visibility, and earnings flow.
+            </p>
+          </section>
+
+          <button
             type="button"
             className="activation-next-float"
             aria-label="Open next action"

@@ -60,7 +60,7 @@ const MobileDrawer = ({
       />
 
       <aside
-        className={`mobile-drawer glass-panel ${isOpen ? 'is-open' : ''}`}
+        className={`mobile-drawer ${isOpen ? 'is-open' : ''}`}
         aria-hidden={!isOpen}
       >
         <div className="mobile-drawer__header">

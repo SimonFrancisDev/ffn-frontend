@@ -51,7 +51,6 @@ const OrbitsPage = () => {
 
   // Refs for caching
   const galaxyRef = useRef(null)
-  const modalRef = useRef(null)
   const referrerCacheRef = useRef(new Map())
   const viewedLevelsCacheRef = useRef(new Map())
   const fetchIdRef = useRef(0)
@@ -377,31 +376,12 @@ const resolveOccupantReferrer = useCallback(async (occupantAddress, backendItem 
         const resolvedReferrer = await resolveOccupantReferrer(occupant, pos)
         const occupantType = deriveOccupantType(occupant, viewAddress, { ...pos, originalReferrer: resolvedReferrer, occupantReferrer: resolvedReferrer })
         const positionInfo = buildPositionInfoFromRuleView(orbitType, pos.number, level, null, viewAddress)
-        // return {
-        //   number: pos.number, level, cycleNumber, isHistoricalPosition: true, occupantType, occupant,
-        //   amount: pos.amount || '0', timestamp: Number(pos.timestamp || 0), positionInfo,
-        //   line: pos.line || positionInfo.line, spillsTo: positionInfo.spillsTo,
-        //   parentPosition: pos.parentPosition ?? positionInfo.parentPosition, truthLabel: pos.truthLabel || (occupant ? 'UNKNOWN' : 'NO_RECEIPT')
-        // }
-
         return {
-            number: pos.number,
-            level,
-            cycleNumber,
-            isHistoricalPosition: true,
-            occupantType,
-            occupant,
-            amount: pos.amount || '0',
-            timestamp: Number(pos.timestamp || 0),
-            positionInfo,
-            line: pos.line || positionInfo.line,
-            spillsTo: positionInfo.spillsTo,
-            parentPosition: pos.parentPosition ?? positionInfo.parentPosition,
-            truthLabel: pos.truthLabel || (occupant ? 'UNKNOWN' : 'NO_RECEIPT'),
-            referrer: pos.referrer || resolvedReferrer,
-            originalReferrer: pos.originalReferrer || resolvedReferrer,
-            occupantReferrer: pos.occupantReferrer || resolvedReferrer
-          }
+          number: pos.number, level, cycleNumber, isHistoricalPosition: true, occupantType, occupant,
+          amount: pos.amount || '0', timestamp: Number(pos.timestamp || 0), positionInfo,
+          line: pos.line || positionInfo.line, spillsTo: positionInfo.spillsTo,
+          parentPosition: pos.parentPosition ?? positionInfo.parentPosition, truthLabel: pos.truthLabel || (occupant ? 'UNKNOWN' : 'NO_RECEIPT')
+        }
       }))
       cycleHistoryCacheRef.current.set(cacheKey, positions)
       return positions
@@ -465,37 +445,8 @@ const resolveOccupantReferrer = useCallback(async (occupantAddress, backendItem 
       }))
 
       const myPositions = positions.filter(p => p.occupantType === 'mine').map(p => p.number)
-      // const downlinePositions = positions.filter(p => p.occupantType === 'downline').map(p => ({ position: p.number, user: p.occupant, amount: p.amount }))
-      // const otherOccupants = positions.filter(p => p.occupantType === 'other').map(p => ({ position: p.number, user: p.occupant, amount: p.amount }))
-      
-      
-      const owner = viewAddress?.toLowerCase()
-
-      const downlinePositions = positions.filter(p => {
-        if (!p.occupant) return false
-
-        const ref =
-          p.originalReferrer ||
-          p.referrer ||
-          p.occupantReferrer ||
-          ethers.ZeroAddress
-
-        return ref?.toLowerCase() === owner
-      })
-
-      const otherOccupants = positions.filter(p => {
-        if (!p.occupant) return false
-
-        const ref =
-          p.originalReferrer ||
-          p.referrer ||
-          p.occupantReferrer ||
-          ethers.ZeroAddress
-
-        return ref?.toLowerCase() !== owner &&
-              p.occupant.toLowerCase() !== owner
-      })
-      
+      const downlinePositions = positions.filter(p => p.occupantType === 'downline').map(p => ({ position: p.number, user: p.occupant, amount: p.amount }))
+      const otherOccupants = positions.filter(p => p.occupantType === 'other').map(p => ({ position: p.number, user: p.occupant, amount: p.amount }))
       const structuralLinks = positions.filter(p => p.parentPosition && p.occupant).map(p => ({ from: p.number, to: p.parentPosition, user: p.occupant }))
       const lineCounts = { line1: Number(snapshot.linePaymentCounts?.line1 || 0), line2: Number(snapshot.linePaymentCounts?.line2 || 0), line3: Number(snapshot.linePaymentCounts?.line3 || 0) }
 
@@ -709,204 +660,11 @@ const resolveOccupantReferrer = useCallback(async (occupantAddress, backendItem 
   //   return () => { window.removeEventListener('resize', updateSize); if (resizeObserver) resizeObserver.disconnect(); clearTimeout(timer) }
   // }, [activeTab, orbitData, cycleHistoryData, selectedCycleByLevel, containerSize.width, containerSize.height])
 
-//   useEffect(() => {
-//   const updateSize = () => {
-//     if (!galaxyRef.current) return
-
-//     const { width, height } = galaxyRef.current.getBoundingClientRect()
-//     if (width <= 0 || height <= 0) return
-
-//     setContainerSize((prev) => {
-//       if (prev.width === width && prev.height === height) return prev
-//       return { width, height }
-//     })
-
-//     setIsGalaxyMeasured(true)
-//   }
-
-//   updateSize()
-
-//   let rafId = 0
-//   const handleResize = () => {
-//     cancelAnimationFrame(rafId)
-//     rafId = requestAnimationFrame(updateSize)
-//   }
-
-//   window.addEventListener('resize', handleResize)
-
-//   let resizeObserver
-//   if (window.ResizeObserver && galaxyRef.current) {
-//     resizeObserver = new ResizeObserver(() => {
-//       cancelAnimationFrame(rafId)
-//       rafId = requestAnimationFrame(updateSize)
-//     })
-//     resizeObserver.observe(galaxyRef.current)
-//   }
-
-//   return () => {
-//     window.removeEventListener('resize', handleResize)
-//     if (resizeObserver) resizeObserver.disconnect()
-//     cancelAnimationFrame(rafId)
-//   }
-// }, [activeTab])
-
-// const activeLevelNumber = Number(activeTab.replace('level', ''))
-// const activeLevelData = orbitData[activeLevelNumber]
-
-const activeLevelNumber = Number(activeTab.replace('level', ''))
-const activeLevelData = orbitData[activeLevelNumber]
-const activeLevelReady = !!activeLevelData?.positions
-
-// useEffect(() => {
-//   let rafId = 0
-//   let resizeObserver
-
-//   const updateSize = () => {
-//     if (!galaxyRef.current) return
-
-//     const { width, height } = galaxyRef.current.getBoundingClientRect()
-//     if (width <= 0 || height <= 0) return
-
-//     setContainerSize((prev) => {
-//       if (prev.width === width && prev.height === height) return prev
-//       return { width, height }
-//     })
-
-//     setIsGalaxyMeasured(true)
-//   }
-
-//   const scheduleUpdate = () => {
-//     cancelAnimationFrame(rafId)
-//     rafId = requestAnimationFrame(updateSize)
-//   }
-
-//   scheduleUpdate()
-
-//   window.addEventListener('resize', scheduleUpdate)
-
-//   if (window.ResizeObserver && galaxyRef.current) {
-//     resizeObserver = new ResizeObserver(scheduleUpdate)
-//     resizeObserver.observe(galaxyRef.current)
-//   }
-
-//   return () => {
-//     window.removeEventListener('resize', scheduleUpdate)
-//     if (resizeObserver) resizeObserver.disconnect()
-//     cancelAnimationFrame(rafId)
-//   }
-// }, [activeTab, orbitData])
-
-
-// useEffect(() => {
-//   if (!activeLevelData) return
-
-//   let rafId = 0
-//   let resizeObserver
-
-//   const updateSize = () => {
-//     if (!galaxyRef.current) return
-
-//     const { width, height } = galaxyRef.current.getBoundingClientRect()
-//     if (width <= 0 || height <= 0) return
-
-//     setContainerSize((prev) => {
-//       if (prev.width === width && prev.height === height) return prev
-//       return { width, height }
-//     })
-
-//     setIsGalaxyMeasured(true)
-//   }
-
-//   const scheduleUpdate = () => {
-//     cancelAnimationFrame(rafId)
-//     rafId = requestAnimationFrame(updateSize)
-//   }
-
-//   scheduleUpdate()
-
-//   window.addEventListener('resize', scheduleUpdate)
-
-//   if (window.ResizeObserver && galaxyRef.current) {
-//     resizeObserver = new ResizeObserver(scheduleUpdate)
-//     resizeObserver.observe(galaxyRef.current)
-//   }
-
-//   return () => {
-//     window.removeEventListener('resize', scheduleUpdate)
-//     if (resizeObserver) resizeObserver.disconnect()
-//     cancelAnimationFrame(rafId)
-//   }
-// }, [activeTab, activeLevelData])
-
-// useEffect(() => {
-//   if (!activeLevelData) return
-
-//   let rafId = 0
-//   let resizeObserver
-//   let settleTimer
-
-//   const updateSize = () => {
-//     if (!galaxyRef.current) return
-
-//     const rect = galaxyRef.current.getBoundingClientRect()
-//     const width = Math.round(rect.width)
-//     const height = Math.round(rect.height)
-
-//     if (width <= 0 || height <= 0) return
-
-//     setContainerSize((prev) => {
-//       if (prev.width === width && prev.height === height) return prev
-//       return { width, height }
-//     })
-
-//     setIsGalaxyMeasured(true)
-//   }
-
-//   const scheduleUpdate = () => {
-//     cancelAnimationFrame(rafId)
-//     rafId = requestAnimationFrame(updateSize)
-//   }
-
-//   setIsGalaxyMeasured(false)
-
-//   scheduleUpdate()
-//   settleTimer = setTimeout(() => {
-//     scheduleUpdate()
-//   }, 120)
-
-//   window.addEventListener('resize', scheduleUpdate)
-
-//   if (window.ResizeObserver) {
-//     resizeObserver = new ResizeObserver(() => {
-//       scheduleUpdate()
-//     })
-//     if (galaxyRef.current) {
-//       resizeObserver.observe(galaxyRef.current)
-//     }
-//   }
-
-//   return () => {
-//     window.removeEventListener('resize', scheduleUpdate)
-//     if (resizeObserver) resizeObserver.disconnect()
-//     cancelAnimationFrame(rafId)
-//     clearTimeout(settleTimer)
-//   }
-// }, [activeTab, activeLevelData])
-
-useEffect(() => {
-  if (!activeLevelReady) return
-
-  let rafId = 0
-  let resizeObserver = null
-  let settleTimer = null
-
+  useEffect(() => {
   const updateSize = () => {
     if (!galaxyRef.current) return
 
-    const rect = galaxyRef.current.getBoundingClientRect()
-    const width = Math.round(rect.width)
-    const height = Math.round(rect.height)
-
+    const { width, height } = galaxyRef.current.getBoundingClientRect()
     if (width <= 0 || height <= 0) return
 
     setContainerSize((prev) => {
@@ -917,33 +675,31 @@ useEffect(() => {
     setIsGalaxyMeasured(true)
   }
 
-  const scheduleUpdate = () => {
+  updateSize()
+
+  let rafId = 0
+  const handleResize = () => {
     cancelAnimationFrame(rafId)
     rafId = requestAnimationFrame(updateSize)
   }
 
-  scheduleUpdate()
-  settleTimer = window.setTimeout(scheduleUpdate, 120)
+  window.addEventListener('resize', handleResize)
 
-  window.addEventListener('resize', scheduleUpdate)
-
+  let resizeObserver
   if (window.ResizeObserver && galaxyRef.current) {
-    resizeObserver = new ResizeObserver(scheduleUpdate)
+    resizeObserver = new ResizeObserver(() => {
+      cancelAnimationFrame(rafId)
+      rafId = requestAnimationFrame(updateSize)
+    })
     resizeObserver.observe(galaxyRef.current)
   }
 
   return () => {
-    window.removeEventListener('resize', scheduleUpdate)
+    window.removeEventListener('resize', handleResize)
     if (resizeObserver) resizeObserver.disconnect()
     cancelAnimationFrame(rafId)
-    if (settleTimer) window.clearTimeout(settleTimer)
   }
-}, [activeTab, activeLevelReady])
-
-// useEffect(() => {
-//   setIsGalaxyMeasured(false)
-//   setContainerSize({ width: 0, height: 0 })
-// }, [activeTab])
+}, [activeTab])
 
   // Clear caches when viewAddress changes
   useEffect(() => {
@@ -961,90 +717,28 @@ useEffect(() => {
     setContainerSize({ width: 0, height: 0 })
   }, [viewAddress])
 
-
-
-  useEffect(() => {
-    if (!showPositionModal) return
-
-    const previousBodyOverflow = document.body.style.overflow
-    document.body.style.overflow = 'hidden'
-    modalRef.current?.focus()
-
-    const handleKeyDown = (event) => {
-      if (event.key === 'Escape') {
-        setShowPositionModal(false)
-      }
-    }
-
-    window.addEventListener('keydown', handleKeyDown)
-
-    return () => {
-      document.body.style.overflow = previousBodyOverflow
-      window.removeEventListener('keydown', handleKeyDown)
-    }
-  }, [showPositionModal])
-
   // ============================================================
   // RENDER HELPERS
   // ============================================================
   const renderPositionTooltip = (position) => {
-    const viewerBreakdown = position.viewerReceiptBreakdown || {
-      totalGross: 0,
-      totalLiquid: 0,
-      totalEscrow: 0,
-    }
-
     if (!position.occupant) {
       return (
         <div className="custom-tooltip">
-          <div className="custom-tooltip__title">Position #{position.number}</div>
-          <div className="custom-tooltip__row">
-            <span>Status</span>
-            <strong>Empty</strong>
-          </div>
-          <div className="custom-tooltip__row">
-            <span>Line</span>
-            <strong>Line {position.line || 1}</strong>
-          </div>
-          {position.parentPosition && (
-            <div className="custom-tooltip__row">
-              <span>Parent</span>
-              <strong>Position {position.parentPosition}</strong>
-            </div>
-          )}
+          <strong>Empty Position</strong>
+          <div>Available to be filled</div>
+          {position.parentPosition && <div className="text-warning">Structural parent: Position {position.parentPosition}</div>}
         </div>
       )
     }
-
+    const viewerBreakdown = position.viewerReceiptBreakdown || { totalGross: 0, totalLiquid: 0, totalEscrow: 0 }
     return (
       <div className="custom-tooltip">
-        <div className="custom-tooltip__title">Position #{position.number}</div>
-        <div className="custom-tooltip__row">
-          <span>Occupant</span>
-          <strong>{shortAddress(position.occupant)}</strong>
-        </div>
-        <div className="custom-tooltip__row">
-          <span>Line</span>
-          <strong>Line {position.line || 1}</strong>
-        </div>
-        <div className="custom-tooltip__row">
-          <span>Type</span>
-          <strong>{position.truthLabel || position.positionInfo?.type || 'Unknown'}</strong>
-        </div>
-        <div className="custom-tooltip__row">
-          <span>Net Amount</span>
-          <strong>{formatUsdtDisplay(getNetAmount(Number(position.amount || 0)))} USDT</strong>
-        </div>
-        {position.parentPosition && (
-          <div className="custom-tooltip__row">
-            <span>Parent</span>
-            <strong>Position {position.parentPosition}</strong>
-          </div>
-        )}
-        <div className="custom-tooltip__row">
-          <span>You Received</span>
-          <strong>{formatUsdtDisplay(viewerBreakdown.totalLiquid || 0)} USDT</strong>
-        </div>
+        <div><strong>Position #{position.number}</strong> (Line {position.line})</div>
+        <div><strong>Occupant:</strong> {shortAddress(position.occupant)}</div>
+        <div><strong>Amount:</strong> {formatUsdtDisplay(getNetAmount(Number(position.amount)))} USDT</div>
+        {position.parentPosition && <div className="text-warning">Parent: Position {position.parentPosition}</div>}
+        <hr />
+        <div><strong>You received:</strong> {formatUsdtDisplay(viewerBreakdown.totalLiquid)} USDT</div>
       </div>
     )
   }
@@ -1131,15 +825,6 @@ useEffect(() => {
         })}
       </div>
 
-      <div className="orbit-tips glass-panel">
-        <p>
-          ⚡ You may experience a slight delay when opening <strong>P12</strong> and <strong>P39</strong> orbits.
-        </p>
-        <p>
-          🚀 [Blinking Yellow Dots] Other orbit visuals load silently when you click the next level while viewing your current level.
-        </p>
-      </div>
-
       {/* Main Content */}
       <div className="orbits-main-grid">
         <div className="orbits-main-grid__left">
@@ -1173,67 +858,11 @@ useEffect(() => {
             const historicalPositions = (cycleHistoryData[level]?.[String(selectedCycle)] || []).map(pos => ({ ...pos, level }))
             const displayedPositions = isHistoricalView ? historicalPositions : positions
 
-              const ownerLower = viewAddress?.toLowerCase()
-
-              const displayedDownlineCount = displayedPositions.filter((p) => {
-                if (!p.occupant) return false
-
-                if (isHistoricalView) {
-                  const ref =
-                    p.originalReferrer ||
-                    p.referrer ||
-                    p.occupantReferrer ||
-                    ethers.ZeroAddress
-
-                  if (ref && ref !== ethers.ZeroAddress) {
-                    return ref.toLowerCase() === ownerLower
-                  }
-
-                  return p.occupantType === 'downline'
-                }
-
-                const ref =
-                  p.originalReferrer ||
-                  p.referrer ||
-                  p.occupantReferrer ||
-                  ethers.ZeroAddress
-
-                return ref.toLowerCase() === ownerLower
-              }).length
-
-              const displayedOtherCount = displayedPositions.filter((p) => {
-                if (!p.occupant) return false
-                if (p.occupant.toLowerCase() === ownerLower) return false
-
-                if (isHistoricalView) {
-                  const ref =
-                    p.originalReferrer ||
-                    p.referrer ||
-                    p.occupantReferrer ||
-                    ethers.ZeroAddress
-
-                  if (ref && ref !== ethers.ZeroAddress) {
-                    return ref.toLowerCase() !== ownerLower
-                  }
-
-                  return p.occupantType === 'other'
-                }
-
-                const ref =
-                  p.originalReferrer ||
-                  p.referrer ||
-                  p.occupantReferrer ||
-                  ethers.ZeroAddress
-
-                return ref.toLowerCase() !== ownerLower
-              }).length
-
             const positionsByLine = {}
             displayedPositions.forEach(pos => { const line = pos.line; if (!positionsByLine[line]) positionsByLine[line] = []; positionsByLine[line].push(pos) })
             const structure = getOrbitStructure(orbitType)
             const filledCountForDisplay = displayedPositions.filter(p => p.occupant).length
-            const filledCount = (data.positions || []).filter(p => p.occupant).length
-            const currentIndexForDisplay = isHistoricalView ? Math.min(filledCountForDisplay, config.positions) : (currentIndex || 0)
+            const currentIndexForDisplay = isHistoricalView ? Math.min(filledCountForDisplay, config.positions) : (currentIndex || 1)
             const shouldShowAutoUpgradePanel = isLevelActive && level < 10 && level === highestViewedActiveLevel
             const isLoadingCycleHistory = !!loadingCycleByLevel[level]
             const hasCycleSupport = cycleHistorySupportByLevel[level]
@@ -1247,59 +876,13 @@ useEffect(() => {
                   <div className="orbit-header-info">
                     <span>Level {level} ({orbitType}) - {viewMode === 'global' ? 'Orbit View' : 'Downline View'}</span>
                     {totalCycles > 0 && <span className="cycle-badge">Cycle {Number(totalCycles) + 1}</span>}
-                    {isHistoricalView && <span className="history-badge">Stored Snapshot • Cycle {selectedCycle}</span>}
+                    {isHistoricalView && <span className="history-badge">Viewing Cycle {selectedCycle}</span>}
                   </div>
                   <div className="orbit-header-stats">
                     {!isLevelActive && <span className="badge-secondary">Inactive</span>}
-                    {/* {data.downlinePositions?.length > 0 && <span className="badge-warning">⬇ {data.downlinePositions.length}</span>}
-                    {data.otherOccupants?.length > 0 && <span className="badge-info">🔄 {data.otherOccupants.length}</span>} */}
-                    {displayedDownlineCount > 0 && <span className="badge-warning">⬇ {displayedDownlineCount}</span>}
-                    {displayedOtherCount > 0 && <span className="badge-info">🔄 {displayedOtherCount}</span>}
-                    {/* <span className="badge-primary">{currentIndexForDisplay}/{config.positions} filled</span> */}
-                    <span className="badge-primary">{filledCountForDisplay}/{config.positions} filled</span>
-                  </div>
-                </div>
-
-                <div className={`orbit-summary-strip glass-panel ${isHistoricalView ? 'is-historical' : 'is-live'}`}>
-                  <div className="orbit-summary-item">
-                    <span className="orbit-summary-label">Level</span>
-                    <strong className="orbit-summary-value">L{level}</strong>
-                  </div>
-                  <div className="orbit-summary-item">
-                    <span className="orbit-summary-label">Orbit</span>
-                    <strong className="orbit-summary-value">{orbitType}</strong>
-                  </div>
-                  <div className="orbit-summary-item">
-                    <span className="orbit-summary-label">Filled</span>
-                    {/* <strong className="orbit-summary-value">{currentIndexForDisplay}/{config.positions}</strong> */}
-                    <strong className="orbit-summary-value">{filledCountForDisplay}/{config.positions}</strong>
-                  </div>
-                  <div className="orbit-summary-item">
-                    <span className="orbit-summary-label">{isHistoricalView ? 'Snapshot Cycle' : 'Current Cycle'}</span>
-                    <strong className="orbit-summary-value">
-                      {isHistoricalView ? `Cycle ${selectedCycle}` : `Cycle ${Number(totalCycles) + 1}`}
-                    </strong>
-                  </div>
-                  <div className="orbit-summary-item">
-                    <span className="orbit-summary-label">Downline</span>
-                    {/* <strong className="orbit-summary-value">{data.downlinePositions?.length || 0}</strong> */}
-                    <strong className="orbit-summary-value">{displayedDownlineCount}</strong>
-                  </div>
-                  <div className="orbit-summary-item">
-                    <span className="orbit-summary-label">Other Occupants</span>
-                    {/* <strong className="orbit-summary-value">{data.otherOccupants?.length || 0}</strong> */}
-                    <strong className="orbit-summary-value">{displayedOtherCount}</strong>
-
-                  </div>
-                  <div className="orbit-summary-item">
-                    <span className="orbit-summary-label">Total Earned</span>
-                    <strong className="orbit-summary-value">{formatUsdtDisplay(data?.totalEarned || 0)} USDT</strong>
-                  </div>
-                  <div className="orbit-summary-item">
-                    <span className="orbit-summary-label">{level < 10 ? `Locked for L${level + 1}` : 'Top Level'}</span>
-                    <strong className="orbit-summary-value">
-                      {level < 10 ? `${formatUsdtDisplay(userLocks[level] || 0)} USDT` : 'Complete'}
-                    </strong>
+                    {data.downlinePositions?.length > 0 && <span className="badge-warning">⬇ {data.downlinePositions.length}</span>}
+                    {data.otherOccupants?.length > 0 && <span className="badge-info">🔄 {data.otherOccupants.length}</span>}
+                    <span className="badge-primary">{currentIndexForDisplay}/{config.positions} filled</span>
                   </div>
                 </div>
 
@@ -1315,12 +898,7 @@ useEffect(() => {
                 )}
 
                 {/* Galaxy Visualization */}
-                {/* <div className={`galaxy-container ${orbitType.toLowerCase()} ${!isGalaxyMeasured ? 'is-measuring' : ''}`} ref={galaxyRef}> */}
-                <div
-                    key={`galaxy-${activeTab}`}
-                    className={`galaxy-container ${orbitType.toLowerCase()} ${!isGalaxyMeasured ? 'is-measuring' : ''}`}
-                    ref={galaxyRef}
-                  >
+                <div className={`galaxy-container ${orbitType.toLowerCase()} ${!isGalaxyMeasured ? 'is-measuring' : ''}`} ref={galaxyRef}>
                   {!isGalaxyMeasured ? (
                     <div className="galaxy-measure-loader">
                       <div className="spinner"></div>
@@ -1348,10 +926,8 @@ useEffect(() => {
 
                     <div className="galaxy-inner">
                     {(() => {
-                      // const outerWidth = containerSize.width > 0 ? containerSize.width : 560
-                      // const outerHeight = containerSize.height > 0 ? containerSize.height : 560
-                      const outerWidth = containerSize.width || galaxyRef.current?.clientWidth || 560
-                      const outerHeight = containerSize.height || galaxyRef.current?.clientHeight || outerWidth
+                      const outerWidth = containerSize.width > 0 ? containerSize.width : 560
+                      const outerHeight = containerSize.height > 0 ? containerSize.height : 560
                       const usableSize = Math.max(Math.min(outerWidth, outerHeight) * 0.86, 240)
                       const stageSize = usableSize
                       const centerX = stageSize / 2
@@ -1566,12 +1142,6 @@ useEffect(() => {
                   <div className="legend-item"><div className="legend-dot empty"></div><span>Empty</span></div>
                   <div className="legend-item"><div className="legend-dot gold"></div><span>Spillover Link</span></div>
                 </div>
-
-                {hoveredPosition && (
-                  <div className="orbit-hover-card glass-panel">
-                    {renderPositionTooltip(hoveredPosition)}
-                  </div>
-                )}
               </div>
             )
           })}
@@ -1650,12 +1220,9 @@ useEffect(() => {
 
                 {/* Historical view note */}
                 {selectedCycleByLevel[level] !== 'current' && (
-                  <div className="info-card glass-panel historical-insight-card">
-                    <h3>Historical Snapshot</h3>
-                    <div className="history-note">
-                      You are viewing stored orbit data for Cycle {selectedCycleByLevel[level]}.
-                      Position layout and occupants reflect that cycle snapshot, while total earned remains the current cumulative value.
-                    </div>
+                  <div className="info-card glass-panel">
+                    <h3>Historical View</h3>
+                    <div className="history-note">Showing stored data for Cycle {selectedCycleByLevel[level]}. Total earned reflects current value.</div>
                   </div>
                 )}
               </>
@@ -1667,7 +1234,7 @@ useEffect(() => {
       {/* Position Modal */}
       {showPositionModal && selectedPosition && (
         <div className="modal-overlay" onClick={() => setShowPositionModal(false)}>
-          <div className="position-modal glass-panel" onClick={(e) => e.stopPropagation()} role="dialog" aria-modal="true" tabIndex={-1} ref={modalRef}>
+          <div className="position-modal glass-panel" onClick={(e) => e.stopPropagation()}>
             <button className="modal-close" onClick={() => setShowPositionModal(false)}>×</button>
             <h3>Position #{selectedPosition.number}</h3>
             <div className="modal-detail"><span className="modal-label">Type</span><span>{selectedPosition.truthLabel || selectedPosition.positionInfo?.type || 'Unknown'}</span></div>

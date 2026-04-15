@@ -157,8 +157,8 @@ const HERO_MESSAGE =
   'Welcome to Fin Freedom Program. Inspect live read-layer signals, understand where you stand, and move through the ecosystem with clarity.'
 
 const APP_USER_ID_STORAGE_KEY = 'finfreedom_app_user_id_v1'
-const DUPLICATED_PROGRAMS = [...PROGRAMS, ...PROGRAMS]
-
+// const DUPLICATED_PROGRAMS = [...PROGRAMS, ...PROGRAMS]
+const DUPLICATED_PROGRAMS = PROGRAMS
 const TOKEN_IMAGES = {
   fgt: '/images/fgt-token.png',
   fgtr: '/images/fgtr-token.png',
@@ -241,58 +241,105 @@ const MiniGrowthChart = ({ series = [] }) => {
   )
 }
 
-const OrbitVisual = ({ walletStateLabel, levelLabel, subjectAddress }) => {
+// const OrbitVisual = ({ walletStateLabel, levelLabel, subjectAddress }) => {
+//   return (
+//     <div className="landing-orbit-visual glass-panel">
+//       <div className="landing-orbit-visual__header">
+//         <div className="landing-orbit-visual__dots">
+//           <span />
+//           <span />
+//           <span />
+//         </div>
+//         <span className="landing-orbit-visual__title">Live Entry State</span>
+//       </div>
+
+//       <div className="landing-orbit-visual__body">
+//         <div className="landing-orbit-visual__preview landing-orbit-visual__preview--expanded">
+//           {[...Array(5)].map((_, index) => {
+//             const ringNumber = index + 1
+//             return (
+//               <div
+//                 key={ringNumber}
+//                 className={`landing-orbit-visual__ring landing-orbit-visual__ring--${ringNumber}`}
+//               >
+//                 <div className={`landing-orbit-visual__path landing-orbit-visual__path--${ringNumber}`}>
+//                   <span className={`landing-orbit-visual__node landing-orbit-visual__node--${ringNumber}`} />
+//                 </div>
+//               </div>
+//             )
+//           })}
+//           <div className="landing-orbit-visual__core">YOU</div>
+//         </div>
+
+//         <div className="landing-orbit-visual__typing glass-panel">
+//           <span className="landing-orbit-visual__typing-label muted-text">Live Orbit Guide</span>
+//           <p className="landing-orbit-visual__typing-text">{HERO_MESSAGE}</p>
+//         </div>
+
+//         <div className="landing-orbit-visual__metrics">
+//           <div className="landing-orbit-visual__metric glass-panel">
+//             <span className="landing-orbit-visual__metric-label muted-text">Wallet</span>
+//             <span className="landing-orbit-visual__metric-value">{walletStateLabel}</span>
+//           </div>
+
+//           <div className="landing-orbit-visual__metric glass-panel">
+//             <span className="landing-orbit-visual__metric-label muted-text">Level</span>
+//             <span className="landing-orbit-visual__metric-value">{levelLabel}</span>
+//           </div>
+
+//           <div className="landing-orbit-visual__metric glass-panel">
+//             <span className="landing-orbit-visual__metric-label muted-text">Viewing</span>
+//             <span className="landing-orbit-visual__metric-value">{shortenAddress(subjectAddress)}</span>
+//           </div>
+//         </div>
+//       </div>
+//     </div>
+//   )
+// }
+
+
+const OrbitStructure = ({ type }) => {
+  const getConfig = () => {
+    if (type === 'P4') return [4]
+    if (type === 'P12') return [3, 9]
+    if (type === 'P39') return [3, 9, 27]
+    return []
+  }
+
+  const rings = getConfig()
+
   return (
-    <div className="landing-orbit-visual glass-panel">
-      <div className="landing-orbit-visual__header">
-        <div className="landing-orbit-visual__dots">
-          <span />
-          <span />
-          <span />
-        </div>
-        <span className="landing-orbit-visual__title">Live Entry State</span>
-      </div>
+    <div className="orbit">
+      {rings.map((count, ringIndex) => {
+        const size = 80 + ringIndex * 60
 
-      <div className="landing-orbit-visual__body">
-        <div className="landing-orbit-visual__preview landing-orbit-visual__preview--expanded">
-          {[...Array(5)].map((_, index) => {
-            const ringNumber = index + 1
-            return (
-              <div
-                key={ringNumber}
-                className={`landing-orbit-visual__ring landing-orbit-visual__ring--${ringNumber}`}
-              >
-                <div className={`landing-orbit-visual__path landing-orbit-visual__path--${ringNumber}`}>
-                  <span className={`landing-orbit-visual__node landing-orbit-visual__node--${ringNumber}`} />
-                </div>
-              </div>
-            )
-          })}
-          <div className="landing-orbit-visual__core">YOU</div>
-        </div>
+        return (
+          <div
+            key={ringIndex}
+            className="orbit-ring"
+            style={{
+              width: size,
+              height: size,
+            }}
+          >
+            {Array.from({ length: count }).map((_, i) => {
+              const angle = (360 / count) * i
 
-        <div className="landing-orbit-visual__typing glass-panel">
-          <span className="landing-orbit-visual__typing-label muted-text">Live Orbit Guide</span>
-          <p className="landing-orbit-visual__typing-text">{HERO_MESSAGE}</p>
-        </div>
-
-        <div className="landing-orbit-visual__metrics">
-          <div className="landing-orbit-visual__metric glass-panel">
-            <span className="landing-orbit-visual__metric-label muted-text">Wallet</span>
-            <span className="landing-orbit-visual__metric-value">{walletStateLabel}</span>
+              return (
+                <span
+                  key={i}
+                  className="orbit-node"
+                  style={{
+                    transform: `rotate(${angle}deg) translate(${size / 2}px) rotate(-${angle}deg)`
+                  }}
+                />
+              )
+            })}
           </div>
+        )
+      })}
 
-          <div className="landing-orbit-visual__metric glass-panel">
-            <span className="landing-orbit-visual__metric-label muted-text">Level</span>
-            <span className="landing-orbit-visual__metric-value">{levelLabel}</span>
-          </div>
-
-          <div className="landing-orbit-visual__metric glass-panel">
-            <span className="landing-orbit-visual__metric-label muted-text">Viewing</span>
-            <span className="landing-orbit-visual__metric-value">{shortenAddress(subjectAddress)}</span>
-          </div>
-        </div>
-      </div>
+      <div className="orbit-core">YOU</div>
     </div>
   )
 }
@@ -344,6 +391,26 @@ const LandingPage = ({ onNavigate }) => {
   const [programModal, setProgramModal] = useState(null)
 
   const showDisclaimer = forceShowDisclaimer || !isAcknowledged
+  const [typedHeroMessage, setTypedHeroMessage] = useState('')
+
+
+  useEffect(() => {
+  let index = 0
+  const text = HERO_MESSAGE
+
+  setTypedHeroMessage('')
+
+  const interval = window.setInterval(() => {
+    index += 1
+    setTypedHeroMessage(text.slice(0, index))
+
+    if (index >= text.length) {
+      window.clearInterval(interval)
+    }
+  }, 28)
+
+  return () => window.clearInterval(interval)
+}, [])
 
   useEffect(() => {
     if (typeof window === 'undefined') return
@@ -919,7 +986,11 @@ const LandingPage = ({ onNavigate }) => {
                     <span className="landing-hero__terminal-label">FFNNarrator / live observer</span>
                   </div>
 
-                  <p className="landing-hero__terminal-text">{HERO_MESSAGE}</p>
+                  {/* <p className="landing-hero__terminal-text">{HERO_MESSAGE}</p> */}
+                  <p className="landing-hero__terminal-text">
+                    {typedHeroMessage}
+                    <span className="landing-hero__typing-caret" />
+                  </p>
                 </div>
 
                 <div className="landing-hero__trust-row landing-hero__trust-row--compact">
@@ -1225,7 +1296,7 @@ const LandingPage = ({ onNavigate }) => {
           </div>
         </section>
 
-        <section className="landing-transparency app-container">
+        {/* <section className="landing-transparency app-container">
           <div className="landing-section-heading">
             <span className="landing-section-heading__eyebrow muted-text">Transparency & Trust</span>
             <h2 className="landing-section-heading__title">
@@ -1296,7 +1367,49 @@ const LandingPage = ({ onNavigate }) => {
               </div>
             </div>
           </div>
-        </section>
+        </section> */}
+        <section className="landing-transparency app-container">
+  <div className="landing-section-heading">
+    <span className="landing-section-heading__eyebrow muted-text">
+      Orbit Structures
+    </span>
+
+    <h2 className="landing-section-heading__title">
+      Structured progression across deterministic orbit systems
+    </h2>
+
+    <p className="landing-section-heading__text soft-text">
+      Each level operates on a defined orbit structure. Your position, movement,
+      and progression are transparently visible and mathematically distributed.
+    </p>
+  </div>
+
+  <div className="orbit-grid">
+    <div className="orbit-card glass-panel">
+      <h3>P4</h3>
+      <OrbitStructure type="P4" />
+    </div>
+
+    <div className="orbit-card glass-panel">
+      <h3>P12</h3>
+      <OrbitStructure type="P12" />
+    </div>
+
+    <div className="orbit-card glass-panel">
+      <h3>P39</h3>
+      <OrbitStructure type="P39" />
+    </div>
+  </div>
+
+  <div className="orbit-cta">
+    <button
+      className="landing-hero__primary-btn"
+      onClick={() => onNavigate?.('activation')}
+    >
+      Learn More →
+    </button>
+  </div>
+</section>
 
         <footer className="landing-footer">
           <div className="landing-footer__inner glass-panel">

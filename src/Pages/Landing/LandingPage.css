@@ -146,11 +146,11 @@ html {
 
 .landing-hero__title {
   width: 100%;
-  max-width: 14ch;
+  max-width: 100%;
   margin: 0;
-  text-align: left;
-  font-size: clamp(2.4rem, 5.2vw, 5rem);
-  line-height: 0.98;
+  text-align: center;
+  font-size: clamp(1.4rem, 3.2vw, 3rem);
+  line-height: 1.3;
   letter-spacing: -0.045em;
   font-weight: 800;
   color: var(--text-primary);
@@ -163,7 +163,7 @@ html {
   line-height: 1.85;
 }
 
-.landing-hero__panel,
+/* .landing-hero__panel,
 .landing-hero__terminal,
 .landing-stats__card,
 .landing-roadmap__track,
@@ -176,6 +176,30 @@ html {
 .landing-program-modal__dialog {
   backdrop-filter: blur(10px);
   -webkit-backdrop-filter: blur(10px);
+} */
+
+/* PERFORMANCE FIX — REMOVE BLUR */
+.landing-hero__panel,
+.landing-hero__terminal,
+.landing-stats__card,
+.landing-roadmap__track,
+.landing-coins__card,
+.landing-transparency__content,
+.landing-orbit-visual,
+.landing-footer__inner,
+.landing-programs__card,
+.landing-disclaimer__dialog,
+.landing-program-modal__dialog {
+  backdrop-filter: none;
+  -webkit-backdrop-filter: none;
+}
+
+
+.landing-stats__card,
+.landing-programs__card,
+.landing-orbit-visual,
+.landing-hero__panel {
+  background: rgba(10, 18, 34, 0.88);
 }
 
 .landing-hero__panel {
@@ -863,11 +887,31 @@ html {
   position: relative;
 }
 
-.landing-programs__track {
+/* .landing-programs__track {
   display: grid;
   grid-template-columns: repeat(3, minmax(0, 1fr));
   gap: 18px;
   align-items: stretch;
+} */
+
+
+.landing-programs__track {
+  display: flex;
+  gap: 16px;
+  overflow-x: auto;
+  scroll-snap-type: x mandatory;
+  padding-bottom: 10px;
+}
+
+.landing-programs__card {
+  flex: 0 0 85%;
+  scroll-snap-align: start;
+}
+
+@media (min-width: 768px) {
+  .landing-programs__card {
+    flex: 0 0 320px;
+  }
 }
 
 .landing-programs__card {
@@ -1742,5 +1786,140 @@ body.light .landing-hero__panel {
   *::after {
     animation: none !important;
     transition: none !important;
+  }
+}
+
+
+@media (max-width: 768px) {
+  .landing-stats__grid,
+  .landing-roadmap__track,
+  .landing-coins__grid,
+  .landing-programs__track,
+  .landing-transparency__top,
+  .landing-hero__layout {
+    grid-template-columns: 1fr !important;
+  }
+
+
+  .landing-hero__title  {
+    text-align: left
+  }
+}
+
+
+
+
+/* ===== ORBIT STRUCTURE ===== */
+
+.orbit {
+  position: relative;
+  width: 100%;
+  height: 260px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.orbit-ring {
+  position: absolute;
+  border-radius: 50%;
+  border: 1px solid rgba(255,255,255,0.1);
+}
+
+.orbit-node {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  width: 10px;
+  height: 10px;
+  margin: -5px;
+  border-radius: 50%;
+  background: linear-gradient(135deg, var(--glow-teal), var(--glow-blue));
+  box-shadow: 0 0 12px rgba(77,163,255,0.4);
+}
+
+.orbit-core {
+  width: 60px;
+  height: 60px;
+  border-radius: 16px;
+  background: rgba(10,18,34,0.9);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-weight: 800;
+  z-index: 2;
+}
+
+
+.orbit-grid {
+  display: grid;
+  gap: 20px;
+}
+
+/* .orbit-card {
+  padding: 20px;
+  border-radius: 20px;
+  text-align: center;
+}
+  */
+
+
+  .orbit-card {
+  padding: 22px;
+  border-radius: 24px;
+  background: linear-gradient(
+    180deg,
+    rgba(11, 18, 32, 0.96),
+    rgba(8, 14, 26, 0.96)
+  );
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  box-shadow: 0 14px 30px rgba(0, 0, 0, 0.18);
+  text-align: center;
+}
+
+.orbit-card h3 {
+  margin: 0 0 14px;
+  font-size: 1.15rem;
+  line-height: 1.1;
+  font-weight: 800;
+  letter-spacing: -0.02em;
+  color: var(--text-primary);
+}
+
+.orbit-card p {
+  margin: 12px 0 0;
+  font-size: 13px;
+  line-height: 1.7;
+  color: var(--text-secondary);
+}
+
+.orbit-cta {
+  margin-top: 20px;
+  text-align: center;
+}
+
+@media (min-width: 768px) {
+  .orbit-grid {
+    grid-template-columns: repeat(3, 1fr);
+  }
+}
+
+
+.landing-hero__typing-caret {
+  display: inline-block;
+  width: 8px;
+  height: 1.1em;
+  margin-left: 4px;
+  vertical-align: -2px;
+  background: var(--glow-teal);
+  animation: heroCaretBlink 0.9s steps(1) infinite;
+}
+
+@keyframes heroCaretBlink {
+  0%, 50% {
+    opacity: 1;
+  }
+  50.01%, 100% {
+    opacity: 0;
   }
 }

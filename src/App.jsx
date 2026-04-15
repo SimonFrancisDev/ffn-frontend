@@ -745,13 +745,13 @@ function App() {
     walletError,
   ])
 
-  // ❌ REMOVED: renderCurrentPage() function completely
 
   return (
     <SessionProvider>
       <SpaceProvider walletAddress={walletAccount}>
         <>
-          <AppShell
+         <AppShell
+            fullWidth={location.pathname === '/' || location.pathname === '/home'}
             topbar={<TopNoticeBar notices={notices} />}
             navbar={
               <MainNavbar
@@ -787,7 +787,6 @@ function App() {
               />
             }
           >
-            {/* ✅ REPLACED: renderCurrentPage() with Routes */}
             <Routes>
               <Route path="/" element={<LandingPage onNavigate={handleNavigate} />} />
               <Route path="/home" element={<LandingPage onNavigate={handleNavigate} />} />

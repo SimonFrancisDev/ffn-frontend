@@ -6,34 +6,23 @@ const AppShell = ({
   navbar = null,
   footer = null,
   contentClassName = '',
+  fullWidth = false, // 👈 NEW
 }) => {
   return (
-    <div className="app-shell theme-transition">
-      <div className="app-shell__bg app-shell__bg--one" />
-      <div className="app-shell__bg app-shell__bg--two" />
-      <div className="app-shell__bg app-shell__bg--three" />
+    <div className={`app-shell ${fullWidth ? 'app-shell--full' : ''}`}>
+      {topbar ? <div className="app-shell__topbar">{topbar}</div> : null}
 
-      {topbar ? (
-        <div className="app-shell__topbar">
-          {topbar}
-        </div>
-      ) : null}
+      {navbar ? <div className="app-shell__navbar">{navbar}</div> : null}
 
-      {navbar ? (
-        <div className="app-shell__navbar">
-          {navbar}
-        </div>
-      ) : null}
-
-      <main className={`app-shell__content ${contentClassName}`.trim()}>
+      <main
+        className={`app-shell__content ${contentClassName} ${
+          fullWidth ? 'app-shell__content--full' : ''
+        }`.trim()}
+      >
         {children}
       </main>
 
-      {footer ? (
-        <div className="app-shell__footer">
-          {footer}
-        </div>
-      ) : null}
+      {footer ? <div className="app-shell__footer">{footer}</div> : null}
     </div>
   )
 }
@@ -59,32 +48,16 @@ export default AppShell
 //   contentClassName = '',
 // }) => {
 //   return (
-//     <div className="app-shell theme-transition">
-//       <div className="app-shell__bg app-shell__bg--one" />
-//       <div className="app-shell__bg app-shell__bg--two" />
-//       <div className="app-shell__bg app-shell__bg--three" />
+//     <div className="app-shell">
+//       {topbar ? <div className="app-shell__topbar">{topbar}</div> : null}
 
-//       {topbar ? (
-//         <div className="app-shell__topbar">
-//           {topbar}
-//         </div>
-//       ) : null}
+//       {navbar ? <div className="app-shell__navbar">{navbar}</div> : null}
 
-//       {navbar ? (
-//         <div className="app-shell__navbar">
-//           {navbar}
-//         </div>
-//       ) : null}
-
-//       <main className={`app-shell__content app-container ${contentClassName}`.trim()}>
+//       <main className={`app-shell__content ${contentClassName}`.trim()}>
 //         {children}
 //       </main>
 
-//       {footer ? (
-//         <div className="app-shell__footer">
-//           {footer}
-//         </div>
-//       ) : null}
+//       {footer ? <div className="app-shell__footer">{footer}</div> : null}
 //     </div>
 //   )
 // }

@@ -48,14 +48,14 @@
   --surface-2: rgba(255, 255, 255, 0.12);
   --surface-3: rgba(255, 255, 255, 0.16);
 
-  --glass-bg: rgba(255, 255, 255, 0.08);
-  --glass-bg-strong: rgba(255, 255, 255, 0.12);
-  --glass-border: rgba(255, 255, 255, 0.14);
-  --glass-shadow: 0 8px 32px rgba(0, 0, 0, 0.28);
+  --glass-bg: rgba(255, 255, 255, 0.06);
+  --glass-bg-strong: rgba(255, 255, 255, 0.1);
+  --glass-border: rgba(255, 255, 255, 0.1);
+  --glass-shadow: 0 12px 28px rgba(0, 0, 0, 0.16);
 
   --text-primary: rgba(255, 255, 255, 0.96);
-  --text-secondary: rgba(255, 255, 255, 0.72);
-  --text-muted: rgba(255, 255, 255, 0.52);
+  --text-secondary: rgba(255, 255, 255, 0.74);
+  --text-muted: rgba(255, 255, 255, 0.54);
 
   --border-soft: rgba(255, 255, 255, 0.1);
   --border-strong: rgba(255, 255, 255, 0.18);
@@ -66,13 +66,13 @@
 
   --bg-core-glow: rgba(255, 255, 255, 0.03);
 
-  --star-dim: rgba(255, 255, 255, 0.12);
-  --star-soft: rgba(255, 255, 255, 0.2);
-  --star-bright: rgba(255, 255, 255, 0.34);
+  --star-dim: rgba(255, 255, 255, 0.18);
+  --star-soft: rgba(255, 255, 255, 0.28);
+  --star-bright: rgba(255, 255, 255, 0.42);
 
-  --nebula-1: rgba(29, 233, 182, 0.1);
-  --nebula-2: rgba(77, 163, 255, 0.12);
-  --nebula-3: rgba(139, 92, 246, 0.1);
+  --nebula-1: rgba(29, 233, 182, 0.08);
+  --nebula-2: rgba(77, 163, 255, 0.1);
+  --nebula-3: rgba(139, 92, 246, 0.08);
   --nebula-4: rgba(255, 255, 255, 0.04);
 
   --dust-band: rgba(110, 160, 255, 0.08);
@@ -80,132 +80,68 @@
   --shooting-star-core: rgba(255, 255, 255, 0.95);
   --shooting-star-tail: rgba(255, 255, 255, 0.28);
 
-  /* Add to your existing :root, [data-theme="dark"] */
---space-haze: rgba(29, 233, 182, 0.03);
---space-depth: rgba(7, 17, 31, 0.4);
---cosmic-glow-1: rgba(77, 163, 255, 0.08);
---cosmic-glow-2: rgba(139, 92, 246, 0.06);
---stellar-bloom: rgba(255, 255, 255, 0.04);
---milky-way-mist: rgba(29, 233, 182, 0.02);
+  --space-haze: rgba(29, 233, 182, 0.035);
+  --space-depth: rgba(7, 17, 31, 0.34);
+  --cosmic-glow-1: rgba(77, 163, 255, 0.11);
+  --cosmic-glow-2: rgba(139, 92, 246, 0.09);
+  --stellar-bloom: rgba(255, 255, 255, 0.04);
+  --milky-way-mist: rgba(29, 233, 182, 0.025);
+  --grid-line: rgba(255, 255, 255, 0.03);
 }
 
 /* =========================
    LIGHT THEME
+   Rebuilt to feel bright, polished, and premium.
    ========================= */
 [data-theme="light"] {
-  --bg-primary: #eef4ff;
-  --bg-secondary: #e7f0ff;
-  --bg-tertiary: #f8fbff;
-  --bg-overlay: rgba(255, 255, 255, 0.72);
+  --bg-primary: #f4f7fc;
+  --bg-secondary: #edf3fb;
+  --bg-tertiary: #ffffff;
+  --bg-overlay: rgba(255, 255, 255, 0.82);
 
-  --surface-1: rgba(255, 255, 255, 0.68);
-  --surface-2: rgba(255, 255, 255, 0.78);
-  --surface-3: rgba(255, 255, 255, 0.9);
+  --surface-1: rgba(255, 255, 255, 0.9);
+  --surface-2: rgba(248, 251, 255, 0.96);
+  --surface-3: rgba(238, 244, 255, 0.98);
 
-  --glass-bg: rgba(255, 255, 255, 0.58);
-  --glass-bg-strong: rgba(255, 255, 255, 0.72);
-  --glass-border: rgba(255, 255, 255, 0.6);
-  --glass-shadow: 0 10px 30px rgba(17, 24, 39, 0.08);
+  --glass-bg: rgba(255, 255, 255, 0.88);
+  --glass-bg-strong: rgba(255, 255, 255, 0.96);
+  --glass-border: rgba(150, 170, 205, 0.22);
+  --glass-shadow: 0 16px 32px rgba(44, 72, 112, 0.08);
 
-  --text-primary: rgba(15, 23, 42, 0.96);
-  --text-secondary: rgba(30, 41, 59, 0.74);
-  --text-muted: rgba(51, 65, 85, 0.56);
+  --text-primary: rgba(14, 24, 42, 0.96);
+  --text-secondary: rgba(36, 52, 82, 0.76);
+  --text-muted: rgba(74, 92, 122, 0.58);
 
   --border-soft: rgba(148, 163, 184, 0.18);
-  --border-strong: rgba(148, 163, 184, 0.3);
+  --border-strong: rgba(120, 144, 176, 0.24);
 
-  --bg-radial-1: rgba(29, 233, 182, 0.16);
-  --bg-radial-2: rgba(77, 163, 255, 0.18);
-  --bg-radial-3: rgba(139, 92, 246, 0.14);
+  --bg-radial-1: rgba(29, 233, 182, 0.1);
+  --bg-radial-2: rgba(77, 163, 255, 0.12);
+  --bg-radial-3: rgba(139, 92, 246, 0.08);
 
-  --bg-core-glow: rgba(255, 255, 255, 0.24);
+  --bg-core-glow: rgba(255, 255, 255, 0.32);
 
-  --star-dim: rgba(77, 163, 255, 0.09);
-  --star-soft: rgba(77, 163, 255, 0.14);
-  --star-bright: rgba(139, 92, 246, 0.16);
+  --star-dim: rgba(77, 163, 255, 0.08);
+  --star-soft: rgba(77, 163, 255, 0.12);
+  --star-bright: rgba(139, 92, 246, 0.12);
 
-  --nebula-1: rgba(29, 233, 182, 0.08);
-  --nebula-2: rgba(77, 163, 255, 0.1);
-  --nebula-3: rgba(139, 92, 246, 0.08);
-  --nebula-4: rgba(255, 255, 255, 0.18);
+  --nebula-1: rgba(29, 233, 182, 0.07);
+  --nebula-2: rgba(77, 163, 255, 0.09);
+  --nebula-3: rgba(139, 92, 246, 0.07);
+  --nebula-4: rgba(255, 255, 255, 0.22);
 
-  --dust-band: rgba(120, 160, 255, 0.08);
+  --dust-band: rgba(120, 160, 255, 0.06);
 
-  --shooting-star-core: rgba(77, 163, 255, 0.3);
-  --shooting-star-tail: rgba(77, 163, 255, 0.1);
+  --shooting-star-core: rgba(77, 163, 255, 0.22);
+  --shooting-star-tail: rgba(77, 163, 255, 0.08);
 
-  --space-haze: rgba(29, 233, 182, 0.06);
---space-depth: rgba(238, 244, 255, 0.5);
---cosmic-glow-1: rgba(77, 163, 255, 0.12);
---cosmic-glow-2: rgba(139, 92, 246, 0.1);
---stellar-bloom: rgba(255, 255, 255, 0.15);
---milky-way-mist: rgba(29, 233, 182, 0.08);
-}
-
-@keyframes galaxyDrift {
-  0% {
-    transform: translate3d(0, 0, 0) scale(1);
-  }
-  50% {
-    transform: translate3d(-0.5%, 0.6%, 0) scale(1.02);
-  }
-  100% {
-    transform: translate3d(0.7%, -0.45%, 0) scale(1.03);
-  }
-}
-
-@keyframes starTwinkle {
-  0%,
-  100% {
-    opacity: 0.88;
-    filter: brightness(0.98);
-  }
-  50% {
-    opacity: 1;
-    filter: brightness(1.12);
-  }
-}
-
-@keyframes shootingArrowOne {
-  0% {
-    opacity: 0;
-    transform: translate3d(-48%, -32%, 0) rotate(-14deg) scale(1.35);
-  }
-  10% {
-    opacity: 0;
-  }
-  16% {
-    opacity: 0.82;
-  }
-  30% {
-    opacity: 0;
-    transform: translate3d(34%, 28%, 0) rotate(-14deg) scale(1.35);
-  }
-  100% {
-    opacity: 0;
-    transform: translate3d(34%, 28%, 0) rotate(-14deg) scale(1.35);
-  }
-}
-
-@keyframes shootingArrowTwo {
-  0% {
-    opacity: 0;
-    transform: translate3d(-60%, -38%, 0) rotate(-10deg) scale(1.45);
-  }
-  44% {
-    opacity: 0;
-  }
-  50% {
-    opacity: 0.6;
-  }
-  64% {
-    opacity: 0;
-    transform: translate3d(30%, 24%, 0) rotate(-10deg) scale(1.45);
-  }
-  100% {
-    opacity: 0;
-    transform: translate3d(30%, 24%, 0) rotate(-10deg) scale(1.45);
-  }
+  --space-haze: rgba(29, 233, 182, 0.05);
+  --space-depth: rgba(228, 238, 252, 0.52);
+  --cosmic-glow-1: rgba(77, 163, 255, 0.13);
+  --cosmic-glow-2: rgba(139, 92, 246, 0.09);
+  --stellar-bloom: rgba(255, 255, 255, 0.2);
+  --milky-way-mist: rgba(29, 233, 182, 0.05);
+  --grid-line: rgba(77, 115, 168, 0.055);
 }
 
 @media (prefers-reduced-motion: reduce) {
@@ -213,44 +149,5 @@
   body::after,
   #root::before {
     animation: none;
-  }
-}
-
-
-
-@keyframes spaceBreathing {
-  0%, 100% {
-    opacity: 0.6;
-    transform: scale(1);
-  }
-  50% {
-    opacity: 0.85;
-    transform: scale(1.08);
-  }
-}
-
-@keyframes cosmicDrift {
-  0% {
-    transform: translate3d(0, 0, 0);
-  }
-  33% {
-    transform: translate3d(0.3%, -0.2%, 0);
-  }
-  66% {
-    transform: translate3d(-0.2%, 0.4%, 0);
-  }
-  100% {
-    transform: translate3d(0, 0, 0);
-  }
-}
-
-@keyframes deepSpacePulse {
-  0%, 100% {
-    opacity: 0.3;
-    filter: blur(8px);
-  }
-  50% {
-    opacity: 0.6;
-    filter: blur(12px);
   }
 }

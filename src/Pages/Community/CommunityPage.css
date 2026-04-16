@@ -1148,3 +1148,87 @@
     transform: rotate(-35deg);
   }
 }
+
+
+.community-highlights {
+  width: 100%;
+  margin-top:
+  10px
+}
+
+.token-snapshot-grid {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 10px;
+  margin-top: 6px;
+}
+
+.token-snapshot-chip {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 12px 14px;
+  border-radius: 14px;
+  background: rgba(255, 255, 255, 0.04);
+  border: 1px solid var(--border-soft);
+}
+
+.token-snapshot-chip__icon {
+  width: 40px;
+  height: 40px;
+  border-radius: 12px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  background: var(--surface-2);
+  color: var(--text-primary);
+  flex-shrink: 0;
+}
+
+.token-snapshot-chip__icon--image {
+  overflow: hidden;
+  padding: 0;
+  background: rgba(255, 255, 255, 0.06);
+}
+
+.token-snapshot-chip__image {
+  width: 26px;
+  height: 26px;
+  object-fit: contain;
+  display: block;
+}
+
+.token-snapshot-chip--wallet .token-snapshot-chip__icon {
+  color: #8b5a2b;
+}
+
+.token-snapshot-chip__body {
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+}
+
+.token-snapshot-chip__body small {
+  font-size: 11px;
+  color: var(--text-secondary);
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+
+.token-snapshot-chip__body strong {
+  font-size: 15px;
+  color: var(--text-primary);
+  font-weight: 800;
+}
+
+@media (min-width: 640px) {
+  .token-snapshot-grid {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+  }
+}
+
+.level-cycle {
+  font-size: 10px;
+  color: var(--text-secondary);
+  margin-top: 4px;
+}

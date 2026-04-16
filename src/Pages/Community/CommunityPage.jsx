@@ -25,6 +25,7 @@ import {
   DollarSign,
   Activity,
   ChevronRight,
+  
 } from 'lucide-react'
 import { FaFacebookF, FaInstagram, FaDiscord } from 'react-icons/fa'
 import { FaXTwitter } from 'react-icons/fa6'
@@ -37,6 +38,7 @@ import {
   FaMedal,
   FaCrown,
   FaAward,
+  FaWallet,
 } from 'react-icons/fa'
 import { MdEmojiEvents } from 'react-icons/md'
 import { GiLaurelCrown, GiTrophyCup } from 'react-icons/gi'
@@ -85,6 +87,11 @@ const LEADERBOARD_TABS = [
 
 const DOWNLINE_LEVEL_KEYS = Array.from({ length: 10 }, (_, index) => `level${index + 1}`)
 
+const TOKEN_IMAGES = {
+  fgt: '/images/fgt-token.png',
+  fgtr: '/images/fgtr-token.png',
+}
+
 // Medal components for top 3 ranks - static colors preserved
 const RankMedal = ({ rank }) => {
   if (rank === 1) return <FaCrown size={16} style={{ color: '#FFD700', filter: 'drop-shadow(0 2px 4px rgba(255,215,0,0.3))' }} />
@@ -129,6 +136,7 @@ const CommunityPage = ({ onNavigate }) => {
   const [lastUpdated, setLastUpdated] = useState(new Date().toLocaleTimeString())
   const [activeLeaderboardTab, setActiveLeaderboardTab] = useState('topEarners')
   const [isLeaderboardModalOpen, setIsLeaderboardModalOpen] = useState(false)
+  
 
   const [publicReadStats, setPublicReadStats] = useState({
     totalParticipants: 0,
@@ -172,6 +180,7 @@ const CommunityPage = ({ onNavigate }) => {
   const [topReferrersData, setTopReferrersData] = useState([])
   const [mostActiveData, setMostActiveData] = useState([])
   const [isLoadingTabData, setIsLoadingTabData] = useState(false)
+  const [orbitNetwork, setOrbitNetwork] = useState({})
 
   const formatToken = useCallback((value) => {
     const numeric = Number(value)
@@ -362,26 +371,34 @@ const CommunityPage = ({ onNavigate }) => {
   const fetchUserDownline = useCallback(async () => {
     if (!resolvedAddress) return
     try {
-      const payload = await fetchJson(`/api/community/member/${resolvedAddress}/downline`)
+      const payload = await fetchJson(`/api/community/member/${resolvedAddress}/orbit-network`)
       const data = payload?.data || {}
+      const levels = data.levels || {}
+      setOrbitNetwork(levels)
+
       setDownlineStats({
-        level1: Number(data.level1 || 0),
-        level2: Number(data.level2 || 0),
-        level3: Number(data.level3 || 0),
-        level4: Number(data.level4 || 0),
-        level5: Number(data.level5 || 0),
-        level6: Number(data.level6 || 0),
-        level7: Number(data.level7 || 0),
-        level8: Number(data.level8 || 0),
-        level9: Number(data.level9 || 0),
-        level10: Number(data.level10 || 0),
+        level1: Number(levels.level1?.totalMembersAcrossCycles || 0),
+        level2: Number(levels.level2?.totalMembersAcrossCycles || 0),
+        level3: Number(levels.level3?.totalMembersAcrossCycles || 0),
+        level4: Number(levels.level4?.totalMembersAcrossCycles || 0),
+        level5: Number(levels.level5?.totalMembersAcrossCycles || 0),
+        level6: Number(levels.level6?.totalMembersAcrossCycles || 0),
+        level7: Number(levels.level7?.totalMembersAcrossCycles || 0),
+        level8: Number(levels.level8?.totalMembersAcrossCycles || 0),
+        level9: Number(levels.level9?.totalMembersAcrossCycles || 0),
+        level10: Number(levels.level10?.totalMembersAcrossCycles || 0),
       })
+
+      // setDownlineEarnings({})
+      // setCurrentCycle(Number(levels.level1?.latestCycle || 1))
       
-      // Use real earnings from API - no mock fallback
-      setDownlineEarnings(data.earnings || {})
+      // // Use real earnings from API - no mock fallback
+      // setDownlineEarnings(data.earnings || {})
       
-      // Use real cycle from API
-      setCurrentCycle(data.currentCycle || 1)
+      // // Use real cycle from API
+      // setCurrentCycle(data.currentCycle || 1)
+      setDownlineEarnings({})
+      setCurrentCycle(Number(levels.level1?.latestCycle || 1))
     } catch (err) {
       console.error('Error fetching downline:', err)
       // On error, set empty earnings
@@ -834,9 +851,11 @@ const CommunityPage = ({ onNavigate }) => {
             <div className="community-section-heading community-section-heading--row">
               <div>
                 <span className="community-section-heading__eyebrow muted-text">Your Network Tree</span>
-                <h2 className="community-section-heading__title">Monitor your referral network clearly across all visible levels</h2>
+                {/* <h2 className="community-section-heading__title">Monitor your referral network clearly across all visible levels</h2> */}
+                <h2 className="community-section-heading__title">Review your orbit-member activity across all visible levels and completed cycles</h2>
               </div>
-              <button className="section-action-btn" onClick={() => handleRoute('orbits')}>
+              {/* <button className="section-action-btn" onClick={() => handleRoute('orbits')}> */}
+              <button className="section-action-btn" onClick={() => onNavigate?.('orbits')}>
                 <Orbit size={14} />
                 <span>View Orbit</span>
                 <ChevronRight size={12} />
@@ -852,8 +871,9 @@ const CommunityPage = ({ onNavigate }) => {
                 <div className="tree-node you">
                   <span className="node-icon">👤</span>
                   <span className="node-label">You</span>
-                  <span className="node-level">Level 0</span>
-                  <span className="node-cycle">Cycle {currentCycle}</span>
+                  <span className="node-level"></span>
+                  {/* <span className="node-cycle">Cycle {currentCycle}</span> */}
+                  <span className="node-cycle">Multi-level cycle tracking</span>
                 </div>
 
                 <div className="tree-children tree-children--ten">
@@ -865,7 +885,12 @@ const CommunityPage = ({ onNavigate }) => {
                     return (
                       <div key={key} className="tree-level">
                         <div className="level-label">Level {index + 1}</div>
+                        {/* <div className="level-count">{value} members</div> */}
                         <div className="level-count">{value} members</div>
+
+                        <div className="level-cycle">
+                          Cycle {orbitNetwork[key]?.latestCycle || 0}
+                        </div>
                         {value > 0 && hasEarnings && (
                           <div className="level-earnings">
                             <FaCoins size={10} style={{ marginRight: '4px', color: '#f59e0b' }} />
@@ -882,7 +907,8 @@ const CommunityPage = ({ onNavigate }) => {
               </div>
 
               <div className="tree-total">
-                <span>Visible Network Count:</span>
+                {/* <span>Visible Network Count:</span> */}
+                <span>Cycle-based Member Count:</span>
                 <strong>{totalVisibleNetwork}</strong>
                 <span className="tree-total-divider">•</span>
                 <span>Active Levels:</span>
@@ -938,7 +964,7 @@ const CommunityPage = ({ onNavigate }) => {
             )}
           </section>
 
-          <section className="community-highlights glass-panel">
+          {/* <section className="community-highlights glass-panel">
             <div className="community-section-heading community-section-heading--row">
               <div>
                 <span className="community-section-heading__eyebrow muted-text">Highlights</span>
@@ -976,7 +1002,7 @@ const CommunityPage = ({ onNavigate }) => {
                 </div>
               )}
             </div>
-          </section>
+          </section> */}
         </div>
 
         <div className="community-main-grid__right">
@@ -1151,7 +1177,7 @@ const CommunityPage = ({ onNavigate }) => {
               </p>
             </div>
 
-            <div className="community-spotlight__card glass-panel" style={{ background: 'linear-gradient(135deg, rgba(245, 158, 11, 0.06), rgba(29, 233, 182, 0.03))' }}>
+            {/* <div className="community-spotlight__card glass-panel" style={{ background: 'linear-gradient(135deg, rgba(245, 158, 11, 0.06), rgba(29, 233, 182, 0.03))' }}>
               <span className="community-spotlight__label muted-text">
                 <FaCoins size={14} style={{ marginRight: '6px', color: '#f59e0b' }} />
                 Token Snapshot
@@ -1160,6 +1186,47 @@ const CommunityPage = ({ onNavigate }) => {
               <p className="community-spotlight__text soft-text">
                 FGTr: {memberSummary.fgtrTotal} • Earnings: ${memberSummary.totalReceiptEarnings}
               </p>
+            </div> */}
+            <div
+              className="community-spotlight__card glass-panel"
+              style={{ background: 'linear-gradient(135deg, rgba(245, 158, 11, 0.06), rgba(29, 233, 182, 0.03))' }}
+            >
+              <span className="community-spotlight__label muted-text">
+                <FaCoins size={14} style={{ marginRight: '6px', color: '#f59e0b' }} />
+                Token Snapshot
+              </span>
+
+              <div className="token-snapshot-grid">
+                <div className="token-snapshot-chip">
+                  <span className="token-snapshot-chip__icon token-snapshot-chip__icon--image">
+                    <img  src={TOKEN_IMAGES.fgt}  alt="FGT token" className="token-snapshot-chip__image" />
+                  </span>
+                  <div className="token-snapshot-chip__body">
+                    <small>FGT </small>
+                    <strong>{memberSummary.fgtTotal}</strong>
+                  </div>
+                </div>
+
+                <div className="token-snapshot-chip">
+                  <span className="token-snapshot-chip__icon token-snapshot-chip__icon--image">
+                    <img src={TOKEN_IMAGES.fgtr} alt="FGTr token" className="token-snapshot-chip__image" />
+                  </span>
+                  <div className="token-snapshot-chip__body">
+                    <small>FGTr </small>
+                    <strong>{memberSummary.fgtrTotal}</strong>
+                  </div>
+                </div>
+
+                <div className="token-snapshot-chip token-snapshot-chip--wallet">
+                  <span className="token-snapshot-chip__icon">
+                    <FaWallet size={14} />
+                  </span>
+                  <div className="token-snapshot-chip__body">
+                    <small>Earnings</small>
+                    <strong>${memberSummary.totalReceiptEarnings}</strong>
+                  </div>
+                </div>
+              </div>
             </div>
           </section>
 
@@ -1219,6 +1286,46 @@ const CommunityPage = ({ onNavigate }) => {
           </section>
         </div>
       </div>
+
+      <section className="community-highlights glass-panel">
+      <div className="community-section-heading community-section-heading--row">
+        <div>
+          <span className="community-section-heading__eyebrow muted-text">Highlights</span>
+          <h2 className="community-section-heading__title">Important updates, notices, and community headlines</h2>
+        </div>
+        <button className="section-refresh-btn" onClick={refreshAnnouncements}>
+          <RefreshCw size={14} />
+          <span>Refresh</span>
+        </button>
+      </div>
+
+      <div className="community-highlights__list">
+        {announcementItems.length ? (
+          announcementItems.map((announcement) => (
+            <div key={announcement._id || announcement.id || announcement.title} className={`community-highlights__item type-${announcement.type || 'info'}`}>
+              <span className="community-highlights__icon">
+                <Megaphone size={18} style={{ color: 'var(--glow-blue)' }} />
+              </span>
+              <div>
+                <h3 className="community-highlights__title">{announcement.title}</h3>
+                <p className="community-highlights__text soft-text">{announcement.content}</p>
+                <span className="highlight-date">{announcement.date}</span>
+              </div>
+            </div>
+          ))
+        ) : (
+          <div className="community-panel-empty glass-panel">
+            <Megaphone size={18} style={{ color: 'var(--glow-blue)' }} />
+            <div>
+              <strong className="community-panel-empty__title">Announcements coming soon</strong>
+              <p className="community-panel-empty__text soft-text">
+                Stay tuned for important updates and community news.
+              </p>
+            </div>
+          </div>
+        )}
+      </div>
+    </section>
 
       {/* Leaderboard Modal */}
       {isLeaderboardModalOpen && (

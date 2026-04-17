@@ -134,7 +134,7 @@ export const AdminPanel = () => {
   const [isID1Downline, setIsID1Downline] = useState(false)
   const [founderRefreshing, setFounderRefreshing] = useState(false)
   const [totalFounderBalance, setTotalFounderBalance] = useState('0.00')
-
+  // Flag to prevent auto-refresh from overwriting test addresses
   // ========== NEW STATE: Community Content Management ==========
   const [announcements, setAnnouncements] = useState([])
   const [events, setEvents] = useState([])
@@ -148,6 +148,8 @@ export const AdminPanel = () => {
 
   // ========== FLOATING BUTTON STATE ==========
   const [showChargeModal, setShowChargeModal] = useState(false)
+  const [skipAutoRefresh, setSkipAutoRefresh] = useState(false)
+
 
   const totalRatio = useMemo(
     () => ratioInputs.reduce((sum, r) => sum + parseInt(r || 0, 10), 0),
@@ -752,6 +754,9 @@ export const AdminPanel = () => {
     }
   }, [contracts])
 
+
+
+  
   // ============================================================
   // NEW: Community Content API Functions
   // ============================================================
@@ -944,16 +949,30 @@ export const AdminPanel = () => {
       const levelManagerPaused = contracts.levelManager?.paused ? await contracts.levelManager.paused() : false
       setSystemState({ levelManagerPaused })
 
-      if (ownerMatch && contracts.levelManager) {
-        const [wallets, ratios] = await contracts.levelManager.getFounderWallets()
-        setFounderWallets(wallets)
-        setFounderRatios(ratios.map(r => r.toString()))
+      // if (ownerMatch && contracts.levelManager) {
+      //   const [wallets, ratios] = await contracts.levelManager.getFounderWallets()
+      //   setFounderWallets(wallets)
+      //   setFounderRatios(ratios.map(r => r.toString()))
 
+      //   const currentNftPool = await contracts.levelManager.nftPool()
+      //   const currentOpsWallet = await contracts.levelManager.operationsWallet()
+      //   setNftPool(currentNftPool)
+      //   setOpsWallet(currentOpsWallet)
+      // }
+
+      if (ownerMatch && contracts.levelManager) {
+      const [wallets, ratios] = await contracts.levelManager.getFounderWallets()
+      setFounderWallets(wallets)
+      setFounderRatios(ratios.map(r => r.toString()))
+
+      // Only update from contract if we're not in test mode
+      if (!skipAutoRefresh) {
         const currentNftPool = await contracts.levelManager.nftPool()
         const currentOpsWallet = await contracts.levelManager.operationsWallet()
         setNftPool(currentNftPool)
         setOpsWallet(currentOpsWallet)
       }
+    }
 
       const count = Number(txCount)
       const start = Math.max(0, count - 50)
@@ -2181,7 +2200,7 @@ export const AdminPanel = () => {
           </div>
 
           <div className="flex-between-premium" style={{ gap: '12px' }}>
-            <button 
+            {/* <button 
               className="btn-premium-secondary" 
               onClick={() => {
                 const [randomNft, randomOps] = generateRandomEthAddresses(2)
@@ -2191,7 +2210,21 @@ export const AdminPanel = () => {
               disabled={txStatus.loading}
             >
               <RefreshCw size={14} /> Fill Test Addresses
-            </button>
+            </button> */}
+            <button 
+                className="btn-premium-secondary" 
+                onClick={() => {
+                  const [randomNft, randomOps] = generateRandomEthAddresses(2)
+                  setNftPool(randomNft)
+                  setOpsWallet(randomOps)
+                  setSkipAutoRefresh(true) // Prevent auto-refresh from overwriting
+                  // Auto-reset flag after 5 seconds
+                  setTimeout(() => setSkipAutoRefresh(false), 5000)
+                }}
+                disabled={txStatus.loading}
+              >
+                <RefreshCw size={14} /> Fill Test Addresses
+              </button>
             <button 
               className="btn-premium" 
               onClick={async () => {

@@ -8,7 +8,7 @@ import { useTranslation } from 'react-i18next'
 import {
   Key, Crown, BarChart3, Clock, AlertTriangle, Plus, Edit, Trash2,
   Eye, EyeOff, RefreshCw, Globe, Users, Calendar, Link2, FileText,
-  Megaphone, ExternalLink, ChevronRight, X, Check, Tag, Hash
+  Megaphone, ExternalLink, ChevronRight, X, Check, Tag, Hash, Wallet
 } from 'lucide-react'
 
 // ============================================================
@@ -145,6 +145,9 @@ export const AdminPanel = () => {
   const [editingItem, setEditingItem] = useState(null)
   const [contentLoading, setContentLoading] = useState(false)
   const [formData, setFormData] = useState({})
+
+  // ========== FLOATING BUTTON STATE ==========
+  const [showChargeModal, setShowChargeModal] = useState(false)
 
   const totalRatio = useMemo(
     () => ratioInputs.reduce((sum, r) => sum + parseInt(r || 0, 10), 0),
@@ -521,12 +524,43 @@ export const AdminPanel = () => {
       padding: 16px;
       margin-bottom: 16px;
     }
+    .fab-premium {
+      position: fixed;
+      bottom: 30px;
+      right: 30px;
+      z-index: 1000;
+      background: linear-gradient(135deg, var(--glow-teal), #1a9b7a);
+      border: none;
+      width: 56px;
+      height: 56px;
+      border-radius: 28px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      cursor: pointer;
+      box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3), 0 0 0 1px rgba(29, 233, 182, 0.3);
+      transition: all 0.2s ease;
+      color: #07111f;
+    }
+    .fab-premium:hover {
+      transform: scale(1.1);
+      box-shadow: 0 6px 20px rgba(29, 233, 182, 0.4);
+    }
+    .fab-premium:active {
+      transform: scale(0.95);
+    }
     @media (max-width: 768px) {
       .admin-shell-premium { padding: 12px; }
       .admin-hero-premium { flex-direction: column; align-items: flex-start; }
       .grid-3-premium, .grid-2-premium { grid-template-columns: 1fr; }
       .wallet-grid-premium { grid-template-columns: 1fr; }
       .content-tabs-premium { flex-wrap: wrap; }
+      .fab-premium {
+        bottom: 20px;
+        right: 20px;
+        width: 48px;
+        height: 48px;
+      }
     }
   `
 
@@ -818,28 +852,20 @@ export const AdminPanel = () => {
     setShowContentModal(true)
   }
 
-  // const openCreateModal = () => {
-  //   setEditingItem(null)
-  //   setFormData({ isActive: true })
-  //   setShowContentModal(true)
-  // }
-
-
   const openCreateModal = () => {
-  setEditingItem(null)
-  // Auto-fill date for announcements
-  const defaultData = { isActive: true }
-  if (activeContentTab === 'announcements') {
-    const today = new Date()
-    defaultData.date = today.toLocaleDateString('en-US', { 
-      month: 'short', 
-      day: 'numeric', 
-      year: 'numeric' 
-    })
+    setEditingItem(null)
+    const defaultData = { isActive: true }
+    if (activeContentTab === 'announcements') {
+      const today = new Date()
+      defaultData.date = today.toLocaleDateString('en-US', { 
+        month: 'short', 
+        day: 'numeric', 
+        year: 'numeric' 
+      })
+    }
+    setFormData(defaultData)
+    setShowContentModal(true)
   }
-  setFormData(defaultData)
-  setShowContentModal(true)
-}
 
   // ============================================================
   // NEW: Founder Vault Functions
@@ -958,7 +984,6 @@ export const AdminPanel = () => {
         }
       }
 
-      // NEW: Also refresh founder balances
       await fetchFounderBalances()
     } catch (err) {
       console.error('Error fetching admin data:', err)
@@ -991,7 +1016,7 @@ export const AdminPanel = () => {
   useEffect(() => {
     if (contracts && account) {
       refreshGovernanceData().catch(console.error)
-      fetchAllContent() // NEW: Fetch community content on load
+      fetchAllContent()
     }
   }, [contracts, account, refreshGovernanceData, fetchAllContent])
 
@@ -2109,6 +2134,95 @@ export const AdminPanel = () => {
         </Modal.Footer>
       </Modal>
 
+      {/* Charge Routing Modal */}
+      <Modal show={showChargeModal} onHide={() => setShowChargeModal(false)} centered className="premium-modal" size="lg">
+        <Modal.Header closeButton style={{ background: 'rgba(0,0,0,0.5)', borderBottom: '1px solid rgba(255,255,255,0.08)' }}>
+          <Modal.Title style={{ color: 'var(--glow-teal)' }}>
+            <Wallet size={18} style={{ marginRight: '8px', display: 'inline' }} />
+            Configure NFT & Operations Wallets
+          </Modal.Title>
+        </Modal.Header>
+        <Modal.Body style={{ background: 'rgba(0,0,0,0.4)', padding: '24px' }}>
+          <div className="admin-subtitle mb-4">
+            Submit a governance proposal to update the charge recipients for the LevelManager contract.
+            This will require multisig approval and timelock execution.
+          </div>
+
+          <Form.Group className="mb-4">
+            <Form.Label className="small-label-premium">NFT Pool Address</Form.Label>
+            <Form.Control
+              className="input-premium"
+              type="text"
+              placeholder="0x..."
+              value={nftPool}
+              onChange={(e) => setNftPool(e.target.value)}
+            />
+            <div className="admin-subtitle mt-1">Address that receives NFT-related funds</div>
+          </Form.Group>
+
+          <Form.Group className="mb-4">
+            <Form.Label className="small-label-premium">Operations Wallet Address</Form.Label>
+            <Form.Control
+              className="input-premium"
+              type="text"
+              placeholder="0x..."
+              value={opsWallet}
+              onChange={(e) => setOpsWallet(e.target.value)}
+            />
+            <div className="admin-subtitle mt-1">Address that receives operational funds</div>
+          </Form.Group>
+
+          <div className="soft-panel-premium mb-4">
+            <div className="small-label-premium mb-2">Current Configuration</div>
+            <div className="mono" style={{ fontSize: '11px', color: 'rgba(255,255,255,0.6)' }}>
+              <div>NFT Pool: {nftPool ? shortAddress(nftPool) : 'Not set'}</div>
+              <div className="mt-1">Operations: {opsWallet ? shortAddress(opsWallet) : 'Not set'}</div>
+            </div>
+          </div>
+
+          <div className="flex-between-premium" style={{ gap: '12px' }}>
+            <button 
+              className="btn-premium-secondary" 
+              onClick={() => {
+                const [randomNft, randomOps] = generateRandomEthAddresses(2)
+                setNftPool(randomNft)
+                setOpsWallet(randomOps)
+              }}
+              disabled={txStatus.loading}
+            >
+              <RefreshCw size={14} /> Fill Test Addresses
+            </button>
+            <button 
+              className="btn-premium" 
+              onClick={async () => {
+                await handleUpdateChargeRecipients()
+                if (!txStatus.error) {
+                  setShowChargeModal(false)
+                }
+              }}
+              disabled={txStatus.loading || !nftPool || !opsWallet}
+            >
+              Submit Charge Routing Proposal
+            </button>
+          </div>
+
+          {txStatus.loading && (
+            <div className="mt-3 text-center">
+              <Spinner size="sm" /> Submitting proposal...
+            </div>
+          )}
+        </Modal.Body>
+      </Modal>
+
+      {/* Floating Action Button */}
+      <button 
+        className="fab-premium"
+        onClick={() => setShowChargeModal(true)}
+        title="Configure NFT & Operations Wallets"
+      >
+        <Wallet size={24} />
+      </button>
+
       <style>{`
         @keyframes spin {
           from { transform: rotate(0deg); }
@@ -2124,76 +2238,71 @@ export const AdminPanel = () => {
           overflow: hidden;
         }
 
-        /* Add to adminStyles */
-          .admin-shell-premium {
-            padding: 20px;
-            max-width: 1400px;
-            margin: 0 auto;
-            min-height: calc(100vh - 80px);
-            will-change: transform; /* Hardware acceleration */
-            transform: translateZ(0);
-          }
+        .admin-shell-premium {
+          padding: 20px;
+          max-width: 1400px;
+          margin: 0 auto;
+          min-height: calc(100vh - 80px);
+          will-change: transform;
+          transform: translateZ(0);
+        }
 
-          .glass-panel-premium,
-          .admin-card-premium,
-          .admin-hero-premium {
-            /* Reduce backdrop-filter intensity */
-            backdrop-filter: blur(8px);
-            -webkit-backdrop-filter: blur(8px);
-          }
+        .glass-panel-premium,
+        .admin-card-premium,
+        .admin-hero-premium {
+          backdrop-filter: blur(8px);
+          -webkit-backdrop-filter: blur(8px);
+        }
 
-          /* Disable heavy animations on scroll */
-          @media (prefers-reduced-motion: reduce) {
-            *,
-            *::before,
-            *::after {
-              animation-duration: 0.01ms !important;
-              animation-iteration-count: 1 !important;
-              transition-duration: 0.01ms !important;
-            }
+        @media (prefers-reduced-motion: reduce) {
+          *,
+          *::before,
+          *::after {
+            animation-duration: 0.01ms !important;
+            animation-iteration-count: 1 !important;
+            transition-duration: 0.01ms !important;
           }
+        }
 
-          /* Optimize table rendering */
-          .premium-table {
-            will-change: transform;
-            transform: translateZ(0);
-          }
+        .premium-table {
+          will-change: transform;
+          transform: translateZ(0);
+        }
 
-          .table-responsive {
-            -webkit-overflow-scrolling: touch;
-          }
+        .table-responsive {
+          -webkit-overflow-scrolling: touch;
+        }
 
-          .input-premium {
-            width: 100%;
-            padding: 10px 14px;
-            background: rgba(255, 255, 255, 0.12) !important; /* Darker background */
-            border: 1px solid rgba(255, 255, 255, 0.2) !important;
-            border-radius: 12px;
-            color: #ffffff !important; /* Pure white text */
-            font-family: monospace;
-            font-size: 13px;
-            transition: all 0.2s;
-            caret-color: var(--glow-teal); /* Visible cursor */
-          }
+        .input-premium {
+          width: 100%;
+          padding: 10px 14px;
+          background: rgba(255, 255, 255, 0.12) !important;
+          border: 1px solid rgba(255, 255, 255, 0.2) !important;
+          border-radius: 12px;
+          color: #ffffff !important;
+          font-family: monospace;
+          font-size: 13px;
+          transition: all 0.2s;
+          caret-color: var(--glow-teal);
+        }
 
-          .input-premium:focus {
-            outline: none;
-            border-color: var(--glow-teal) !important;
-            background: rgba(255, 255, 255, 0.18) !important;
-            color: #ffffff !important;
-          }
+        .input-premium:focus {
+          outline: none;
+          border-color: var(--glow-teal) !important;
+          background: rgba(255, 255, 255, 0.18) !important;
+          color: #ffffff !important;
+        }
 
-          .input-premium::placeholder {
-            color: rgba(255, 255, 255, 0.5) !important;
-          }
+        .input-premium::placeholder {
+          color: rgba(255, 255, 255, 0.5) !important;
+        }
 
-          /* Fix for form controls */
-          .form-control.input-premium,
-          textarea.input-premium,
-          select.input-premium {
-            background: rgba(255, 255, 255, 0.12) !important;
-            color: #ffffff !important;
-          }
+        .form-control.input-premium,
+        textarea.input-premium,
+        select.input-premium {
+          background: rgba(255, 255, 255, 0.12) !important;
+          color: #ffffff !important;
+        }
       `}</style>
     </Container>
   )
@@ -2213,13 +2322,26 @@ export default AdminPanel
 
 
 
+
 // import React, { useState, useEffect, useMemo, useCallback } from 'react'
-// import { Container, Row, Col, Form, Button, Alert, Spinner, Table, Badge, ProgressBar, Accordion } from 'react-bootstrap'
+// import { Container, Row, Col, Form, Button, Alert, Spinner, Table, Accordion, Modal, Nav, Badge } from 'react-bootstrap'
 // import { useWallet } from '../hooks/useWallet'
 // import { useContracts } from '../hooks/useContracts'
 // import { web3Service } from '../Services/web3'
 // import { ethers } from 'ethers'
 // import { useTranslation } from 'react-i18next'
+// import {
+//   Key, Crown, BarChart3, Clock, AlertTriangle, Plus, Edit, Trash2,
+//   Eye, EyeOff, RefreshCw, Globe, Users, Calendar, Link2, FileText,
+//   Megaphone, ExternalLink, ChevronRight, X, Check, Tag, Hash
+// } from 'lucide-react'
+
+// // ============================================================
+// // CONSTANTS & INTERFACES
+// // ============================================================
+// const API_BASE_URL = 'http://localhost:5000'
+// const ADMIN_API_KEY = 'TheEagleEyeOfThe4thBatallionWeaveHowManyFounders1234567ky4574'
+// const ADMIN_API_HEADER = 'x-admin-key'
 
 // const levelManagerAdminIface = new ethers.Interface([
 //   'function pause()',
@@ -2254,13 +2376,32 @@ export default AdminPanel
 
 // const boolText = (v) => (v ? 'Yes' : 'No')
 
+// // Admin API helper
+// const adminApi = async (endpoint, options = {}) => {
+//   const response = await fetch(`${API_BASE_URL}${endpoint}`, {
+//     headers: {
+//       'Content-Type': 'application/json',
+//       [ADMIN_API_HEADER]: ADMIN_API_KEY,
+//       ...(options.headers || {}),
+//     },
+//     ...options,
+//   })
+//   const payload = await response.json().catch(() => null)
+//   if (!response.ok) {
+//     throw new Error(payload?.message || `Request failed: ${response.status}`)
+//   }
+//   return payload
+// }
+
+// // ============================================================
+// // COMPONENT
+// // ============================================================
 // export const AdminPanel = () => {
 //   const { isConnected, account, connect } = useWallet()
 //   const { contracts, isLoading, error, loadContracts } = useContracts()
 //   const { t } = useTranslation()
 
-//   // ... (ALL STATE DECLARATIONS REMAIN THE SAME - too long to repeat, but keep all existing state)
-
+//   // ========== EXISTING STATE ==========
 //   const [founderWallets, setFounderWallets] = useState([])
 //   const [founderRatios, setFounderRatios] = useState([])
 //   const [walletInputs, setWalletInputs] = useState(Array(8).fill(''))
@@ -2312,6 +2453,24 @@ export default AdminPanel
 //     timelockDelay: '0'
 //   })
 
+//   // ========== NEW STATE: Founder Vault Viewer ==========
+//   const [walletBalances, setWalletBalances] = useState({})
+//   const [id1Wallet, setId1Wallet] = useState('')
+//   const [isID1Downline, setIsID1Downline] = useState(false)
+//   const [founderRefreshing, setFounderRefreshing] = useState(false)
+//   const [totalFounderBalance, setTotalFounderBalance] = useState('0.00')
+
+//   // ========== NEW STATE: Community Content Management ==========
+//   const [announcements, setAnnouncements] = useState([])
+//   const [events, setEvents] = useState([])
+//   const [socialLinks, setSocialLinks] = useState([])
+//   const [resources, setResources] = useState([])
+//   const [activeContentTab, setActiveContentTab] = useState('announcements')
+//   const [showContentModal, setShowContentModal] = useState(false)
+//   const [editingItem, setEditingItem] = useState(null)
+//   const [contentLoading, setContentLoading] = useState(false)
+//   const [formData, setFormData] = useState({})
+
 //   const totalRatio = useMemo(
 //     () => ratioInputs.reduce((sum, r) => sum + parseInt(r || 0, 10), 0),
 //     [ratioInputs]
@@ -2321,10 +2480,12 @@ export default AdminPanel
 //   const guardianAddress = import.meta.env.VITE_GUARDIAN_ADDRESS || ''
 //   const multisigAddress = import.meta.env.VITE_MULTISIG_ADDRESS || ''
 
-//   // PREMIUM GLASS STYLES
+//   // ============================================================
+//   // PREMIUM GLASS STYLES (with spacing fixes)
+//   // ============================================================
 //   const adminStyles = `
 //     .admin-shell-premium {
-//       padding: 24px;
+//       padding: 20px;
 //       max-width: 1400px;
 //       margin: 0 auto;
 //       min-height: calc(100vh - 80px);
@@ -2341,9 +2502,9 @@ export default AdminPanel
 //       justify-content: space-between;
 //       align-items: center;
 //       flex-wrap: wrap;
-//       gap: 20px;
-//       padding: 24px 28px;
-//       margin-bottom: 28px;
+//       gap: 16px;
+//       padding: 20px 24px;
+//       margin-bottom: 20px;
 //       background: rgba(0, 0, 0, 0.35);
 //       backdrop-filter: blur(10px);
 //       border: 1px solid rgba(255, 255, 255, 0.08);
@@ -2367,8 +2528,8 @@ export default AdminPanel
 //     .admin-badge-premium {
 //       display: inline-flex;
 //       align-items: center;
-//       gap: 8px;
-//       padding: 6px 14px;
+//       gap: 6px;
+//       padding: 6px 12px;
 //       background: rgba(255,255,255,0.08);
 //       border-radius: 30px;
 //       font-size: 12px;
@@ -2382,7 +2543,8 @@ export default AdminPanel
 //       border: 1px solid rgba(255, 255, 255, 0.08);
 //       border-radius: 20px;
 //       overflow: hidden;
-//       margin-bottom: 24px;
+//       margin-bottom: 20px;
+//       height: 100%;
 //       transition: all 0.2s;
 //     }
 //     .admin-card-premium:hover {
@@ -2390,7 +2552,7 @@ export default AdminPanel
 //     }
 //     .admin-header-premium {
 //       background: linear-gradient(135deg, rgba(29, 233, 182, 0.12), rgba(77, 163, 255, 0.08));
-//       padding: 16px 20px;
+//       padding: 14px 18px;
 //       border-bottom: 1px solid rgba(255,255,255,0.08);
 //     }
 //     .admin-header-premium h3, .admin-header-premium .header-title {
@@ -2400,9 +2562,12 @@ export default AdminPanel
 //       letter-spacing: 1px;
 //       color: var(--glow-teal);
 //       text-transform: uppercase;
+//       display: flex;
+//       align-items: center;
+//       gap: 8px;
 //     }
 //     .admin-body-premium {
-//       padding: 20px;
+//       padding: 16px;
 //     }
 //     .input-premium {
 //       width: 100%;
@@ -2435,6 +2600,10 @@ export default AdminPanel
 //       transition: all 0.2s;
 //       background: linear-gradient(135deg, var(--glow-teal), #1a9b7a);
 //       color: #07111f;
+//       display: inline-flex;
+//       align-items: center;
+//       gap: 6px;
+//       justify-content: center;
 //     }
 //     .btn-premium-secondary {
 //       background: rgba(255,255,255,0.1);
@@ -2446,8 +2615,11 @@ export default AdminPanel
 //       color: white;
 //     }
 //     .btn-premium-sm {
-//       padding: 6px 14px;
+//       padding: 6px 12px;
 //       font-size: 11px;
+//     }
+//     .btn-premium-icon {
+//       padding: 6px 10px;
 //     }
 //     .btn-premium:disabled {
 //       opacity: 0.5;
@@ -2458,7 +2630,7 @@ export default AdminPanel
 //       font-size: 13px;
 //     }
 //     .premium-table th {
-//       padding: 12px;
+//       padding: 10px 12px;
 //       text-align: left;
 //       color: rgba(255,255,255,0.6);
 //       font-weight: 600;
@@ -2468,7 +2640,7 @@ export default AdminPanel
 //       border-bottom: 1px solid rgba(255,255,255,0.08);
 //     }
 //     .premium-table td {
-//       padding: 12px;
+//       padding: 10px 12px;
 //       border-bottom: 1px solid rgba(255,255,255,0.05);
 //       vertical-align: middle;
 //     }
@@ -2507,7 +2679,7 @@ export default AdminPanel
 //       background: rgba(0,0,0,0.3);
 //       color: white;
 //       font-weight: 600;
-//       padding: 16px 20px;
+//       padding: 14px 18px;
 //     }
 //     .premium-accordion .accordion-button:not(.collapsed) {
 //       background: rgba(29, 233, 182, 0.1);
@@ -2519,31 +2691,37 @@ export default AdminPanel
 //     }
 //     .premium-accordion .accordion-body {
 //       background: rgba(0,0,0,0.2);
-//       padding: 20px;
+//       padding: 16px;
 //     }
 //     .metric-box-premium {
 //       background: rgba(255,255,255,0.05);
 //       border-radius: 16px;
-//       padding: 16px;
+//       padding: 14px;
 //       text-align: center;
+//       height: 100%;
+//       display: flex;
+//       flex-direction: column;
+//       justify-content: center;
 //     }
 //     .metric-label-premium {
 //       font-size: 10px;
 //       text-transform: uppercase;
 //       letter-spacing: 1px;
 //       color: rgba(255,255,255,0.5);
-//       margin-bottom: 8px;
+//       margin-bottom: 6px;
 //     }
 //     .metric-value-premium {
-//       font-size: 18px;
+//       font-size: 16px;
 //       font-weight: 700;
 //       color: var(--glow-teal);
 //     }
 //     .action-card-premium {
 //       background: rgba(255,255,255,0.05);
 //       border-radius: 16px;
-//       padding: 16px;
+//       padding: 14px;
 //       height: 100%;
+//       display: flex;
+//       flex-direction: column;
 //     }
 //     .small-label-premium {
 //       font-size: 10px;
@@ -2556,7 +2734,7 @@ export default AdminPanel
 //       display: inline-flex;
 //       align-items: center;
 //       gap: 6px;
-//       padding: 4px 12px;
+//       padding: 4px 10px;
 //       background: rgba(255,255,255,0.08);
 //       border-radius: 20px;
 //       font-size: 11px;
@@ -2564,30 +2742,30 @@ export default AdminPanel
 //     }
 //     .grid-3-premium {
 //       display: grid;
-//       grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
-//       gap: 16px;
+//       grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+//       gap: 14px;
 //     }
 //     .grid-2-premium {
 //       display: grid;
 //       grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
-//       gap: 16px;
+//       gap: 14px;
 //     }
 //     .flex-between-premium {
 //       display: flex;
 //       justify-content: space-between;
 //       align-items: center;
 //       flex-wrap: wrap;
-//       gap: 12px;
+//       gap: 10px;
 //     }
 //     .guide-step-premium {
 //       border-left: 3px solid var(--glow-teal);
-//       padding: 10px 14px;
+//       padding: 10px 12px;
 //       background: rgba(29, 233, 182, 0.05);
 //       border-radius: 12px;
-//       margin-bottom: 10px;
+//       margin-bottom: 8px;
 //     }
 //     .soft-panel-premium {
-//       padding: 14px;
+//       padding: 12px;
 //       border-radius: 16px;
 //       background: rgba(255,255,255,0.05);
 //       border: 1px solid rgba(255,255,255,0.08);
@@ -2602,20 +2780,20 @@ export default AdminPanel
 //     .wallet-grid-premium {
 //       display: grid;
 //       grid-template-columns: 1fr 100px;
-//       gap: 10px;
-//       margin-bottom: 10px;
+//       gap: 8px;
+//       margin-bottom: 8px;
 //       align-items: center;
 //     }
 //     .owner-sign-pill-premium {
 //       display: inline-flex;
 //       align-items: center;
-//       gap: 8px;
-//       padding: 6px 12px;
+//       gap: 6px;
+//       padding: 4px 10px;
 //       background: rgba(255,255,255,0.08);
 //       border-radius: 30px;
 //       font-size: 11px;
 //       font-family: monospace;
-//       margin: 4px 6px 0 0;
+//       margin: 2px 4px 2px 0;
 //     }
 //     .tx-row-premium:hover {
 //       background: rgba(255,255,255,0.03);
@@ -2626,18 +2804,60 @@ export default AdminPanel
 //       border: 1px solid rgba(255,255,255,0.1);
 //       border-radius: 16px;
 //       color: white;
+//       margin-bottom: 16px;
 //     }
 //     .alert-premium a {
 //       color: var(--glow-teal);
 //     }
+//     .content-tabs-premium {
+//       display: flex;
+//       gap: 4px;
+//       border-bottom: 1px solid rgba(255,255,255,0.08);
+//       padding-bottom: 12px;
+//       margin-bottom: 16px;
+//     }
+//     .content-tab-premium {
+//       padding: 8px 16px;
+//       border-radius: 30px;
+//       background: transparent;
+//       border: none;
+//       color: rgba(255,255,255,0.6);
+//       font-size: 12px;
+//       font-weight: 600;
+//       text-transform: uppercase;
+//       letter-spacing: 0.5px;
+//       cursor: pointer;
+//       transition: all 0.2s;
+//       display: flex;
+//       align-items: center;
+//       gap: 6px;
+//     }
+//     .content-tab-premium:hover {
+//       background: rgba(255,255,255,0.05);
+//       color: white;
+//     }
+//     .content-tab-premium.active {
+//       background: linear-gradient(135deg, var(--glow-teal), #1a9b7a);
+//       color: #07111f;
+//     }
+//     .founder-summary-card {
+//       background: linear-gradient(135deg, rgba(29, 233, 182, 0.08), rgba(77, 163, 255, 0.04));
+//       border-radius: 16px;
+//       padding: 16px;
+//       margin-bottom: 16px;
+//     }
 //     @media (max-width: 768px) {
-//       .admin-shell-premium { padding: 16px; }
+//       .admin-shell-premium { padding: 12px; }
 //       .admin-hero-premium { flex-direction: column; align-items: flex-start; }
 //       .grid-3-premium, .grid-2-premium { grid-template-columns: 1fr; }
 //       .wallet-grid-premium { grid-template-columns: 1fr; }
+//       .content-tabs-premium { flex-wrap: wrap; }
 //     }
 //   `
 
+//   // ============================================================
+//   // HELPER FUNCTIONS
+//   // ============================================================
 //   const generateRandomEthAddresses = (count = 1) => Array.from({ length: count }, () => ethers.Wallet.createRandom().address)
 
 //   const shortAddress = (addr) => (!addr ? '—' : `${addr.slice(0, 8)}...${addr.slice(-6)}`)
@@ -2823,6 +3043,167 @@ export default AdminPanel
 //     }
 //   }, [contracts])
 
+//   // ============================================================
+//   // NEW: Community Content API Functions
+//   // ============================================================
+//   const fetchAnnouncements = useCallback(async () => {
+//     try {
+//       const res = await adminApi('/api/admin/community/announcements')
+//       setAnnouncements(res.data || [])
+//     } catch (err) { console.error('Fetch announcements failed:', err) }
+//   }, [])
+
+//   const fetchEvents = useCallback(async () => {
+//     try {
+//       const res = await adminApi('/api/admin/community/events')
+//       setEvents(res.data || [])
+//     } catch (err) { console.error('Fetch events failed:', err) }
+//   }, [])
+
+//   const fetchSocialLinks = useCallback(async () => {
+//     try {
+//       const res = await adminApi('/api/admin/community/social-links')
+//       setSocialLinks(res.data || [])
+//     } catch (err) { console.error('Fetch social links failed:', err) }
+//   }, [])
+
+//   const fetchResources = useCallback(async () => {
+//     try {
+//       const res = await adminApi('/api/admin/community/resources')
+//       setResources(res.data || [])
+//     } catch (err) { console.error('Fetch resources failed:', err) }
+//   }, [])
+
+//   const fetchAllContent = useCallback(async () => {
+//     setContentLoading(true)
+//     await Promise.all([fetchAnnouncements(), fetchEvents(), fetchSocialLinks(), fetchResources()])
+//     setContentLoading(false)
+//   }, [fetchAnnouncements, fetchEvents, fetchSocialLinks, fetchResources])
+
+//   const handleCreateContent = async () => {
+//     const endpoints = {
+//       announcements: '/api/admin/community/announcements',
+//       events: '/api/admin/community/events',
+//       socialLinks: '/api/admin/community/social-links',
+//       resources: '/api/admin/community/resources'
+//     }
+//     try {
+//       await adminApi(endpoints[activeContentTab], {
+//         method: 'POST',
+//         body: JSON.stringify(formData)
+//       })
+//       setShowContentModal(false)
+//       setFormData({})
+//       fetchAllContent()
+//     } catch (err) {
+//       alert(`Failed to create: ${err.message}`)
+//     }
+//   }
+
+//   const handleUpdateContent = async () => {
+//     const endpoints = {
+//       announcements: `/api/admin/community/announcements/${editingItem._id}`,
+//       events: `/api/admin/community/events/${editingItem._id}`,
+//       socialLinks: `/api/admin/community/social-links/${editingItem._id}`,
+//       resources: `/api/admin/community/resources/${editingItem._id}`
+//     }
+//     try {
+//       await adminApi(endpoints[activeContentTab], {
+//         method: 'PATCH',
+//         body: JSON.stringify(formData)
+//       })
+//       setShowContentModal(false)
+//       setEditingItem(null)
+//       setFormData({})
+//       fetchAllContent()
+//     } catch (err) {
+//       alert(`Failed to update: ${err.message}`)
+//     }
+//   }
+
+//   const handleDeleteContent = async (id) => {
+//     if (!window.confirm('Are you sure you want to delete this item?')) return
+//     const endpoints = {
+//       announcements: `/api/admin/community/announcements/${id}`,
+//       events: `/api/admin/community/events/${id}`,
+//       socialLinks: `/api/admin/community/social-links/${id}`,
+//       resources: `/api/admin/community/resources/${id}`
+//     }
+//     try {
+//       await adminApi(endpoints[activeContentTab], { method: 'DELETE' })
+//       fetchAllContent()
+//     } catch (err) {
+//       alert(`Failed to delete: ${err.message}`)
+//     }
+//   }
+
+//   const openEditModal = (item) => {
+//     setEditingItem(item)
+//     setFormData(item)
+//     setShowContentModal(true)
+//   }
+
+//   // const openCreateModal = () => {
+//   //   setEditingItem(null)
+//   //   setFormData({ isActive: true })
+//   //   setShowContentModal(true)
+//   // }
+
+
+//   const openCreateModal = () => {
+//   setEditingItem(null)
+//   // Auto-fill date for announcements
+//   const defaultData = { isActive: true }
+//   if (activeContentTab === 'announcements') {
+//     const today = new Date()
+//     defaultData.date = today.toLocaleDateString('en-US', { 
+//       month: 'short', 
+//       day: 'numeric', 
+//       year: 'numeric' 
+//     })
+//   }
+//   setFormData(defaultData)
+//   setShowContentModal(true)
+// }
+
+//   // ============================================================
+//   // NEW: Founder Vault Functions
+//   // ============================================================
+//   const fetchFounderBalances = useCallback(async () => {
+//     if (!contracts?.levelManager || !contracts?.usdt) return
+//     setFounderRefreshing(true)
+//     try {
+//       const [wallets] = await contracts.levelManager.getFounderWallets()
+//       const id1 = await contracts.levelManager.id1Wallet()
+//       const isDownline = await contracts.levelManager.isID1Downline(account)
+      
+//       setId1Wallet(id1)
+//       setIsID1Downline(isDownline)
+
+//       const balances = {}
+//       let total = 0
+//       for (const wallet of wallets) {
+//         try {
+//           const balance = await contracts.usdt.balanceOf(wallet)
+//           const formatted = ethers.formatUnits(balance, 6)
+//           balances[wallet] = formatted
+//           total += parseFloat(formatted)
+//         } catch {
+//           balances[wallet] = '0.00'
+//         }
+//       }
+//       setWalletBalances(balances)
+//       setTotalFounderBalance(total.toFixed(2))
+//     } catch (err) {
+//       console.error('Fetch founder balances failed:', err)
+//     } finally {
+//       setFounderRefreshing(false)
+//     }
+//   }, [contracts, account])
+
+//   // ============================================================
+//   // EXISTING FUNCTIONS (Complete, unabbreviated)
+//   // ============================================================
 //   const refreshGovernanceData = useCallback(async () => {
 //     if (!contracts || !account) return
 
@@ -2901,12 +3282,15 @@ export default AdminPanel
 //           setGuardianChecks({ proxyApproved: null, implementationApproved: null })
 //         }
 //       }
+
+//       // NEW: Also refresh founder balances
+//       await fetchFounderBalances()
 //     } catch (err) {
 //       console.error('Error fetching admin data:', err)
 //     } finally {
 //       setOwnerCheckComplete(true)
 //     }
-//   }, [contracts, account, multisigTx?.txId, readTransaction, loadGuardianChecks, levelManagerAddress])
+//   }, [contracts, account, multisigTx?.txId, readTransaction, loadGuardianChecks, levelManagerAddress, fetchFounderBalances])
 
 //   useEffect(() => {
 //     if (contracts) {
@@ -2932,8 +3316,9 @@ export default AdminPanel
 //   useEffect(() => {
 //     if (contracts && account) {
 //       refreshGovernanceData().catch(console.error)
+//       fetchAllContent() // NEW: Fetch community content on load
 //     }
-//   }, [contracts, account, refreshGovernanceData])
+//   }, [contracts, account, refreshGovernanceData, fetchAllContent])
 
 //   useEffect(() => {
 //     const interval = setInterval(async () => {
@@ -3234,7 +3619,62 @@ export default AdminPanel
 
 //   const txStage = getStageFromTx(multisigTx)
 
-//   // FIXED: Not connected state - no connect button, just info message
+//   // ============================================================
+//   // RENDER HELPERS
+//   // ============================================================
+//   const getContentList = () => {
+//     switch (activeContentTab) {
+//       case 'announcements': return announcements
+//       case 'events': return events
+//       case 'socialLinks': return socialLinks
+//       case 'resources': return resources
+//       default: return []
+//     }
+//   }
+
+//   const getContentFields = () => {
+//     switch (activeContentTab) {
+//       case 'announcements':
+//         return [
+//           { name: 'title', label: 'Title', type: 'text', required: true },
+//           { name: 'content', label: 'Content', type: 'textarea', required: true },
+//           { name: 'date', label: 'Date', type: 'text', placeholder: 'e.g., Jan 15, 2024', required: true },
+//           { name: 'type', label: 'Type', type: 'select', options: ['info', 'success', 'warning'] },
+//           { name: 'priority', label: 'Priority', type: 'number' },
+//           { name: 'isActive', label: 'Active', type: 'checkbox' }
+//         ]
+//       case 'events':
+//         return [
+//           { name: 'title', label: 'Title', type: 'text', required: true },
+//           { name: 'content', label: 'Description', type: 'textarea' },
+//           { name: 'date', label: 'Date', type: 'text' },
+//           { name: 'ctaUrl', label: 'CTA URL', type: 'text' },
+//           { name: 'ctaLabel', label: 'CTA Label', type: 'text' },
+//           { name: 'isActive', label: 'Active', type: 'checkbox' }
+//         ]
+//       case 'socialLinks':
+//         return [
+//           { name: 'platform', label: 'Platform', type: 'select', options: ['telegram', 'discord', 'x', 'instagram', 'facebook'] },
+//           { name: 'href', label: 'URL', type: 'text', required: true },
+//           { name: 'sortOrder', label: 'Sort Order', type: 'number' },
+//           { name: 'isActive', label: 'Active', type: 'checkbox' }
+//         ]
+//       case 'resources':
+//         return [
+//           { name: 'key', label: 'Key', type: 'select', options: ['faq', 'tutorials', 'support', 'docs'] },
+//           { name: 'label', label: 'Label', type: 'text', required: true },
+//           { name: 'route', label: 'Route', type: 'text' },
+//           { name: 'href', label: 'External URL', type: 'text' },
+//           { name: 'sortOrder', label: 'Sort Order', type: 'number' },
+//           { name: 'isActive', label: 'Active', type: 'checkbox' }
+//         ]
+//       default: return []
+//     }
+//   }
+
+//   // ============================================================
+//   // RENDER
+//   // ============================================================
 //   if (!isConnected) {
 //     return (
 //       <Container className="admin-shell-premium">
@@ -3294,32 +3734,35 @@ export default AdminPanel
 //           <div className="admin-subtitle">Production governance cockpit for multisig owners</div>
 //         </div>
 //         <div className="flex-between-premium" style={{ gap: '12px' }}>
-//           <span className="admin-badge-premium">🔑 {shortAddress(account)}</span>
-//           <span className="admin-badge-premium">👑 Multisig Owner</span>
-//           <span className="admin-badge-premium">📊 {multisigStats.requiredConfirmations}/{ownerList.length || 5} Threshold</span>
-//           <span className="admin-badge-premium">⏱️ {formatCountdown(Number(multisigStats.timelockDelay || 0))}</span>
+//           <span className="admin-badge-premium"><Key size={14} /> {shortAddress(account)}</span>
+//           <span className="admin-badge-premium"><Crown size={14} /> Multisig Owner</span>
+//           <span className="admin-badge-premium"><BarChart3 size={14} /> {multisigStats.requiredConfirmations}/{ownerList.length || 5} Threshold</span>
+//           <span className="admin-badge-premium"><Clock size={14} /> {formatCountdown(Number(multisigStats.timelockDelay || 0))}</span>
 //         </div>
 //       </div>
 
 //       {/* Transaction Status */}
 //       {txStatus.error && (
-//         <Alert variant="danger" className="alert-premium mb-4" dismissible onClose={() => setErrorTx(null)}>
-//           <strong>⚠️ Error:</strong> {txStatus.error}
+//         <Alert variant="danger" className="alert-premium" dismissible onClose={() => setErrorTx(null)}>
+//           <div className="flex-between-premium" style={{ marginBottom: '4px' }}>
+//             <strong><AlertTriangle size={14} /> Error:</strong>
+//           </div>
+//           {txStatus.error}
 //         </Alert>
 //       )}
 
 //       {txStatus.hash && (
-//         <Alert variant="info" className="alert-premium mb-4">
+//         <Alert variant="info" className="alert-premium">
 //           <div style={{ fontSize: '11px', opacity: 0.6, marginBottom: '4px' }}>TRANSACTION BROADCAST</div>
 //           {txStatus.note && <div className="mb-2">{txStatus.note}</div>}
-//           <a href={`https://amoy.polygonscan.com/tx/${txStatus.hash}`} target="_blank" rel="noopener noreferrer" className="text-glow" style={{ textDecoration: 'none' }}>
-//             {txStatus.hash}
+//           <a href={`https://amoy.polygonscan.com/tx/${txStatus.hash}`} target="_blank" rel="noopener noreferrer" className="text-glow" style={{ textDecoration: 'none', display: 'flex', alignItems: 'center', gap: '4px' }}>
+//             {txStatus.hash} <ExternalLink size={12} />
 //           </a>
 //         </Alert>
 //       )}
 
 //       {/* Governance Model & System Status */}
-//       <Row className="g-4 mb-4">
+//       <Row className="g-3 mb-4">
 //         <Col xl={4}>
 //           <div className="admin-card-premium">
 //             <div className="admin-header-premium">
@@ -3352,7 +3795,7 @@ export default AdminPanel
 //               <div className="header-title">System Status</div>
 //             </div>
 //             <div className="admin-body-premium">
-//               <Row className="g-3">
+//               <Row className="g-2">
 //                 <Col md={6} xl={3}>
 //                   <div className="metric-box-premium">
 //                     <div className="metric-label-premium">LevelManager paused</div>
@@ -3396,7 +3839,7 @@ export default AdminPanel
 //       </Row>
 
 //       {/* Quick Governance Actions */}
-//       <Row className="g-4 mb-4">
+//       <Row className="g-3 mb-4">
 //         <Col xl={12}>
 //           <div className="admin-card-premium">
 //             <div className="admin-header-premium">
@@ -3428,7 +3871,9 @@ export default AdminPanel
 //                 <div className="action-card-premium">
 //                   <div className="small-label-premium">Queue refresh</div>
 //                   <div className="admin-subtitle mb-3">Reload multisig queue, chain time, approvals, and system states.</div>
-//                   <button className="btn-premium w-100" onClick={refreshGovernanceData} disabled={txStatus.loading}>Refresh cockpit</button>
+//                   <button className="btn-premium w-100" onClick={refreshGovernanceData} disabled={txStatus.loading}>
+//                     <RefreshCw size={14} /> Refresh cockpit
+//                   </button>
 //                 </div>
 //               </div>
 //             </div>
@@ -3437,7 +3882,7 @@ export default AdminPanel
 //       </Row>
 
 //       {/* Recent Transactions & Selected Transaction */}
-//       <Row className="g-4 mb-4">
+//       <Row className="g-3 mb-4">
 //         <Col xl={7}>
 //           <div className="admin-card-premium">
 //             <div className="admin-header-premium">
@@ -3445,7 +3890,7 @@ export default AdminPanel
 //             </div>
 //             <div className="admin-body-premium">
 //               <div className="admin-subtitle mb-3">Every proposal appears here with status, votes, countdown, and quick actions.</div>
-//               <div className="table-responsive">
+//               <div className="table-responsive" style={{ maxHeight: '400px', overflowY: 'auto' }}>
 //                 <table className="premium-table">
 //                   <thead>
 //                     <tr>
@@ -3503,7 +3948,7 @@ export default AdminPanel
 //             <div className="admin-body-premium">
 //               <div className="admin-subtitle mb-3">Load any transaction to inspect action, approvals, target, timelock, and upgrade/guardian checks.</div>
 
-//               <Row className="g-3 align-items-end mb-4">
+//               <Row className="g-2 align-items-end mb-3">
 //                 <Col md={6}>
 //                   <Form.Label className="small-label-premium">Transaction ID</Form.Label>
 //                   <Form.Control
@@ -3515,8 +3960,8 @@ export default AdminPanel
 //                   />
 //                 </Col>
 //                 <Col md={6}>
-//                   <div className="flex-between-premium" style={{ gap: '8px' }}>
-//                     <button className="btn-premium btn-premium-sm" onClick={() => loadMultisigTx()}>Load Tx</button>
+//                   <div className="flex-between-premium" style={{ gap: '6px' }}>
+//                     <button className="btn-premium btn-premium-sm" onClick={() => loadMultisigTx()}>Load</button>
 //                     <button className="btn-premium btn-premium-sm" onClick={() => handleApproveTx()} disabled={!txIdInput}>Approve</button>
 //                     <button className="btn-premium btn-premium-sm" onClick={() => handleRevokeTx()} disabled={!txIdInput}>Revoke</button>
 //                     <button className="btn-premium btn-premium-sm" onClick={() => handleExecuteTx()} disabled={!txIdInput}>Execute</button>
@@ -3532,7 +3977,7 @@ export default AdminPanel
 
 //               {multisigTx && (
 //                 <>
-//                   <Row className="g-3 mb-4">
+//                   <Row className="g-2 mb-3">
 //                     <Col md={6}>
 //                       <div className="metric-box-premium">
 //                         <div className="metric-label-premium">Stage</div>
@@ -3549,7 +3994,7 @@ export default AdminPanel
 //                     </Col>
 //                   </Row>
 
-//                   <div className="mb-4">
+//                   <div className="mb-3">
 //                     <div className="small-label-premium mb-2">Approval progress</div>
 //                     <div className="premium-progress">
 //                       <div className="premium-progress-fill" style={{ width: `${approvalPercent}%` }} />
@@ -3557,7 +4002,7 @@ export default AdminPanel
 //                     <div className="admin-subtitle mt-1">{Math.round(approvalPercent)}%</div>
 //                   </div>
 
-//                   <div className="table-responsive mb-4">
+//                   <div className="table-responsive mb-3">
 //                     <table className="premium-table">
 //                       <tbody>
 //                         <tr><th style={{ width: '40%' }}>Transaction ID</th><td>{multisigTx.txId}</td></tr>
@@ -3578,7 +4023,7 @@ export default AdminPanel
 //                   </div>
 
 //                   {(multisigTx.implementationAddress || multisigTx.proxyAddress) && (
-//                     <div className="soft-panel-premium mb-4">
+//                     <div className="soft-panel-premium mb-3">
 //                       <div className="small-label-premium mb-2">Upgrade / guardian checks</div>
 //                       <div>Proxy approved: <span className={`premium-badge ${guardianChecks.proxyApproved ? 'premium-badge-success' : 'premium-badge-danger'}`}>{guardianChecks.proxyApproved === null ? 'Unknown' : boolText(guardianChecks.proxyApproved)}</span></div>
 //                       <div className="mt-2">Implementation approved: <span className={`premium-badge ${guardianChecks.implementationApproved ? 'premium-badge-success' : 'premium-badge-danger'}`}>{guardianChecks.implementationApproved === null ? 'Unknown' : boolText(guardianChecks.implementationApproved)}</span></div>
@@ -3606,7 +4051,7 @@ export default AdminPanel
 //       </Row>
 
 //       {/* Governance Operations Accordion */}
-//       <Row className="g-4 mb-4">
+//       <Row className="g-3 mb-4">
 //         <Col xl={12}>
 //           <div className="admin-card-premium">
 //             <div className="admin-header-premium">
@@ -3614,13 +4059,15 @@ export default AdminPanel
 //             </div>
 //             <div className="admin-body-premium">
 //               <Accordion defaultActiveKey={['0']} alwaysOpen className="premium-accordion">
+                
+//                 {/* Founder wallets and representatives */}
 //                 <Accordion.Item eventKey="0">
 //                   <Accordion.Header>Founder wallets and representatives</Accordion.Header>
 //                   <Accordion.Body>
-//                     <Row className="g-4">
+//                     <Row className="g-3">
 //                       <Col xl={6}>
 //                         <div className="admin-subtitle mb-3">This creates a multisig proposal to update all 8 founder wallets and their ratios.</div>
-//                         <div className="soft-panel-premium mb-4">
+//                         <div className="soft-panel-premium mb-3">
 //                           <div className="small-label-premium mb-2">Current founder distribution</div>
 //                           <div className="table-responsive">
 //                             <table className="premium-table mb-0">
@@ -3659,7 +4106,7 @@ export default AdminPanel
 //                       </Col>
 
 //                       <Col xl={6}>
-//                         <div className="action-card-premium mb-4">
+//                         <div className="action-card-premium mb-3">
 //                           <div className="small-label-premium">Founder representative proposal</div>
 //                           <div className="admin-subtitle mb-3">Submit a multisig proposal to add a founder representative.</div>
 //                           <div className="flex-between-premium mb-3" style={{ gap: '8px' }}>
@@ -3684,10 +4131,11 @@ export default AdminPanel
 //                   </Accordion.Body>
 //                 </Accordion.Item>
 
+//                 {/* Guardian approvals and upgrade flow */}
 //                 <Accordion.Item eventKey="1">
 //                   <Accordion.Header>Guardian approvals and upgrade flow</Accordion.Header>
 //                   <Accordion.Body>
-//                     <Row className="g-4">
+//                     <Row className="g-3">
 //                       <Col xl={4}>
 //                         <div className="action-card-premium">
 //                           <div className="small-label-premium">Approve proxy</div>
@@ -3724,10 +4172,11 @@ export default AdminPanel
 //                   </Accordion.Body>
 //                 </Accordion.Item>
 
+//                 {/* Multisig owner management */}
 //                 <Accordion.Item eventKey="2">
 //                   <Accordion.Header>Multisig owner management</Accordion.Header>
 //                   <Accordion.Body>
-//                     <Row className="g-4">
+//                     <Row className="g-3">
 //                       <Col xl={3}>
 //                         <div className="action-card-premium">
 //                           <div className="small-label-premium">Add owner</div>
@@ -3759,7 +4208,7 @@ export default AdminPanel
 //                       </Col>
 //                     </Row>
 
-//                     <div className="soft-panel-premium mt-4">
+//                     <div className="soft-panel-premium mt-3">
 //                       <div className="small-label-premium mb-2">Current multisig owners</div>
 //                       <div>
 //                         {ownerList.map((owner) => (
@@ -3772,12 +4221,307 @@ export default AdminPanel
 //                     </div>
 //                   </Accordion.Body>
 //                 </Accordion.Item>
+
+//                 {/* NEW: Community Content Management */}
+//                 <Accordion.Item eventKey="3">
+//                   <Accordion.Header>
+//                     <Globe size={14} style={{ marginRight: '8px' }} />
+//                     Community Content Management
+//                   </Accordion.Header>
+//                   <Accordion.Body>
+//                     <div className="content-tabs-premium">
+//                       <button className={`content-tab-premium ${activeContentTab === 'announcements' ? 'active' : ''}`} onClick={() => setActiveContentTab('announcements')}>
+//                         <Megaphone size={12} /> Announcements
+//                       </button>
+//                       <button className={`content-tab-premium ${activeContentTab === 'events' ? 'active' : ''}`} onClick={() => setActiveContentTab('events')}>
+//                         <Calendar size={12} /> Events
+//                       </button>
+//                       <button className={`content-tab-premium ${activeContentTab === 'socialLinks' ? 'active' : ''}`} onClick={() => setActiveContentTab('socialLinks')}>
+//                         <Link2 size={12} /> Social Links
+//                       </button>
+//                       <button className={`content-tab-premium ${activeContentTab === 'resources' ? 'active' : ''}`} onClick={() => setActiveContentTab('resources')}>
+//                         <FileText size={12} /> Resources
+//                       </button>
+//                     </div>
+
+//                     <div className="flex-between-premium mb-3">
+//                       <div className="admin-subtitle">
+//                         {contentLoading ? 'Loading...' : `${getContentList().length} items`}
+//                       </div>
+//                       <button className="btn-premium btn-premium-sm" onClick={openCreateModal}>
+//                         <Plus size={12} /> Create New
+//                       </button>
+//                     </div>
+
+//                     <div className="table-responsive">
+//                       <table className="premium-table">
+//                         <thead>
+//                           <tr>
+//                             <th>Title/Label</th>
+//                             <th>Status</th>
+//                             <th>Actions</th>
+//                           </tr>
+//                         </thead>
+//                         <tbody>
+//                           {contentLoading ? (
+//                             <tr><td colSpan={3} style={{ textAlign: 'center' }}><Spinner size="sm" /></td></tr>
+//                           ) : getContentList().length === 0 ? (
+//                             <tr><td colSpan={3} style={{ textAlign: 'center', color: 'rgba(255,255,255,0.4)' }}>No items found.</td></tr>
+//                           ) : (
+//                             getContentList().map((item) => (
+//                               <tr key={item._id}>
+//                                 <td>
+//                                   <div className="fw-bold">{item.title || item.label || item.platform || item.key}</div>
+//                                   <div className="admin-subtitle">{item.content?.slice(0, 30) || item.href || item.route}</div>
+//                                 </td>
+//                                 <td>
+//                                   <span className={`premium-badge ${item.isActive ? 'premium-badge-success' : 'premium-badge-dark'}`}>
+//                                     {item.isActive ? <Eye size={10} /> : <EyeOff size={10} />} {item.isActive ? 'Active' : 'Inactive'}
+//                                   </span>
+//                                 </td>
+//                                 <td>
+//                                   <div style={{ display: 'flex', gap: '6px' }}>
+//                                     <button className="btn-premium btn-premium-sm btn-premium-icon" onClick={() => openEditModal(item)}>
+//                                       <Edit size={12} />
+//                                     </button>
+//                                     <button className="btn-premium btn-premium-sm btn-premium-icon btn-premium-danger" onClick={() => handleDeleteContent(item._id)}>
+//                                       <Trash2 size={12} />
+//                                     </button>
+//                                   </div>
+//                                 </td>
+//                               </tr>
+//                             ))
+//                           )}
+//                         </tbody>
+//                       </table>
+//                     </div>
+//                   </Accordion.Body>
+//                 </Accordion.Item>
+
+//                 {/* NEW: Founder Vault Distribution Viewer */}
+//                 <Accordion.Item eventKey="4">
+//                   <Accordion.Header>
+//                     <Users size={14} style={{ marginRight: '8px' }} />
+//                     Founder Vault Distribution
+//                   </Accordion.Header>
+//                   <Accordion.Body>
+//                     <div className="flex-between-premium mb-3">
+//                       <div>
+//                         <div className="small-label-premium">ID1 Wallet</div>
+//                         <div className="mono" style={{ fontSize: '12px' }}>{shortAddress(id1Wallet)}</div>
+//                       </div>
+//                       <div>
+//                         <span className={`premium-badge ${isID1Downline ? 'premium-badge-success' : 'premium-badge-warning'}`}>
+//                           {isID1Downline ? <Check size={10} /> : <X size={10} />} {isID1Downline ? 'Downline Synced' : 'Non-ID1 Node'}
+//                         </span>
+//                       </div>
+//                       <button className="btn-premium btn-premium-sm" onClick={fetchFounderBalances} disabled={founderRefreshing}>
+//                         <RefreshCw size={12} className={founderRefreshing ? 'spin' : ''} /> Refresh
+//                       </button>
+//                     </div>
+
+//                     <div className="founder-summary-card">
+//                       <Row>
+//                         <Col md={6}>
+//                           <div className="small-label-premium">Total Tracked Balance</div>
+//                           <div className="metric-value-premium" style={{ fontSize: '20px' }}>{totalFounderBalance} USDT</div>
+//                         </Col>
+//                         <Col md={6}>
+//                           <div className="small-label-premium">Distribution Rule</div>
+//                           <div className="admin-subtitle">Ratios determine founder payout splits</div>
+//                         </Col>
+//                       </Row>
+//                     </div>
+
+//                     <div className="table-responsive">
+//                       <table className="premium-table">
+//                         <thead>
+//                           <tr>
+//                             <th>Wallet Address</th>
+//                             <th>Ratio</th>
+//                             <th>USDT Balance</th>
+//                           </tr>
+//                         </thead>
+//                         <tbody>
+//                           {founderWallets.length === 0 ? (
+//                             <tr><td colSpan={3} style={{ textAlign: 'center', color: 'rgba(255,255,255,0.4)' }}>No founder wallets configured.</td></tr>
+//                           ) : (
+//                             founderWallets.map((wallet, index) => (
+//                               <tr key={index}>
+//                                 <td>
+//                                   <a href={`https://amoy.polygonscan.com/address/${wallet}`} target="_blank" rel="noopener noreferrer" className="text-glow" style={{ textDecoration: 'none', display: 'flex', alignItems: 'center', gap: '4px' }}>
+//                                     <span className="mono">{wallet.slice(0, 10)}...{wallet.slice(-8)}</span>
+//                                     <ExternalLink size={10} />
+//                                   </a>
+//                                 </td>
+//                                 <td>
+//                                   <span className="premium-badge premium-badge-info">
+//                                     {(parseInt(founderRatios[index] || '0', 10) / 100).toFixed(2)}%
+//                                   </span>
+//                                 </td>
+//                                 <td className="fw-bold text-glow">{walletBalances[wallet] || '0.00'} USDT</td>
+//                               </tr>
+//                             ))
+//                           )}
+//                         </tbody>
+//                       </table>
+//                     </div>
+//                   </Accordion.Body>
+//                 </Accordion.Item>
+
 //               </Accordion>
 //             </div>
 //           </div>
 //         </Col>
 //       </Row>
+
+//       {/* Content Modal */}
+//       <Modal show={showContentModal} onHide={() => setShowContentModal(false)} centered className="premium-modal">
+//         <Modal.Header closeButton style={{ background: 'rgba(0,0,0,0.5)', borderBottom: '1px solid rgba(255,255,255,0.08)' }}>
+//           <Modal.Title style={{ color: 'var(--glow-teal)' }}>
+//             {editingItem ? 'Edit' : 'Create'} {activeContentTab.slice(0, -1)}
+//           </Modal.Title>
+//         </Modal.Header>
+//         <Modal.Body style={{ background: 'rgba(0,0,0,0.4)', padding: '20px' }}>
+//           {getContentFields().map((field) => (
+//             <Form.Group key={field.name} className="mb-3">
+//               <Form.Label className="small-label-premium">{field.label}</Form.Label>
+//               {field.type === 'textarea' ? (
+//                 <Form.Control
+//                   as="textarea"
+//                   rows={3}
+//                   className="input-premium"
+//                   value={formData[field.name] || ''}
+//                   onChange={(e) => setFormData({ ...formData, [field.name]: e.target.value })}
+//                   required={field.required}
+//                 />
+//               ) : field.type === 'select' ? (
+//                 <Form.Select
+//                   className="input-premium"
+//                   value={formData[field.name] || ''}
+//                   onChange={(e) => setFormData({ ...formData, [field.name]: e.target.value })}
+//                 >
+//                   <option value="">Select...</option>
+//                   {field.options.map((opt) => (
+//                     <option key={opt} value={opt}>{opt}</option>
+//                   ))}
+//                 </Form.Select>
+//               ) : field.type === 'checkbox' ? (
+//                 <Form.Check
+//                   type="checkbox"
+//                   label="Active"
+//                   checked={formData[field.name] || false}
+//                   onChange={(e) => setFormData({ ...formData, [field.name]: e.target.checked })}
+//                   style={{ color: 'white' }}
+//                 />
+//               ) : (
+//                 <Form.Control
+//                   type={field.type}
+//                   className="input-premium"
+//                   value={formData[field.name] || ''}
+//                   onChange={(e) => setFormData({ ...formData, [field.name]: e.target.value })}
+//                   required={field.required}
+//                 />
+//               )}
+//             </Form.Group>
+//           ))}
+//         </Modal.Body>
+//         <Modal.Footer style={{ background: 'rgba(0,0,0,0.3)', borderTop: '1px solid rgba(255,255,255,0.08)' }}>
+//           <button className="btn-premium-secondary" onClick={() => setShowContentModal(false)}>Cancel</button>
+//           <button className="btn-premium" onClick={editingItem ? handleUpdateContent : handleCreateContent}>
+//             {editingItem ? 'Update' : 'Create'}
+//           </button>
+//         </Modal.Footer>
+//       </Modal>
+
+//       <style>{`
+//         @keyframes spin {
+//           from { transform: rotate(0deg); }
+//           to { transform: rotate(360deg); }
+//         }
+//         .spin {
+//           animation: spin 1s linear infinite;
+//         }
+//         .premium-modal .modal-content {
+//           background: transparent;
+//           border: 1px solid rgba(255,255,255,0.1);
+//           border-radius: 20px;
+//           overflow: hidden;
+//         }
+
+//         /* Add to adminStyles */
+//           .admin-shell-premium {
+//             padding: 20px;
+//             max-width: 1400px;
+//             margin: 0 auto;
+//             min-height: calc(100vh - 80px);
+//             will-change: transform; /* Hardware acceleration */
+//             transform: translateZ(0);
+//           }
+
+//           .glass-panel-premium,
+//           .admin-card-premium,
+//           .admin-hero-premium {
+//             /* Reduce backdrop-filter intensity */
+//             backdrop-filter: blur(8px);
+//             -webkit-backdrop-filter: blur(8px);
+//           }
+
+//           /* Disable heavy animations on scroll */
+//           @media (prefers-reduced-motion: reduce) {
+//             *,
+//             *::before,
+//             *::after {
+//               animation-duration: 0.01ms !important;
+//               animation-iteration-count: 1 !important;
+//               transition-duration: 0.01ms !important;
+//             }
+//           }
+
+//           /* Optimize table rendering */
+//           .premium-table {
+//             will-change: transform;
+//             transform: translateZ(0);
+//           }
+
+//           .table-responsive {
+//             -webkit-overflow-scrolling: touch;
+//           }
+
+//           .input-premium {
+//             width: 100%;
+//             padding: 10px 14px;
+//             background: rgba(255, 255, 255, 0.12) !important; /* Darker background */
+//             border: 1px solid rgba(255, 255, 255, 0.2) !important;
+//             border-radius: 12px;
+//             color: #ffffff !important; /* Pure white text */
+//             font-family: monospace;
+//             font-size: 13px;
+//             transition: all 0.2s;
+//             caret-color: var(--glow-teal); /* Visible cursor */
+//           }
+
+//           .input-premium:focus {
+//             outline: none;
+//             border-color: var(--glow-teal) !important;
+//             background: rgba(255, 255, 255, 0.18) !important;
+//             color: #ffffff !important;
+//           }
+
+//           .input-premium::placeholder {
+//             color: rgba(255, 255, 255, 0.5) !important;
+//           }
+
+//           /* Fix for form controls */
+//           .form-control.input-premium,
+//           textarea.input-premium,
+//           select.input-premium {
+//             background: rgba(255, 255, 255, 0.12) !important;
+//             color: #ffffff !important;
+//           }
+//       `}</style>
 //     </Container>
 //   )
 // }
 
+// export default AdminPanel

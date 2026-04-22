@@ -177,7 +177,7 @@
   .language-dropdown {
     position: fixed;
     top: 120px;
-    left: 50%;
+    left: 90%;
     right: auto;
     transform: translateX(-50%);
     width: min(calc(100vw - 24px), 380px);

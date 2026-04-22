@@ -1,52 +1,34 @@
 /* =========================================================
-   NOTIFICATION DROPDOWN - MOBILE CENTER FIX
+   NOTIFICATION DROPDOWN - FULLY FIXED
    ========================================================= */
 
-.notification-dropdown__backdrop {
-  position: fixed;
-  inset: 0;
-  z-index: 9998;
-  border: 0;
-  padding: 0;
-  margin: 0;
-  background: rgba(3, 8, 20, 0.52);
-  backdrop-filter: blur(6px);
-  -webkit-backdrop-filter: blur(6px);
-  cursor: default;
-}
-
-[data-theme="light"] .notification-dropdown__backdrop {
-  background: rgba(15, 23, 42, 0.16);
-}
-
 .notification-dropdown {
-  box-sizing: border-box;
   position: absolute;
   top: calc(100% + 12px);
   right: 0;
   left: auto;
-  z-index: 9999;
   width: 360px;
   max-width: min(360px, calc(100vw - 24px));
-  max-height: min(560px, calc(100vh - 100px));
   padding: 14px;
-  overflow: hidden;
   border-radius: 22px;
-  border: 1px solid var(--border-strong);
   background: var(--dropdown-bg, rgba(10, 15, 30, 0.98));
   backdrop-filter: blur(20px);
   -webkit-backdrop-filter: blur(20px);
+  border: 1px solid var(--border-strong);
   box-shadow:
     0 20px 60px rgba(0, 0, 0, 0.4),
     0 8px 24px rgba(0, 0, 0, 0.25);
-  display: flex;
-  flex-direction: column;
+  z-index: 9999;
+  max-height: min(560px, calc(100vh - 100px));
+  overflow: hidden;
 }
 
+/* Dark theme dropdown background */
 [data-theme="dark"] .notification-dropdown {
   --dropdown-bg: rgba(10, 15, 30, 0.98);
 }
 
+/* Light theme dropdown background */
 [data-theme="light"] .notification-dropdown {
   --dropdown-bg: rgba(255, 255, 255, 0.98);
   box-shadow:
@@ -54,12 +36,14 @@
     0 8px 24px rgba(0, 0, 0, 0.1);
 }
 
+/* Override any glass-panel transparency */
 .notification-dropdown.glass-panel {
   background: var(--dropdown-bg, rgba(10, 15, 30, 0.98));
   backdrop-filter: blur(20px);
   -webkit-backdrop-filter: blur(20px);
 }
 
+/* Desktop styles */
 @media (min-width: 768px) {
   .notification-dropdown {
     position: absolute;
@@ -67,35 +51,46 @@
     right: 0;
     left: auto;
     transform: none;
+    width: 360px;
+    max-width: min(360px, calc(100vw - 24px));
+    max-height: min(560px, calc(100vh - 100px));
   }
 }
 
-/* MOBILE: TRUE CENTERED MODAL */
+/* Mobile styles - top-centered sheet */
 @media (max-width: 767px) {
   .notification-dropdown {
     position: fixed;
-    top: 50%;
+    top: 72px;
     left: 50%;
     right: auto;
     bottom: auto;
-    transform: translate(-50%, -50%);
-    width: min(400px, calc(100vw - 24px));
-    max-width: calc(100vw - 24px);
-    height: auto;
-    max-height: min(84dvh, calc(100dvh - 24px));
+    transform: translateX(-50%);
+    width: min(92vw, 420px);
+    max-width: min(92vw, 420px);
+    max-height: calc(100vh - 92px);
     padding: 12px;
     border-radius: 18px;
-    margin: 0;
+    z-index: 10000;
   }
 }
 
+/* Extra small devices */
 @media (max-width: 480px) {
   .notification-dropdown {
-    width: calc(100vw - 16px);
-    max-width: calc(100vw - 16px);
-    max-height: min(86dvh, calc(100dvh - 16px));
+    top: 64px;
+    width: calc(100vw - 20px);
+    max-width: calc(100vw - 20px);
     padding: 10px;
     border-radius: 16px;
+  }
+}
+
+/* Very short screens */
+@media (max-height: 600px) {
+  .notification-dropdown {
+    top: 56px;
+    max-height: calc(100vh - 72px);
   }
 }
 
@@ -106,21 +101,20 @@
   gap: 12px;
   padding-bottom: 12px;
   border-bottom: 1px solid var(--border-soft);
-  flex-shrink: 0;
 }
 
 .notification-dropdown__title-group {
-  min-width: 0;
   display: flex;
   flex-direction: column;
   gap: 4px;
+  min-width: 0;
 }
 
 .notification-dropdown__title {
-  margin: 0;
   font-size: 15px;
   font-weight: 700;
   color: var(--text-primary);
+  margin: 0;
 }
 
 .notification-dropdown__count {
@@ -132,20 +126,13 @@
   display: flex;
   align-items: center;
   gap: 8px;
-  flex-wrap: wrap;
-  justify-content: flex-end;
   flex-shrink: 0;
-  max-width: 52%;
 }
 
-.notification-dropdown__action {
+.notification-dropdown__mark-read {
   min-height: 32px;
   padding: 0 10px;
   border-radius: 999px;
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  gap: 6px;
   background: var(--surface-1);
   border: 1px solid var(--border-soft);
   font-size: 12px;
@@ -155,20 +142,15 @@
   transition: all 0.2s ease;
 }
 
-.notification-dropdown__action:hover {
+.notification-dropdown__mark-read:hover {
   background: var(--surface-2);
   border-color: var(--border-strong);
   color: var(--text-primary);
 }
 
-.notification-dropdown__action:disabled {
+.notification-dropdown__mark-read:disabled {
   opacity: 0.5;
   cursor: not-allowed;
-}
-
-.notification-dropdown__action--danger:hover {
-  border-color: rgba(239, 68, 68, 0.35);
-  color: #ef4444;
 }
 
 .notification-dropdown__close {
@@ -178,12 +160,12 @@
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  flex-shrink: 0;
   background: var(--surface-1);
   border: 1px solid var(--border-soft);
   color: var(--text-secondary);
   cursor: pointer;
   transition: all 0.2s ease;
+  flex-shrink: 0;
 }
 
 .notification-dropdown__close:hover {
@@ -197,16 +179,38 @@
 }
 
 .notification-dropdown__list {
-  flex: 1;
-  min-height: 0;
   display: flex;
   flex-direction: column;
   gap: 10px;
   padding-top: 12px;
+  max-height: calc(100vh - 220px);
   overflow-y: auto;
   overscroll-behavior: contain;
 }
 
+/* Desktop list height */
+@media (min-width: 768px) {
+  .notification-dropdown__list {
+    max-height: 360px;
+  }
+}
+
+/* Mobile list height */
+@media (max-width: 767px) {
+  .notification-dropdown__list {
+    max-height: calc(100vh - 180px);
+  }
+}
+
+@media (max-width: 480px) {
+  .notification-dropdown__list {
+    gap: 8px;
+    padding-top: 10px;
+    max-height: calc(100vh - 168px);
+  }
+}
+
+/* Scrollbar styling */
 .notification-dropdown__list::-webkit-scrollbar {
   width: 4px;
 }
@@ -225,14 +229,14 @@
   display: flex;
   align-items: flex-start;
   gap: 10px;
-  width: 100%;
   padding: 12px;
   border-radius: 18px;
   border: 1px solid var(--border-soft);
   background: var(--surface-1);
   cursor: pointer;
-  text-align: left;
   transition: all 0.2s ease;
+  width: 100%;
+  text-align: left;
 }
 
 .notification-dropdown__item:hover {
@@ -264,6 +268,7 @@
   justify-content: center;
   background: var(--surface-2);
   border: 1px solid var(--border-soft);
+  font-size: 15px;
 }
 
 .notification-dropdown__content {
@@ -282,24 +287,24 @@
 }
 
 .notification-dropdown__item-title {
-  margin: 0;
   font-size: 13px;
   font-weight: 700;
   color: var(--text-primary);
+  margin: 0;
 }
 
 .notification-dropdown__time {
-  flex-shrink: 0;
-  white-space: nowrap;
   font-size: 11px;
   color: var(--text-muted);
+  white-space: nowrap;
+  flex-shrink: 0;
 }
 
 .notification-dropdown__message {
-  margin: 0;
   font-size: 12px;
   line-height: 1.45;
   color: var(--text-secondary);
+  margin: 0;
 }
 
 .notification-dropdown__empty {
@@ -321,21 +326,23 @@
   justify-content: center;
   background: var(--surface-1);
   border: 1px solid var(--border-soft);
+  font-size: 20px;
 }
 
 .notification-dropdown__empty-title {
-  margin: 0;
   font-size: 14px;
   font-weight: 700;
   color: var(--text-primary);
+  margin: 0;
 }
 
 .notification-dropdown__empty-text {
-  margin: 0;
   font-size: 12px;
   max-width: 240px;
+  margin: 0;
 }
 
+/* Small-screen polish */
 @media (max-width: 480px) {
   .notification-dropdown__header {
     gap: 10px;
@@ -352,10 +359,9 @@
 
   .notification-dropdown__header-actions {
     gap: 6px;
-    max-width: 56%;
   }
 
-  .notification-dropdown__action {
+  .notification-dropdown__mark-read {
     min-height: 30px;
     padding: 0 8px;
     font-size: 11px;
@@ -394,12 +400,13 @@
   }
 }
 
+/* Light mode outline enhancements */
 [data-theme="light"] .notification-dropdown {
   border: 1px solid rgba(100, 120, 150, 0.35);
 }
 
 [data-theme="light"] .notification-dropdown__item,
-[data-theme="light"] .notification-dropdown__action,
+[data-theme="light"] .notification-dropdown__mark-read,
 [data-theme="light"] .notification-dropdown__close,
 [data-theme="light"] .notification-dropdown__empty-icon {
   border-color: rgba(100, 120, 150, 0.25);

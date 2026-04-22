@@ -1,21 +1,16 @@
-/* =========================================================
-   NOTIFICATION DROPDOWN - FIXED CENTERING
-   ========================================================= */
-
 .notification-dropdown {
   position: absolute;
   top: calc(100% + 12px);
   right: 0;
-  width: 360px;
+  width: min(92vw, 360px);
   padding: 14px;
   border-radius: 22px;
+  /* Use theme variables for opacity control */
   background: var(--dropdown-bg, rgba(10, 15, 30, 0.98));
   backdrop-filter: blur(20px);
   border: 1px solid var(--border-strong);
   box-shadow: 0 20px 60px rgba(0, 0, 0, 0.4), 0 8px 24px rgba(0, 0, 0, 0.25);
   z-index: 9999;
-  max-height: calc(100vh - 100px);
-  overflow-y: auto;
 }
 
 /* Dark theme dropdown background */
@@ -23,7 +18,7 @@
   --dropdown-bg: rgba(10, 15, 30, 0.98);
 }
 
-/* Light theme dropdown background */
+/* Light theme dropdown background - more opaque */
 [data-theme="light"] .notification-dropdown {
   --dropdown-bg: rgba(255, 255, 255, 0.98);
   box-shadow: 0 20px 60px rgba(0, 0, 0, 0.15), 0 8px 24px rgba(0, 0, 0, 0.1);
@@ -35,57 +30,6 @@
   backdrop-filter: blur(20px);
 }
 
-/* Desktop styles (768px and above) */
-@media (min-width: 768px) {
-  .notification-dropdown {
-    position: absolute;
-    top: calc(100% + 12px);
-    right: 0;
-    left: auto;
-    transform: none;
-    width: 360px;
-  }
-}
-
-/* Mobile styles (767px and below) - centered properly */
-@media (max-width: 767px) {
-  .notification-dropdown {
-    position: fixed;
-    top: 50%;
-    left: 50%;
-    right: auto;
-    bottom: auto;
-    transform: translate(-50%, -50%);
-    width: calc(100% - 32px);
-    max-width: 400px;
-    max-height: 80vh;
-    overflow-y: auto;
-    z-index: 10000;
-  }
-}
-
-/* Extra small devices (480px and below) */
-@media (max-width: 480px) {
-  .notification-dropdown {
-    width: calc(100% - 24px);
-    max-width: none;
-    top: 50%;
-    left: 50%;
-    transform: translate(-50%, -50%);
-    padding: 12px;
-  }
-}
-
-/* Ensure the dropdown doesn't overflow on very short screens */
-@media (max-height: 600px) {
-  .notification-dropdown {
-    max-height: 85vh;
-    top: 50%;
-    transform: translate(-50%, -50%);
-  }
-}
-
-/* Rest of your existing styles remain the same */
 .notification-dropdown__header {
   display: flex;
   align-items: flex-start;
@@ -175,21 +119,6 @@
   padding-top: 12px;
   max-height: 360px;
   overflow-y: auto;
-}
-
-/* Scrollbar styling */
-.notification-dropdown__list::-webkit-scrollbar {
-  width: 4px;
-}
-
-.notification-dropdown__list::-webkit-scrollbar-track {
-  background: var(--border-soft);
-  border-radius: 10px;
-}
-
-.notification-dropdown__list::-webkit-scrollbar-thumb {
-  background: var(--glow-teal);
-  border-radius: 10px;
 }
 
 .notification-dropdown__item {
@@ -308,19 +237,39 @@
   margin: 0;
 }
 
-/* Light mode outline enhancements */
-[data-theme="light"] .notification-dropdown {
-  border: 1px solid rgba(100, 120, 150, 0.35);
+/* Mobile styles - centered like other dropdowns */
+@media (max-width: 767px) {
+  .notification-dropdown {
+    position: fixed;
+    top: 120px;
+    left: 50%;
+    right: auto;
+    transform: translateX(-50%);
+    width: min(calc(100vw - 24px), 420px);
+    max-height: calc(100vh - 140px);
+    z-index: 10000;
+  }
+
+  .notification-dropdown__header {
+    align-items: flex-start;
+  }
+
+  .notification-dropdown__header-actions {
+    gap: 6px;
+  }
+
+  .notification-dropdown__mark-read {
+    padding: 0 8px;
+    font-size: 11px;
+  }
+
+  .notification-dropdown__list {
+    max-height: calc(100vh - 240px);
+  }
 }
 
-[data-theme="light"] .notification-dropdown__item,
-[data-theme="light"] .notification-dropdown__mark-read,
-[data-theme="light"] .notification-dropdown__close,
-[data-theme="light"] .notification-dropdown__empty-icon {
-  border-color: rgba(100, 120, 150, 0.25);
-}
-
-[data-theme="light"] .notification-dropdown__item.is-unread {
-  background: rgba(0, 0, 0, 0.04);
-  border-color: rgba(100, 120, 150, 0.35);
+@media (min-width: 768px) {
+  .notification-dropdown {
+    width: 360px;
+  }
 }

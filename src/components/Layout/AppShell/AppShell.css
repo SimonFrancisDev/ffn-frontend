@@ -25,12 +25,10 @@
 }
 
 .app-shell__navbar {
-  position: sticky;
-  top: 0;
+  position: relative;
   z-index: 40;
-  backface-visibility: hidden;
-  transform: translateZ(0);
-  will-change: transform;
+  width: 100%;
+  max-width: 100%;
 }
 
 .app-shell__content {
@@ -41,7 +39,9 @@
   width: 100%;
   max-width: 100%;
   margin: 0;
-  padding: 0;
+  padding-top: 96px;
+  padding-inline: 0;
+  padding-bottom: 0;
 }
 
 .app-shell__footer {
@@ -55,20 +55,24 @@
 
 @media (min-width: 768px) {
   .app-shell__content {
-    padding: 0;
+    padding-top: 96px;
   }
 }
 
-
-
-/* FULL WIDTH MODE (for landing pages) */
+/* FULL WIDTH MODE */
 .app-shell--full {
   overflow-x: clip;
 }
 
 .app-shell__content--full {
-  padding: 0 !important;
-  margin: 0 !important;
   width: 100%;
   max-width: 100%;
+  margin: 0 !important;
+  padding-top: 96px !important;
+  padding-inline: 0 !important;
+}
+
+/* HELP PREVENT CHILD OVERFLOW ISSUES */
+.app-shell__content > * {
+  min-width: 0;
 }

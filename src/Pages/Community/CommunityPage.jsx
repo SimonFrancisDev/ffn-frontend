@@ -204,7 +204,7 @@ const CommunityPage = ({ onNavigate }) => {
 
   const viewerLabel = useMemo(() => {
     if (!resolvedAddress) return 'No active space'
-    return isOwnSpace ? 'Your space' : 'Visitor space'
+    return isOwnSpace ? 'Your connected space' : 'Visitor space'
   }, [resolvedAddress, isOwnSpace])
 
   const viewerAddressLabel = useMemo(() => {
@@ -389,19 +389,10 @@ const CommunityPage = ({ onNavigate }) => {
         level10: Number(levels.level10?.totalMembersAcrossCycles || 0),
       })
 
-      // setDownlineEarnings({})
-      // setCurrentCycle(Number(levels.level1?.latestCycle || 1))
-      
-      // // Use real earnings from API - no mock fallback
-      // setDownlineEarnings(data.earnings || {})
-      
-      // // Use real cycle from API
-      // setCurrentCycle(data.currentCycle || 1)
       setDownlineEarnings({})
       setCurrentCycle(Number(levels.level1?.latestCycle || 1))
     } catch (err) {
       console.error('Error fetching downline:', err)
-      // On error, set empty earnings
       setDownlineEarnings({})
     }
   }, [resolvedAddress])
@@ -646,15 +637,15 @@ const CommunityPage = ({ onNavigate }) => {
           <div className="community-hero__content">
             <div className="community-hero__eyebrow glass-panel">
               <span className="community-hero__eyebrow-dot" />
-              <span className="community-hero__eyebrow-text">Join the Movement</span>
+              <span className="community-hero__eyebrow-text">Join the Ecosystem</span>
             </div>
             <div className="community-hero__text-block">
-              <h1 className="community-hero__title">Community</h1>
+              <h1 className="community-hero__title">Community Hub</h1>
               <p className="community-hero__description soft-text">
                 Connect your wallet to access referral tools, view leaderboards, and track community growth.
               </p>
             </div>
-            <button onClick={connect} className="connect-wallet-btn">Connect Wallet</button>
+            <button type="button" onClick={connect} className="connect-wallet-btn">Connect Wallet</button>
           </div>
         </div>
       </section>
@@ -682,17 +673,17 @@ const CommunityPage = ({ onNavigate }) => {
           <div className="community-hero__eyebrow glass-panel">
             <span className="community-hero__eyebrow-dot" />
             <span className="community-hero__eyebrow-text">
-              Live ecosystem visibility, progress, and participation
+              A Decentralized Path to Financial Freedom
             </span>
           </div>
 
           <div className="community-hero__text-block">
             <h1 className="community-hero__title">Community Hub</h1>
             <p className="community-hero__description soft-text">
-              Track community momentum, monitor your network, and stay close to the latest ecosystem activity.
+              A transparent, participation-driven ecosystem designed to reward contribution, progression, and long-term commitment. Track community momentum, monitor your network, and stay close to the latest ecosystem activity.
             </p>
             <div className="small muted-text">
-              Last updated: {lastUpdated} • Viewing: {isOwnSpace ? 'your connected space' : 'visitor space'}
+              Last updated: {lastUpdated} • {isOwnSpace ? 'Your connected space' : 'Visitor space'}
             </div>
           </div>
 
@@ -737,7 +728,7 @@ const CommunityPage = ({ onNavigate }) => {
 
       <section className="community-metrics glass-panel">
         <div className="community-section-heading">
-          <span className="community-section-heading__eyebrow muted-text">Public Snapshot</span>
+          <span className="community-section-heading__eyebrow muted-text">Ecosystem Snapshot</span>
           <h2 className="community-section-heading__title">Core community indicators at a glance</h2>
         </div>
 
@@ -746,7 +737,7 @@ const CommunityPage = ({ onNavigate }) => {
             <span className="community-metrics__icon" style={{ background: 'linear-gradient(135deg, rgba(29, 233, 182, 0.15), rgba(77, 163, 255, 0.1))' }}>
               <Users size={18} style={{ color: 'var(--glow-teal)' }} />
             </span>
-            <span className="community-metrics__label muted-text">Total Members</span>
+            <span className="community-metrics__label muted-text">Total Participants</span>
             <strong className="community-metrics__value gradient-text-teal">
               {formatWhole(publicReadStats.totalParticipants || communityGlobalStats.totalUsers)}
             </strong>
@@ -756,7 +747,7 @@ const CommunityPage = ({ onNavigate }) => {
             <span className="community-metrics__icon" style={{ background: 'linear-gradient(135deg, rgba(245, 158, 11, 0.15), rgba(29, 233, 182, 0.1))' }}>
               <FaCoins size={18} style={{ color: '#f59e0b' }} />
             </span>
-            <span className="community-metrics__label muted-text">Core Balance</span>
+            <span className="community-metrics__label muted-text">Visible Treasury</span>
             <strong className="community-metrics__value gradient-text-gold">
               {publicReadStats.visibleCoreBalance || communityGlobalStats.totalLiquid} USDT
             </strong>
@@ -766,7 +757,7 @@ const CommunityPage = ({ onNavigate }) => {
             <span className="community-metrics__icon" style={{ background: 'linear-gradient(135deg, rgba(77, 163, 255, 0.15), rgba(139, 92, 246, 0.1))' }}>
               <FaShieldAlt size={18} style={{ color: 'var(--glow-blue)' }} />
             </span>
-            <span className="community-metrics__label muted-text">Read Layer</span>
+            <span className="community-metrics__label muted-text">Read Layer Status</span>
             <strong className="community-metrics__value gradient-text-blue">
               {publicReadStats.readLayerStatus}
             </strong>
@@ -788,8 +779,8 @@ const CommunityPage = ({ onNavigate }) => {
         <div className="community-main-grid__left">
           <section className="community-referral glass-panel">
             <div className="community-section-heading">
-              <span className="community-section-heading__eyebrow muted-text">Your Referral Arsenal</span>
-              <h2 className="community-section-heading__title">Share your link, welcome new members, and track your referral performance</h2>
+              <span className="community-section-heading__eyebrow muted-text">Referral Program</span>
+              <h2 className="community-section-heading__title">Share your link, welcome new participants, and track your referral performance</h2>
             </div>
 
             {isOwnSpace ? (
@@ -822,7 +813,7 @@ const CommunityPage = ({ onNavigate }) => {
                   <div className="referral-link-label">Your Unique Referral Link</div>
                   <div className="referral-link-box">
                     <input type="text" className="referral-link-input" value={referralLink} readOnly />
-                    <button className="copy-btn" onClick={() => copyText(referralLink, 'referral')}>
+                    <button type="button" className="copy-btn" onClick={() => copyText(referralLink, 'referral')}>
                       {copied ? <><ShieldCheck size={14} /><span>Copied</span></> : <><Copy size={14} /><span>Copy</span></>}
                     </button>
                   </div>
@@ -831,7 +822,7 @@ const CommunityPage = ({ onNavigate }) => {
 
                 <div className="referral-tip">
                   <Rocket size={16} style={{ color: 'var(--glow-teal)' }} />
-                  <span className="tip-text">Share your personal link to onboard new participants into your own space.</span>
+                  <span className="tip-text">Share your personal link to onboard new participants into your ecosystem network.</span>
                 </div>
               </>
             ) : (
@@ -851,13 +842,11 @@ const CommunityPage = ({ onNavigate }) => {
             <div className="community-section-heading community-section-heading--row">
               <div>
                 <span className="community-section-heading__eyebrow muted-text">Your Network Tree</span>
-                {/* <h2 className="community-section-heading__title">Monitor your referral network clearly across all visible levels</h2> */}
-                <h2 className="community-section-heading__title">Review your orbit-member activity across all visible levels and completed cycles</h2>
+                <h2 className="community-section-heading__title">Monitor your referral network across all visible levels and completed cycles</h2>
               </div>
-              {/* <button className="section-action-btn" onClick={() => handleRoute('orbits')}> */}
-              <button className="section-action-btn" onClick={() => onNavigate?.('orbits')}>
+              <button type="button" className="section-action-btn" onClick={() => onNavigate?.('orbits')}>
                 <Orbit size={14} />
-                <span>View Orbit</span>
+                <span>Explore Orbit</span>
                 <ChevronRight size={12} />
               </button>
             </div>
@@ -872,7 +861,6 @@ const CommunityPage = ({ onNavigate }) => {
                   <span className="node-icon">👤</span>
                   <span className="node-label">You</span>
                   <span className="node-level"></span>
-                  {/* <span className="node-cycle">Cycle {currentCycle}</span> */}
                   <span className="node-cycle">Multi-level cycle tracking</span>
                 </div>
 
@@ -885,7 +873,6 @@ const CommunityPage = ({ onNavigate }) => {
                     return (
                       <div key={key} className="tree-level">
                         <div className="level-label">Level {index + 1}</div>
-                        {/* <div className="level-count">{value} members</div> */}
                         <div className="level-count">{value} members</div>
 
                         <div className="level-cycle">
@@ -907,7 +894,6 @@ const CommunityPage = ({ onNavigate }) => {
               </div>
 
               <div className="tree-total">
-                {/* <span>Visible Network Count:</span> */}
                 <span>Cycle-based Member Count:</span>
                 <strong>{totalVisibleNetwork}</strong>
                 <span className="tree-total-divider">•</span>
@@ -963,64 +949,23 @@ const CommunityPage = ({ onNavigate }) => {
               </div>
             )}
           </section>
-
-          {/* <section className="community-highlights glass-panel">
-            <div className="community-section-heading community-section-heading--row">
-              <div>
-                <span className="community-section-heading__eyebrow muted-text">Highlights</span>
-                <h2 className="community-section-heading__title">Important updates, notices, and community headlines</h2>
-              </div>
-              <button className="section-refresh-btn" onClick={refreshAnnouncements}>
-                <RefreshCw size={14} />
-                <span>Refresh</span>
-              </button>
-            </div>
-
-            <div className="community-highlights__list">
-              {announcementItems.length ? (
-                announcementItems.map((announcement) => (
-                  <div key={announcement._id || announcement.id || announcement.title} className={`community-highlights__item type-${announcement.type || 'info'}`}>
-                    <span className="community-highlights__icon">
-                      <Megaphone size={18} style={{ color: 'var(--glow-blue)' }} />
-                    </span>
-                    <div>
-                      <h3 className="community-highlights__title">{announcement.title}</h3>
-                      <p className="community-highlights__text soft-text">{announcement.content}</p>
-                      <span className="highlight-date">{announcement.date}</span>
-                    </div>
-                  </div>
-                ))
-              ) : (
-                <div className="community-panel-empty glass-panel">
-                  <Megaphone size={18} style={{ color: 'var(--glow-blue)' }} />
-                  <div>
-                    <strong className="community-panel-empty__title">Announcements coming soon</strong>
-                    <p className="community-panel-empty__text soft-text">
-                      Stay tuned for important updates and community news.
-                    </p>
-                  </div>
-                </div>
-              )}
-            </div>
-          </section> */}
         </div>
 
         <div className="community-main-grid__right">
           <section className="community-leaderboard glass-panel">
             <div className="community-section-heading">
               <span className="community-section-heading__eyebrow muted-text">Global Leaderboard</span>
-              <h2 className="community-section-heading__title">See the strongest performers across earnings, referrals, and activity</h2>
+              <h2 className="community-section-heading__title">See the strongest performers across earnings, referrals, and participation</h2>
             </div>
 
             <div className="leaderboard-tabs">
               {LEADERBOARD_TABS.map((tab) => {
                 const Icon = tab.icon
                 return (
-                  <button
+                  <button type="button"
                     key={tab.id}
                     className={`leaderboard-tab ${activeLeaderboardTab === tab.id ? 'active' : ''}`}
                     onClick={() => setActiveLeaderboardTab(tab.id)}
-                    type="button"
                   >
                     <Icon size={14} />
                     <span>{tab.label}</span>
@@ -1087,7 +1032,7 @@ const CommunityPage = ({ onNavigate }) => {
 
             {leaderboardDataByTab.length > 0 && (
               <div className="leaderboard-footer">
-                <button className="view-all-btn" onClick={() => setIsLeaderboardModalOpen(true)}>
+                <button type="button" className="view-all-btn" onClick={() => setIsLeaderboardModalOpen(true)}>
                   <span>View Full Board ({leaderboardDataByTab.length} total)</span>
                   <ArrowRight size={14} />
                 </button>
@@ -1101,7 +1046,7 @@ const CommunityPage = ({ onNavigate }) => {
                 <span className="community-section-heading__eyebrow muted-text">Upcoming Events</span>
                 <h2 className="community-section-heading__title">Upcoming sessions and notices</h2>
               </div>
-              <button className="section-refresh-btn" onClick={refreshEvents}>
+              <button type="button" className="section-refresh-btn" onClick={refreshEvents}>
                 <RefreshCw size={14} />
                 <span>Refresh</span>
               </button>
@@ -1159,7 +1104,7 @@ const CommunityPage = ({ onNavigate }) => {
                 Milestone
               </span>
               <strong className="community-spotlight__value">
-                {formatWhole(publicReadStats.totalParticipants || communityGlobalStats.totalUsers)} Members
+                {formatWhole(publicReadStats.totalParticipants || communityGlobalStats.totalUsers)} Participants
               </strong>
               <p className="community-spotlight__text soft-text">
                 Total registered participants in the ecosystem.
@@ -1173,20 +1118,10 @@ const CommunityPage = ({ onNavigate }) => {
               </span>
               <strong className="community-spotlight__value">Level {memberSummary.highestActiveLevel || 0}</strong>
               <p className="community-spotlight__text soft-text">
-                {memberSummary.activeLevelsCount} active levels • Keep growing!
+                {memberSummary.activeLevelsCount} active levels • Continue your progression
               </p>
             </div>
 
-            {/* <div className="community-spotlight__card glass-panel" style={{ background: 'linear-gradient(135deg, rgba(245, 158, 11, 0.06), rgba(29, 233, 182, 0.03))' }}>
-              <span className="community-spotlight__label muted-text">
-                <FaCoins size={14} style={{ marginRight: '6px', color: '#f59e0b' }} />
-                Token Snapshot
-              </span>
-              <strong className="community-spotlight__value">{memberSummary.fgtTotal} FGT</strong>
-              <p className="community-spotlight__text soft-text">
-                FGTr: {memberSummary.fgtrTotal} • Earnings: ${memberSummary.totalReceiptEarnings}
-              </p>
-            </div> */}
             <div
               className="community-spotlight__card glass-panel"
               style={{ background: 'linear-gradient(135deg, rgba(245, 158, 11, 0.06), rgba(29, 233, 182, 0.03))' }}
@@ -1290,10 +1225,10 @@ const CommunityPage = ({ onNavigate }) => {
       <section className="community-highlights glass-panel">
       <div className="community-section-heading community-section-heading--row">
         <div>
-          <span className="community-section-heading__eyebrow muted-text">Highlights</span>
+          <span className="community-section-heading__eyebrow muted-text">Announcements</span>
           <h2 className="community-section-heading__title">Important updates, notices, and community headlines</h2>
         </div>
-        <button className="section-refresh-btn" onClick={refreshAnnouncements}>
+        <button type="button" className="section-refresh-btn" onClick={refreshAnnouncements}>
           <RefreshCw size={14} />
           <span>Refresh</span>
         </button>
@@ -1336,7 +1271,7 @@ const CommunityPage = ({ onNavigate }) => {
                 <h3>Full Leaderboard</h3>
                 <p>{LEADERBOARD_TABS.find((item) => item.id === activeLeaderboardTab)?.label}</p>
               </div>
-              <button className="leaderboard-modal__close" onClick={() => setIsLeaderboardModalOpen(false)}>
+              <button type="button" className="leaderboard-modal__close" onClick={() => setIsLeaderboardModalOpen(false)}>
                 <X size={16} />
               </button>
             </div>
@@ -1382,9 +1317,3 @@ const CommunityPage = ({ onNavigate }) => {
 }
 
 export default CommunityPage
-
-
-
-// 0x296238e950ef0066D2119230Bf0eb3aDEBc94882
-// 0x21f9eDB0CE6b79afA98dE14b03678CB29bc4859C
-// 0xA32332B104aa9Fc5E5415a227D58d6914f3D7478

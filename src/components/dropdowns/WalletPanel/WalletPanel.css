@@ -251,3 +251,100 @@
     width: 340px;
   }
 }
+
+
+
+/* =========================================================
+   WALLET PANEL - Make it shorter and scrollable
+   ========================================================= */
+
+/* Make the overall panel more compact */
+.wallet-panel {
+  padding: 12px;
+  max-height: 85vh;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+}
+
+/* Make the content area scrollable */
+.wallet-panel__summary {
+  flex: 1;
+  overflow-y: auto;
+  max-height: 280px;
+  padding-top: 12px;
+  scrollbar-width: thin;
+}
+
+/* Custom scrollbar styling */
+.wallet-panel__summary::-webkit-scrollbar {
+  width: 4px;
+}
+
+.wallet-panel__summary::-webkit-scrollbar-track {
+  background: var(--border-soft);
+  border-radius: 10px;
+}
+
+.wallet-panel__summary::-webkit-scrollbar-thumb {
+  background: var(--glow-teal);
+  border-radius: 10px;
+}
+
+/* Reduce spacing between sections */
+.wallet-panel__summary {
+  gap: 10px;
+}
+
+/* Reduce padding on cards */
+.wallet-panel__address-block,
+.wallet-panel__meta-card {
+  padding: 10px;
+}
+
+/* Reduce meta grid gap */
+.wallet-panel__meta-grid {
+  gap: 8px;
+}
+
+/* Make address value more compact */
+.wallet-panel__value {
+  font-size: 12px;
+  line-height: 1.4;
+}
+
+/* Reduce action buttons height slightly */
+.wallet-panel__action-btn {
+  min-height: 42px;
+  font-size: 12px;
+}
+
+/* Reduce header padding */
+.wallet-panel__header {
+  padding-bottom: 10px;
+}
+
+/* Actions section spacing */
+.wallet-panel__actions {
+  gap: 8px;
+  padding-top: 12px;
+}
+
+/* Ensure the panel doesn't overflow on short screens */
+@media (max-height: 700px) {
+  .wallet-panel__summary {
+    max-height: 220px;
+  }
+}
+
+@media (max-height: 600px) {
+  .wallet-panel__summary {
+    max-height: 180px;
+  }
+}
+
+@media (max-height: 500px) {
+  .wallet-panel__summary {
+    max-height: 140px;
+  }
+}

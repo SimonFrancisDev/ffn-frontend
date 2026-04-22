@@ -37,9 +37,7 @@
   --info: #38bdf8;
 }
 
-/* =========================
-   DARK THEME - DEFAULT
-   ========================= */
+/* DARK THEME */
 :root,
 [data-theme="dark"] {
   --bg-primary: #07111f;
@@ -92,31 +90,28 @@
   --grid-line: rgba(255, 255, 255, 0.03);
 }
 
-/* =========================
-   LIGHT THEME
-   Rebuilt to feel bright, polished, and premium.
-   ========================= */
+/* LIGHT THEME */
 [data-theme="light"] {
   --bg-primary: #f4f7fc;
   --bg-secondary: #edf3fb;
   --bg-tertiary: #ffffff;
   --bg-overlay: rgba(255, 255, 255, 0.82);
 
-  --surface-1: rgba(255, 255, 255, 0.9);
-  --surface-2: rgba(248, 251, 255, 0.96);
-  --surface-3: rgba(238, 244, 255, 0.98);
+  --surface-1: rgba(255, 255, 255, 0.82);
+  --surface-2: rgba(255, 255, 255, 0.94);
+  --surface-3: rgba(244, 248, 255, 0.98);
 
-  --glass-bg: rgba(255, 255, 255, 0.88);
-  --glass-bg-strong: rgba(255, 255, 255, 0.96);
-  --glass-border: rgba(150, 170, 205, 0.22);
-  --glass-shadow: 0 16px 32px rgba(44, 72, 112, 0.08);
+  --glass-bg: rgba(255, 255, 255, 0.86);
+  --glass-bg-strong: rgba(255, 255, 255, 0.94);
+  --glass-border: rgba(150, 170, 205, 0.28);
+  --glass-shadow: 0 12px 28px rgba(44, 72, 112, 0.1);
 
-  --text-primary: rgba(14, 24, 42, 0.96);
+  --text-primary: rgba(0, 0, 0, 0.96);
   --text-secondary: rgba(36, 52, 82, 0.76);
   --text-muted: rgba(74, 92, 122, 0.58);
 
-  --border-soft: rgba(148, 163, 184, 0.18);
-  --border-strong: rgba(120, 144, 176, 0.24);
+  --border-soft: rgba(148, 163, 184, 0.2);
+  --border-strong: rgba(120, 144, 176, 0.28);
 
   --bg-radial-1: rgba(29, 233, 182, 0.1);
   --bg-radial-2: rgba(77, 163, 255, 0.12);
@@ -140,27 +135,11 @@
 
   --space-haze: rgba(29, 233, 182, 0.05);
   --space-depth: rgba(228, 238, 252, 0.52);
-  --cosmic-glow-1: rgba(77, 163, 255, 0.13);
-  --cosmic-glow-2: rgba(139, 92, 246, 0.09);
-  --stellar-bloom: rgba(255, 255, 255, 0.2);
-  --milky-way-mist: rgba(29, 233, 182, 0.05);
-  --grid-line: rgba(77, 115, 168, 0.055);
-
-
- 
-  
-  /* Make cosmic elements more visible in light mode */
   --cosmic-glow-1: rgba(77, 163, 255, 0.18);
   --cosmic-glow-2: rgba(139, 92, 246, 0.14);
+  --stellar-bloom: rgba(255, 255, 255, 0.2);
   --milky-way-mist: rgba(29, 233, 182, 0.08);
-  
-  /* Grid should be more present */
   --grid-line: rgba(77, 115, 168, 0.12);
-  
-  /* Glass panels need better definition */
-  --glass-bg: rgba(255, 255, 255, 0.86);
-  --glass-border: rgba(150, 170, 205, 0.28);
-  --glass-shadow: 0 12px 28px rgba(44, 72, 112, 0.1);
 }
 
 @media (prefers-reduced-motion: reduce) {
@@ -170,6 +149,3 @@
     animation: none;
   }
 }
-
-
-

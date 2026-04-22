@@ -6,7 +6,7 @@ import {
   AlertCircle, AlertTriangle, BookOpen, Check, CheckCircle, ChevronRight, Copy,
   ExternalLink, HelpCircle, Info, LifeBuoy, Mail, RefreshCw, Rocket, Search,
   Send, Shield, TrendingUp, Wallet, Wifi, Activity, Database, X, Orbit, FileText,
-  FileCheck, Lock, Video
+  FileCheck, Lock, Video, Eye, Scale
 } from 'lucide-react'
 import { FaTelegramPlane, FaDiscord, FaInstagram, FaFacebookF } from 'react-icons/fa'
 import { FaXTwitter } from 'react-icons/fa6'
@@ -24,31 +24,31 @@ const QUICK_HELP_GUIDES = {
     title: 'Registration Help',
     route: 'community',
     routeLabel: 'Open Community Hub',
-    description: 'Use this path when a new member needs help joining correctly and completing the first clean setup.',
+    description: 'Complete the registration process correctly and confirm your sponsor relationship. Wallet addresses cannot be changed after registration.',
     steps: [
-      'Confirm the wallet is connected before starting the registration flow.',
-      'Verify the sponsor or referral link before submitting the registration transaction.',
-      'Wait for the transaction to confirm fully before refreshing the page.',
-      'If registration still does not appear, copy the wallet address and transaction hash and send them in a support request.',
+      'Confirm your wallet is connected before starting the registration flow.',
+      'Verify your sponsor or referral link before submitting the registration transaction.',
+      'Wait for the transaction to confirm fully on-chain before refreshing.',
+      'If registration does not appear, copy your wallet address and transaction hash for support.',
     ],
   },
   levels: {
     title: 'Levels & Activation',
     route: 'activation-center',
     routeLabel: 'Open Activation Center',
-    description: 'Use this guide when a level does not activate, appears delayed, or looks inconsistent after submission.',
+    description: 'Troubleshoot level activation delays across the 10 progressive levels. Prices double from $10 to $5,120.',
     steps: [
-      'Check that the wallet is on the correct network and has the needed balance.',
-      'Confirm the previous level is active if progression rules require it.',
-      'After submitting, allow the transaction to settle before checking again.',
-      'If the level is still unavailable, include the wallet and transaction hash in your support request.',
+      'Verify your wallet is on the correct network with sufficient balance.',
+      'Confirm previous levels are active before attempting the next one.',
+      'Allow transaction confirmation time before checking again.',
+      'If level remains unavailable, include wallet address and transaction hash in your request.',
     ],
   },
   orbit: {
     title: 'Orbit Issues',
     route: 'orbits',
     routeLabel: 'Open Orbits Page',
-    description: 'Use this guide for placements, cycle questions, payout visibility, and orbit rendering issues.',
+    description: 'Resolve placement, cycle, payout visibility, and orbit rendering issues across P4, P12, and P39 structures.',
     steps: [
       'Open the Orbits page and confirm you are viewing the correct level and wallet space.',
       'Check whether you are on the current cycle or a historical cycle before comparing positions.',
@@ -60,9 +60,9 @@ const QUICK_HELP_GUIDES = {
     title: 'Wallet & Network',
     route: 'support',
     routeLabel: 'Stay on Support',
-    description: 'Use this guide when wallet connection, network switching, signature prompts, or submission confirmations are failing.',
+    description: 'Resolve wallet connection, network switching, signature prompts, and submission confirmations.',
     steps: [
-      'Reconnect the wallet and confirm the expected account is selected.',
+      'Reconnect your wallet and confirm the expected account is selected.',
       'Verify the correct chain is active before attempting any on-chain action.',
       'Clear any stuck wallet prompt, refresh once, and retry carefully.',
       'If the issue persists, submit a ticket with the exact failed action and your wallet address.',
@@ -70,11 +70,13 @@ const QUICK_HELP_GUIDES = {
   },
 }
 
+// Updated resources - removed Documentation and Whitepaper
 const fallbackResources = [
-  { id: 'docs', label: 'Documentation', href: '#', icon: 'docs' },
-  { id: 'whitepaper', label: 'Whitepaper', href: '#', icon: 'file' },
-  { id: 'privacy', label: 'Privacy Policy', href: '#', icon: 'lock' },
-  { id: 'tutorials', label: 'Tutorial Videos', href: '#', icon: 'video' },
+  { id: 'privacy', label: 'Privacy Policy', href: '#', icon: 'lock', isModal: true },
+  { id: 'risk', label: 'Risk Disclaimer', href: '#', icon: 'alert', isModal: true },
+  { id: 'transparency', label: 'Smart Contract Transparency', href: '#', icon: 'eye', isModal: true },
+  { id: 'terms', label: 'Terms & Conditions', href: '#', icon: 'scale', isModal: true },
+  { id: 'tutorials', label: 'Tutorial Videos', href: '#', icon: 'video', isModal: true, isComingSoon: true },
 ]
 
 function getSocialVisual(platform = '') {
@@ -87,10 +89,11 @@ function getSocialVisual(platform = '') {
 }
 
 function getResourceIcon(key = '') {
-  if (key.includes('doc')) return BookOpen
-  if (key.includes('white')) return FileCheck
   if (key.includes('privacy')) return Lock
   if (key.includes('tutorial') || key.includes('video')) return Video
+  if (key.includes('risk') || key.includes('alert')) return AlertTriangle
+  if (key.includes('transparency') || key.includes('eye')) return Eye
+  if (key.includes('term') || key.includes('scale')) return Scale
   return FileText
 }
 
@@ -142,6 +145,7 @@ const FloatingSupportButton = ({ onRefresh, telegramLink, onContactScroll }) => 
   return (
     <div className="floating-support">
       <button 
+        type="button"
         className="floating-support__trigger"
         onClick={() => setIsOpen(!isOpen)}
       >
@@ -151,17 +155,90 @@ const FloatingSupportButton = ({ onRefresh, telegramLink, onContactScroll }) => 
       
       {isOpen && (
         <div className="floating-support__menu glass-panel">
-          <button onClick={() => { onContactScroll(); setIsOpen(false); }}>
+          <button type="button" onClick={() => { onContactScroll(); setIsOpen(false); }}>
             <Mail size={16} /> Contact Support
           </button>
-          <button onClick={() => { window.open(telegramLink, '_blank'); setIsOpen(false); }}>
+          <button type="button" onClick={() => { window.open(telegramLink, '_blank', 'noopener,noreferrer'); setIsOpen(false); }}>
             <FaTelegramPlane size={16} /> Telegram
           </button>
-          <button onClick={() => { onRefresh(); setIsOpen(false); }}>
+          <button type="button" onClick={() => { onRefresh(); setIsOpen(false); }}>
             <RefreshCw size={16} /> Refresh Data
           </button>
         </div>
       )}
+    </div>
+  )
+}
+
+// Modal Components for Legal Documents
+const LegalModal = ({ isOpen, onClose, title, children }) => {
+  useEffect(() => {
+    if (isOpen) {
+      document.body.style.overflow = 'hidden'
+    } else {
+      document.body.style.overflow = ''
+    }
+    return () => {
+      document.body.style.overflow = ''
+    }
+  }, [isOpen])
+
+  if (!isOpen) return null
+
+  return (
+    <div className="legal-modal-overlay" onClick={onClose}>
+      <div className="legal-modal glass-panel" onClick={(e) => e.stopPropagation()}>
+        <div className="legal-modal__header">
+          <h3>{title}</h3>
+          <button type="button" className="legal-modal__close" onClick={onClose}>
+            <X size={18} />
+          </button>
+        </div>
+        <div className="legal-modal__body">
+          {children}
+        </div>
+        <div className="legal-modal__footer">
+          <button type="button" className="legal-modal__close-btn" onClick={onClose}>Close</button>
+        </div>
+      </div>
+    </div>
+  )
+}
+
+const ComingSoonModal = ({ isOpen, onClose, title }) => {
+  useEffect(() => {
+    if (isOpen) {
+      document.body.style.overflow = 'hidden'
+    } else {
+      document.body.style.overflow = ''
+    }
+    return () => {
+      document.body.style.overflow = ''
+    }
+  }, [isOpen])
+
+  if (!isOpen) return null
+
+  return (
+    <div className="legal-modal-overlay" onClick={onClose}>
+      <div className="legal-modal glass-panel" onClick={(e) => e.stopPropagation()}>
+        <div className="legal-modal__header">
+          <h3>{title}</h3>
+          <button type="button" className="legal-modal__close" onClick={onClose}>
+            <X size={18} />
+          </button>
+        </div>
+        <div className="legal-modal__body coming-soon-body">
+          <div className="coming-soon-icon">
+            <Video size={48} />
+          </div>
+          <h4>Tutorial Videos Underway</h4>
+          <p>Video tutorials are currently being prepared and will be available soon. Stay tuned for step-by-step guides on registration, level activation, orbit navigation, and more.</p>
+        </div>
+        <div className="legal-modal__footer">
+          <button type="button" className="legal-modal__close-btn" onClick={onClose}>Close</button>
+        </div>
+      </div>
     </div>
   )
 }
@@ -189,6 +266,13 @@ const SupportPage = ({ onNavigate }) => {
   const [submitStatus, setSubmitStatus] = useState({ loading: false, success: false, error: null })
   const [copiedWallet, setCopiedWallet] = useState(false)
 
+  // Modal states
+  const [showPrivacyModal, setShowPrivacyModal] = useState(false)
+  const [showRiskModal, setShowRiskModal] = useState(false)
+  const [showTransparencyModal, setShowTransparencyModal] = useState(false)
+  const [showTermsModal, setShowTermsModal] = useState(false)
+  const [showTutorialModal, setShowTutorialModal] = useState(false)
+
   const categoryIcons = {
     'Getting Started': Rocket,
     'Levels & Activation': TrendingUp,
@@ -197,6 +281,20 @@ const SupportPage = ({ onNavigate }) => {
     'Technical Issues': AlertTriangle,
     'Account & Security': Shield,
     default: HelpCircle,
+  }
+
+  const handleResourceClick = (item) => {
+    if (item.isComingSoon) {
+      setShowTutorialModal(true)
+    } else if (item.id === 'privacy') {
+      setShowPrivacyModal(true)
+    } else if (item.id === 'risk') {
+      setShowRiskModal(true)
+    } else if (item.id === 'transparency') {
+      setShowTransparencyModal(true)
+    } else if (item.id === 'terms') {
+      setShowTermsModal(true)
+    }
   }
 
   const fetchFaqs = useCallback(async () => {
@@ -413,9 +511,9 @@ const SupportPage = ({ onNavigate }) => {
           <div className="support-hero__left">
             <div className="support-hero__text-block">
               <h1 className="support-hero__title">Support Center</h1>
-              <p className="support-hero__description soft-text">Connect your wallet to unlock direct support, guided help, and personalized ticket submission.</p>
+              <p className="support-hero__description soft-text">Connect your wallet to access support resources, guided help, and personalized ticket submission. Fin Freedom Network rewards intentional participation, not shortcuts.</p>
             </div>
-            <button onClick={connect} className="connect-wallet-btn"><Wallet size={18} /> Connect Wallet</button>
+            <button type="button" onClick={connect} className="connect-wallet-btn"><Wallet size={18} /> Connect Wallet</button>
           </div>
           <div className="support-hero__right">
             <div className="support-country-mosaic">
@@ -433,16 +531,87 @@ const SupportPage = ({ onNavigate }) => {
 
   return (
     <section className="support-page">
+      {/* Modals */}
+      <LegalModal isOpen={showPrivacyModal} onClose={() => setShowPrivacyModal(false)} title="Privacy Policy">
+        <div className="legal-content">
+          <h4>1. Data Collection Philosophy</h4>
+          <p>Fin Freedom Network is designed to collect minimal data. The Platform does not require: names, email addresses, phone numbers, government-issued identification. The Platform is built to function without traditional user accounts or centralized identity records.</p>
+          <h4>2. Information Collected</h4>
+          <p>The Platform may collect or process: public wallet addresses, on-chain transaction data, referral relationships recorded on-chain, website usage data (if applicable).</p>
+          <h4>3. Blockchain Transparency</h4>
+          <p>Blockchain data is public, permanent, and accessible to anyone. Your wallet address and all transactions are publicly visible. Fin Freedom Network cannot alter, hide, or delete blockchain data.</p>
+          <h4>4. No Sale or Monetization of Data</h4>
+          <p>Fin Freedom Network does not sell, rent, trade, or monetize user data. The Platform does not engage in data brokerage or targeted advertising based on personal information.</p>
+        </div>
+      </LegalModal>
+
+      <LegalModal isOpen={showRiskModal} onClose={() => setShowRiskModal(false)} title="Risk Disclaimer">
+        <div className="legal-content">
+          <p style={{ fontWeight: 'bold', color: 'var(--danger)', marginBottom: '16px' }}>IMPORTANT NOTICE</p>
+          <p>Participation in Fin Freedom Network involves significant risks. You should only participate if you fully understand and willingly accept these risks.</p>
+          <h4>1. Blockchain & Smart Contract Risks</h4>
+          <p>Smart contracts operate autonomously once deployed and may be difficult or impossible to modify. Risks include vulnerabilities, coding errors, protocol exploits, and chain reorganizations.</p>
+          <h4>2. Token & Digital Asset Risks</h4>
+          <p>Tokens may fluctuate in value, experience low liquidity, lose value entirely, or be affected by regulatory actions. There is no assurance that any token will maintain value or utility.</p>
+          <h4>3. No Financial, Legal, or Tax Advice</h4>
+          <p>Nothing provided constitutes investment, financial, legal, or tax advice. You are solely responsible for seeking independent professional advice.</p>
+          <h4>4. User Error & Security Risks</h4>
+          <p>Fin Freedom Network cannot reverse transactions or recover lost assets from user errors, phishing, or compromised wallets.</p>
+        </div>
+      </LegalModal>
+
+      <LegalModal isOpen={showTransparencyModal} onClose={() => setShowTransparencyModal(false)} title="Smart Contract Transparency">
+        <div className="legal-content">
+          <h4>On-Chain Smart Contracts</h4>
+          <p>Fin Freedom Network is built with transparency and safety at its core. All core mechanisms are enforced by immutable smart contracts deployed on public blockchains.</p>
+          <h4>Security Features</h4>
+          <ul>
+            <li>No admin access to user funds</li>
+            <li>Deterministic payout rules</li>
+            <li>Multisig governance</li>
+            <li>External audits planned</li>
+          </ul>
+          <h4>Verifiable Operations</h4>
+          <p>Users can independently verify all rules and transactions on-chain. Every reward follows a clear, predefined structure that cannot be altered arbitrarily.</p>
+          <h4>Ecosystem Roadmap</h4>
+          <ul>
+            <li>Phase 2: Freedom-Plus Program rollout</li>
+            <li>Phase 3: Freedom NFT Program activation</li>
+            <li>Phase 4: Token utilities & governance expansion</li>
+            <li>Phase 5: Marketplace, Academy, and ecosystem integrations</li>
+          </ul>
+        </div>
+      </LegalModal>
+
+      <LegalModal isOpen={showTermsModal} onClose={() => setShowTermsModal(false)} title="Terms & Conditions">
+        <div className="legal-content">
+          <h4>1. Acceptance of Terms</h4>
+          <p>By accessing, registering, or using any part of the Fin Freedom Network platform, you confirm that you have read, understood, and agreed to be bound by these Terms & Conditions.</p>
+          <h4>2. Nature of the Platform</h4>
+          <p>Fin Freedom Network is a decentralized, blockchain-based platform that operates through smart contracts. The Platform does not hold user funds, control user wallets, or guarantee earnings.</p>
+          <h4>3. Wallet Responsibility</h4>
+          <p>You are solely responsible for safeguarding your wallet credentials. Wallet addresses cannot be changed once registered. Lost private keys cannot be recovered.</p>
+          <h4>4. No Guarantees</h4>
+          <p>Fin Freedom Network makes no guarantees regarding profits, income, returns, referrals, or future platform performance.</p>
+          <h4>5. Smart Contract Finality</h4>
+          <p>Blockchain transactions are irreversible. Once confirmed, they cannot be reversed or refunded.</p>
+        </div>
+      </LegalModal>
+
+      <ComingSoonModal isOpen={showTutorialModal} onClose={() => setShowTutorialModal(false)} title="Tutorial Videos" />
+
       <div className="support-hero glass-panel">
         <div className="support-hero__left">
           <div className="support-hero__eyebrow glass-panel">
             <span className="support-hero__eyebrow-dot" />
-            <span className="support-hero__eyebrow-text">Help, guidance, issue reporting, and user safety</span>
+            <span className="support-hero__eyebrow-text">Wallet-first support and guidance</span>
           </div>
 
           <div className="support-hero__text-block">
             <h1 className="support-hero__title">Support Center</h1>
-            <p className="support-hero__description soft-text">Find the right help path quickly, review trusted answers, and contact support with enough detail for faster resolution.</p>
+            <p className="support-hero__description soft-text">
+              Fin Freedom Network is built on transparent, on-chain mechanisms. Find the right help path quickly, review trusted answers, and contact support with relevant wallet addresses and transaction hashes for faster resolution.
+            </p>
           </div>
 
           <div className="support-hero__tools">
@@ -452,7 +621,7 @@ const SupportPage = ({ onNavigate }) => {
                 <input
                   type="text"
                   className="search-input"
-                  placeholder="Search support topics, onboarding help, activation issues, or wallet questions"
+                  placeholder="Search support topics, registration help, activation issues, or orbit questions..."
                   value={searchQuery}
                   onChange={handleSearchChange}
                 />
@@ -553,25 +722,25 @@ const SupportPage = ({ onNavigate }) => {
           <button type="button" className="support-quick-help__card glass-panel" onClick={() => setActiveGuideKey('registration')}>
             <span className="support-quick-help__icon"><Rocket size={24} style={{ color: 'var(--glow-teal)' }} /></span>
             <span className="support-quick-help__title">Registration Help</span>
-            <span className="support-quick-help__text soft-text">Onboarding steps, sponsor confirmation, and registration recovery.</span>
+            <span className="support-quick-help__text soft-text">Onboarding steps, sponsor confirmation, and irreversible registration.</span>
             <ChevronRight size={16} className="card-arrow" />
           </button>
           <button type="button" className="support-quick-help__card glass-panel" onClick={() => setActiveGuideKey('levels')}>
             <span className="support-quick-help__icon"><TrendingUp size={24} style={{ color: 'var(--glow-blue)' }} /></span>
             <span className="support-quick-help__title">Levels & Activation</span>
-            <span className="support-quick-help__text soft-text">Activation checks, progression rules, and visibility guidance.</span>
+            <span className="support-quick-help__text soft-text">10 progressive levels, activation checks, and progression rules.</span>
             <ChevronRight size={16} className="card-arrow" />
           </button>
           <button type="button" className="support-quick-help__card glass-panel" onClick={() => setActiveGuideKey('orbit')}>
             <span className="support-quick-help__icon"><Orbit size={24} style={{ color: '#8b5cf6' }} /></span>
             <span className="support-quick-help__title">Orbit Issues</span>
-            <span className="support-quick-help__text soft-text">Placements, cycles, orbit loading, and payout visibility.</span>
+            <span className="support-quick-help__text soft-text">Placements, cycles (P4, P12, P39), and payout visibility.</span>
             <ChevronRight size={16} className="card-arrow" />
           </button>
           <button type="button" className="support-quick-help__card glass-panel" onClick={() => setActiveGuideKey('wallet')}>
             <span className="support-quick-help__icon"><Wallet size={24} style={{ color: '#f59e0b' }} /></span>
             <span className="support-quick-help__title">Wallet & Network</span>
-            <span className="support-quick-help__text soft-text">Connection, wrong network, wallet prompts, and transaction support.</span>
+            <span className="support-quick-help__text soft-text">Connection, network switching, and transaction confirmations.</span>
             <ChevronRight size={16} className="card-arrow" />
           </button>
         </div>
@@ -610,11 +779,15 @@ const SupportPage = ({ onNavigate }) => {
             </div>
             <div className="support-contact__field-group">
               <label className="support-contact__label muted-text">Transaction Hash (Optional)</label>
-              <input type="text" className="support-contact__input glass-panel" placeholder="0x..." value={ticketForm.txHash} onChange={(e) => handleFormChange('txHash', e.target.value)} />
+              <input type="text" className="support-contact__input glass-panel" placeholder="0x... (include for faster resolution)" value={ticketForm.txHash} onChange={(e) => handleFormChange('txHash', e.target.value)} />
             </div>
             <div className="support-contact__field-group">
               <label className="support-contact__label muted-text">Message *</label>
-              <textarea className="support-contact__textarea glass-panel" placeholder="Describe what happened, what you expected, and the steps you already tried." value={ticketForm.message} onChange={(e) => handleFormChange('message', e.target.value)} rows={6} />
+              <textarea className="support-contact__textarea glass-panel" placeholder="Describe what happened, what you expected, and the steps you already tried. Include level, cycle, and any error messages." value={ticketForm.message} onChange={(e) => handleFormChange('message', e.target.value)} rows={6} />
+            </div>
+            <div className="support-info-note glass-panel">
+              <Info size={14} />
+              <span className="soft-text">Blockchain transactions are irreversible. Always verify details before signing.</span>
             </div>
             {submitStatus.success ? <div className="support-success-message"><CheckCircle size={16} /> Support request submitted successfully. Our team will review it and respond as soon as possible.</div> : null}
             {submitStatus.error ? <div className="support-error-message"><AlertCircle size={16} /> {submitStatus.error}</div> : null}
@@ -631,7 +804,14 @@ const SupportPage = ({ onNavigate }) => {
               <LifeBuoy size={20} />
               <div>
                 <strong>Before you submit</strong>
-                <p className="soft-text">Include the wallet, level, cycle, and transaction hash whenever they apply. That gives support the best chance of resolving the issue quickly.</p>
+                <p className="soft-text">Include your wallet address, level, cycle, and transaction hash whenever applicable. This gives support the best chance of resolving your issue quickly.</p>
+              </div>
+            </div>
+            <div className="support-contact__assist-card">
+              <Shield size={20} style={{ color: 'var(--glow-teal)' }} />
+              <div>
+                <strong>Wallet responsibility</strong>
+                <p className="soft-text">You are solely responsible for securing your wallet. Fin Freedom Network will never request your private key or recovery phrase.</p>
               </div>
             </div>
             {recentTickets.length ? 
@@ -663,6 +843,7 @@ const SupportPage = ({ onNavigate }) => {
         <div className="support-section-heading">
           <span className="support-section-heading__eyebrow muted-text">Knowledge Base</span>
           <h2 className="support-section-heading__title">Frequently Asked Questions</h2>
+          <p className="soft-text">Clear answers about participation, progression, and platform rules</p>
         </div>
         {searchQuery ? <div className="search-results-info"><Search size={14} /> Found {filteredFaqs.length} result{filteredFaqs.length === 1 ? '' : 's'} for "{searchQuery}"</div> : null}
         {loading ? 
@@ -692,7 +873,7 @@ const SupportPage = ({ onNavigate }) => {
 
       <section className="support-safety glass-panel">
         <div className="support-section-heading">
-          <span className="support-section-heading__eyebrow muted-text">Security</span>
+          <span className="support-section-heading__eyebrow muted-text">Security & Transparency</span>
           <h2 className="support-section-heading__title">Safety Guidance</h2>
         </div>
         <div className="support-safety__grid">
@@ -700,28 +881,42 @@ const SupportPage = ({ onNavigate }) => {
             <span className="support-safety__icon"><Shield size={20} style={{ color: 'var(--glow-teal)' }} /></span>
             <div>
               <h3 className="support-safety__title">Never share your seed phrase</h3>
-              <p className="support-safety__text soft-text">FFN will never ask for your seed phrase or private keys.</p>
+              <p className="support-safety__text soft-text">Fin Freedom Network will never ask for your seed phrase, private keys, or recovery phrase.</p>
             </div>
           </div>
           <div className="support-safety__item">
             <span className="support-safety__icon"><AlertTriangle size={20} style={{ color: '#f59e0b' }} /></span>
             <div>
-              <h3 className="support-safety__title">Verify the active network first</h3>
-              <p className="support-safety__text soft-text">Always confirm the expected chain before signing or submitting a transaction.</p>
+              <h3 className="support-safety__title">Transactions are irreversible</h3>
+              <p className="support-safety__text soft-text">Once confirmed on the blockchain, transactions cannot be reversed or refunded. Always verify details before signing.</p>
+            </div>
+          </div>
+          <div className="support-safety__item">
+            <span className="support-safety__icon"><Eye size={20} style={{ color: 'var(--glow-blue)' }} /></span>
+            <div>
+              <h3 className="support-safety__title">No admin access to funds</h3>
+              <p className="support-safety__text soft-text">Smart contracts enforce deterministic payout rules. No single individual has unilateral authority over user funds.</p>
             </div>
           </div>
           <div className="support-safety__item">
             <span className="support-safety__icon"><Search size={20} style={{ color: 'var(--glow-blue)' }} /></span>
             <div>
-              <h3 className="support-safety__title">Review transaction details carefully</h3>
-              <p className="support-safety__text soft-text">Check the wallet prompt, value, and target action before you confirm anything.</p>
+              <h3 className="support-safety__title">Review transaction details</h3>
+              <p className="support-safety__text soft-text">Check the wallet prompt, value, and target action before you confirm any transaction.</p>
             </div>
           </div>
           <div className="support-safety__item">
             <span className="support-safety__icon"><AlertCircle size={20} style={{ color: '#ef4444' }} /></span>
             <div>
-              <h3 className="support-safety__title">Avoid unofficial links and contacts</h3>
+              <h3 className="support-safety__title">Avoid unofficial links</h3>
               <p className="support-safety__text soft-text">Use only trusted support channels and never send funds to unknown addresses.</p>
+            </div>
+          </div>
+          <div className="support-safety__item">
+            <span className="support-safety__icon"><Scale size={20} style={{ color: '#8b5cf6' }} /></span>
+            <div>
+              <h3 className="support-safety__title">Wallet addresses are final</h3>
+              <p className="support-safety__text soft-text">Wallet addresses cannot be changed after registration. If compromised, you must create a new wallet before registering.</p>
             </div>
           </div>
         </div>
@@ -731,6 +926,7 @@ const SupportPage = ({ onNavigate }) => {
         <div className="support-section-heading">
           <span className="support-section-heading__eyebrow muted-text">Updates</span>
           <h2 className="support-section-heading__title">Announcements</h2>
+          <p className="soft-text">Transparent communication and community updates</p>
         </div>
         <div className="announcements-list">
           {announcements.length ? announcements.map((item) => 
@@ -765,11 +961,16 @@ const SupportPage = ({ onNavigate }) => {
           {(resources.length ? resources : fallbackResources).map((item) => {
             const Icon = getResourceIcon(item.key || item.label || '')
             return (
-              <a key={item._id || item.id || item.label} href={item.href || '#'} className="resource-link" target={item.href ? '_blank' : undefined} rel={item.href ? 'noopener noreferrer' : undefined}>
+              <button
+                key={item._id || item.id || item.label}
+                className="resource-link resource-link--modal"
+                onClick={() => handleResourceClick(item)}
+                type="button"
+              >
                 <span className="resource-link__icon"><Icon size={16} /></span>
                 <span>{item.label}</span>
-                {item.href ? <ExternalLink size={12} /> : null}
-              </a>
+                {item.isComingSoon && <span className="coming-soon-badge">Soon</span>}
+              </button>
             )
           })}
         </div>
@@ -792,13 +993,13 @@ const SupportPage = ({ onNavigate }) => {
             })}
           </div>
         </div>
-        <div className="support-contact-info">
+        {/* <div className="support-contact-info">
           <h4>Direct contact</h4>
           <div className="contact-methods">
             <a href="mailto:support@finfreedom.io" className="contact-method"><Mail size={14} /> support@finfreedom.io</a>
             <span className="response-time">Average response window: within 24 hours</span>
           </div>
-        </div>
+        </div> */}
       </section>
 
       {activeGuide ? 

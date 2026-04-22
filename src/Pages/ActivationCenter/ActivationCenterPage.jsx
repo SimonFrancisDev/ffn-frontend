@@ -99,6 +99,10 @@ const ActivationCenterPage = () => {
   const [pendingActivationLevel, setPendingActivationLevel] = useState(null)
   const [isNextActionModalOpen, setIsNextActionModalOpen] = useState(false)
   const [openLevelDetails, setOpenLevelDetails] = useState({})
+  const [isRegistrationModalOpen, setIsRegistrationModalOpen] = useState(false)
+  
+  // New state for Security Notice popup
+  const [showSecurityNotice, setShowSecurityNotice] = useState(false)
 
   const [isDeployer, setIsDeployer] = useState(false)
   const [deployerUsdtBalance, setDeployerUsdtBalance] = useState('0')
@@ -107,6 +111,7 @@ const ActivationCenterPage = () => {
   const [showTransferToSelf, setShowTransferToSelf] = useState(true)
   const [isId1Wallet, setIsId1Wallet] = useState(false)
   const [id1Address, setId1Address] = useState('')
+  const [registrationReferrer, setRegistrationReferrer] = useState('')
 
   const [orbitLevelData, setOrbitLevelData] = useState({})
   const [downlineData, setDownlineData] = useState({})
@@ -132,9 +137,6 @@ const ActivationCenterPage = () => {
 
   const canWriteHere = isOwnSpace && canTransact && isViewerConnectedWallet
 
- 
-
-
   const navigateToOrbits = useCallback(() => {
     navigate('/orbits')
   }, [navigate])
@@ -155,6 +157,12 @@ const ActivationCenterPage = () => {
   const getWriteContracts = async () => {
     const { writeContracts } = await web3Service.initWallet({ requestAccounts: false })
     return writeContracts
+  }
+
+  const getSigner = async () => {
+    if (!window.ethereum) throw new Error('MetaMask not installed')
+    const provider = new ethers.BrowserProvider(window.ethereum)
+    return await provider.getSigner()
   }
 
   const getLevelBackground = (level) => {
@@ -595,45 +603,37 @@ const ActivationCenterPage = () => {
     }
   }, [contracts, viewer, fetchTokenSummary])
 
-  // useEffect(() => {
-  //   if (typeof document === 'undefined') return
-
-  //   const shouldLock = isEligibilityModalOpen || isNextActionModalOpen
-  //   if (!shouldLock) return
-
-  //   const previousOverflow = document.body.style.overflow
-  //   document.body.style.overflow = 'hidden'
-
-  //   return () => {
-  //     document.body.style.overflow = previousOverflow
-  //   }
-  // }, [isEligibilityModalOpen, isNextActionModalOpen])
-
-
   useEffect(() => {
-  if (typeof document === 'undefined') return
+    if (typeof document === 'undefined') return
 
-  const shouldLock = isEligibilityModalOpen || isNextActionModalOpen
+    const shouldLock = isEligibilityModalOpen || isNextActionModalOpen || isRegistrationModalOpen || showSecurityNotice
 
-  const previousBodyOverflow = document.body.style.overflow
-  const previousBodyTouchAction = document.body.style.touchAction
-  const previousHtmlOverflow = document.documentElement.style.overflow
-  const previousHtmlScrollBehavior = document.documentElement.style.scrollBehavior
+    const previousBodyOverflow = document.body.style.overflow
+    const previousBodyTouchAction = document.body.style.touchAction
+    const previousHtmlOverflow = document.documentElement.style.overflow
+    const previousHtmlScrollBehavior = document.documentElement.style.scrollBehavior
 
-  if (shouldLock) {
-    document.body.style.overflow = 'hidden'
-    document.body.style.touchAction = 'none'
-    document.documentElement.style.overflow = 'hidden'
-    document.documentElement.style.scrollBehavior = 'auto'
-  }
+    if (shouldLock) {
+      document.body.style.overflow = 'hidden'
+      document.body.style.touchAction = 'none'
+      document.documentElement.style.overflow = 'hidden'
+      document.documentElement.style.scrollBehavior = 'auto'
+    }
 
-  return () => {
-    document.body.style.overflow = previousBodyOverflow
-    document.body.style.touchAction = previousBodyTouchAction
-    document.documentElement.style.overflow = previousHtmlOverflow
-    document.documentElement.style.scrollBehavior = previousHtmlScrollBehavior
-  }
-}, [isEligibilityModalOpen, isNextActionModalOpen])
+    return () => {
+      document.body.style.overflow = previousBodyOverflow
+      document.body.style.touchAction = previousBodyTouchAction
+      document.documentElement.style.overflow = previousHtmlOverflow
+      document.documentElement.style.scrollBehavior = previousHtmlScrollBehavior
+    }
+  }, [isEligibilityModalOpen, isNextActionModalOpen, isRegistrationModalOpen, showSecurityNotice])
+
+  // Updated auto-open effect - shows Security Notice first, then registration modal
+  useEffect(() => {
+    if (isConnected && !contractsLoading && !isRegistered && !isId1Wallet && canWriteHere) {
+      setShowSecurityNotice(true)
+    }
+  }, [isConnected, contractsLoading, isRegistered, isId1Wallet, canWriteHere])
 
   const getHighestActiveLevel = useCallback(() => {
     const active = Object.entries(activeLevels)
@@ -651,7 +651,9 @@ const ActivationCenterPage = () => {
 
   const canActivateLevel = useCallback(
     (level) => {
-      if (level === 1) return !activeLevels[1]
+      if (level === 1) {
+        return !activeLevels[1]
+      }
       return !activeLevels[level] && activeLevels[level - 1]
     },
     [activeLevels]
@@ -664,14 +666,39 @@ const ActivationCenterPage = () => {
     }))
   }, [])
 
-  const getSigner = async () => {
-    if (!window.ethereum) throw new Error('MetaMask not installed')
-    const provider = new ethers.BrowserProvider(window.ethereum)
-    return await provider.getSigner()
-  }
+  const ensureSufficientAllowance = useCallback(
+    async (requiredAmountUsdt) => {
+      const signer = await getSigner()
+      const spender = contracts.levelManager.target
+      const currentAllowance = await contracts.usdt.allowance(account, spender)
+      const requiredAmountWei = ethers.parseUnits(String(requiredAmountUsdt), 6)
 
-  const handleRegister = async () => {
+      if (currentAllowance >= requiredAmountWei) {
+        return null
+      }
+
+      const approveTx = await contracts.usdt.connect(signer).approve(spender, requiredAmountWei)
+      setTxStatus({ loading: true, hash: approveTx.hash, error: null })
+      await approveTx.wait()
+
+      const newAllowance = await contracts.usdt.allowance(account, spender)
+      setAllowance(formatUsdt(newAllowance).toString())
+
+      return approveTx
+    },
+    [contracts, account, formatUsdt]
+  )
+
+  const refreshAllAfterWrite = useCallback(async () => {
+    await fetchUserData()
+    await fetchAllOrbitLevelData()
+    await fetchTokenSummary()
+    setLastUpdated(new Date().toLocaleTimeString())
+  }, [fetchUserData, fetchAllOrbitLevelData, fetchTokenSummary])
+
+  const handleCombinedRegisterAndActivateLevelOne = useCallback(async () => {
     if (!ensureWritableSpace()) return
+
     if (networkWarning) {
       setTxStatus({
         loading: false,
@@ -684,36 +711,59 @@ const ActivationCenterPage = () => {
     setTxStatus({ loading: true, hash: null, error: null })
 
     try {
+      const totalRequiredUsdt = 10
+      const totalRequiredWei = ethers.parseUnits(String(totalRequiredUsdt), 6)
       const balance = await contracts.usdt.balanceOf(account)
-      const requiredAmount = ethers.parseUnits('10', 6)
 
-      if (balance < requiredAmount) {
+      if (balance < totalRequiredWei) {
         throw new Error(
-          `Insufficient USDT balance. You need 10 USDT for registration. Current balance: ${ethers.formatUnits(balance, 6)} USDT`
+          `Insufficient USDT balance. You need ${totalRequiredUsdt} USDT for registration and Level 1 activation. Current balance: ${ethers.formatUnits(balance, 6)} USDT`
         )
       }
 
-      const spender = contracts.levelManager.target
-      const currentAllowance = await contracts.usdt.allowance(account, spender)
-      if (currentAllowance < requiredAmount) {
-        throw new Error('Please approve 10 USDT first before registering.')
-      }
+      await ensureSufficientAllowance(totalRequiredUsdt)
 
       const writeContracts = await getWriteContracts()
-      const tx = await writeContracts.registration.register(referrer || ethers.ZeroAddress)
-      setTxStatus({ loading: true, hash: tx.hash, error: null })
-      await tx.wait()
 
-      setTxStatus({ loading: false, hash: tx.hash, error: null })
-      await fetchUserData()
-      await fetchAllOrbitLevelData()
-      await fetchTokenSummary()
+      const registerTx = await writeContracts.registration.register(registrationReferrer || ethers.ZeroAddress)
+      setTxStatus({ loading: true, hash: registerTx.hash, error: null })
+      await registerTx.wait()
+
+      try {
+        const signer = await getSigner()
+        const registrationWithSigner = contracts.registration.connect(signer)
+        const level1AlreadyActive = await contracts.registration.isLevelActivated(account, 1)
+
+        if (!level1AlreadyActive) {
+          const activateTx = await registrationWithSigner.activateLevel(1)
+          setTxStatus({ loading: true, hash: activateTx.hash, error: null })
+          await activateTx.wait()
+          setTxStatus({ loading: false, hash: activateTx.hash, error: null })
+        } else {
+          setTxStatus({ loading: false, hash: registerTx.hash, error: null })
+        }
+      } catch (activationError) {
+        const latestActive = await contracts.registration
+          .isLevelActivated(account, 1)
+          .catch(() => false)
+
+        if (latestActive) {
+          setTxStatus({ loading: false, hash: registerTx.hash, error: null })
+        } else {
+          throw activationError
+        }
+      }
+
+      await refreshAllAfterWrite()
+      setIsRegistrationModalOpen(false)
+      setRegistrationReferrer('')
     } catch (err) {
-      console.error('Registration error:', err)
+      console.error('Registration + Level 1 activation error:', err)
 
-      let errorMessage = err.message
+      let errorMessage = err.message || 'Transaction failed'
+
       if (err.message?.includes('Already registered')) {
-        errorMessage = 'You are already registered.'
+        errorMessage = 'This wallet is already registered.'
       } else if (err.message?.includes('Self-referral')) {
         errorMessage = 'You cannot refer yourself.'
       } else if (err.message?.includes('Referrer not registered')) {
@@ -726,27 +776,16 @@ const ActivationCenterPage = () => {
 
       setTxStatus({ loading: false, hash: null, error: errorMessage })
     }
-  }
-
-  const handleApproveForRegistration = async () => {
-    if (!ensureWritableSpace()) return
-    setTxStatus({ loading: true, hash: null, error: null })
-
-    try {
-      const writeContracts = await getWriteContracts()
-      const spender = contracts.levelManager.target
-      const amount = ethers.parseUnits('10', 6)
-      const tx = await writeContracts.usdt.approve(spender, amount)
-      setTxStatus({ loading: true, hash: tx.hash, error: null })
-      await tx.wait()
-
-      const newAllowance = await contracts.usdt.allowance(account, spender)
-      setAllowance(formatUsdt(newAllowance).toString())
-      setTxStatus({ loading: false, hash: tx.hash, error: null })
-    } catch (err) {
-      setTxStatus({ loading: false, hash: null, error: err.message })
-    }
-  }
+  }, [
+    ensureWritableSpace,
+    networkWarning,
+    contracts,
+    account,
+    ensureSufficientAllowance,
+    getWriteContracts,
+    registrationReferrer,
+    refreshAllAfterWrite,
+  ])
 
   const handleTransferToSelf = async () => {
     if (!ensureWritableSpace()) return
@@ -817,6 +856,7 @@ const ActivationCenterPage = () => {
   const buildEligibilityChecks = useCallback(
     (level) => {
       const price = parseFloat(levelPrices[level] || '0')
+      const totalRequired = price
 
       return [
         {
@@ -833,26 +873,36 @@ const ActivationCenterPage = () => {
         },
         {
           key: 'registration',
-          label: 'Registration complete',
-          passed: Boolean(isRegistered),
-          hint: isRegistered ? 'Registration is already confirmed.' : 'Complete registration first.',
+          label: level === 1 && !isRegistered ? 'Ready to register' : 'Registration complete',
+          passed: level === 1 ? true : Boolean(isRegistered),
+          hint:
+            level === 1 && !isRegistered
+              ? 'This action will register the wallet and activate Level 1.'
+              : isRegistered
+                ? 'Registration is already confirmed.'
+                : 'Complete registration first.',
         },
         {
           key: 'levelReady',
           label: `Level ${level} ready`,
           passed: Boolean(canActivateLevel(level)),
-          hint: canActivateLevel(level)
-            ? `Level ${level} is available for activation.`
-            : `Activate Level ${level - 1} first.`,
+          hint:
+            level === 1 && !isRegistered
+              ? 'Level 1 is available as part of onboarding.'
+              : canActivateLevel(level)
+                ? `Level ${level} is available for activation.`
+                : `Activate Level ${level - 1} first.`,
         },
         {
           key: 'balance',
-          label: `${levelPrices[level]} USDT available`,
-          passed: parseFloat(usdtBalance) >= price,
+          label: `${totalRequired} USDT available`,
+          passed: parseFloat(usdtBalance) >= totalRequired,
           hint:
-            parseFloat(usdtBalance) >= price
+            parseFloat(usdtBalance) >= totalRequired
               ? 'Wallet balance is sufficient.'
-              : `You need ${levelPrices[level]} USDT for this level.`,
+              : level === 1 && !isRegistered
+                ? `You need ${totalRequired} USDT for registration and Level 1 activation.`
+                : `You need ${levelPrices[level]} USDT for this level.`,
         },
       ]
     },
@@ -867,6 +917,11 @@ const ActivationCenterPage = () => {
         hash: null,
         error: 'Please switch to Polygon Amoy Testnet first.',
       })
+      return
+    }
+
+    if (level === 1 && !isRegistered) {
+      await handleCombinedRegisterAndActivateLevelOne()
       return
     }
 
@@ -889,27 +944,15 @@ const ActivationCenterPage = () => {
         throw new Error(`Insufficient USDT balance. You have ${usdtBalance} USDT but need ${price} USDT.`)
       }
 
+      await ensureSufficientAllowance(price)
+
       const signer = await getSigner()
-
-      const spender = contracts.levelManager.target
-      const currentAllowance = await contracts.usdt.allowance(account, spender)
-      const allowanceNum = parseFloat(formatUsdt(currentAllowance).toString())
-
-      if (allowanceNum < price) {
-        const priceWei = ethers.parseUnits(price.toString(), 6)
-        const approveTx = await contracts.usdt.connect(signer).approve(spender, priceWei)
-        setTxStatus({ loading: true, hash: approveTx.hash, error: null })
-        await approveTx.wait()
-      }
-
       const registrationWithSigner = contracts.registration.connect(signer)
       const tx = await registrationWithSigner.activateLevel(level)
       setTxStatus({ loading: true, hash: tx.hash, error: null })
       await tx.wait()
 
-      await fetchUserData()
-      await fetchAllOrbitLevelData()
-      await fetchTokenSummary()
+      await refreshAllAfterWrite()
       setTxStatus({ loading: false, hash: tx.hash, error: null })
     } catch (err) {
       console.error('Activation error:', err)
@@ -955,6 +998,15 @@ const ActivationCenterPage = () => {
     setIsEligibilityAnimating(false)
 
     await executeLevelActivation(level)
+  }
+
+  const handleRegisterFromModal = async () => {
+    await handleCombinedRegisterAndActivateLevelOne()
+  }
+
+  const handleProceedToRegistration = () => {
+    setShowSecurityNotice(false)
+    setIsRegistrationModalOpen(true)
   }
 
   const highestLevel = useMemo(() => {
@@ -1032,7 +1084,7 @@ const ActivationCenterPage = () => {
               </p>
             </div>
 
-            <button onClick={connect} className="activation-next__button" style={{ maxWidth: '280px' }}>
+            <button onClick={connect} className="activation-next__button activation-next__button--fit">
               Connect Wallet
             </button>
           </div>
@@ -1044,8 +1096,8 @@ const ActivationCenterPage = () => {
             </div>
 
             <div className="activation-hero__visual-box">
-              <div style={{ textAlign: 'center' }}>
-                <div style={{ fontSize: '48px', marginBottom: '12px', display: 'flex', justifyContent: 'center' }}>
+              <div className="activation-center-stack">
+                <div className="activation-center-icon">
                   <FaLock />
                 </div>
                 <div>Wallet not connected</div>
@@ -1060,7 +1112,7 @@ const ActivationCenterPage = () => {
   if (contractsLoading) {
     return (
       <section className="activation-page">
-        <div className="activation-hero__text-block" style={{ textAlign: 'center', padding: '60px 20px' }}>
+        <div className="activation-hero__text-block activation-hero__text-block--loading">
           <div className="spinner"></div>
           <p>Loading contracts...</p>
         </div>
@@ -1072,8 +1124,7 @@ const ActivationCenterPage = () => {
     <section className="activation-page">
       {!isOwnSpace && (
         <div
-          className="activation-notices__item is-info"
-          style={{ marginBottom: '16px', borderLeft: '3px solid var(--glow-blue)' }}
+          className="activation-notices__item activation-notices__item--banner is-info"
         >
           <span className="activation-notices__dot" />
           <div>
@@ -1083,9 +1134,8 @@ const ActivationCenterPage = () => {
             </p>
             <button
               type="button"
-              className="activation-next__button"
+              className="activation-next__button activation-next__button--compact"
               onClick={switchToSelf}
-              style={{ marginTop: '10px', maxWidth: '220px' }}
             >
               Return to My Space
             </button>
@@ -1095,12 +1145,11 @@ const ActivationCenterPage = () => {
 
       {networkWarning && (
         <div
-          className="activation-notices__item is-error"
-          style={{ marginBottom: '16px', borderLeft: '3px solid #ef4444' }}
+          className="activation-notices__item activation-notices__item--banner is-error"
         >
-          <span className="activation-notices__dot" style={{ background: '#ef4444' }} />
+          <span className="activation-notices__dot activation-notices__dot--error" />
           <div>
-            <h3 className="activation-notices__title" style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+            <h3 className="activation-notices__title activation-notices__title--inline">
               <FaExclamationTriangle /> Network Error
             </h3>
             <p className="activation-notices__text">
@@ -1111,8 +1160,8 @@ const ActivationCenterPage = () => {
       )}
 
       {contractsError && (
-        <div className="activation-notices__item is-error" style={{ marginBottom: '16px' }}>
-          <span className="activation-notices__dot" style={{ background: '#ef4444' }} />
+        <div className="activation-notices__item activation-notices__item--banner is-error">
+          <span className="activation-notices__dot activation-notices__dot--error" />
           <div>
             <h3 className="activation-notices__title">Contract Error</h3>
             <p className="activation-notices__text">{contractsError}</p>
@@ -1121,8 +1170,8 @@ const ActivationCenterPage = () => {
       )}
 
       {txStatus.error && (
-        <div className="activation-notices__item is-error" style={{ marginBottom: '16px' }}>
-          <span className="activation-notices__dot" style={{ background: '#ef4444' }} />
+        <div className="activation-notices__item activation-notices__item--banner is-error">
+          <span className="activation-notices__dot activation-notices__dot--error" />
           <div>
             <h3 className="activation-notices__title">Transaction Error</h3>
             <p className="activation-notices__text">{txStatus.error}</p>
@@ -1131,7 +1180,7 @@ const ActivationCenterPage = () => {
       )}
 
       {txStatus.hash && (
-        <div className="activation-notices__item is-info" style={{ marginBottom: '16px' }}>
+        <div className="activation-notices__item activation-notices__item--banner is-info">
           <span className="activation-notices__dot" />
           <div>
             <h3 className="activation-notices__title">Transaction Submitted</h3>
@@ -1140,7 +1189,7 @@ const ActivationCenterPage = () => {
                 href={`https://amoy.polygonscan.com/tx/${txStatus.hash}`}
                 target="_blank"
                 rel="noopener noreferrer"
-                style={{ color: 'var(--glow-teal)' }}
+                className="activation-inline-link"
               >
                 View on Polygonscan →
               </a>
@@ -1161,7 +1210,7 @@ const ActivationCenterPage = () => {
           <div className="activation-hero__text-block">
             <h1 className="activation-hero__title">Manage Your Level</h1>
             <p className="activation-hero__description soft-text">
-              Track your level earnings., inspect orbit readiness, review token signals, and activate the next eligible level from one guided flow.
+              Track your level earnings, inspect orbit readiness, review token signals, and activate the next eligible level from one guided flow.
             </p>
             <div className="small muted-text">Last updated: {lastUpdated}</div>
           </div>
@@ -1253,7 +1302,7 @@ const ActivationCenterPage = () => {
             <p className="activation-registration__status-text soft-text">
               {isRegistered
                 ? `Wallet ${viewer?.slice(0, 6)}...${viewer?.slice(-4)} is registered in the protocol.`
-                : 'Complete registration to begin activation. Entry requires 10 USDT.'}
+                : 'Complete onboarding to register and activate Level 1 in one guided step.'}
             </p>
           </div>
 
@@ -1265,15 +1314,15 @@ const ActivationCenterPage = () => {
                   ? `${id1Address.slice(0, 8)}...${id1Address.slice(-6)}`
                   : 'ID1 Wallet'
                 : referrer
-                ? `${referrer.slice(0, 8)}...${referrer.slice(-6)}`
-                : 'No Referrer'}
+                  ? `${referrer.slice(0, 8)}...${referrer.slice(-6)}`
+                  : 'No Referrer'}
             </strong>
             <p className="activation-registration__status-text soft-text">
               {isId1Wallet
                 ? 'You are the ID1 wallet. All levels are automatically active.'
                 : referrer
-                ? 'Your sponsor relationship is confirmed on-chain.'
-                : 'No referrer provided. You are connected under the program system ID.'}
+                  ? 'Your sponsor relationship is confirmed on-chain.'
+                  : 'No referrer provided. You are connected under the program system ID.'}
             </p>
           </div>
         </div>
@@ -1282,21 +1331,6 @@ const ActivationCenterPage = () => {
       <section className="activation-levels glass-panel activation-levels--fullwidth">
         <div className="activation-section-heading">
           <span className="activation-section-heading__eyebrow muted-text">Levels 1-10</span>
-          <h2 className="activation-section-heading__title">Structured progression across all levels</h2>
-        </div>
-
-        <div className="level-progress-bars">
-          {[1, 2, 3, 4, 5, 6, 7, 8, 9, 10].map((level) => (
-            <div key={`progress-${level}`} className="level-progress-item">
-              <div className="level-progress-label">L{level}</div>
-              <div className="level-progress-track">
-                <div
-                  className={`level-progress-fill ${activeLevels[level] ? 'active' : ''}`}
-                  style={{ width: activeLevels[level] ? '100%' : '0%' }}
-                />
-              </div>
-            </div>
-          ))}
         </div>
 
         <div className="activation-levels__grid">
@@ -1318,15 +1352,15 @@ const ActivationCenterPage = () => {
             const fgtEarned = tokenSummary.fgtByLevel[level] || 0
             const fgtrEarned = tokenSummary.fgtrByLevel[level] || 0
             const latestTokenEvent = tokenSummary.lastEventByLevel[level] || null
-            const hasEnoughBalance = parseFloat(usdtBalance) >= price
+            const combinedRequired = level === 1 && !isRegistered ? 10 : price
+            const hasEnoughBalance = parseFloat(usdtBalance) >= combinedRequired
             const isOpen = !!openLevelDetails[level]
 
             return (
               <div
                 key={level}
                 className={`activation-levels__card premium-card compact-level-card ${isActive ? 'activated' : ''} ${isNext ? 'next' : ''}`}
-                // style={{ backgroundImage: getLevelBackground(level) }}
-                style={{ background: getLevelBackground(level), backgroundAttachment: 'scroll' }}
+                style={{ background: getLevelBackground(level) }}
               >
                 <div className="compact-level-card__header">
                   <div className="compact-level-card__header-left">
@@ -1341,7 +1375,7 @@ const ActivationCenterPage = () => {
                 </div>
 
                 <div className={`compact-level-card__price ${hasEnoughBalance ? 'is-sufficient' : 'is-insufficient'}`}>
-                  {price} USDT
+                  {level === 1 && !isRegistered ? '10 USDT Onboarding' : `${price} USDT`}
                 </div>
 
                 <div className="compact-level-card__actions">
@@ -1361,7 +1395,11 @@ const ActivationCenterPage = () => {
                           onClick={() => handleApproveAndActivate(level)}
                           disabled={!canWriteHere || txStatus.loading || !hasEnoughBalance || networkWarning}
                         >
-                          {txStatus.loading ? 'Processing...' : 'Activate Orbit'}
+                          {txStatus.loading
+                            ? 'Processing...'
+                            : level === 1 && !isRegistered
+                              ? 'Register & Activate'
+                              : 'Activate Orbit'}
                         </button>
                       ) : (
                         <button className="locked-btn compact-action-btn" disabled>
@@ -1485,14 +1523,18 @@ const ActivationCenterPage = () => {
                           </div>
                           <div className="detail-row">
                             <span>Requirement:</span>
-                            <strong>{price} USDT</strong>
+                            <strong>
+                              {level === 1 && !isRegistered ? '10 USDT total' : `${price} USDT`}
+                            </strong>
                           </div>
                         </div>
 
                         <p className="level-description">
-                          {isNext
-                            ? `Activate for ${price} USDT to unlock ${orbitTypeForLevel} Orbit.`
-                            : `Requires Level ${level - 1} activation first.`}
+                          {level === 1 && !isRegistered
+                            ? 'This step registers your wallet and activates Level 1 in one flow.'
+                            : isNext
+                              ? `Activate for ${price} USDT to unlock ${orbitTypeForLevel} Orbit.`
+                              : `Requires Level ${level - 1} activation first.`}
                         </p>
                       </>
                     )}
@@ -1506,66 +1548,6 @@ const ActivationCenterPage = () => {
 
       <section className="activation-main-grid">
         <div className="activation-main-grid__left">
-          {!isRegistered && !isId1Wallet && canWriteHere && (
-            <section className="activation-registration-form glass-panel">
-              <div className="activation-section-heading">
-                <span className="activation-section-heading__eyebrow muted-text">Registration Required</span>
-                <h2 className="activation-section-heading__title">Complete protocol registration</h2>
-              </div>
-
-              <div className="registration-warning">
-                <div className="warning-header">Registration requires 10 USDT</div>
-                <div className="warning-details">
-                  <div>Your USDT Balance: <strong>{usdtBalance} USDT</strong></div>
-                  <div>Current Allowance: <strong>{allowance} USDT</strong></div>
-                </div>
-              </div>
-
-              {parseFloat(allowance) < 10 && (
-                <button
-                  className="approve-reg-btn"
-                  onClick={handleApproveForRegistration}
-                  disabled={txStatus.loading || networkWarning}
-                >
-                  {txStatus.loading ? 'Processing...' : 'Approve 10 USDT for Registration'}
-                </button>
-              )}
-
-              <div className="referrer-input-group">
-                <label className="referrer-label">Referrer Address (Optional)</label>
-                <input
-                  type="text"
-                  className="referrer-input"
-                  placeholder="0x000... (leave empty for no referrer)"
-                  value={referrer}
-                  onChange={(e) => setReferrer(e.target.value)}
-                />
-                <p className="referrer-hint">
-                  Your referrer will be: {referrer || 'No referrer (connected to the system ID)'}
-                </p>
-              </div>
-
-              <button
-                className="register-btn"
-                onClick={handleRegister}
-                disabled={
-                  txStatus.loading ||
-                  parseFloat(usdtBalance) < 10 ||
-                  parseFloat(allowance) < 10 ||
-                  networkWarning
-                }
-              >
-                {txStatus.loading ? 'Processing...' : 'Register (10 USDT)'}
-              </button>
-
-              {parseFloat(usdtBalance) < 10 && (
-                <div className="insufficient-funds-warning">
-                  ⚠ Insufficient USDT balance. Need 10 USDT.
-                </div>
-              )}
-            </section>
-          )}
-
           {!isRegistered && !isId1Wallet && !canWriteHere && (
             <section className="activation-registration-form glass-panel">
               <div className="activation-section-heading">
@@ -1582,7 +1564,7 @@ const ActivationCenterPage = () => {
               </div>
 
               <p className="soft-text">
-                To approve USDT, enter a referrer, register, or activate levels, return to your own space.
+                To enter a referrer, register, or activate levels, return to your own space.
               </p>
             </section>
           )}
@@ -1669,15 +1651,25 @@ const ActivationCenterPage = () => {
                     <span className="activation-notices__dot" />
                     <div>
                       <h3 className="activation-notices__title">
-                        {nextLevel ? `Level ${nextLevel}: ${levelPrices[nextLevel]} USDT required` : 'Maximum level achieved'}
+                        {nextLevel
+                          ? !isRegistered && nextLevel === 1
+                            ? 'Onboarding requires 10 USDT'
+                            : `Level ${nextLevel}: ${levelPrices[nextLevel]} USDT required`
+                          : 'Maximum level achieved'}
                       </h3>
                       <p className="activation-notices__text soft-text">
                         {nextLevel
-                          ? `Balance: ${usdtBalance} USDT. ${
-                              parseFloat(usdtBalance) >= parseFloat(levelPrices[nextLevel])
-                                ? 'Sufficient funds available.'
-                                : `Need ${(parseFloat(levelPrices[nextLevel]) - parseFloat(usdtBalance)).toFixed(2)} more USDT.`
-                            }`
+                          ? !isRegistered && nextLevel === 1
+                            ? `Balance: ${usdtBalance} USDT. ${
+                                parseFloat(usdtBalance) >= 10
+                                  ? 'Sufficient funds available for registration and Level 1.'
+                                  : `Need ${(10 - parseFloat(usdtBalance)).toFixed(2)} more USDT.`
+                              }`
+                            : `Balance: ${usdtBalance} USDT. ${
+                                parseFloat(usdtBalance) >= parseFloat(levelPrices[nextLevel])
+                                  ? 'Sufficient funds available.'
+                                  : `Need ${(parseFloat(levelPrices[nextLevel]) - parseFloat(usdtBalance)).toFixed(2)} more USDT.`
+                              }`
                           : 'All 10 levels are active. Open the Orbits page for deeper visibility into structure, receipts, and earnings flow.'}
                       </p>
                     </div>
@@ -1693,8 +1685,8 @@ const ActivationCenterPage = () => {
                         {isId1Wallet
                           ? 'You are the ID1 wallet. All levels remain active by protocol design.'
                           : referrer
-                          ? `Sponsored by ${referrer.slice(0, 8)}...${referrer.slice(-6)}`
-                          : 'No referrer provided. You are connected directly to the protocol.'}
+                            ? `Sponsored by ${referrer.slice(0, 8)}...${referrer.slice(-6)}`
+                            : 'No referrer provided. You are connected directly to the protocol.'}
                       </p>
                     </div>
                   </div>
@@ -1743,10 +1735,10 @@ const ActivationCenterPage = () => {
                       </div>
                     </div>
                   ) : (
-                    <div style={{ textAlign: 'center' }}>
-                      <div style={{ fontSize: '48px', marginBottom: '12px' }}>🌌</div>
-                      <div style={{ fontWeight: 'bold', marginBottom: '8px' }}>FFN Space</div>
-                      <div style={{ fontSize: '12px', opacity: 0.7 }}>Click to explore your orbit ecosystem</div>
+                    <div className="activation-center-stack">
+                      <div className="activation-space-icon">🌌</div>
+                      <div className="activation-space-title">FFN Space</div>
+                      <div className="activation-space-note">Click to explore your orbit ecosystem</div>
                     </div>
                   )}
                 </div>
@@ -1757,7 +1749,8 @@ const ActivationCenterPage = () => {
               </div>
             </div>
           </section>
-<button
+
+          <button
             type="button"
             className="activation-next-float"
             aria-label="Open next action"
@@ -1785,8 +1778,10 @@ const ActivationCenterPage = () => {
                   {!canWriteHere
                     ? "You are currently viewing another member's space. Progress and orbit state are visible, but wallet actions are disabled."
                     : nextLevel
-                    ? `Level ${nextLevel} requires ${levelPrices[nextLevel]} USDT and unlocks ${levelToOrbitType[nextLevel]} Orbit with new visibility and earning potential.`
-                    : 'You have activated all 10 levels. Explore the Orbits page to inspect your full network and earnings.'}
+                      ? !isRegistered && nextLevel === 1
+                        ? 'Complete onboarding to register this wallet and activate Level 1 in a single action.'
+                        : `Level ${nextLevel} requires ${levelPrices[nextLevel]} USDT and unlocks ${levelToOrbitType[nextLevel]} Orbit with new visibility and earning potential.`
+                      : 'You have activated all 10 levels. Explore the Orbits page to inspect your full network and earnings.'}
                 </p>
 
                 <div className="activation-modal__actions">
@@ -1801,13 +1796,16 @@ const ActivationCenterPage = () => {
                       disabled={
                         txStatus.loading ||
                         !canActivateLevel(nextLevel) ||
-                        parseFloat(usdtBalance) < parseFloat(levelPrices[nextLevel]) ||
+                        parseFloat(usdtBalance) <
+                          parseFloat(nextLevel === 1 && !isRegistered ? '10' : levelPrices[nextLevel]) ||
                         networkWarning
                       }
                     >
                       {txStatus.loading
                         ? 'Processing...'
-                        : `Activate Level ${nextLevel} (${levelPrices[nextLevel]} USDT)`}
+                        : nextLevel === 1 && !isRegistered
+                          ? 'Register & Activate Level 1'
+                          : `Activate Level ${nextLevel} (${levelPrices[nextLevel]} USDT)`}
                     </button>
                   ) : null}
 
@@ -1877,6 +1875,147 @@ const ActivationCenterPage = () => {
                     </button>
                   </div>
                 ) : null}
+              </div>
+            </div>
+          )}
+
+          {/* SECURITY NOTICE POPUP - Appears BEFORE Registration Modal */}
+          {showSecurityNotice && (
+            <div className="activation-overlay" role="dialog" aria-modal="true">
+              <div className="activation-modal activation-modal--security">
+                <div className="activation-modal__top">
+                  <div className="security-notice-badge">
+                    <FaExclamationTriangle size={18} />
+                    <span>Security & Legal Notice</span>
+                  </div>
+                  <button
+                    type="button"
+                    className="activation-modal__close"
+                    onClick={() => setShowSecurityNotice(false)}
+                    aria-label="Close security notice"
+                  >
+                    <FaTimesCircle />
+                  </button>
+                </div>
+
+                <h3 className="activation-modal__title security-notice-title">Important Notice — Please Read Carefully</h3>
+
+                <div className="security-notice-sections">
+                  <div className="security-notice-section">
+                    <div className="security-notice-section__icon">🔐</div>
+                    <div className="security-notice-section__content">
+                      <h4>Wallet Security</h4>
+                      <p>You are solely responsible for securing your wallet. Never share your private key or secret recovery phrase with anyone — including sponsors, support staff, or administrators. Fin Freedom Network will never request your private key.</p>
+                    </div>
+                  </div>
+
+                  <div className="security-notice-section">
+                    <div className="security-notice-section__icon">🔒</div>
+                    <div className="security-notice-section__content">
+                      <h4>Irreversible Registration</h4>
+                      <p>Wallet addresses cannot be changed after registration. If your wallet has been compromised, you must create a new wallet before registering.</p>
+                    </div>
+                  </div>
+
+                  <div className="security-notice-section">
+                    <div className="security-notice-section__icon">⛓️</div>
+                    <div className="security-notice-section__content">
+                      <h4>Decentralized Participation</h4>
+                      <p>Transactions are irreversible once confirmed on the blockchain. Always verify transaction details before signing.</p>
+                    </div>
+                  </div>
+                </div>
+
+                <div className="security-notice-acknowledgment">
+                  <p>By clicking "I Understand & Proceed", you confirm that you understand the above and accept full responsibility for your wallet security.</p>
+                </div>
+
+                <div className="activation-modal__actions activation-modal__actions--double">
+                  <button
+                    type="button"
+                    className="activation-modal__button activation-modal__button--ghost"
+                    onClick={() => setShowSecurityNotice(false)}
+                  >
+                    Cancel
+                  </button>
+                  <button
+                    type="button"
+                    className="activation-modal__button activation-modal__button--primary"
+                    onClick={handleProceedToRegistration}
+                  >
+                    I Understand & Proceed
+                  </button>
+                </div>
+              </div>
+            </div>
+          )}
+
+          {/* Existing Registration Modal - stays exactly the same */}
+          {isRegistrationModalOpen && (
+            <div className="activation-overlay" role="dialog" aria-modal="true">
+              <div className="activation-modal">
+                <div className="activation-modal__top">
+                  <h3 className="activation-modal__title">Complete Registration</h3>
+                  <button
+                    type="button"
+                    className="activation-modal__close"
+                    onClick={() => setIsRegistrationModalOpen(false)}
+                    aria-label="Close registration modal"
+                  >
+                    <FaTimesCircle />
+                  </button>
+                </div>
+
+                <p className="activation-modal__text">
+                  You are not registered yet. Complete registration to activate Level 1 and start your journey.
+                </p>
+
+                <div className="registration-warning registration-warning--spaced">
+                  <div className="warning-header">Onboarding Details</div>
+                  <div className="warning-details">
+                    <div>Registration + Level 1: <strong>10 USDT total</strong></div>
+                    <div>Your USDT Balance: <strong>{usdtBalance} USDT</strong></div>
+                    <div>Current Allowance: <strong>{allowance} USDT</strong></div>
+                  </div>
+                </div>
+
+                <div className="referrer-input-group">
+                  <label className="referrer-label">Referrer Address (Optional)</label>
+                  <input
+                    type="text"
+                    className="referrer-input"
+                    placeholder="0x000... (leave empty for no referrer)"
+                    value={registrationReferrer}
+                    onChange={(e) => setRegistrationReferrer(e.target.value)}
+                  />
+                  <p className="referrer-hint">
+                    Your referrer will be: {registrationReferrer || 'No referrer (connected to the system ID)'}
+                  </p>
+                </div>
+
+                {parseFloat(usdtBalance) < 10 && (
+                  <div className="insufficient-funds-warning">
+                    ⚠ Insufficient USDT balance. Need 10 USDT for onboarding.
+                  </div>
+                )}
+
+                <div className="activation-modal__actions">
+                  <button
+                    type="button"
+                    className="activation-modal__button activation-modal__button--ghost"
+                    onClick={() => setIsRegistrationModalOpen(false)}
+                  >
+                    Close
+                  </button>
+                  <button
+                    type="button"
+                    className="activation-modal__button activation-modal__button--primary"
+                    onClick={handleRegisterFromModal}
+                    disabled={txStatus.loading || parseFloat(usdtBalance) < 10 || networkWarning}
+                  >
+                    {txStatus.loading ? 'Processing...' : 'Register & Activate Level 1'}
+                  </button>
+                </div>
               </div>
             </div>
           )}

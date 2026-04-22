@@ -228,7 +228,7 @@ const DashboardPage = () => {
           CONTRACT_ADDRESSES?.REGISTRATION ||
           env.VITE_REGISTRATION_ADDRESS ||
           '0x782FE376de66a3866e972D119a4a5D6E6B897Bac',
-        note: 'Identity entry, registration state, and participant lookup.',
+        note: 'Manages identity, registration status, and participant records.',
       },
       {
         key: 'level-manager',
@@ -237,7 +237,7 @@ const DashboardPage = () => {
           CONTRACT_ADDRESSES?.LEVEL_MANAGER ||
           env.VITE_LEVELMANAGER_ADDRESS ||
           '0xb4605C2a9B7e591240Eff49B13D7B638C15e6168',
-        note: 'Level progression control, treasury routing, and system orchestration.',
+        note: 'Controls level upgrades, reward routing, and system logic.',
       },
       {
         key: 'escrow',
@@ -246,7 +246,7 @@ const DashboardPage = () => {
           CONTRACT_ADDRESSES?.ESCROW ||
           env.VITE_ESCROW_ADDRESS ||
           '0x605B01408548655b5C73AF48c5f5B4A780BbB7eB',
-        note: 'Reserved upgrade liquidity held for deterministic release paths.',
+        note: 'Holds reserved liquidity for automated upgrades.',
       },
       {
         key: 'p4',
@@ -255,7 +255,7 @@ const DashboardPage = () => {
           CONTRACT_ADDRESSES?.P4_ORBIT ||
           env.VITE_P4_ORBIT_ADDRESS ||
           '0x147d5b7269f9BC6c27E31a3BDF352fe4d315847F',
-        note: 'Compact orbit structure used for fast-entry positioning.',
+        note: 'Entry-level orbit with 4 positions.',
       },
       {
         key: 'p12',
@@ -264,7 +264,7 @@ const DashboardPage = () => {
           CONTRACT_ADDRESSES?.P12_ORBIT ||
           env.VITE_P12_ORBIT_ADDRESS ||
           '0xd2E2605e5b2326272B53A5A9a7f5F0e3F648E6Ce',
-        note: 'Growth orbit structure with broader layered movement.',
+        note: 'Growth orbit with 12 positions for broader reach.',
       },
       {
         key: 'p39',
@@ -273,7 +273,7 @@ const DashboardPage = () => {
           CONTRACT_ADDRESSES?.P39_ORBIT ||
           env.VITE_P39_ORBIT_ADDRESS ||
           '0xFDb2dbfb5D86bf05BEa334F84F8672aEb0eafe6a',
-        note: 'Expansion orbit structure designed for deeper progression visibility.',
+        note: 'Expansion orbit with 39 positions for deeper progression.',
       },
     ].map((item) => ({
       ...item,
@@ -438,9 +438,9 @@ const DashboardPage = () => {
       feed.push({
         id: 'participants',
         icon: UserPlus,
-        iconColor: '#22c55e',
-        title: 'Participant count updated',
-        description: `${formatNumber(totalParticipants, 0)} total registered participants`,
+        iconColorClass: 'text-success',
+        title: 'New participants joined',
+        description: `${formatNumber(totalParticipants, 0)} total registered members`,
         time: formatRelativeTime(lastUpdated),
         amount: null,
       })
@@ -451,9 +451,9 @@ const DashboardPage = () => {
       feed.push({
         id: 'liquid',
         icon: Coins,
-        iconColor: '#1de9b6',
-        title: 'Liquid earnings recorded',
-        description: `$${formatNumber(totalLiquid)} total liquid paid across receipts`,
+        iconColorClass: 'text-glow-teal',
+        title: 'Liquid earnings distributed',
+        description: `$${formatNumber(totalLiquid)} total paid across receipts`,
         time: 'All time',
         amount: totalLiquid,
       })
@@ -463,8 +463,8 @@ const DashboardPage = () => {
       feed.push({
         id: 'receipts',
         icon: Receipt,
-        iconColor: '#f59e0b',
-        title: 'Receipt ledger growing',
+        iconColorClass: 'text-warning',
+        title: 'Receipt ledger updated',
         description: `${formatNumber(communityStats.totalReceipts, 0)} payout receipts recorded`,
         time: 'All time',
         amount: null,
@@ -475,9 +475,9 @@ const DashboardPage = () => {
       feed.push({
         id: 'escrow',
         icon: PiggyBank,
-        iconColor: '#8b5cf6',
-        title: 'Current escrow visible',
-        description: `$${formatNumber(contractBalances.ESCROW)} currently held in escrow`,
+        iconColorClass: 'text-glow-purple',
+        title: 'Escrow balance updated',
+        description: `$${formatNumber(contractBalances.ESCROW)} held for auto-upgrades`,
         time: formatRelativeTime(lastUpdated),
         amount: Number(contractBalances.ESCROW || 0),
       })
@@ -487,9 +487,9 @@ const DashboardPage = () => {
       feed.push({
         id: 'announcement',
         icon: Megaphone,
-        iconColor: '#4da3ff',
-        title: announcements[0].title || 'New announcement',
-        description: announcements[0].content || 'Community update available',
+        iconColorClass: 'text-glow-blue',
+        title: announcements[0].title || 'Community update',
+        description: announcements[0].content || 'New announcement available',
         time: announcements[0].createdAt
           ? formatRelativeTime(announcements[0].createdAt)
           : 'Recent',
@@ -558,9 +558,7 @@ const DashboardPage = () => {
     return fees + liquid
   }, [totalFees, communityStats.totalLiquid])
 
-  const timeSinceUpdate = useMemo(() => {
-    return formatRelativeTime(lastUpdated)
-  }, [lastUpdated])
+  const timeSinceUpdate = useMemo(() => formatRelativeTime(lastUpdated), [lastUpdated])
 
   return (
     <section className="dashboard-page">
@@ -568,16 +566,14 @@ const DashboardPage = () => {
         <div className="dashboard-hero__content">
           <div className="dashboard-hero__eyebrow dashboard-surface dashboard-surface--chip">
             <span className="dashboard-hero__eyebrow-dot" />
-            <span className="dashboard-hero__eyebrow-text">
-              Real-time protocol intelligence
-            </span>
+            <span className="dashboard-hero__eyebrow-text">Live Community Data</span>
           </div>
 
           <div className="dashboard-hero__text-block">
-            <h1 className="dashboard-hero__title">Protocol Intelligence Dashboard</h1>
+            <h1 className="dashboard-hero__title">Community Real-Time Dashboard</h1>
             <p className="dashboard-hero__description soft-text">
-              Production-grade visibility into contract state, treasury routing, participant growth,
-              announcements, and live network health across the Fin Freedom ecosystem.
+              Real-time visibility into contract state, treasury allocation, participant growth,
+              and network health — all powered by on-chain data.
             </p>
           </div>
 
@@ -614,10 +610,9 @@ const DashboardPage = () => {
 
             <button
               type="button"
-              className="dashboard-hero__chip dashboard-surface dashboard-surface--chip"
+              className="dashboard-hero__chip dashboard-surface dashboard-surface--chip dashboard-hero__chip--action"
               onClick={refreshAllData}
               disabled={isRefreshing}
-              style={{ cursor: 'pointer' }}
             >
               <RefreshCw size={14} className={isRefreshing ? 'spin' : ''} />
               <span>Updated {timeSinceUpdate}</span>
@@ -682,10 +677,10 @@ const DashboardPage = () => {
             <span className="dashboard-stats__icon">
               <CircleDollarSign size={20} className="text-glow-teal" />
             </span>
-            <span className="dashboard-stats__label soft-text">Protocol Volume</span>
+            <span className="dashboard-stats__label soft-text">Total Value Locked</span>
             <strong className="dashboard-stats__value">${formatNumber(totalProtocolVolume)}</strong>
             <small className="dashboard-stats__note soft-text">
-              Combined operational, pool, and liquid flow visibility.
+              Total USDT value across all protocol contracts.
             </small>
           </div>
 
@@ -693,32 +688,32 @@ const DashboardPage = () => {
             <span className="dashboard-stats__icon">
               <Users size={20} className="text-glow-blue" />
             </span>
-            <span className="dashboard-stats__label soft-text">Total Participants</span>
+            <span className="dashboard-stats__label soft-text">Registered Members</span>
             <strong className="dashboard-stats__value">{formatNumber(totalParticipants, 0)}</strong>
             <small className="dashboard-stats__note soft-text">
-              Registered members currently visible through the read layer.
+              Verified participants in the ecosystem.
             </small>
           </div>
 
           <div className="dashboard-stats__card dashboard-surface">
             <span className="dashboard-stats__icon">
-              <Building2 size={20} style={{ color: '#f59e0b' }} />
+              <Building2 size={20} className="text-warning" />
             </span>
-            <span className="dashboard-stats__label soft-text">NFT Pool (80%)</span>
+            <span className="dashboard-stats__label soft-text">NFT Reward Pool (80%)</span>
             <strong className="dashboard-stats__value">${formatNumber(nftBalance)}</strong>
             <small className="dashboard-stats__note soft-text">
-              Founder distribution pool visibility.
+              Reserved for NFT member distributions.
             </small>
           </div>
 
           <div className="dashboard-stats__card dashboard-surface">
             <span className="dashboard-stats__icon">
-              <Wallet size={20} style={{ color: '#8b5cf6' }} />
+              <Wallet size={20} className="text-glow-purple" />
             </span>
-            <span className="dashboard-stats__label soft-text">Operations (20%)</span>
+            <span className="dashboard-stats__label soft-text">Operations Treasury (20%)</span>
             <strong className="dashboard-stats__value">${formatNumber(opsBalance)}</strong>
             <small className="dashboard-stats__note soft-text">
-              Operational treasury routing balance.
+              Allocated for ecosystem operations.
             </small>
           </div>
         </div>
@@ -728,8 +723,8 @@ const DashboardPage = () => {
         <div className="dashboard-main-grid__left">
           <section className="dashboard-contracts dashboard-surface">
             <div className="dashboard-section-heading">
-              <span className="dashboard-section-heading__eyebrow soft-text">Contract Directory</span>
-              <h2 className="dashboard-section-heading__title">Core Smart Contract Addresses</h2>
+              <span className="dashboard-section-heading__eyebrow soft-text">On-Chain Reference</span>
+              <h2 className="dashboard-section-heading__title">Smart Contract Directory</h2>
             </div>
 
             <div className="dashboard-contracts__grid">
@@ -759,8 +754,8 @@ const DashboardPage = () => {
 
           <section className="dashboard-treasury dashboard-surface">
             <div className="dashboard-section-heading">
-              <span className="dashboard-section-heading__eyebrow soft-text">Treasury Visibility</span>
-              <h2 className="dashboard-section-heading__title">Contract Balances</h2>
+              <span className="dashboard-section-heading__eyebrow soft-text">Treasury</span>
+              <h2 className="dashboard-section-heading__title">Contract USDT Balances</h2>
             </div>
 
             <div className="dashboard-treasury__grid">
@@ -772,22 +767,13 @@ const DashboardPage = () => {
               ))}
             </div>
           </section>
-
-          {/* <section className="dashboard-guidance dashboard-surface">
-            <div className="dashboard-section-heading">
-              <span className="dashboard-section-heading__eyebrow soft-text">Growth</span>
-              <h2 className="dashboard-section-heading__title">Recent Activity</h2>
-            </div>
-
-            <DashboardLineChart series={growthData.series} />
-          </section> */}
         </div>
 
         <div className="dashboard-main-grid__right">
           <section className="dashboard-activity dashboard-surface">
             <div className="dashboard-section-heading">
-              <span className="dashboard-section-heading__eyebrow soft-text">Live Feed</span>
-              <h2 className="dashboard-section-heading__title">Network Activity</h2>
+              <span className="dashboard-section-heading__eyebrow soft-text">Activity</span>
+              <h2 className="dashboard-section-heading__title">Recent Network Activity</h2>
             </div>
 
             <div className="dashboard-activity__list">
@@ -798,7 +784,7 @@ const DashboardPage = () => {
                   return (
                     <div key={item.id} className="dashboard-activity__item dashboard-surface dashboard-surface--inner">
                       <span className="dashboard-activity__icon">
-                        <Icon size={18} style={{ color: item.iconColor }} />
+                        <Icon size={18} className={item.iconColorClass} />
                       </span>
 
                       <div className="dashboard-activity__content">
@@ -826,8 +812,8 @@ const DashboardPage = () => {
 
       <section className="dashboard-notices dashboard-surface dashboard-notices--wide">
         <div className="dashboard-section-heading">
-          <span className="dashboard-section-heading__eyebrow soft-text">Updates & Status</span>
-          <h2 className="dashboard-section-heading__title">Announcements & System Health</h2>
+          <span className="dashboard-section-heading__eyebrow soft-text">Status</span>
+          <h2 className="dashboard-section-heading__title">Announcements & Health</h2>
         </div>
 
         <div className="dashboard-notices__list dashboard-notices__list--wide">
@@ -913,30 +899,6 @@ const DashboardPage = () => {
           ) : null}
         </div>
       </section>
-
-      <style>{`
-        @keyframes spin {
-          from { transform: rotate(0deg); }
-          to { transform: rotate(360deg); }
-        }
-
-        .spin {
-          animation: spin 1s linear infinite;
-        }
-
-        .text-glow-teal { color: var(--glow-teal); }
-        .text-glow-blue { color: var(--glow-blue); }
-        .text-success { color: var(--success); }
-        .text-warning { color: var(--warning); }
-        .text-info { color: var(--info); }
-
-        .dashboard-activity__amount {
-          font-size: 14px;
-          font-weight: 700;
-          color: var(--glow-teal);
-          margin-top: 4px;
-        }
-      `}</style>
     </section>
   )
 }

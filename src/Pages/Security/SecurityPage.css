@@ -1,21 +1,38 @@
+/* =========================================================
+   SECURITY PAGE - MAIN LAYOUT
+   ========================================================= */
+
 .security-page {
   display: flex;
   flex-direction: column;
-  gap: var(--space-7);
+  gap: clamp(20px, 2.8vw, 32px);
+  width: 100%;
+  padding: clamp(16px, 2vw, 24px) clamp(16px, 3vw, 32px) var(--space-7);
+  margin: 0 auto;
 }
+
+.security-page.locked {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 60vh;
+}
+
+/* =========================================================
+   HERO SECTION
+   ========================================================= */
 
 .security-hero {
   display: grid;
   grid-template-columns: 1fr;
-  gap: var(--space-6);
+  gap: clamp(20px, 2.8vw, 32px);
   align-items: stretch;
-  padding-top: var(--space-4);
 }
 
 .security-hero__content {
   display: flex;
   flex-direction: column;
-  gap: var(--space-5);
+  gap: clamp(16px, 2.4vw, 24px);
 }
 
 .security-hero__eyebrow {
@@ -47,7 +64,7 @@
 .security-hero__text-block {
   display: flex;
   flex-direction: column;
-  gap: var(--space-4);
+  gap: clamp(12px, 1.8vw, 16px);
 }
 
 .security-hero__title {
@@ -64,6 +81,12 @@
   max-width: 620px;
 }
 
+.security-inline-meta {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+}
+
 .security-hero__chips {
   display: flex;
   flex-wrap: wrap;
@@ -71,30 +94,34 @@
 }
 
 .security-hero__chip {
-  min-height: 36px;
+  min-height: 38px;
   padding: 0 14px;
   border-radius: 999px;
   display: inline-flex;
   align-items: center;
+  gap: 8px;
   font-size: 12px;
   font-weight: 700;
   color: var(--text-secondary);
 }
 
 .security-hero__visual,
-.security-checklist,
+.security-responsibility,
+.security-transparency,
 .security-risks,
-.security-status,
-.security-visual {
-  padding: 18px;
+.security-best-practices,
+.security-support {
+  padding: clamp(18px, 2.4vw, 24px);
   background: var(--glass-bg-strong);
   display: flex;
   flex-direction: column;
-  gap: 16px;
+  gap: 18px;
+  border-radius: 24px;
+  border: 1px solid var(--glass-border);
+  box-shadow: var(--glass-shadow);
 }
 
-.security-hero__visual-box,
-.security-visual__box {
+.security-hero__visual-box {
   min-height: 220px;
   border-radius: 18px;
   display: flex;
@@ -103,18 +130,36 @@
   text-align: center;
   background:
     radial-gradient(circle at center, rgba(77, 163, 255, 0.08), transparent 60%),
-    rgba(255, 255, 255, 0.03);
+    var(--surface-1);
   border: 1px dashed var(--border-strong);
   color: var(--text-secondary);
   font-size: 14px;
   font-weight: 600;
 }
 
-.security-hero__visual-note,
-.security-visual__note {
+.security-hero__visual-stack {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 12px;
+}
+
+.security-hero__visual-icon {
+  color: var(--glow-teal);
+}
+
+.security-hero__visual-icon.alt {
+  color: var(--glow-blue);
+}
+
+.security-hero__visual-note {
   font-size: 12px;
   line-height: 1.6;
 }
+
+/* =========================================================
+   SECTION HEADINGS
+   ========================================================= */
 
 .security-section-heading {
   display: flex;
@@ -126,6 +171,9 @@
   font-size: 11px;
   text-transform: uppercase;
   letter-spacing: 0.08em;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
 }
 
 .security-section-heading__title {
@@ -136,101 +184,689 @@
   color: var(--text-primary);
 }
 
+/* =========================================================
+   MAIN GRID
+   ========================================================= */
+
 .security-main-grid {
   display: grid;
   grid-template-columns: 1fr;
-  gap: 14px;
+  gap: 20px;
 }
 
 .security-main-grid__left,
 .security-main-grid__right {
   display: flex;
   flex-direction: column;
-  gap: 14px;
+  gap: 20px;
 }
 
-.security-checklist__list,
-.security-status__list {
+/* =========================================================
+   RESPONSIBILITY SECTION
+   ========================================================= */
+
+.responsibility-list {
   display: flex;
   flex-direction: column;
-  gap: 12px;
+  gap: 16px;
 }
 
-.security-checklist__item,
-.security-risk,
-.security-status__card {
-  padding: 14px;
-  background: var(--surface-1);
-}
-
-.security-checklist__item {
+.responsibility-item {
   display: flex;
-  align-items: flex-start;
-  gap: 12px;
+  gap: 14px;
+  padding: 16px;
+  background: var(--surface-1);
+  border: 1px solid var(--border-soft);
+  border-radius: 18px;
 }
 
-.security-checklist__icon {
-  width: 40px;
-  height: 40px;
+.responsibility-icon {
+  width: 44px;
+  height: 44px;
   border-radius: 14px;
   display: inline-flex;
   align-items: center;
   justify-content: center;
   background: var(--surface-2);
   border: 1px solid var(--border-soft);
-  font-size: 18px;
+  color: var(--glow-teal);
   flex-shrink: 0;
 }
 
-.security-checklist__title {
+.responsibility-title {
   font-size: 15px;
   font-weight: 700;
   color: var(--text-primary);
   margin-bottom: 6px;
 }
 
-.security-checklist__text {
+.responsibility-text {
+  font-size: 13px;
+  line-height: 1.65;
+}
+
+/* =========================================================
+   TRANSPARENCY SECTION
+   ========================================================= */
+
+.transparency-list {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+
+.transparency-item {
+  display: flex;
+  align-items: flex-start;
+  gap: 12px;
+  padding: 14px;
+  background: var(--surface-1);
+  border: 1px solid var(--border-soft);
+  border-radius: 16px;
+}
+
+.transparency-icon {
+  flex-shrink: 0;
+  margin-top: 2px;
+}
+
+.transparency-icon.success {
+  color: var(--glow-teal);
+}
+
+.transparency-item strong {
+  display: block;
+  color: var(--text-primary);
+  margin-bottom: 4px;
+}
+
+/* =========================================================
+   RISKS SECTION
+   ========================================================= */
+
+.risks-list {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+
+.risk-item {
+  display: flex;
+  gap: 14px;
+  padding: 16px;
+  background: var(--surface-1);
+  border: 1px solid var(--border-soft);
+  border-radius: 18px;
+}
+
+.risk-icon {
+  flex-shrink: 0;
+  margin-top: 2px;
+}
+
+.risk-icon.danger {
+  color: var(--danger);
+}
+
+.risk-icon.warning {
+  color: var(--warning);
+}
+
+.risk-icon.info {
+  color: var(--glow-blue);
+}
+
+.risk-title {
+  font-size: 14px;
+  font-weight: 700;
+  color: var(--text-primary);
+  display: block;
+  margin-bottom: 4px;
+}
+
+.risk-text {
   font-size: 13px;
   line-height: 1.6;
 }
 
-.security-risks__grid {
-  display: grid;
-  grid-template-columns: 1fr;
+.risk-disclaimer {
+  margin-top: 8px;
+  padding: 16px;
+  border-radius: 16px;
+  background: rgba(239, 68, 68, 0.06);
+  border: 1px solid rgba(239, 68, 68, 0.15);
+  display: flex;
   gap: 12px;
+  align-items: flex-start;
 }
 
-.security-risk__label,
-.security-status__label {
-  font-size: 11px;
-  text-transform: uppercase;
-  letter-spacing: 0.05em;
+.risk-disclaimer p {
+  margin: 0;
+  font-size: 12px;
+  line-height: 1.6;
+}
+
+/* =========================================================
+   BEST PRACTICES SECTION
+   ========================================================= */
+
+.practices-list {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+
+.practice-item {
+  display: flex;
+  gap: 14px;
+  align-items: flex-start;
+  padding: 14px;
+  background: var(--surface-1);
+  border: 1px solid var(--border-soft);
+  border-radius: 16px;
+}
+
+.practice-number {
+  width: 32px;
+  height: 32px;
+  border-radius: 10px;
+  background: linear-gradient(135deg, var(--glow-teal), var(--glow-blue));
+  color: #07111f;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  font-weight: 800;
+  font-size: 14px;
+  flex-shrink: 0;
+}
+
+.practice-item strong {
+  display: block;
+  color: var(--text-primary);
+  margin-bottom: 4px;
+}
+
+/* =========================================================
+   SUPPORT SECTION
+   ========================================================= */
+
+.support-info {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+
+.support-note {
+  padding: 14px;
+  border-radius: 14px;
+  background: rgba(77, 163, 255, 0.08);
+  border: 1px solid rgba(77, 163, 255, 0.15);
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  font-size: 13px;
+}
+
+/* =========================================================
+   NETWORK WARNING
+   ========================================================= */
+
+.network-warning {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  padding: 16px 20px;
+  border-radius: 20px;
+  border: 1px solid rgba(239, 68, 68, 0.35);
+  background: rgba(239, 68, 68, 0.08);
+  flex-wrap: wrap;
+}
+
+.network-warning__body {
+  flex: 1 1 240px;
+}
+
+.network-warning__body p {
+  margin-top: 4px;
+}
+
+/* =========================================================
+   BUTTONS
+   ========================================================= */
+
+.connect-wallet-btn,
+.switch-network-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  min-height: 46px;
+  padding: 0 20px;
+  border-radius: 14px;
+  background: linear-gradient(135deg, var(--glow-teal), var(--glow-blue));
+  color: #07111f;
+  font-weight: 700;
+  border: none;
+  cursor: pointer;
+  width: fit-content;
+}
+
+.connect-wallet-btn {
+  width: fit-content;
+}
+
+/* =========================================================
+   LOADING STATE
+   ========================================================= */
+
+.spinner {
+  width: 40px;
+  height: 40px;
+  border: 3px solid rgba(77, 163, 255, 0.2);
+  border-top-color: var(--glow-blue);
+  border-radius: 50%;
+  animation: security-spin 0.8s linear infinite;
+  margin: 0 auto 16px;
+}
+
+@keyframes security-spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+.loading-container {
+  text-align: center;
+  padding: 60px;
+}
+
+/* =========================================================
+   TEXT COLORS
+   ========================================================= */
+
+.text-success {
+  color: var(--success);
+}
+
+.text-warning {
+  color: var(--warning);
+}
+
+.text-danger {
+  color: var(--danger);
+}
+
+.small {
+  font-size: 12px;
+}
+
+.muted-text {
   color: var(--text-muted);
 }
 
-.security-risk__value,
-.security-status__value {
-  display: block;
-  margin-top: 6px;
-  font-size: 15px;
-  font-weight: 700;
-  color: var(--text-primary);
+.soft-text {
+  color: var(--text-secondary);
 }
 
-@media (min-width: 640px) {
-  .security-risks__grid {
-    grid-template-columns: repeat(2, minmax(0, 1fr));
-  }
-}
+/* =========================================================
+   RESPONSIVE
+   ========================================================= */
 
 @media (min-width: 1024px) {
   .security-hero {
     grid-template-columns: minmax(0, 1.02fr) minmax(360px, 0.98fr);
-    gap: var(--space-7);
+    gap: clamp(24px, 4vw, 40px);
   }
 
   .security-main-grid {
     grid-template-columns: minmax(0, 1.15fr) minmax(320px, 0.85fr);
     align-items: start;
+  }
+}
+
+@media (max-width: 768px) {
+  .security-page {
+    padding: 14px;
+  }
+
+  .network-warning {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+
+  .switch-network-btn {
+    width: 100%;
+  }
+
+  .responsibility-item,
+  .transparency-item,
+  .risk-item,
+  .practice-item {
+    flex-direction: column;
+  }
+
+  .responsibility-icon {
+    width: 40px;
+    height: 40px;
+  }
+
+  .practice-number {
+    width: 28px;
+    height: 28px;
+    font-size: 12px;
+  }
+}
+
+/* =========================================================
+   LIGHT MODE OUTLINE ENHANCEMENTS
+   ========================================================= */
+
+[data-theme="light"] .security-hero__visual,
+[data-theme="light"] .security-responsibility,
+[data-theme="light"] .security-transparency,
+[data-theme="light"] .security-risks,
+[data-theme="light"] .security-best-practices,
+[data-theme="light"] .security-support {
+  border: 1px solid rgba(100, 120, 150, 0.4);
+  background: rgba(255, 255, 255, 0.96);
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.04);
+}
+
+[data-theme="light"] .responsibility-item,
+[data-theme="light"] .transparency-item,
+[data-theme="light"] .risk-item,
+[data-theme="light"] .practice-item {
+  background: rgba(255, 255, 255, 0.94);
+  border: 1px solid rgba(100, 120, 150, 0.3);
+}
+
+[data-theme="light"] .responsibility-icon {
+  background: rgba(248, 250, 252, 0.98);
+  border: 1px solid rgba(100, 120, 150, 0.25);
+}
+
+[data-theme="light"] .security-hero__chip {
+  background: rgba(255, 255, 255, 0.94);
+  border: 1px solid rgba(100, 120, 150, 0.3);
+  color: #1a2a3a;
+}
+
+[data-theme="light"] .risk-disclaimer {
+  background: rgba(239, 68, 68, 0.06);
+  border: 1px solid rgba(239, 68, 68, 0.2);
+}
+
+[data-theme="light"] .support-note {
+  background: rgba(77, 163, 255, 0.08);
+  border: 1px solid rgba(77, 163, 255, 0.2);
+}
+
+[data-theme="light"] .security-hero__title,
+[data-theme="light"] .security-section-heading__title,
+[data-theme="light"] .responsibility-title,
+[data-theme="light"] .transparency-item strong,
+[data-theme="light"] .risk-title,
+[data-theme="light"] .practice-item strong {
+  color: #0f172a;
+}
+
+[data-theme="light"] .security-hero__description,
+[data-theme="light"] .responsibility-text,
+[data-theme="light"] .risk-text,
+[data-theme="light"] .soft-text {
+  color: #475569;
+}
+
+[data-theme="light"] .security-hero__visual-box {
+  background:
+    radial-gradient(circle at center, rgba(77, 163, 255, 0.08), transparent 60%),
+    rgba(255, 255, 255, 0.96);
+  border: 1px solid rgba(100, 120, 150, 0.25);
+}
+
+/* Hover effects light mode */
+@media (hover: hover) {
+  [data-theme="light"] .responsibility-item:hover,
+  [data-theme="light"] .transparency-item:hover,
+  [data-theme="light"] .risk-item:hover,
+  [data-theme="light"] .practice-item:hover {
+    border-color: rgba(77, 163, 255, 0.5);
+    background: rgba(255, 255, 255, 0.98);
+    transition: all 0.2s ease;
+  }
+}
+
+/* =========================================================
+   CARD SPACING FIX - No walls attached
+   ========================================================= */
+
+.security-hero,
+.security-main-grid,
+.network-warning {
+  width: 100%;
+  max-width: 100%;
+  margin: 0;
+}
+
+.security-main-grid__left > *,
+.security-main-grid__right > * {
+  margin: 0;
+}
+
+/* Ensure all sections have breathing room */
+.security-responsibility,
+.security-transparency,
+.security-risks,
+.security-best-practices,
+.security-support {
+  margin: 0;
+}
+
+/* Remove any leftover profile lock styles that might still be referenced */
+.lock-screen,
+.lock-setup,
+.lock-status,
+.lock-status-indicator,
+.lock-actions,
+.lock-now-btn,
+.remove-lock-btn,
+.logout-btn,
+.lock-input,
+.lock-error,
+.lock-screen__icon,
+.lock-screen__title,
+.modal-overlay,
+.modal-content,
+.modal-icon,
+.modal-input,
+.modal-error,
+.modal-confirm,
+.modal-close,
+.coming-soon-section,
+.coming-soon-header,
+.coming-soon-badge,
+.toggle-switch,
+.toggle-slider,
+.setting-item,
+.setting-select,
+.setting-info,
+.setting-label,
+.setting-desc,
+.settings-list,
+.settings-note,
+.whitelist-add,
+.whitelist-input,
+.whitelist-list,
+.whitelist-item,
+.whitelist-address,
+.whitelist-actions,
+.whitelist-note,
+.whitelist-empty,
+.copy-address-btn,
+.add-address-btn,
+.save-settings-btn,
+.security-score,
+.score-circle,
+.score-value,
+.score-label,
+.score-status,
+.security-checklist,
+.security-checklist__list,
+.security-checklist__item,
+.security-checklist__icon,
+.security-checklist__title,
+.security-checklist__text,
+.tips-list,
+.tip-item,
+.tip-icon,
+.security-risks__grid,
+.security-risk,
+.risk-icon,
+.security-risk__label,
+.security-risk__value,
+.security-risk__desc {
+  /* These classes are removed or no longer used */
+  display: none;
+}
+
+
+
+
+/* =========================================================
+   FULL WIDTH SECTION - Best Practices + Need Help
+   ========================================================= */
+
+.security-fullwidth-section {
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+  width: 100%;
+  margin-top: 0;
+}
+
+/* Remove the old right column best practices since we moved it */
+.security-main-grid__right .security-best-practices {
+  display: none;
+}
+
+/* For desktop - ensure full width */
+@media (min-width: 1024px) {
+  .security-fullwidth-section {
+    width: 100%;
+    max-width: 100%;
+  }
+  
+  .security-best-practices,
+  .security-support {
+    width: 100%;
+  }
+}
+
+/* Adjust main grid when right column is empty */
+.security-main-grid__right {
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+}
+
+/* Remove any leftover styles */
+.security-best-practices {
+  margin: 0;
+}
+
+.security-support {
+  margin: 0;
+}
+
+
+
+
+
+
+
+
+
+
+
+/* =========================================================
+   TRANSPARENT IMAGE AS BACKGROUND - FIXED
+   ========================================================= */
+
+.security-hero__visual {
+  position: relative;
+  overflow: hidden;
+}
+
+.security-hero__visual::before {
+  content: '';
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  width: 580px;
+  height: 580px;
+  background-image: url('/assets/images/security-hero-image.png');
+  background-size: contain;
+  background-repeat: no-repeat;
+  background-position: center;
+  opacity: 0.25;
+  pointer-events: none;
+  z-index: 0;
+}
+
+/* Dark mode - slightly higher opacity for visibility */
+[data-theme="dark"] .security-hero__visual::before {
+  opacity: 0.80;
+}
+
+/* Light mode - adjust opacity */
+[data-theme="light"] .security-hero__visual::before {
+  opacity: 1;
+  border: 1px dashed var(--border-strong);
+}
+
+/* Remove the background from visual-box so image shows through */
+.security-hero__visual-box {
+  position: relative;
+  z-index: 1;
+  background: transparent !important;
+  /* border: 1px dashed var(--border-strong); */
+  border: none
+}
+
+/* Keep the radial gradient but make it transparent enough */
+.security-hero__visual-box {
+  background: radial-gradient(circle at center, rgba(77, 163, 255, 0.06), transparent 100%) !important;
+}
+
+/* Ensure content stays above */
+.security-info-card,
+.security-hero__visual-note {
+  position: relative;
+  z-index: 1;
+  background: transparent
+}
+
+/* Adjust for different screen sizes */
+@media (max-width: 1024px) {
+  .security-hero__visual::before {
+    width: 300px;
+    height: 300px;
+  }
+}
+
+@media (max-width: 768px) {
+  .security-hero__visual::before {
+    width: 230px;
+    height: 230px;
+    background-size: cover;
+    overflow: visible;
+  }
+}
+
+@media (max-width: 480px) {
+  .security-hero__visual::before {
+    width: 140px;
+    height: 140px;
   }
 }

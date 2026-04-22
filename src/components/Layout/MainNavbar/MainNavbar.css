@@ -1,8 +1,66 @@
-.main-navbar {
+/* .main-navbar {
   position: relative;
   padding-top: var(--space-3);
   padding-bottom: var(--space-3);
 }
+
+.main-navbar__inner {
+  min-height: var(--nav-height);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-3);
+  padding: 10px 12px;
+  border-radius: var(--radius-xl);
+  background: var(--glass-bg-strong);
+  overflow: visible;
+} */
+
+
+/* .main-navbar {
+  position: fixed;
+  top: 10;
+  left: 0;
+  right: 0;
+  z-index: 1000;
+  padding-top: 12px;
+  padding-bottom: 12px;
+  background: transparent;
+} */
+
+
+/* .main-navbar {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  z-index: 1000;
+  padding-top: 12px;
+  padding-bottom: 22px;
+  background: transparent;
+  transition: transform 0.3s ease;
+} */
+
+.main-navbar {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  z-index: 1000;
+  padding-top: 12px;
+  padding-bottom: 12px;
+  background: transparent;
+  transition: top 0.3s ease;
+}
+
+
+
+.main-navbar .app-container {
+  position: relative;
+  z-index: 2;
+}
+
+
 
 .main-navbar__inner {
   min-height: var(--nav-height);
@@ -386,4 +444,41 @@
 .main-navbar__wallet-dot.is-loading {
   background: var(--warning);
   box-shadow: 0 0 12px rgba(245, 158, 11, 0.45);
+}
+
+
+
+
+
+
+/* =========================
+   FIX: FLOATING DROPDOWNS
+========================= */
+
+.main-navbar__floating-wrap {
+  position: relative;
+  display: flex;
+  align-items: center;
+}
+
+/* THE FIX */
+.main-navbar__dropdown {
+  position: absolute;
+  top: calc(100% + 10px);
+  right: 0;
+  z-index: 999;
+
+  opacity: 0;
+  transform: translateY(-6px);
+  pointer-events: none;
+  visibility: hidden;
+
+  transition: opacity 0.18s ease, transform 0.18s ease;
+}
+
+.main-navbar__dropdown.is-open {
+  opacity: 1;
+  transform: translateY(0);
+  pointer-events: auto;
+  visibility: visible;
 }

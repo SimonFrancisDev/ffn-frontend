@@ -190,3 +190,83 @@
     width: 320px;
   }
 }
+
+
+
+/* =========================================================
+   FIX DROPDOWN HEIGHT - Make it shorter and scrollable
+   ========================================================= */
+
+.language-dropdown__list {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  padding-top: 12px;
+  max-height: 280px;
+  overflow-y: auto;
+  scrollbar-width: thin;
+}
+
+/* Custom scrollbar styling */
+.language-dropdown__list::-webkit-scrollbar {
+  width: 4px;
+}
+
+.language-dropdown__list::-webkit-scrollbar-track {
+  background: var(--border-soft);
+  border-radius: 10px;
+}
+
+.language-dropdown__list::-webkit-scrollbar-thumb {
+  background: var(--glow-teal);
+  border-radius: 10px;
+}
+
+/* Reduce item height to fit more in view */
+.language-dropdown__item {
+  min-height: 48px;
+  padding: 0 12px;
+}
+
+/* Reduce flag size slightly */
+.language-dropdown__flag {
+  width: 30px;
+  height: 30px;
+  font-size: 14px;
+}
+
+/* Adjust spacing for smaller items */
+.language-dropdown__item-left {
+  gap: 10px;
+}
+
+.language-dropdown__label {
+  font-size: 12px;
+}
+
+.language-dropdown__code {
+  font-size: 10px;
+}
+
+/* Reduce header padding */
+.language-dropdown__header {
+  padding-bottom: 10px;
+}
+
+/* Overall dropdown slightly more compact */
+.language-dropdown {
+  padding: 12px;
+}
+
+/* Ensure the dropdown doesn't overflow the viewport */
+@media (max-height: 500px) {
+  .language-dropdown__list {
+    max-height: 180px;
+  }
+}
+
+@media (max-height: 400px) {
+  .language-dropdown__list {
+    max-height: 140px;
+  }
+}

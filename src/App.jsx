@@ -139,16 +139,16 @@ const getInitialNotifications = () => {
         n.iconName === 'DollarSign'
           ? DollarSign
           : n.iconName === 'TrendingUp'
-          ? TrendingUp
-          : n.iconName === 'Wrench'
-          ? Wrench
-          : n.iconName === 'Megaphone'
-          ? Megaphone
-          : n.iconName === 'Calendar'
-          ? Calendar
-          : n.iconName === 'Bell'
-          ? Bell
-          : Bell,
+            ? TrendingUp
+            : n.iconName === 'Wrench'
+              ? Wrench
+              : n.iconName === 'Megaphone'
+                ? Megaphone
+                : n.iconName === 'Calendar'
+                  ? Calendar
+                  : n.iconName === 'Bell'
+                    ? Bell
+                    : Bell,
     }))
   } catch (error) {
     console.error('Failed to read stored notifications:', error)
@@ -314,22 +314,29 @@ function App() {
         fetch(`${API_BASE_URL}/api/community/events`),
       ])
 
-      const announcementsData = await announcementsRes.json().catch(() => ({ data: { items: [] } }))
-      const eventsData = await eventsRes.json().catch(() => ({ data: { items: [] } }))
+      const announcementsData = await announcementsRes
+        .json()
+        .catch(() => ({ data: { items: [] } }))
+      const eventsData = await eventsRes
+        .json()
+        .catch(() => ({ data: { items: [] } }))
 
       const announcements = announcementsData?.data?.items || []
       const events = eventsData?.data?.items || []
 
       const storedReadStatus =
         typeof window !== 'undefined'
-          ? JSON.parse(window.localStorage.getItem(NOTIFICATION_READ_STATUS_KEY) || '{}')
+          ? JSON.parse(
+              window.localStorage.getItem(NOTIFICATION_READ_STATUS_KEY) || '{}'
+            )
           : {}
 
       return [
         ...announcements.map((a) => ({
           id: `announcement-${a._id}`,
           title: a.title,
-          message: a.content?.slice(0, 80) + (a.content?.length > 80 ? '...' : ''),
+          message:
+            a.content?.slice(0, 80) + (a.content?.length > 80 ? '...' : ''),
           time: a.date || new Date(a.createdAt).toLocaleDateString(),
           icon: Megaphone,
           iconColor: '#1de9b6',
@@ -342,7 +349,8 @@ function App() {
         ...events.map((e) => ({
           id: `event-${e._id}`,
           title: e.title,
-          message: e.content?.slice(0, 80) + (e.content?.length > 80 ? '...' : ''),
+          message:
+            e.content?.slice(0, 80) + (e.content?.length > 80 ? '...' : ''),
           time: e.date || new Date(e.createdAt).toLocaleDateString(),
           icon: Calendar,
           iconColor: '#f59e0b',
@@ -367,13 +375,18 @@ function App() {
     const storedNotifications = getInitialNotifications()
     const storedReadStatus =
       typeof window !== 'undefined'
-        ? JSON.parse(window.localStorage.getItem(NOTIFICATION_READ_STATUS_KEY) || '{}')
+        ? JSON.parse(
+            window.localStorage.getItem(NOTIFICATION_READ_STATUS_KEY) || '{}'
+          )
         : {}
 
-    const allNotifications = [...storedNotifications, ...communityNotifs].map((n) => ({
-      ...n,
-      read: storedReadStatus[n.id] !== undefined ? storedReadStatus[n.id] : n.read,
-    }))
+    const allNotifications = [...storedNotifications, ...communityNotifs].map(
+      (n) => ({
+        ...n,
+        read:
+          storedReadStatus[n.id] !== undefined ? storedReadStatus[n.id] : n.read,
+      })
+    )
 
     const uniqueNotifications = allNotifications.filter(
       (n, i, arr) => arr.findIndex((x) => x.id === n.id) === i
@@ -404,19 +417,22 @@ function App() {
           n.icon === DollarSign
             ? 'DollarSign'
             : n.icon === TrendingUp
-            ? 'TrendingUp'
-            : n.icon === Wrench
-            ? 'Wrench'
-            : n.icon === Megaphone
-            ? 'Megaphone'
-            : n.icon === Calendar
-            ? 'Calendar'
-            : n.icon === Bell
-            ? 'Bell'
-            : 'Bell',
+              ? 'TrendingUp'
+              : n.icon === Wrench
+                ? 'Wrench'
+                : n.icon === Megaphone
+                  ? 'Megaphone'
+                  : n.icon === Calendar
+                    ? 'Calendar'
+                    : n.icon === Bell
+                      ? 'Bell'
+                      : 'Bell',
         icon: undefined,
       }))
-      window.localStorage.setItem(NOTIFICATIONS_STORAGE_KEY, JSON.stringify(serializable))
+      window.localStorage.setItem(
+        NOTIFICATIONS_STORAGE_KEY,
+        JSON.stringify(serializable)
+      )
     } catch (error) {
       console.error('Failed to persist notifications:', error)
     }
@@ -487,6 +503,10 @@ function App() {
     setIsNotificationsOpen(true)
   }
 
+  const handleCloseNotifications = () => {
+    setIsNotificationsOpen(false)
+  }
+
   const handleToggleLanguage = () => {
     setIsNotificationsOpen(false)
     setIsWalletOpen(false)
@@ -548,21 +568,34 @@ function App() {
   }
 
   const handleMarkAllNotificationsRead = () => {
+    const nextReadStatus = {}
+
     setNotifications((current) =>
-      current.map((item) => ({
-        ...item,
-        read: true,
-      }))
+      current.map((item) => {
+        nextReadStatus[item.id] = true
+        return {
+          ...item,
+          read: true,
+        }
+      })
     )
 
     if (typeof window !== 'undefined') {
-      const readStatus = {}
-      notifications.forEach((n) => {
-        readStatus[n.id] = true
-      })
-      window.localStorage.setItem(NOTIFICATION_READ_STATUS_KEY, JSON.stringify(readStatus))
+      window.localStorage.setItem(
+        NOTIFICATION_READ_STATUS_KEY,
+        JSON.stringify(nextReadStatus)
+      )
     }
   }
+
+  const handleClearNotifications = useCallback(() => {
+    setNotifications([])
+
+    if (typeof window !== 'undefined') {
+      window.localStorage.removeItem(NOTIFICATIONS_STORAGE_KEY)
+      window.localStorage.removeItem(NOTIFICATION_READ_STATUS_KEY)
+    }
+  }, [])
 
   const handleNotificationClick = useCallback(
     (notification) => {
@@ -583,13 +616,10 @@ function App() {
         )
       }
 
-      if (notification.type === 'announcement' || notification.type === 'event') {
-        setModalNotification(notification)
-      } else if (notification.route) {
+      if (notification.route) {
         handleNavigate(notification.route)
+        setIsNotificationsOpen(false)
       }
-
-      setIsNotificationsOpen(false)
     },
     [handleNavigate]
   )
@@ -598,15 +628,19 @@ function App() {
     const status = isWalletLoading
       ? 'Connecting'
       : isConnected
-      ? 'Connected'
-      : 'Disconnected'
+        ? 'Connected'
+        : 'Disconnected'
 
     return {
       status,
-      address: walletAccount ? shortenAddress(walletAccount) : 'No wallet connected',
+      address: walletAccount
+        ? shortenAddress(walletAccount)
+        : 'No wallet connected',
       network: isConnected ? 'Polygon Amoy Testnet' : 'Not connected',
       provider:
-        typeof window !== 'undefined' && window.ethereum ? 'MetaMask' : 'No wallet provider',
+        typeof window !== 'undefined' && window.ethereum
+          ? 'MetaMask'
+          : 'No wallet provider',
       balance: balance ? Number(balance).toFixed(4) : null,
       isConnected,
       isLoading: isWalletLoading,
@@ -615,7 +649,9 @@ function App() {
   }, [balance, isConnected, isWalletLoading, walletAccount])
 
   const account = useMemo(() => {
-    const walletDisplay = walletAccount ? shortenAddress(walletAccount) : 'No wallet connected'
+    const walletDisplay = walletAccount
+      ? shortenAddress(walletAccount)
+      : 'No wallet connected'
 
     return {
       initials: 'U',
@@ -632,7 +668,14 @@ function App() {
       networkSize: userDownline?.total || 0,
       isRegistered: Boolean(userSummary?.isRegistered),
     }
-  }, [internalUserId, isConnected, walletAccount, userSummary, userReferrals, userDownline])
+  }, [
+    internalUserId,
+    isConnected,
+    walletAccount,
+    userSummary,
+    userReferrals,
+    userDownline,
+  ])
 
   const latestUnreadNotification = useMemo(() => {
     return notifications.find((item) => !item.read) || null
@@ -646,7 +689,8 @@ function App() {
         id: 'wallet-missing',
         type: 'danger',
         label: 'Wallet Required',
-        message: 'MetaMask is not installed. Install a wallet to connect and use live platform data.',
+        message:
+          'MetaMask is not installed. Install a wallet to connect and use live platform data.',
         source: 'wallet',
         sticky: true,
         dismissible: false,
@@ -679,7 +723,8 @@ function App() {
         id: 'wallet-connecting',
         type: 'info',
         label: 'Connecting',
-        message: 'Connecting your wallet and preparing live platform access.',
+        message:
+          'Connecting your wallet and preparing live platform access.',
         source: 'wallet',
         sticky: true,
         dismissible: false,
@@ -690,7 +735,8 @@ function App() {
         id: 'wallet-disconnected',
         type: 'info',
         label: 'Connect Wallet',
-        message: 'Connect your wallet to access live balances, orbit state, and account-linked data.',
+        message:
+          'Connect your wallet to access live balances, orbit state, and account-linked data.',
         source: 'wallet',
         sticky: true,
         dismissible: true,
@@ -715,7 +761,8 @@ function App() {
         id: 'testnet-reminder',
         type: 'warning',
         label: 'Testnet Notice',
-        message: 'You are connected to Polygon Amoy Testnet. Verify transactions and values before confirming.',
+        message:
+          'You are connected to Polygon Amoy Testnet. Verify transactions and values before confirming.',
         source: 'network',
         sticky: false,
         dismissible: true,
@@ -771,8 +818,10 @@ function App() {
                 onToggleTheme={handleToggleTheme}
                 isNotificationsOpen={isNotificationsOpen}
                 onToggleNotifications={handleToggleNotifications}
+                onCloseNotifications={handleCloseNotifications}
                 notifications={notifications}
                 onMarkAllNotificationsRead={handleMarkAllNotificationsRead}
+                onClearNotifications={handleClearNotifications}
                 onNotificationClick={handleNotificationClick}
                 isLanguageOpen={isLanguageOpen}
                 onToggleLanguage={handleToggleLanguage}
@@ -860,6 +909,8 @@ export default App
 
 // import { useEffect, useMemo, useState, useCallback } from 'react'
 // import { useLocation, useNavigate, Routes, Route } from 'react-router-dom'
+// import { useTranslation } from 'react-i18next'
+// import i18n from './i18n'
 // import AppShell from './components/Layout/AppShell/AppShell'
 // import TopNoticeBar from './components/Layout/TopNoticeBar/TopNoticeBar'
 // import MainNavbar from './components/Layout/MainNavbar/MainNavbar'
@@ -936,14 +987,20 @@ export default App
 // const NOTIFICATION_READ_STATUS_KEY = 'finfreedom_notification_read_status_v1'
 // const LANGUAGE_STORAGE_KEY = 'finfreedom_language_v1'
 // const THEME_STORAGE_KEY = 'finfreedom_theme_v1'
-// const LAST_PAGE_STORAGE_KEY = 'finfreedom_last_page_v1'
 // const APP_USER_ID_STORAGE_KEY = 'finfreedom_app_user_id_v1'
 
 // const languages = [
 //   { code: 'en', label: 'English', flag: '🇬🇧' },
+//   { code: 'it', label: 'Italiano', flag: '🇮🇹' },
+//   { code: 'zh', label: '中文', flag: '🇨🇳' },
+//   { code: 'hi', label: 'हिन्दी', flag: '🇮🇳' },
+//   { code: 'fa', label: 'فارسی', flag: '🇮🇷' },
+//   { code: 'id', label: 'Bahasa Indonesia', flag: '🇮🇩' },
+//   { code: 'ko', label: '한국어', flag: '🇰🇷' },
 //   { code: 'fr', label: 'Français', flag: '🇫🇷' },
+//   { code: 'vi', label: 'Tiếng Việt', flag: '🇻🇳' },
+//   { code: 'ru', label: 'Русский', flag: '🇷🇺' },
 //   { code: 'es', label: 'Español', flag: '🇪🇸' },
-//   { code: 'ar', label: 'العربية', flag: '🇸🇦' },
 // ]
 
 // const routeMap = {
@@ -1009,18 +1066,15 @@ export default App
 // }
 
 // const getInitialLanguage = () => {
-//   if (typeof window === 'undefined') return languages[0].label
+//   if (typeof window === 'undefined') return 'en'
 
 //   try {
 //     const stored = window.localStorage.getItem(LANGUAGE_STORAGE_KEY)
-//     const matched = languages.find(
-//       (language) => language.label === stored || language.code === stored
-//     )
-
-//     return matched ? matched.label : languages[0].label
+//     const matched = languages.find((language) => language.code === stored)
+//     return matched ? matched.code : 'en'
 //   } catch (error) {
 //     console.error('Failed to read stored language:', error)
-//     return languages[0].label
+//     return 'en'
 //   }
 // }
 
@@ -1083,10 +1137,7 @@ export default App
 // function App() {
 //   const navigate = useNavigate()
 //   const location = useLocation()
-
-//   // ❌ REMOVED: currentPage state
-//   // ❌ REMOVED: initialPage useMemo
-//   // ✅ React Router is now the single source of truth
+//   const { t } = useTranslation()
 
 //   const [isDrawerOpen, setIsDrawerOpen] = useState(false)
 //   const [theme, setTheme] = useState(getInitialTheme)
@@ -1123,6 +1174,15 @@ export default App
 //   useEffect(() => {
 //     setInternalUserId(getOrCreateInternalUserId())
 //   }, [])
+
+//   useEffect(() => {
+//     const normalizedLanguage = currentLanguage || 'en'
+//     i18n.changeLanguage(normalizedLanguage)
+
+//     const isRTL = ['fa'].includes(normalizedLanguage)
+//     document.documentElement.lang = normalizedLanguage
+//     document.documentElement.dir = isRTL ? 'rtl' : 'ltr'
+//   }, [currentLanguage])
 
 //   useEffect(() => {
 //     const checkMultisigOwner = async () => {
@@ -1287,8 +1347,6 @@ export default App
 //     }
 //   }, [theme])
 
-//   // ❌ REMOVED: LAST_PAGE_STORAGE_KEY effect (no longer needed)
-
 //   const closeAllUtilities = useCallback(() => {
 //     setIsNotificationsOpen(false)
 //     setIsLanguageOpen(false)
@@ -1296,17 +1354,16 @@ export default App
 //     setIsAccountOpen(false)
 //   }, [])
 
-//   // ✅ FIXED: Active nav items derived from React Router
 //   const resolvedNavItems = useMemo(() => {
 //     const current = routeMap[location.pathname] || 'home'
 
 //     return navItems.map((item) => ({
 //       ...item,
 //       active: item.href === current,
+//       label: t(`navbar.navItems.${item.href}`, item.label),
 //     }))
-//   }, [location.pathname])
+//   }, [location.pathname, t])
 
-//   // ✅ FIXED: handleNavigate only uses navigate, no local state
 //   const handleNavigate = useCallback(
 //     (page) => {
 //       const nextPath = pageToPathMap[page] || '/home'
@@ -1358,7 +1415,8 @@ export default App
 //   }
 
 //   const handleSelectLanguage = (language) => {
-//     setCurrentLanguage(language.label)
+//     if (!language?.code) return
+//     setCurrentLanguage(language.code)
 //     setIsLanguageOpen(false)
 //   }
 
@@ -1605,12 +1663,11 @@ export default App
 //     walletError,
 //   ])
 
-
 //   return (
 //     <SessionProvider>
 //       <SpaceProvider walletAddress={walletAccount}>
 //         <>
-//          <AppShell
+//           <AppShell
 //             fullWidth={location.pathname === '/' || location.pathname === '/home'}
 //             topbar={<TopNoticeBar notices={notices} />}
 //             navbar={

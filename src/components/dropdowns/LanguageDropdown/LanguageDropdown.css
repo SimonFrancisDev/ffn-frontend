@@ -1,41 +1,133 @@
-.language-dropdown {
-  position: absolute;
-  top: calc(100% + 12px);
-  right: 0;
-  width: min(92vw, 320px);
-  padding: 14px;
-  border-radius: 22px;
-  /* Use theme variables for opacity control */
-  background: var(--dropdown-bg, rgba(10, 15, 30, 0.98));
-  backdrop-filter: blur(20px);
-  border: 1px solid var(--border-strong);
-  box-shadow: 0 20px 60px rgba(0, 0, 0, 0.4), 0 8px 24px rgba(0, 0, 0, 0.25);
-  z-index: 9999;
+/* =========================================================
+   LANGUAGE MODAL WRAPPER - Matching NotificationDropdown
+   ========================================================= */
+
+.language-modal {
+  position: fixed;
+  inset: 0;
+  z-index: 2147483000;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 16px;
+  isolation: isolate;
 }
 
-/* Dark theme dropdown background */
-[data-theme="dark"] .language-dropdown {
+.language-modal__backdrop {
+  position: absolute;
+  inset: 0;
+  background: rgba(3, 8, 20, 0.62);
+  backdrop-filter: blur(10px);
+  -webkit-backdrop-filter: blur(10px);
+}
+
+.language-modal__dialog {
+  position: relative;
+  z-index: 1;
+  width: min(100%, 320px);
+  max-width: calc(100% - 24px);
+  max-height: min(88vh, 480px);
+  padding: 14px;
+  border-radius: 22px;
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+  background: var(--dropdown-bg, rgba(10, 15, 30, 0.98));
+  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
+  border: 1px solid var(--border-strong);
+  box-shadow:
+    0 20px 60px rgba(0, 0, 0, 0.4),
+    0 8px 24px rgba(0, 0, 0, 0.25);
+}
+
+/* Dark theme */
+[data-theme="dark"] .language-modal__dialog {
   --dropdown-bg: rgba(10, 15, 30, 0.98);
 }
 
-/* Light theme dropdown background - more opaque */
-[data-theme="light"] .language-dropdown {
+/* Light theme */
+[data-theme="light"] .language-modal__dialog {
   --dropdown-bg: rgba(255, 255, 255, 0.98);
-  box-shadow: 0 20px 60px rgba(0, 0, 0, 0.15), 0 8px 24px rgba(0, 0, 0, 0.1);
+  box-shadow:
+    0 20px 60px rgba(0, 0, 0, 0.15),
+    0 8px 24px rgba(0, 0, 0, 0.1);
 }
 
-/* Override any glass-panel transparency */
-.language-dropdown.glass-panel {
+/* Override glass-panel */
+.language-modal__dialog.glass-panel {
   background: var(--dropdown-bg, rgba(10, 15, 30, 0.98));
   backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
 }
 
+/* =========================================================
+   DESKTOP POSITIONING - Matching NotificationDropdown
+   ========================================================= */
+@media (min-width: 768px) {
+  .language-modal {
+    display: block;
+    padding: 0;
+    pointer-events: none;
+  }
+
+  .language-modal__backdrop {
+    background: transparent;
+    backdrop-filter: none;
+    -webkit-backdrop-filter: none;
+    pointer-events: auto;
+  }
+
+  .language-modal__dialog {
+    position: fixed;
+    width: 300px;
+    max-width: min(300px, calc(100vw - 24px));
+    max-height: min(420px, calc(100vh - 100px));
+    pointer-events: auto;
+  }
+}
+
+/* =========================================================
+   MOBILE POSITIONING - Centered modal
+   ========================================================= */
+@media (max-width: 767px) {
+  .language-modal {
+    align-items: center;
+    justify-content: center;
+    padding: 14px;
+  }
+
+  .language-modal__dialog {
+    width: min(92vw, 320px);
+    max-width: min(92vw, 320px);
+    max-height: min(82vh, 480px);
+    padding: 12px;
+    border-radius: 20px;
+  }
+}
+
+@media (max-width: 480px) {
+  .language-modal {
+    padding: 12px;
+  }
+
+  .language-modal__dialog {
+    width: calc(100vw - 20px);
+    max-width: calc(100vw - 20px);
+    padding: 10px;
+    border-radius: 18px;
+  }
+}
+
+/* =========================================================
+   HEADER STYLES
+   ========================================================= */
 .language-dropdown__header {
   display: flex;
   align-items: flex-start;
   justify-content: space-between;
   gap: 12px;
-  padding-bottom: 12px;
+  padding-bottom: 10px;
   border-bottom: 1px solid var(--border-soft);
 }
 
@@ -71,6 +163,7 @@
   color: var(--text-secondary);
   cursor: pointer;
   transition: all 0.2s ease;
+  flex-shrink: 0;
 }
 
 .language-dropdown__close:hover {
@@ -83,15 +176,62 @@
   transform: scale(0.98);
 }
 
+/* =========================================================
+   CURRENT LANGUAGE SECTION
+   ========================================================= */
+.language-dropdown__current {
+  padding: 12px 0;
+  border-bottom: 1px solid var(--border-soft);
+}
+
+.language-dropdown__current-label {
+  display: block;
+  font-size: 11px;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  margin-bottom: 8px;
+  color: var(--text-secondary);
+}
+
+.language-dropdown__current-value {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+/* =========================================================
+   LIST STYLES
+   ========================================================= */
 .language-dropdown__list {
   display: flex;
   flex-direction: column;
-  gap: 10px;
+  gap: 8px;
   padding-top: 12px;
+  max-height: 280px;
+  overflow-y: auto;
+  scrollbar-width: thin;
+  overscroll-behavior: contain;
 }
 
+.language-dropdown__list::-webkit-scrollbar {
+  width: 4px;
+}
+
+.language-dropdown__list::-webkit-scrollbar-track {
+  background: var(--border-soft);
+  border-radius: 10px;
+}
+
+.language-dropdown__list::-webkit-scrollbar-thumb {
+  background: var(--glow-teal);
+  border-radius: 10px;
+}
+
+/* =========================================================
+   ITEM STYLES
+   ========================================================= */
 .language-dropdown__item {
-  min-height: 54px;
+  min-height: 48px;
   width: 100%;
   padding: 0 12px;
   border-radius: 18px;
@@ -126,19 +266,19 @@
   min-width: 0;
   display: flex;
   align-items: center;
-  gap: 12px;
+  gap: 10px;
 }
 
 .language-dropdown__flag {
-  width: 34px;
-  height: 34px;
-  border-radius: 12px;
+  width: 30px;
+  height: 30px;
+  border-radius: 10px;
   display: inline-flex;
   align-items: center;
   justify-content: center;
   background: var(--surface-2);
   border: 1px solid var(--border-soft);
-  font-size: 16px;
+  font-size: 14px;
   flex-shrink: 0;
 }
 
@@ -150,13 +290,13 @@
 }
 
 .language-dropdown__label {
-  font-size: 13px;
+  font-size: 12px;
   font-weight: 700;
   color: var(--text-primary);
 }
 
 .language-dropdown__code {
-  font-size: 11px;
+  font-size: 10px;
   letter-spacing: 0.04em;
   color: var(--text-secondary);
 }
@@ -172,93 +312,9 @@
   color: #0a6b5c;
 }
 
-/* Mobile styles */
-@media (max-width: 767px) {
-  .language-dropdown {
-    position: fixed;
-    top: 120px;
-    left: 90%;
-    right: auto;
-    transform: translateX(-50%);
-    width: min(calc(100vw - 24px), 380px);
-    z-index: 10000;
-  }
-}
-
-@media (min-width: 768px) {
-  .language-dropdown {
-    width: 320px;
-  }
-}
-
-
-
 /* =========================================================
-   FIX DROPDOWN HEIGHT - Make it shorter and scrollable
+   HEIGHT CONSTRAINTS
    ========================================================= */
-
-.language-dropdown__list {
-  display: flex;
-  flex-direction: column;
-  gap: 8px;
-  padding-top: 12px;
-  max-height: 280px;
-  overflow-y: auto;
-  scrollbar-width: thin;
-}
-
-/* Custom scrollbar styling */
-.language-dropdown__list::-webkit-scrollbar {
-  width: 4px;
-}
-
-.language-dropdown__list::-webkit-scrollbar-track {
-  background: var(--border-soft);
-  border-radius: 10px;
-}
-
-.language-dropdown__list::-webkit-scrollbar-thumb {
-  background: var(--glow-teal);
-  border-radius: 10px;
-}
-
-/* Reduce item height to fit more in view */
-.language-dropdown__item {
-  min-height: 48px;
-  padding: 0 12px;
-}
-
-/* Reduce flag size slightly */
-.language-dropdown__flag {
-  width: 30px;
-  height: 30px;
-  font-size: 14px;
-}
-
-/* Adjust spacing for smaller items */
-.language-dropdown__item-left {
-  gap: 10px;
-}
-
-.language-dropdown__label {
-  font-size: 12px;
-}
-
-.language-dropdown__code {
-  font-size: 10px;
-}
-
-/* Reduce header padding */
-.language-dropdown__header {
-  padding-bottom: 10px;
-}
-
-/* Overall dropdown slightly more compact */
-.language-dropdown {
-  padding: 12px;
-}
-
-/* Ensure the dropdown doesn't overflow the viewport */
 @media (max-height: 500px) {
   .language-dropdown__list {
     max-height: 180px;
@@ -269,4 +325,17 @@
   .language-dropdown__list {
     max-height: 140px;
   }
+}
+
+/* =========================================================
+   LIGHT MODE BORDERS
+   ========================================================= */
+[data-theme="light"] .language-modal__dialog {
+  border: 1px solid rgba(100, 120, 150, 0.35);
+}
+
+[data-theme="light"] .language-dropdown__item,
+[data-theme="light"] .language-dropdown__close,
+[data-theme="light"] .language-dropdown__flag {
+  border-color: rgba(100, 120, 150, 0.25);
 }

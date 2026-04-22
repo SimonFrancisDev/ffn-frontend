@@ -1,127 +1,35 @@
-/* =========================================================
-   ACCOUNT MODAL WRAPPER - Matching NotificationDropdown
-   ========================================================= */
-
-.account-modal {
-  position: fixed;
-  inset: 0;
-  z-index: 2147483000;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  padding: 16px;
-  isolation: isolate;
-}
-
-.account-modal__backdrop {
+.account-dropdown {
   position: absolute;
-  inset: 0;
-  background: rgba(3, 8, 20, 0.62);
-  backdrop-filter: blur(10px);
-  -webkit-backdrop-filter: blur(10px);
-}
-
-.account-modal__dialog {
-  position: relative;
-  z-index: 1;
-  width: min(100%, 360px);
-  max-width: calc(100% - 24px);
-  max-height: min(88vh, 600px);
+  top: calc(100% + 12px);
+  right: 0;
+  width: min(92vw, 340px);
   padding: 14px;
   border-radius: 22px;
-  overflow: hidden;
-  display: flex;
-  flex-direction: column;
+  /* Use theme variables for opacity control */
   background: var(--dropdown-bg, rgba(10, 15, 30, 0.98));
   backdrop-filter: blur(20px);
-  -webkit-backdrop-filter: blur(20px);
   border: 1px solid var(--border-strong);
-  box-shadow:
-    0 20px 60px rgba(0, 0, 0, 0.4),
-    0 8px 24px rgba(0, 0, 0, 0.25);
+  box-shadow: 0 20px 60px rgba(0, 0, 0, 0.4), 0 8px 24px rgba(0, 0, 0, 0.25);
+  z-index: 9999;
 }
 
-/* Dark theme */
-[data-theme="dark"] .account-modal__dialog {
+/* Dark theme dropdown background */
+[data-theme="dark"] .account-dropdown {
   --dropdown-bg: rgba(10, 15, 30, 0.98);
 }
 
-/* Light theme */
-[data-theme="light"] .account-modal__dialog {
+/* Light theme dropdown background - more opaque */
+[data-theme="light"] .account-dropdown {
   --dropdown-bg: rgba(255, 255, 255, 0.98);
-  box-shadow:
-    0 20px 60px rgba(0, 0, 0, 0.15),
-    0 8px 24px rgba(0, 0, 0, 0.1);
+  box-shadow: 0 20px 60px rgba(0, 0, 0, 0.15), 0 8px 24px rgba(0, 0, 0, 0.1);
 }
 
-/* Override glass-panel */
-.account-modal__dialog.glass-panel {
+/* Override any glass-panel transparency */
+.account-dropdown.glass-panel {
   background: var(--dropdown-bg, rgba(10, 15, 30, 0.98));
   backdrop-filter: blur(20px);
-  -webkit-backdrop-filter: blur(20px);
 }
 
-/* =========================================================
-   DESKTOP POSITIONING
-   ========================================================= */
-@media (min-width: 768px) {
-  .account-modal {
-    display: block;
-    padding: 0;
-    pointer-events: none;
-  }
-
-  .account-modal__backdrop {
-    background: transparent;
-    backdrop-filter: none;
-    -webkit-backdrop-filter: none;
-    pointer-events: auto;
-  }
-
-  .account-modal__dialog {
-    position: fixed;
-    width: 340px;
-    max-width: min(340px, calc(100vw - 24px));
-    max-height: min(560px, calc(100vh - 100px));
-    pointer-events: auto;
-  }
-}
-
-/* =========================================================
-   MOBILE POSITIONING - Centered modal
-   ========================================================= */
-@media (max-width: 767px) {
-  .account-modal {
-    align-items: center;
-    justify-content: center;
-    padding: 14px;
-  }
-
-  .account-modal__dialog {
-    width: min(92vw, 360px);
-    max-width: min(92vw, 360px);
-    max-height: min(82vh, 560px);
-    padding: 12px;
-    border-radius: 20px;
-  }
-}
-
-@media (max-width: 480px) {
-  .account-modal {
-    padding: 12px;
-  }
-
-  .account-modal__dialog {
-    width: calc(100vw - 20px);
-    max-width: calc(100vw - 20px);
-    padding: 10px;
-    border-radius: 18px;
-  }
-}
-
-/* =========================================================
-   HEADER STYLES
-   ========================================================= */
 .account-dropdown__header {
   display: flex;
   align-items: flex-start;
@@ -129,13 +37,6 @@
   gap: 12px;
   padding-bottom: 12px;
   border-bottom: 1px solid var(--border-soft);
-  flex-shrink: 0;
-}
-
-.account-dropdown__title-group {
-  display: flex;
-  flex-direction: column;
-  gap: 4px;
 }
 
 .account-dropdown__title {
@@ -164,7 +65,6 @@
   color: var(--text-secondary);
   cursor: pointer;
   transition: all 0.2s ease;
-  flex-shrink: 0;
 }
 
 .account-dropdown__close:hover {
@@ -177,15 +77,11 @@
   transform: scale(0.98);
 }
 
-/* =========================================================
-   BODY - Scrollable content
-   ========================================================= */
 .account-dropdown__profile {
   display: flex;
   align-items: center;
   gap: 12px;
   padding-top: 14px;
-  flex-shrink: 0;
 }
 
 .account-dropdown__avatar {
@@ -230,7 +126,6 @@
   flex-wrap: wrap;
   gap: 8px;
   padding-top: 14px;
-  flex-shrink: 0;
 }
 
 .account-dropdown__chip {
@@ -257,32 +152,11 @@
   color: #0a6b5c;
 }
 
-/* =========================================================
-   MENU - Scrollable
-   ========================================================= */
 .account-dropdown__menu {
   display: flex;
   flex-direction: column;
   gap: 8px;
   padding-top: 14px;
-  overflow-y: auto;
-  overscroll-behavior: contain;
-  flex: 1;
-  min-height: 0;
-}
-
-.account-dropdown__menu::-webkit-scrollbar {
-  width: 4px;
-}
-
-.account-dropdown__menu::-webkit-scrollbar-track {
-  background: var(--border-soft);
-  border-radius: 10px;
-}
-
-.account-dropdown__menu::-webkit-scrollbar-thumb {
-  background: var(--glow-teal);
-  border-radius: 10px;
 }
 
 .account-dropdown__item {
@@ -299,7 +173,6 @@
   color: var(--text-primary);
   cursor: pointer;
   transition: all 0.2s ease;
-  flex-shrink: 0;
 }
 
 .account-dropdown__item:hover {
@@ -372,31 +245,28 @@
   border-color: rgba(29, 233, 182, 0.25);
 }
 
-/* =========================================================
-   LIGHT MODE BORDERS
-   ========================================================= */
-[data-theme="light"] .account-modal__dialog {
-  border: 1px solid rgba(100, 120, 150, 0.35);
-}
-
-[data-theme="light"] .account-dropdown__item,
-[data-theme="light"] .account-dropdown__close,
-[data-theme="light"] .account-dropdown__chip,
-[data-theme="light"] .account-dropdown__item-icon {
-  border-color: rgba(100, 120, 150, 0.25);
-}
-
-/* =========================================================
-   HEIGHT CONSTRAINTS
-   ========================================================= */
-@media (max-height: 600px) {
-  .account-dropdown__menu {
-    max-height: 280px;
+/* Mobile styles - Matching language dropdown positioning */
+@media (max-width: 767px) {
+  .account-dropdown {
+    position: fixed;
+    top: 120px;
+    left: 50%;
+    right: auto;
+    transform: translateX(-50%);
+    width: calc(100vw - 32px);
+    max-width: 380px;
+    z-index: 10000;
   }
 }
 
-@media (max-height: 500px) {
-  .account-dropdown__menu {
-    max-height: 200px;
+@media (min-width: 768px) and (max-width: 1023px) {
+  .account-dropdown {
+    width: 320px;
+  }
+}
+
+@media (min-width: 1024px) {
+  .account-dropdown {
+    width: 360px;
   }
 }

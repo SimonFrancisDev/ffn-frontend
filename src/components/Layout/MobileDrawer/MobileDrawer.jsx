@@ -27,28 +27,32 @@ const MobileDrawer = ({
         ? 'Wallet connecting...'
         : 'Wallet disconnected'
 
+  const openAfterClose = (callback) => {
+    onClose?.()
+    window.setTimeout(() => {
+      callback?.()
+    }, 220)
+  }
+
   const handleNotificationsClick = () => {
-    if (onClose) onClose()
-    if (onOpenNotifications) onOpenNotifications()
+    openAfterClose(onOpenNotifications)
   }
 
   const handleLanguageClick = () => {
-    if (onClose) onClose()
-    if (onOpenLanguage) onOpenLanguage()
+    openAfterClose(onOpenLanguage)
   }
 
   const handleWalletClick = () => {
-    if (onClose) onClose()
-    if (onOpenWallet) onOpenWallet()
+    openAfterClose(onOpenWallet)
   }
 
   const handleAccountClick = () => {
-    if (onClose) onClose()
-    if (onOpenAccount) onOpenAccount()
+    openAfterClose(onOpenAccount)
   }
 
   const handleNavigate = (page) => {
-    if (onNavigate) onNavigate(page)
+    onNavigate?.(page)
+    onClose?.()
   }
 
   return (
@@ -72,7 +76,9 @@ const MobileDrawer = ({
             <div className="mobile-drawer__brand-mark">FF</div>
             <div className="mobile-drawer__brand-text">
               <span className="mobile-drawer__brand-name">{brand}</span>
-              <span className="mobile-drawer__brand-tag soft-text">Live platform</span>
+              <span className="mobile-drawer__brand-tag soft-text">
+                Live platform
+              </span>
             </div>
           </button>
 
@@ -108,6 +114,7 @@ const MobileDrawer = ({
               <span className="mobile-drawer__link-arrow">›</span>
             </button>
           ))}
+
           {isAdmin && (
             <button
               type="button"
@@ -127,7 +134,9 @@ const MobileDrawer = ({
             onClick={handleLanguageClick}
             aria-label="Open language menu"
           >
-            <span className="mobile-drawer__utility-icon"><Globe size={18} /></span>
+            <span className="mobile-drawer__utility-icon">
+              <Globe size={18} />
+            </span>
             <span className="mobile-drawer__utility-text">Language</span>
           </button>
 
@@ -137,7 +146,9 @@ const MobileDrawer = ({
             onClick={handleNotificationsClick}
             aria-label="Open notifications"
           >
-            <span className="mobile-drawer__utility-icon"><Bell size={18} /></span>
+            <span className="mobile-drawer__utility-icon">
+              <Bell size={18} />
+            </span>
             <span className="mobile-drawer__utility-text">Notifications</span>
           </button>
 
@@ -161,7 +172,9 @@ const MobileDrawer = ({
             onClick={handleWalletClick}
             aria-label="Open wallet panel"
           >
-            <span className="mobile-drawer__utility-icon"><Wallet size={18} /></span>
+            <span className="mobile-drawer__utility-icon">
+              <Wallet size={18} />
+            </span>
             <span className="mobile-drawer__utility-text">
               {wallet?.status === 'Connected' ? 'Wallet' : 'Connect Wallet'}
             </span>
@@ -173,7 +186,9 @@ const MobileDrawer = ({
             onClick={handleAccountClick}
             aria-label="Open account menu"
           >
-            <span className="mobile-drawer__utility-icon"><User size={18} /></span>
+            <span className="mobile-drawer__utility-icon">
+              <User size={18} />
+            </span>
             <span className="mobile-drawer__utility-text">Account</span>
           </button>
         </div>
@@ -198,8 +213,8 @@ export default MobileDrawer
 
 
 
-
 // import './MobileDrawer.css'
+// import { Sun, Moon, Globe, Bell, Wallet, User, X } from 'lucide-react'
 
 // const MobileDrawer = ({
 //   isOpen = false,
@@ -215,6 +230,8 @@ export default MobileDrawer
 //   onOpenAccount,
 //   account = null,
 //   wallet = null,
+//   isAdmin = false,
+//   onOpenAdminPanel,
 // }) => {
 //   const isDark = theme === 'dark'
 //   const profileName = account?.name || 'Your Account'
@@ -258,7 +275,7 @@ export default MobileDrawer
 //       />
 
 //       <aside
-//         className={`mobile-drawer glass-panel ${isOpen ? 'is-open' : ''}`}
+//         className={`mobile-drawer ${isOpen ? 'is-open' : ''}`}
 //         aria-hidden={!isOpen}
 //       >
 //         <div className="mobile-drawer__header">
@@ -280,7 +297,7 @@ export default MobileDrawer
 //             onClick={onClose}
 //             aria-label="Close navigation menu"
 //           >
-//             ✕
+//             <X size={18} />
 //           </button>
 //         </div>
 
@@ -306,6 +323,16 @@ export default MobileDrawer
 //               <span className="mobile-drawer__link-arrow">›</span>
 //             </button>
 //           ))}
+//           {isAdmin && (
+//             <button
+//               type="button"
+//               className="mobile-drawer__link"
+//               onClick={() => handleNavigate('admin')}
+//             >
+//               <span className="mobile-drawer__link-text">Admin Panel</span>
+//               <span className="mobile-drawer__link-arrow">›</span>
+//             </button>
+//           )}
 //         </nav>
 
 //         <div className="mobile-drawer__utilities">
@@ -315,7 +342,7 @@ export default MobileDrawer
 //             onClick={handleLanguageClick}
 //             aria-label="Open language menu"
 //           >
-//             <span className="mobile-drawer__utility-icon">🌐</span>
+//             <span className="mobile-drawer__utility-icon"><Globe size={18} /></span>
 //             <span className="mobile-drawer__utility-text">Language</span>
 //           </button>
 
@@ -325,7 +352,7 @@ export default MobileDrawer
 //             onClick={handleNotificationsClick}
 //             aria-label="Open notifications"
 //           >
-//             <span className="mobile-drawer__utility-icon">🔔</span>
+//             <span className="mobile-drawer__utility-icon"><Bell size={18} /></span>
 //             <span className="mobile-drawer__utility-text">Notifications</span>
 //           </button>
 
@@ -336,7 +363,7 @@ export default MobileDrawer
 //             aria-label={isDark ? 'Switch to light theme' : 'Switch to dark theme'}
 //           >
 //             <span className="mobile-drawer__utility-icon">
-//               {isDark ? '☀️' : '🌙'}
+//               {isDark ? <Sun size={18} /> : <Moon size={18} />}
 //             </span>
 //             <span className="mobile-drawer__utility-text">
 //               {isDark ? 'Light Mode' : 'Dark Mode'}
@@ -349,7 +376,7 @@ export default MobileDrawer
 //             onClick={handleWalletClick}
 //             aria-label="Open wallet panel"
 //           >
-//             <span className="mobile-drawer__utility-icon">👛</span>
+//             <span className="mobile-drawer__utility-icon"><Wallet size={18} /></span>
 //             <span className="mobile-drawer__utility-text">
 //               {wallet?.status === 'Connected' ? 'Wallet' : 'Connect Wallet'}
 //             </span>
@@ -361,7 +388,7 @@ export default MobileDrawer
 //             onClick={handleAccountClick}
 //             aria-label="Open account menu"
 //           >
-//             <span className="mobile-drawer__utility-icon">👤</span>
+//             <span className="mobile-drawer__utility-icon"><User size={18} /></span>
 //             <span className="mobile-drawer__utility-text">Account</span>
 //           </button>
 //         </div>

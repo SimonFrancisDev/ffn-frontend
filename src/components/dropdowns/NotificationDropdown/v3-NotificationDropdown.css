@@ -69,32 +69,27 @@
 
 /* -----------------------------------------
    DESKTOP POSITIONING
+   behaves like a dropdown panel
 ----------------------------------------- */
 @media (min-width: 768px) {
   .notification-modal {
-    display: block;
-    padding: 0;
-    pointer-events: none;
-  }
-
-  .notification-modal__backdrop {
-    background: transparent;
-    backdrop-filter: none;
-    -webkit-backdrop-filter: none;
-    pointer-events: auto;
+    align-items: flex-start;
+    justify-content: flex-end;
+    padding-top: 76px;
+    padding-right: 20px;
+    padding-left: 20px;
   }
 
   .notification-modal__dialog {
-    position: fixed;
     width: 360px;
     max-width: min(360px, calc(100vw - 24px));
     max-height: min(560px, calc(100vh - 100px));
-    pointer-events: auto;
   }
 }
 
 /* -----------------------------------------
    MOBILE POSITIONING
+   true centered modal
 ----------------------------------------- */
 @media (max-width: 767px) {
   .notification-modal {
@@ -536,7 +531,7 @@
 }
 
 .notification-details-modal__action--danger {
-  color: #ff0000;
+  color: #ff8f8f;
 }
 
 /* -----------------------------------------
@@ -637,4 +632,17 @@
 [data-theme="light"] .notification-details-modal__action,
 [data-theme="light"] .notification-details-modal__icon {
   border-color: rgba(100, 120, 150, 0.25);
+}
+
+
+/* =========================================
+   DESKTOP: REMOVE BACKDROP / BLUR
+========================================= */
+@media (min-width: 768px) {
+  .notification-modal__backdrop {
+    background: transparent;
+    backdrop-filter: none;
+    -webkit-backdrop-filter: none;
+    pointer-events: none; /* allow clicking outside like dropdown */
+  }
 }

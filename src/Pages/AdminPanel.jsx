@@ -1744,7 +1744,15 @@ export const AdminPanel = () => {
       </Modal>
 
       {/* Charge Routing Modal */}
-      <Modal show={showChargeModal} onHide={() => setShowChargeModal(false)} centered className="premium-modal" size="lg">
+      <Modal
+            show={showChargeModal}
+            onHide={() => setShowChargeModal(false)}
+            centered
+            className="premium-modal charge-modal-premium"
+            size="lg"
+            backdrop="static"
+            keyboard
+          >
         <Modal.Header closeButton style={{ background: 'rgba(0,0,0,0.5)', borderBottom: '1px solid rgba(255,255,255,0.08)' }}>
           <Modal.Title style={{ color: 'var(--glow-teal)' }}>
             <Wallet size={18} style={{ marginRight: '8px', display: 'inline' }} />
@@ -1838,13 +1846,19 @@ export const AdminPanel = () => {
       </Modal>
 
       {/* Floating Action Button */}
-      <button 
-        className="fab-premium"
-        onClick={() => setShowChargeModal(true)}
-        title="Configure NFT & Operations Wallets"
-      >
-        <Wallet size={24} />
-      </button>
+      <button
+          type="button"
+          className="fab-premium"
+          onClick={(e) => {
+            e.preventDefault()
+            e.stopPropagation()
+            setShowChargeModal(true)
+          }}
+          aria-label="Configure NFT and Operations Wallets"
+          title="Configure NFT & Operations Wallets"
+        >
+          <Wallet size={24} />
+        </button>
     </Container>
   )
 }

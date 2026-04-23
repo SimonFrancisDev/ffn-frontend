@@ -398,3 +398,112 @@ select.input-premium:focus {
   .wallet-grid-premium { grid-template-columns: 1fr; }
   .fab-premium { bottom: 20px; right: 20px; width: 48px; height: 48px; }
 }
+
+
+
+/* ---------- Stability / anti-crack polish ---------- */
+.admin-shell-premium,
+.admin-hero-premium,
+.admin-card-premium,
+.glass-panel-premium,
+.metric-box-premium,
+.action-card-premium,
+.soft-panel-premium,
+.founder-summary-card,
+.premium-table,
+.premium-modal .modal-content {
+  backface-visibility: hidden;
+  -webkit-backface-visibility: hidden;
+  transform: translateZ(0);
+}
+
+.admin-card-premium,
+.metric-box-premium,
+.action-card-premium,
+.soft-panel-premium,
+.founder-summary-card {
+  border-color: var(--border-strong);
+  box-shadow:
+    0 1px 0 rgba(255, 255, 255, 0.02) inset,
+    0 10px 24px rgba(0, 0, 0, 0.16);
+}
+
+.admin-card-premium:hover,
+.btn-premium:hover:not(:disabled),
+.btn-premium-secondary:hover:not(:disabled),
+.btn-premium-danger:hover:not(:disabled),
+.fab-premium:hover,
+.fab-premium:active {
+  transform: none;
+}
+
+.fab-premium {
+  z-index: 1085;
+  pointer-events: auto;
+  will-change: auto;
+  box-shadow:
+    0 10px 24px rgba(0, 0, 0, 0.22),
+    0 0 0 1px color-mix(in srgb, var(--border-strong) 80%, transparent);
+}
+
+.premium-modal .modal-content {
+  border: 1px solid var(--border-strong);
+  box-shadow: 0 18px 44px rgba(0, 0, 0, 0.32);
+}
+
+.premium-table td,
+.premium-table th,
+.premium-accordion .accordion-item,
+.content-tab-premium,
+.admin-badge-premium,
+.chip-premium,
+.owner-sign-pill-premium {
+  border-color: var(--border-strong);
+}
+
+@media (max-width: 768px) {
+  .admin-shell-premium {
+    padding: 12px;
+    overflow-x: clip;
+  }
+
+  .admin-card-premium,
+  .glass-panel-premium,
+  .admin-hero-premium {
+    border-width: 1.25px;
+    border-color: var(--border-strong);
+    border-radius: 18px;
+  }
+
+  .admin-body-premium {
+    padding: 14px;
+  }
+
+  .metric-box-premium,
+  .action-card-premium,
+  .soft-panel-premium,
+  .founder-summary-card {
+    border-width: 1.25px;
+    border-color: var(--border-strong);
+    border-radius: 14px;
+    padding: 13px;
+  }
+
+  .premium-table {
+    min-width: 720px;
+  }
+
+  .table-responsive {
+    overflow-x: auto;
+    overflow-y: hidden;
+    -webkit-overflow-scrolling: touch;
+  }
+
+  .fab-premium {
+    bottom: 18px;
+    right: 18px;
+    width: 52px;
+    height: 52px;
+    border-radius: 50%;
+  }
+}

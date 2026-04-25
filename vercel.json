@@ -10,17 +10,6 @@
       ],
       "destination": "https://finfreedomnetwork.io/$1",
       "permanent": true
-    },
-    {
-      "source": "/(.*)",
-      "has": [
-        {
-          "type": "host",
-          "value": "www.finfreedomnetwork.io"
-        }
-      ],
-      "destination": "https://finfreedomnetwork.io/$1",
-      "permanent": true
     }
   ],
   "rewrites": [

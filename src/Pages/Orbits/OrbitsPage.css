@@ -2757,3 +2757,114 @@
     height: 105px !important;
   }
 }
+
+
+
+/* ===== CLICK FIX: ensure planets are always clickable ===== */
+
+.star-field,
+.galaxy-container::before,
+.orbit-ring,
+.structural-connection,
+.structural-connection-grey {
+  pointer-events: none !important;
+}
+
+/* Force planets to receive clicks */
+.planet-node {
+  pointer-events: auto !important;
+  z-index: 50 !important;
+}
+
+/* Prevent measuring/loader from blocking clicks when visible */
+.galaxy-measure-loader {
+  pointer-events: none !important;
+}
+
+
+
+
+
+/* ===== CLICK UNBLOCK FIX ===== */
+
+.galaxy-measure-loader,
+.galaxy-inner,
+.galaxy-stage {
+  pointer-events: none;
+}
+
+.star-field,
+.galaxy-container::before,
+.orbit-ring,
+.structural-connection,
+.structural-connection-grey {
+  pointer-events: none;
+}
+
+.planet-node {
+  pointer-events: auto !important;
+  z-index: 60 !important;
+}
+
+.planet-content,
+.planet-icon,
+.planet-earn-badge {
+  pointer-events: none;
+}
+
+
+
+
+
+
+/* ===== FINAL PLANET CLICK FIX ===== */
+
+.galaxy-measure-loader,
+.galaxy-inner,
+.galaxy-stage {
+  pointer-events: none !important;
+}
+
+.star-field,
+.galaxy-container::before,
+.orbit-ring,
+.structural-connection,
+.structural-connection-grey {
+  pointer-events: none !important;
+}
+
+.planet-node {
+  pointer-events: auto !important;
+  z-index: 60 !important;
+  cursor: pointer !important;
+}
+
+.planet-content,
+.planet-icon,
+.planet-earn-badge {
+  pointer-events: none !important;
+}
+
+
+
+
+.modal-overlay {
+  position: fixed !important;
+  inset: 0 !important;
+  z-index: 2147483647 !important;
+  display: flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  padding: 18px !important;
+  background: rgba(3, 8, 20, 0.72) !important;
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
+}
+
+.position-modal {
+  position: relative !important;
+  z-index: 2147483647 !important;
+  width: min(92vw, 620px) !important;
+  max-height: min(92vh, 860px) !important;
+  overflow-y: auto !important;
+}

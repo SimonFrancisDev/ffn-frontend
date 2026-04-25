@@ -2,6 +2,7 @@ import './OrbitsPage.css'
 import { useEffect, useState, useCallback, useRef, useMemo } from 'react'
 import { useWallet } from '../../hooks/useWallet'
 import { useContracts } from '../../hooks/useContracts'
+import { createPortal } from 'react-dom'
 import { ethers } from 'ethers'
 import {
   fetchOrbitLevelsApi,
@@ -857,6 +858,7 @@ const OrbitsPage = () => {
   }
 
   const handlePositionClick = useCallback(async (position) => {
+    console.log('[PLANET_CLICKED]', position)
     const level = Number(position?.level || activeTab?.replace('level', '') || 0)
     const selectedCycle = selectedCycleByLevel[level] || 'current'
     const isHistorical = selectedCycle !== 'current'
@@ -910,6 +912,10 @@ const OrbitsPage = () => {
       .sort((a, b) => b - a)
     return active[0] || 0
   }, [viewedLevels])
+
+  useEffect(() => {
+  setIsGalaxyMeasured(false)
+}, [activeTab, viewAddress])
 
   useEffect(() => {
     if (isConnected) loadContracts().catch(console.error)
@@ -1876,7 +1882,9 @@ const OrbitsPage = () => {
         </div>
       </div>
 
-      {showPositionModal && selectedPosition && (
+      {/* {showPositionModal && selectedPosition && (
+        <div className="modal-overlay" onClick={() => setShowPositionModal(false)}> */}
+      {showPositionModal && selectedPosition && createPortal(
         <div className="modal-overlay" onClick={() => setShowPositionModal(false)}>
           <div
             className="position-modal glass-panel"
@@ -2096,7 +2104,8 @@ const OrbitsPage = () => {
               </>
             )}
           </div>
-        </div>
+        </div>,
+        document.body
       )}
     </section>
   )

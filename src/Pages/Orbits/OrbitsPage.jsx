@@ -85,6 +85,9 @@ const OrbitsPage = () => {
   const [isLoadingOrbits, setIsLoadingOrbits] = useState(true)
   const [loadingLevelsMap, setLoadingLevelsMap] = useState({})
 
+  const [viewedLevelsReady, setViewedLevelsReady] = useState(false)
+  const [receiptsLoading, setReceiptsLoading] = useState(false)
+
   const galaxyRef = useRef(null)
   const modalRef = useRef(null)
   const referrerCacheRef = useRef(new Map())
@@ -521,6 +524,7 @@ const OrbitsPage = () => {
     const key = viewAddress.toLowerCase()
     if (!forceRefresh && viewedLevelsCacheRef.current.has(key)) {
       setViewedLevels(viewedLevelsCacheRef.current.get(key))
+      setViewedLevelsReady(true)
       return
     }
     try {
@@ -528,8 +532,10 @@ const OrbitsPage = () => {
       const levels = Object.fromEntries((result?.levels || []).map((item) => [item.level, !!item.isActive]))
       viewedLevelsCacheRef.current.set(key, levels)
       setViewedLevels(levels)
+      setViewedLevelsReady(true)
     } catch (err) {
       console.error('Error fetching viewed levels:', err)
+      setViewedLevelsReady(true)
     }
   }, [viewAddress])
 
@@ -549,6 +555,7 @@ const OrbitsPage = () => {
       return
     }
 
+    setReceiptsLoading(true)
     try {
       const result = await fetchAddressReceiptsApi(viewAddress)
       const receipts = Array.isArray(result?.receipts) ? result.receipts : []
@@ -558,6 +565,8 @@ const OrbitsPage = () => {
     } catch (err) {
       console.error('Error fetching receipts:', err)
       setReceiptsSupported(false)
+    } finally {
+      setReceiptsLoading(false)
     }
   }, [viewAddress])
 
@@ -956,6 +965,8 @@ const OrbitsPage = () => {
     setViewAddressReceipts([])
     setReceiptBucketsByLevel({})
     setLoadingLevelsMap({})
+    setViewedLevelsReady(false)
+    setReceiptsLoading(false)
     setIsLoadingOrbits(true)
     setIsGalaxyMeasured(false)
     setContainerSize({ width: 0, height: 0 })
@@ -974,13 +985,12 @@ const OrbitsPage = () => {
       setOrbitError('')
 
       try {
-        await fetchViewedLevels(true)
-        if (cancelled) return
+        await Promise.allSettled([
+          fetchViewedLevels(true),
+          fetchViewedAddressReceipts(true),
+          fetchOrbitLevelData(activeLevel || 1, { forceRefresh: true, silent: false })
+        ])
 
-        await fetchViewedAddressReceipts(true)
-        if (cancelled) return
-
-        await fetchOrbitLevelData(activeLevel, { forceRefresh: true, silent: false })
         if (cancelled) return
 
         bootstrapAddressRef.current = normalizedViewAddress
@@ -1245,13 +1255,13 @@ const OrbitsPage = () => {
         >
           Downline View {totalDownline > 0 && <span className="badge">{totalDownline}</span>}
         </button>
-        <div className="receipt-status">Receipts: {receiptsSupported ? '✓ ON' : 'OFF'}</div>
+        <div className="receipt-status">Receipts: {receiptsLoading ? 'Checking…' : receiptsSupported ? '✓ ON' : 'OFF'}</div>
       </div>
 
       <div className="level-tabs glass-panel">
         {[1, 2, 3, 4, 5, 6, 7, 8, 9, 10].map(level => {
           const orbitType = levelToOrbitType[level]
-          const isActive = !!viewedLevels[level]
+          const isActive = viewedLevelsReady ? !!viewedLevels[level] : true
           const isLoading = loadingLevelsMap[level]
           return (
             <button
@@ -1260,7 +1270,7 @@ const OrbitsPage = () => {
               onClick={() => setActiveTab(`level${level}`)}
             >
               L{level} ({orbitType})
-              {!isActive && <span className="inactive-badge">off</span>}
+              {viewedLevelsReady && !isActive && <span className="inactive-badge">off</span>}
               {isLoading && <span className="loading-dot" />}
             </button>
           )
@@ -1306,7 +1316,7 @@ const OrbitsPage = () => {
             const totalCycles = data.totalCycles
             const autoUpgradeCompleted = data.autoUpgradeCompleted
             const lineCounts = linePaymentCountsByLevel[level] || data.linePaymentCounts || { line1: 0, line2: 0, line3: 0 }
-            const isLevelActive = !!viewedLevels[level]
+            const isLevelActive = viewedLevelsReady ? !!viewedLevels[level] : true
             const levelInfo = levelConfig[level]
 
             const totalCompletedCycles = Number(totalCycles || 0)
@@ -1773,7 +1783,7 @@ const OrbitsPage = () => {
           {(() => {
             const level = Number(activeTab.replace('level', ''))
             const data = orbitData[level]
-            const isLevelActive = !!viewedLevels[level]
+            const isLevelActive = viewedLevelsReady ? !!viewedLevels[level] : true
             const levelInfo = levelConfig[level]
             const shouldShowAutoUpgradePanel = isLevelActive && level < 10 && level === highestViewedActiveLevel
             const downlineAtLevel = downlineData[level] || []
@@ -2124,13 +2134,11 @@ export default OrbitsPage
 
 
 
-
-
-
 // import './OrbitsPage.css'
 // import { useEffect, useState, useCallback, useRef, useMemo } from 'react'
 // import { useWallet } from '../../hooks/useWallet'
 // import { useContracts } from '../../hooks/useContracts'
+// import { createPortal } from 'react-dom'
 // import { ethers } from 'ethers'
 // import {
 //   fetchOrbitLevelsApi,
@@ -2212,6 +2220,9 @@ export default OrbitsPage
 //   const [activeTab, setActiveTab] = useState('level1')
 //   const [isLoadingOrbits, setIsLoadingOrbits] = useState(true)
 //   const [loadingLevelsMap, setLoadingLevelsMap] = useState({})
+
+// const [viewedLevelsReady, setViewedLevelsReady] = useState(false)
+// const [receiptsLoading, setReceiptsLoading] = useState(false)
 
 //   const galaxyRef = useRef(null)
 //   const modalRef = useRef(null)
@@ -2322,6 +2333,7 @@ export default OrbitsPage
 //   const getCachedReferrer = useCallback(async (address) => {
 //     const key = address.toLowerCase()
 //     if (referrerCacheRef.current.has(key)) return referrerCacheRef.current.get(key)
+//     if (!contracts?.registration) return ethers.ZeroAddress
 //     const referrer = await withRetry(() => contracts.registration.getReferrer(address))
 //     referrerCacheRef.current.set(key, referrer)
 //     return referrer
@@ -2712,7 +2724,7 @@ export default OrbitsPage
 //   }, [viewAddress, orbitData, mergePositionTruth])
 
 //   const loadCycleHistoryForLevel = useCallback(async (level, cycleNumber) => {
-//     if (!contracts || !viewAddress || !ethers.isAddress(viewAddress) || !orbitData[level]) return
+//     if (!viewAddress || !ethers.isAddress(viewAddress) || !orbitData[level]) return
 //     const cycleKey = String(cycleNumber)
 //     if (cycleHistoryData[level]?.[cycleKey]) return
 
@@ -2729,7 +2741,7 @@ export default OrbitsPage
 //     } finally {
 //       setLoadingCycleByLevel(prev => ({ ...prev, [level]: false }))
 //     }
-//   }, [contracts, viewAddress, orbitData, cycleHistoryData, fetchStoredCycleForLevel])
+//   }, [viewAddress, orbitData, cycleHistoryData, fetchStoredCycleForLevel])
 
 //   const fetchOrbitLevelData = useCallback(async (level, options = {}) => {
 //     const { forceRefresh = false, silent = false } = options
@@ -2747,10 +2759,6 @@ export default OrbitsPage
 
 //     loadingLevelsRef.current.add(fetchKey)
 //     setLoadingLevelsMap(prev => ({ ...prev, [level]: true }))
-//     if (!silent) {
-//       setOrbitError('')
-//       setIsLoadingOrbits(true)
-//     }
 
 //     try {
 //       const snapshot = await fetchOrbitLevelSnapshotApi(viewAddress, level)
@@ -2829,16 +2837,23 @@ export default OrbitsPage
 //       loadedLevelsRef.current.add(fetchKey)
 //     } catch (err) {
 //       console.error(`Orbit sync error for level ${level}:`, err)
-//       setOrbitError(err.message || 'Failed to load orbit data')
+//       if (!silent) {
+//         const existingData = orbitData[level]
+//         if (!existingData) {
+//           setOrbitError('Showing last available data')
+//         }
+//       }
 //     } finally {
 //       loadingLevelsRef.current.delete(fetchKey)
 //       setLoadingLevelsMap(prev => ({ ...prev, [level]: false }))
-//       if (!silent) setIsLoadingOrbits(false)
+//       if (!silent && !orbitData[level]) {
+//         setIsLoadingOrbits(false)
+//       }
 //     }
-//   }, [viewAddress, mergePositionTruth])
+//   }, [viewAddress, mergePositionTruth, orbitData])
 
 //   const fetchAllOrbitData = useCallback(async (forceRefresh = false) => {
-//     if (!contracts || !viewAddress || !ethers.isAddress(viewAddress)) return
+//     if (!viewAddress || !ethers.isAddress(viewAddress)) return
 //     const match = activeTab?.match(/^level(\d+)$/)
 //     const currentLevel = match ? Number(match[1]) : 1
 
@@ -2850,7 +2865,7 @@ export default OrbitsPage
 //     }
 
 //     await fetchOrbitLevelData(currentLevel, { forceRefresh, silent: false })
-//   }, [contracts, viewAddress, activeTab, fetchOrbitLevelData])
+//   }, [viewAddress, activeTab, fetchOrbitLevelData])
 
 //   const hydrateLivePositionDetails = useCallback(async (level, position) => {
 //     if (!viewAddress || !ethers.isAddress(viewAddress) || !position) return position
@@ -2982,6 +2997,7 @@ export default OrbitsPage
 //   }
 
 //   const handlePositionClick = useCallback(async (position) => {
+//     console.log('[PLANET_CLICKED]', position)
 //     const level = Number(position?.level || activeTab?.replace('level', '') || 0)
 //     const selectedCycle = selectedCycleByLevel[level] || 'current'
 //     const isHistorical = selectedCycle !== 'current'
@@ -3037,6 +3053,10 @@ export default OrbitsPage
 //   }, [viewedLevels])
 
 //   useEffect(() => {
+//   setIsGalaxyMeasured(false)
+// }, [activeTab, viewAddress])
+
+//   useEffect(() => {
 //     if (isConnected) loadContracts().catch(console.error)
 //   }, [isConnected, loadContracts])
 
@@ -3081,7 +3101,7 @@ export default OrbitsPage
 //   }, [normalizedViewAddress])
 
 //   useEffect(() => {
-//     if (!contracts || !viewAddress || !ethers.isAddress(viewAddress)) return
+//     if (!viewAddress || !ethers.isAddress(viewAddress)) return
 //     if (bootInFlightRef.current) return
 //     if (bootstrapAddressRef.current === normalizedViewAddress) return
 
@@ -3091,7 +3111,6 @@ export default OrbitsPage
 //     const boot = async () => {
 //       bootInFlightRef.current = true
 //       setOrbitError('')
-//       setIsLoadingOrbits(true)
 
 //       try {
 //         await fetchViewedLevels(true)
@@ -3107,7 +3126,9 @@ export default OrbitsPage
 //       } catch (err) {
 //         if (!cancelled) {
 //           console.error('Initial orbit bootstrap failed:', err)
-//           setOrbitError(err?.message || 'Failed to load orbit data')
+//           if (!orbitData[activeLevel]) {
+//             setOrbitError('Showing last available data')
+//           }
 //         }
 //       } finally {
 //         if (!cancelled) {
@@ -3123,17 +3144,17 @@ export default OrbitsPage
 //       cancelled = true
 //     }
 //   }, [
-//     contracts,
 //     viewAddress,
 //     normalizedViewAddress,
 //     activeTab,
 //     fetchViewedLevels,
 //     fetchViewedAddressReceipts,
-//     fetchOrbitLevelData
+//     fetchOrbitLevelData,
+//     orbitData
 //   ])
 
 //   useEffect(() => {
-//     if (!contracts || !viewAddress || !ethers.isAddress(viewAddress)) return
+//     if (!viewAddress || !ethers.isAddress(viewAddress)) return
 //     if (!bootstrapAddressRef.current || bootstrapAddressRef.current !== normalizedViewAddress) return
 
 //     const match = activeTab?.match(/^level(\d+)$/)
@@ -3143,7 +3164,7 @@ export default OrbitsPage
 
 //     if (loadedLevelsRef.current.has(levelKey) || loadingLevelsRef.current.has(levelKey)) return
 //     fetchOrbitLevelData(level, { silent: false })
-//   }, [activeTab, contracts, viewAddress, normalizedViewAddress, fetchOrbitLevelData])
+//   }, [activeTab, viewAddress, normalizedViewAddress, fetchOrbitLevelData])
 
 //   const activeLevelNumber = Number(activeTab.replace('level', ''))
 //   const activeLevelData = orbitData[activeLevelNumber]
@@ -3900,10 +3921,7 @@ export default OrbitsPage
 //             const upgradeReq = levelInfo?.upgradeReq || 0
 //             const autoUpgradeCompleted = data?.autoUpgradeCompleted
             
-//             // Show skeleton if data is loading
-//             // const isLoadingRightPanel = !data && loadingLevelsMap[level]
-
-//            const isLoadingRightPanel = !data && loadingLevelsMap[level]
+//             const isLoadingRightPanel = !data && loadingLevelsMap[level]
 
 //             if (isLoadingRightPanel) {
 //               return (
@@ -4003,7 +4021,9 @@ export default OrbitsPage
 //         </div>
 //       </div>
 
-//       {showPositionModal && selectedPosition && (
+//       {/* {showPositionModal && selectedPosition && (
+//         <div className="modal-overlay" onClick={() => setShowPositionModal(false)}> */}
+//       {showPositionModal && selectedPosition && createPortal(
 //         <div className="modal-overlay" onClick={() => setShowPositionModal(false)}>
 //           <div
 //             className="position-modal glass-panel"
@@ -4223,11 +4243,11 @@ export default OrbitsPage
 //               </>
 //             )}
 //           </div>
-//         </div>
+//         </div>,
+//         document.body
 //       )}
 //     </section>
 //   )
 // }
 
 // export default OrbitsPage
-

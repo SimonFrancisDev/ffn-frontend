@@ -240,3 +240,92 @@
     display: none;
   }
 }
+
+
+
+/* =========================================================
+   MOBILE DRAWER ABOUT SUBMENU REFINEMENT
+   ========================================================= */
+
+.mobile-drawer__brand {
+  gap: 0;
+}
+
+.mobile-drawer__nav-group {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.mobile-drawer__link--about svg {
+  color: var(--text-muted);
+  transition: transform var(--transition-fast);
+}
+
+.mobile-drawer__nav-group.is-open .mobile-drawer__link--about svg {
+  transform: rotate(180deg);
+}
+
+.mobile-drawer__submenu {
+  display: grid;
+  gap: 6px;
+  max-height: 0;
+  overflow: hidden;
+  padding: 0 0 0 14px;
+  border-left: 1px solid transparent;
+  margin-left: 14px;
+  opacity: 0;
+  transform: translateY(-4px);
+  pointer-events: none;
+  transition:
+    max-height var(--transition-base),
+    opacity var(--transition-fast),
+    transform var(--transition-fast),
+    padding var(--transition-fast),
+    border-color var(--transition-fast);
+}
+
+.mobile-drawer__nav-group.is-open .mobile-drawer__submenu {
+  max-height: 280px;
+  padding: 6px 0 6px 14px;
+  border-left-color: var(--border-soft);
+  opacity: 1;
+  transform: translateY(0);
+  pointer-events: auto;
+}
+
+.mobile-drawer__submenu-link {
+  min-height: 42px;
+  padding: 0 12px;
+  border-radius: 14px;
+  display: flex;
+  align-items: center;
+  text-align: left;
+  background: color-mix(in srgb, var(--surface-1) 72%, transparent);
+  border: 1px solid var(--border-soft);
+  color: var(--text-secondary);
+  font-size: 13px;
+  font-weight: 700;
+  transition:
+    background var(--transition-fast),
+    border-color var(--transition-fast),
+    color var(--transition-fast),
+    transform var(--transition-fast);
+}
+
+.mobile-drawer__submenu-link:active {
+  transform: scale(0.99);
+}
+
+@media (hover: hover) {
+  .mobile-drawer__submenu-link:hover {
+    background: var(--surface-2);
+    border-color: var(--border-strong);
+    color: var(--text-primary);
+  }
+}
+
+[data-theme="light"] .mobile-drawer__submenu-link {
+  background: rgba(255, 255, 255, 0.78);
+  border-color: rgba(100, 120, 150, 0.28);
+}

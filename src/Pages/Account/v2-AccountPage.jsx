@@ -2,7 +2,6 @@ import './AccountPage.css'
 import { useEffect, useState, useCallback, useMemo } from 'react'
 import { useWallet } from '../../hooks/useWallet'
 import { useContracts } from '../../hooks/useContracts'
-import { useSpace } from '../../context/SpaceContext'
 import { ethers } from 'ethers'
 import { fetchAddressReceiptsApi } from '../../Services/orbitsApi'
 
@@ -11,9 +10,6 @@ const LEVELS = Array.from({ length: 10 }, (_, index) => index + 1)
 const AccountPage = () => {
   const { isConnected, account, balance: polBalance, connect } = useWallet()
   const { contracts, isLoading: contractsLoading, loadContracts } = useContracts()
-  const { viewedAddress, isOwnSpace, switchToSelf, switchToVisitor } = useSpace()
-
-  const resolvedAddress = viewedAddress || account || ''
 
   const [isRegistered, setIsRegistered] = useState(false)
   const [referrer, setReferrer] = useState('')
@@ -29,8 +25,6 @@ const AccountPage = () => {
   const [language, setLanguage] = useState('English')
   const [notificationsEnabled, setNotificationsEnabled] = useState(true)
   const [saveNotice, setSaveNotice] = useState('')
-  const [profileInput, setProfileInput] = useState('')
-  const [profileError, setProfileError] = useState('')
 
   const formatUsdt = useCallback((value) => {
     try {
@@ -51,18 +45,18 @@ const AccountPage = () => {
   }, [])
 
   const fetchUserData = useCallback(async () => {
-    if (!contracts || !resolvedAddress) return
+    if (!contracts || !account) return
 
     try {
       const id1WalletAddress = await contracts.registration.id1Wallet()
-      const isId1 = id1WalletAddress?.toLowerCase() === resolvedAddress.toLowerCase()
+      const isId1 = id1WalletAddress?.toLowerCase() === account.toLowerCase()
       setIsId1Wallet(isId1)
 
-      const registered = await contracts.registration.isRegistered(resolvedAddress)
+      const registered = await contracts.registration.isRegistered(account)
       setIsRegistered(registered)
 
       if (registered) {
-        const ref = await contracts.registration.getReferrer(resolvedAddress)
+        const ref = await contracts.registration.getReferrer(account)
         setReferrer(ref === ethers.ZeroAddress ? '' : ref)
         setRegistrationDate('2024-01-15')
       } else {
@@ -73,26 +67,26 @@ const AccountPage = () => {
       const levels = {}
       for (let i = 1; i <= 10; i += 1) {
         try {
-          levels[i] = await contracts.registration.isLevelActivated(resolvedAddress, i)
+          levels[i] = await contracts.registration.isLevelActivated(account, i)
         } catch {
           levels[i] = false
         }
       }
       setActiveLevels(levels)
 
-      const balance = await contracts.usdt.balanceOf(resolvedAddress)
+      const balance = await contracts.usdt.balanceOf(account)
       setUsdtBalance(formatUsdt(balance).toFixed(2))
 
       const spender = contracts.levelManager.target
-      const currentAllowance = await contracts.usdt.allowance(resolvedAddress, spender)
+      const currentAllowance = await contracts.usdt.allowance(account, spender)
       setAllowance(formatUsdt(currentAllowance).toFixed(2))
     } catch (err) {
       console.error('Error fetching user data:', err)
     }
-  }, [contracts, resolvedAddress, formatUsdt])
+  }, [contracts, account, formatUsdt])
 
   const fetchEarningsData = useCallback(async () => {
-    if (!resolvedAddress || !isRegistered) {
+    if (!account || !isRegistered) {
       setTotalEarnings('0.00')
       setLevelEarnings({})
       setDownlineCount(0)
@@ -100,7 +94,7 @@ const AccountPage = () => {
     }
 
     try {
-      const result = await fetchAddressReceiptsApi(resolvedAddress)
+      const result = await fetchAddressReceiptsApi(account)
       const receipts = Array.isArray(result) ? result : []
 
       let total = 0
@@ -128,7 +122,7 @@ const AccountPage = () => {
       setLevelEarnings({})
       setDownlineCount(0)
     }
-  }, [resolvedAddress, isRegistered])
+  }, [account, isRegistered])
 
   useEffect(() => {
     if (isConnected) {
@@ -137,17 +131,17 @@ const AccountPage = () => {
   }, [isConnected, loadContracts])
 
   useEffect(() => {
-    if (contracts && resolvedAddress) {
+    if (contracts && account) {
       fetchUserData()
     }
-  }, [contracts, resolvedAddress, fetchUserData])
+  }, [contracts, account, fetchUserData])
 
   useEffect(() => {
     fetchEarningsData()
   }, [fetchEarningsData])
 
   useEffect(() => {
-    if (!contracts || !resolvedAddress) return
+    if (!contracts || !account) return
 
     const interval = setInterval(() => {
       fetchUserData()
@@ -156,7 +150,7 @@ const AccountPage = () => {
     }, 30000)
 
     return () => clearInterval(interval)
-  }, [contracts, resolvedAddress, fetchUserData, fetchEarningsData])
+  }, [contracts, account, fetchUserData, fetchEarningsData])
 
   useEffect(() => {
     const savedLanguage = localStorage.getItem('ffn_language')
@@ -171,29 +165,6 @@ const AccountPage = () => {
     setSaveNotice('Preferences saved')
     window.setTimeout(() => setSaveNotice(''), 1800)
   }, [language, notificationsEnabled])
-
-  const handleViewProfile = useCallback(() => {
-    const nextValue = profileInput.trim()
-
-    if (!nextValue) {
-      setProfileError('Enter a wallet address to view a public profile.')
-      return
-    }
-
-    if (!ethers.isAddress(nextValue)) {
-      setProfileError('Enter a valid wallet address.')
-      return
-    }
-
-    setProfileError('')
-    switchToVisitor?.(nextValue)
-  }, [profileInput, switchToVisitor])
-
-  const handleReturnToMyProfile = useCallback(() => {
-    setProfileError('')
-    setProfileInput('')
-    switchToSelf?.()
-  }, [switchToSelf])
 
   const highestLevel = useMemo(() => {
     const active = Object.entries(activeLevels)
@@ -222,7 +193,7 @@ const AccountPage = () => {
 
   const memberStatusLabel = isRegistered ? 'Active Member' : 'Not Registered'
 
-  if (!isConnected && !resolvedAddress) {
+  if (!isConnected) {
     return (
       <section className="account-page">
         <div className="account-hero account-surface">
@@ -287,72 +258,17 @@ const AccountPage = () => {
             <span className="account-chip">{activeCount}/10 Activated</span>
             {isId1Wallet ? <span className="account-chip account-chip--accent">ID1 Wallet</span> : null}
           </div>
-
-          <div className="account-profile-switcher account-surface account-surface--inner">
-            <div className="account-profile-switcher__head">
-              <div>
-                <span className="account-profile-switcher__label muted-text">
-                  Profile switcher
-                </span>
-                <p className="account-profile-switcher__note soft-text">
-                  View another public wallet account without leaving this page.
-                </p>
-              </div>
-
-              {!isOwnSpace ? (
-                <button
-                  type="button"
-                  className="account-profile-switcher__return"
-                  onClick={handleReturnToMyProfile}
-                >
-                  Return to my profile
-                </button>
-              ) : null}
-            </div>
-
-            <div className="account-profile-switcher__row">
-              <input
-                type="text"
-                className="account-profile-switcher__input"
-                value={profileInput}
-                onChange={(event) => setProfileInput(event.target.value)}
-                placeholder="Enter wallet address to view account"
-              />
-
-              <button
-                type="button"
-                className="account-profile-switcher__submit"
-                onClick={handleViewProfile}
-              >
-                View Profile
-              </button>
-            </div>
-
-            <div className="account-profile-switcher__meta">
-              <span className="account-profile-switcher__chip">
-                {isOwnSpace ? 'Your connected space' : 'Visitor space'}
-              </span>
-
-              <span className="account-profile-switcher__address">
-                {shortAddress(resolvedAddress)}
-              </span>
-            </div>
-
-            {profileError ? (
-              <p className="account-profile-switcher__error">{profileError}</p>
-            ) : null}
-          </div>
         </div>
 
         <div className="account-hero__visual account-surface account-surface--inner">
           <div className="account-hero__visual-box">
             <div className="profile-viz">
-              <div className="profile-avatar-large">{getInitials(resolvedAddress)}</div>
+              <div className="profile-avatar-large">{getInitials(account)}</div>
               <div className="profile-status online" />
             </div>
           </div>
           <p className="account-hero__visual-note muted-text">
-            {shortAddress(resolvedAddress)} • {memberStatusLabel}
+            {shortAddress(account)} • {memberStatusLabel}
           </p>
         </div>
       </div>
@@ -366,10 +282,10 @@ const AccountPage = () => {
             </div>
 
             <div className="account-summary__card account-surface account-surface--inner">
-              <div className="account-summary__avatar">{getInitials(resolvedAddress)}</div>
+              <div className="account-summary__avatar">{getInitials(account)}</div>
               <div className="account-summary__details">
-                <strong className="account-summary__name">{shortAddress(resolvedAddress)}</strong>
-                <span className="account-summary__meta soft-text">{resolvedAddress}</span>
+                <strong className="account-summary__name">{shortAddress(account)}</strong>
+                <span className="account-summary__meta soft-text">{account}</span>
                 <span className="account-summary__meta soft-text">
                   Member since: {registrationDate || 'Register to start'}
                 </span>
@@ -439,7 +355,7 @@ const AccountPage = () => {
             <div className="account-wallet__list">
               <div className="account-wallet__item account-surface account-surface--inner">
                 <span className="account-wallet__label muted-text">Address</span>
-                <strong className="account-wallet__value">{shortAddress(resolvedAddress)}</strong>
+                <strong className="account-wallet__value">{shortAddress(account)}</strong>
               </div>
               <div className="account-wallet__item account-surface account-surface--inner">
                 <span className="account-wallet__label muted-text">Network</span>

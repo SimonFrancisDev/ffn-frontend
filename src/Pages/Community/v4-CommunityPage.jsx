@@ -118,7 +118,7 @@ function resolveResourceIcon(key) {
 const CommunityPage = ({ onNavigate }) => {
   const { isConnected, account, connect } = useWallet()
   const { contracts, isLoading: contractsLoading, loadContracts } = useContracts()
-  const { viewedAddress, isOwnSpace, switchToSelf, switchToVisitor } = useSpace()
+  const { viewedAddress, isOwnSpace } = useSpace()
 
   const resolvedAddress = viewedAddress || account || ''
 
@@ -136,8 +136,7 @@ const CommunityPage = ({ onNavigate }) => {
   const [lastUpdated, setLastUpdated] = useState(new Date().toLocaleTimeString())
   const [activeLeaderboardTab, setActiveLeaderboardTab] = useState('topEarners')
   const [isLeaderboardModalOpen, setIsLeaderboardModalOpen] = useState(false)
-  const [profileInput, setProfileInput] = useState('')
-  const [profileError, setProfileError] = useState('')
+  
 
   const [publicReadStats, setPublicReadStats] = useState({
     totalParticipants: 0,
@@ -278,29 +277,6 @@ const CommunityPage = ({ onNavigate }) => {
       console.error('Copy failed:', err)
     }
   }, [])
-
-  const handleViewProfile = useCallback(() => {
-    const nextValue = profileInput.trim()
-
-    if (!nextValue) {
-      setProfileError('Enter a wallet address to view a public profile.')
-      return
-    }
-
-    if (!ethers.isAddress(nextValue)) {
-      setProfileError('Enter a valid wallet address.')
-      return
-    }
-
-    setProfileError('')
-    switchToVisitor?.(nextValue)
-  }, [profileInput, switchToVisitor])
-
-  const handleReturnToMyProfile = useCallback(() => {
-    setProfileError('')
-    setProfileInput('')
-    switchToSelf?.()
-  }, [switchToSelf])
 
   const fetchPublicReadStats = useCallback(async () => {
     try {
@@ -669,43 +645,6 @@ const CommunityPage = ({ onNavigate }) => {
                 Connect your wallet to access referral tools, view leaderboards, and track community growth.
               </p>
             </div>
-            <div className="community-profile-switcher glass-panel">
-              <div className="community-profile-switcher__head">
-                <div>
-                  <span className="community-profile-switcher__label muted-text">
-                    Profile switcher
-                  </span>
-                  <p className="community-profile-switcher__note soft-text">
-                    Enter a wallet address to view a public community profile.
-                  </p>
-                </div>
-              </div>
-
-              <div className="community-profile-switcher__row">
-                <div className="community-profile-switcher__input-wrap">
-                  <Globe size={16} />
-                  <input
-                    type="text"
-                    className="community-profile-switcher__input"
-                    value={profileInput}
-                    onChange={(event) => setProfileInput(event.target.value)}
-                    placeholder="Enter wallet address"
-                  />
-                </div>
-
-                <button
-                  type="button"
-                  className="community-profile-switcher__submit"
-                  onClick={handleViewProfile}
-                >
-                  View Profile
-                </button>
-              </div>
-
-              {profileError ? (
-                <p className="community-profile-switcher__error">{profileError}</p>
-              ) : null}
-            </div>
             <button type="button" onClick={connect} className="connect-wallet-btn">Connect Wallet</button>
           </div>
         </div>
@@ -746,64 +685,6 @@ const CommunityPage = ({ onNavigate }) => {
             <div className="small muted-text">
               Last updated: {lastUpdated} • {isOwnSpace ? 'Your connected space' : 'Visitor space'}
             </div>
-          </div>
-
-          <div className="community-profile-switcher glass-panel">
-            <div className="community-profile-switcher__head">
-              <div>
-                <span className="community-profile-switcher__label muted-text">
-                  Profile switcher
-                </span>
-                <p className="community-profile-switcher__note soft-text">
-                  View a public wallet space without leaving the community hub.
-                </p>
-              </div>
-
-              {!isOwnSpace ? (
-                <button
-                  type="button"
-                  className="community-profile-switcher__return"
-                  onClick={handleReturnToMyProfile}
-                >
-                  Return to my profile
-                </button>
-              ) : null}
-            </div>
-
-            <div className="community-profile-switcher__row">
-              <div className="community-profile-switcher__input-wrap">
-                <Globe size={16} />
-                <input
-                  type="text"
-                  className="community-profile-switcher__input"
-                  value={profileInput}
-                  onChange={(event) => setProfileInput(event.target.value)}
-                  placeholder="Enter wallet address to view profile"
-                />
-              </div>
-
-              <button
-                type="button"
-                className="community-profile-switcher__submit"
-                onClick={handleViewProfile}
-              >
-                View Profile
-              </button>
-            </div>
-
-            <div className="community-profile-switcher__meta">
-              <span className="community-profile-switcher__chip">
-                {isOwnSpace ? 'Your connected space' : 'Visitor space'}
-              </span>
-
-              <span className="community-profile-switcher__address">
-                {viewerAddressLabel}
-              </span>
-            </div>
-
-            {profileError ? (
-              <p className="community-profile-switcher__error">{profileError}</p>
-            ) : null}
           </div>
 
           <div className="community-hero__chips">

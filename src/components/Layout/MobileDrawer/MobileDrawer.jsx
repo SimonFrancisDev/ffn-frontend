@@ -1,5 +1,14 @@
 import './MobileDrawer.css'
-import { Sun, Moon, Globe, Bell, Wallet, User, X } from 'lucide-react'
+import { useEffect, useState } from 'react'
+import { Sun, Moon, Globe, Bell, Wallet, User, X, ChevronDown } from 'lucide-react'
+
+const ABOUT_MENU_ITEMS = [
+  { label: 'Who we are', href: 'about', section: 'who-we-are' },
+  { label: 'Our purpose', href: 'about', section: 'our-purpose' },
+  { label: 'Our foundation', href: 'about', section: 'our-foundation' },
+  { label: 'Our core values', href: 'about', section: 'our-core-values' },
+  { label: 'Our commitment', href: 'about', section: 'our-commitment' },
+]
 
 const MobileDrawer = ({
   isOpen = false,
@@ -19,6 +28,7 @@ const MobileDrawer = ({
   onOpenAdminPanel,
 }) => {
   const isDark = theme === 'dark'
+  const [isAboutOpen, setIsAboutOpen] = useState(false)
   const profileName = account?.name || 'Your Account'
   const profileStatus =
     wallet?.status === 'Connected'
@@ -26,6 +36,12 @@ const MobileDrawer = ({
       : wallet?.status === 'Connecting'
         ? 'Wallet connecting...'
         : 'Wallet disconnected'
+
+  useEffect(() => {
+    if (!isOpen) {
+      setIsAboutOpen(false)
+    }
+  }, [isOpen])
 
   const openAfterClose = (callback) => {
     onClose?.()
@@ -50,9 +66,13 @@ const MobileDrawer = ({
     openAfterClose(onOpenAccount)
   }
 
-  const handleNavigate = (page) => {
-    onNavigate?.(page)
+  const handleNavigate = (page, section) => {
+    onNavigate?.(page, section)
     onClose?.()
+  }
+
+  const handleToggleAbout = () => {
+    setIsAboutOpen((current) => !current)
   }
 
   return (
@@ -73,7 +93,6 @@ const MobileDrawer = ({
             className="mobile-drawer__brand"
             onClick={() => handleNavigate('home')}
           >
-            <div className="mobile-drawer__brand-mark">FF</div>
             <div className="mobile-drawer__brand-text">
               <span className="mobile-drawer__brand-name">{brand}</span>
               <span className="mobile-drawer__brand-tag soft-text">
@@ -103,17 +122,60 @@ const MobileDrawer = ({
         </div>
 
         <nav className="mobile-drawer__nav" aria-label="Mobile navigation">
-          {navItems.map((item) => (
-            <button
-              key={item.label}
-              type="button"
-              className={`mobile-drawer__link ${item.active ? 'is-active' : ''}`}
-              onClick={() => handleNavigate(item.href)}
-            >
-              <span className="mobile-drawer__link-text">{item.label}</span>
-              <span className="mobile-drawer__link-arrow">›</span>
-            </button>
-          ))}
+          {navItems.map((item) => {
+            const isAbout = item.href === 'about'
+
+            if (isAbout) {
+              return (
+                <div
+                  key={item.label}
+                  className={`mobile-drawer__nav-group ${item.active ? 'is-active' : ''} ${
+                    isAboutOpen ? 'is-open' : ''
+                  }`}
+                >
+                  <button
+                    type="button"
+                    className={`mobile-drawer__link mobile-drawer__link--about ${item.active ? 'is-active' : ''}`}
+                    onClick={handleToggleAbout}
+                    aria-expanded={isAboutOpen}
+                    aria-controls="mobile-about-submenu"
+                  >
+                    <span className="mobile-drawer__link-text">{item.label}</span>
+                    <ChevronDown size={16} />
+                  </button>
+
+                  <div
+                    id="mobile-about-submenu"
+                    className="mobile-drawer__submenu"
+                    aria-hidden={!isAboutOpen}
+                  >
+                    {ABOUT_MENU_ITEMS.map((aboutItem) => (
+                      <button
+                        key={aboutItem.section}
+                        type="button"
+                        className="mobile-drawer__submenu-link"
+                        onClick={() => handleNavigate(aboutItem.href, aboutItem.section)}
+                      >
+                        {aboutItem.label}
+                      </button>
+                    ))}
+                  </div>
+                </div>
+              )
+            }
+
+            return (
+              <button
+                key={item.label}
+                type="button"
+                className={`mobile-drawer__link ${item.active ? 'is-active' : ''}`}
+                onClick={() => handleNavigate(item.href)}
+              >
+                <span className="mobile-drawer__link-text">{item.label}</span>
+                <span className="mobile-drawer__link-arrow">›</span>
+              </button>
+            )
+          })}
 
           {isAdmin && (
             <button
@@ -209,12 +271,16 @@ export default MobileDrawer
 
 
 
-
-
-
-
 // import './MobileDrawer.css'
-// import { Sun, Moon, Globe, Bell, Wallet, User, X } from 'lucide-react'
+// import { Sun, Moon, Globe, Bell, Wallet, User, X, ChevronDown } from 'lucide-react'
+
+// const ABOUT_MENU_ITEMS = [
+//   { label: 'Who we are', href: 'about', section: 'who-we-are' },
+//   { label: 'Our purpose', href: 'about', section: 'our-purpose' },
+//   { label: 'Our foundation', href: 'about', section: 'our-foundation' },
+//   { label: 'Our core values', href: 'about', section: 'our-core-values' },
+//   { label: 'Our commitment', href: 'about', section: 'our-commitment' },
+// ]
 
 // const MobileDrawer = ({
 //   isOpen = false,
@@ -242,28 +308,32 @@ export default MobileDrawer
 //         ? 'Wallet connecting...'
 //         : 'Wallet disconnected'
 
+//   const openAfterClose = (callback) => {
+//     onClose?.()
+//     window.setTimeout(() => {
+//       callback?.()
+//     }, 220)
+//   }
+
 //   const handleNotificationsClick = () => {
-//     if (onClose) onClose()
-//     if (onOpenNotifications) onOpenNotifications()
+//     openAfterClose(onOpenNotifications)
 //   }
 
 //   const handleLanguageClick = () => {
-//     if (onClose) onClose()
-//     if (onOpenLanguage) onOpenLanguage()
+//     openAfterClose(onOpenLanguage)
 //   }
 
 //   const handleWalletClick = () => {
-//     if (onClose) onClose()
-//     if (onOpenWallet) onOpenWallet()
+//     openAfterClose(onOpenWallet)
 //   }
 
 //   const handleAccountClick = () => {
-//     if (onClose) onClose()
-//     if (onOpenAccount) onOpenAccount()
+//     openAfterClose(onOpenAccount)
 //   }
 
-//   const handleNavigate = (page) => {
-//     if (onNavigate) onNavigate(page)
+//   const handleNavigate = (page, section) => {
+//     onNavigate?.(page, section)
+//     onClose?.()
 //   }
 
 //   return (
@@ -284,10 +354,11 @@ export default MobileDrawer
 //             className="mobile-drawer__brand"
 //             onClick={() => handleNavigate('home')}
 //           >
-//             <div className="mobile-drawer__brand-mark">FF</div>
 //             <div className="mobile-drawer__brand-text">
 //               <span className="mobile-drawer__brand-name">{brand}</span>
-//               <span className="mobile-drawer__brand-tag soft-text">Live platform</span>
+//               <span className="mobile-drawer__brand-tag soft-text">
+//                 Live platform
+//               </span>
 //             </div>
 //           </button>
 
@@ -312,17 +383,53 @@ export default MobileDrawer
 //         </div>
 
 //         <nav className="mobile-drawer__nav" aria-label="Mobile navigation">
-//           {navItems.map((item) => (
-//             <button
-//               key={item.label}
-//               type="button"
-//               className={`mobile-drawer__link ${item.active ? 'is-active' : ''}`}
-//               onClick={() => handleNavigate(item.href)}
-//             >
-//               <span className="mobile-drawer__link-text">{item.label}</span>
-//               <span className="mobile-drawer__link-arrow">›</span>
-//             </button>
-//           ))}
+//           {navItems.map((item) => {
+//             const isAbout = item.href === 'about'
+
+//             if (isAbout) {
+//               return (
+//                 <div
+//                   key={item.label}
+//                   className={`mobile-drawer__nav-group ${item.active ? 'is-active' : ''}`}
+//                 >
+//                   <button
+//                     type="button"
+//                     className={`mobile-drawer__link mobile-drawer__link--about ${item.active ? 'is-active' : ''}`}
+//                     onClick={() => handleNavigate('about')}
+//                   >
+//                     <span className="mobile-drawer__link-text">{item.label}</span>
+//                     <ChevronDown size={16} />
+//                   </button>
+
+//                   <div className="mobile-drawer__submenu">
+//                     {ABOUT_MENU_ITEMS.map((aboutItem) => (
+//                       <button
+//                         key={aboutItem.section}
+//                         type="button"
+//                         className="mobile-drawer__submenu-link"
+//                         onClick={() => handleNavigate(aboutItem.href, aboutItem.section)}
+//                       >
+//                         {aboutItem.label}
+//                       </button>
+//                     ))}
+//                   </div>
+//                 </div>
+//               )
+//             }
+
+//             return (
+//               <button
+//                 key={item.label}
+//                 type="button"
+//                 className={`mobile-drawer__link ${item.active ? 'is-active' : ''}`}
+//                 onClick={() => handleNavigate(item.href)}
+//               >
+//                 <span className="mobile-drawer__link-text">{item.label}</span>
+//                 <span className="mobile-drawer__link-arrow">›</span>
+//               </button>
+//             )
+//           })}
+
 //           {isAdmin && (
 //             <button
 //               type="button"
@@ -342,7 +449,9 @@ export default MobileDrawer
 //             onClick={handleLanguageClick}
 //             aria-label="Open language menu"
 //           >
-//             <span className="mobile-drawer__utility-icon"><Globe size={18} /></span>
+//             <span className="mobile-drawer__utility-icon">
+//               <Globe size={18} />
+//             </span>
 //             <span className="mobile-drawer__utility-text">Language</span>
 //           </button>
 
@@ -352,7 +461,9 @@ export default MobileDrawer
 //             onClick={handleNotificationsClick}
 //             aria-label="Open notifications"
 //           >
-//             <span className="mobile-drawer__utility-icon"><Bell size={18} /></span>
+//             <span className="mobile-drawer__utility-icon">
+//               <Bell size={18} />
+//             </span>
 //             <span className="mobile-drawer__utility-text">Notifications</span>
 //           </button>
 
@@ -376,7 +487,9 @@ export default MobileDrawer
 //             onClick={handleWalletClick}
 //             aria-label="Open wallet panel"
 //           >
-//             <span className="mobile-drawer__utility-icon"><Wallet size={18} /></span>
+//             <span className="mobile-drawer__utility-icon">
+//               <Wallet size={18} />
+//             </span>
 //             <span className="mobile-drawer__utility-text">
 //               {wallet?.status === 'Connected' ? 'Wallet' : 'Connect Wallet'}
 //             </span>
@@ -388,7 +501,9 @@ export default MobileDrawer
 //             onClick={handleAccountClick}
 //             aria-label="Open account menu"
 //           >
-//             <span className="mobile-drawer__utility-icon"><User size={18} /></span>
+//             <span className="mobile-drawer__utility-icon">
+//               <User size={18} />
+//             </span>
 //             <span className="mobile-drawer__utility-text">Account</span>
 //           </button>
 //         </div>

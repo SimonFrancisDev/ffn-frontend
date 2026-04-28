@@ -2852,3 +2852,38 @@ body.light-theme .activation-overlay {
   margin-top: 10px;
   box-shadow: 0 12px 28px rgba(139, 92, 246, 0.25);
 }
+
+
+
+@media (max-width: 768px) {
+  .activation-galaxy-container {
+    overflow: auto;            /* 🔥 enable scrolling */
+    display: block;            /* important: remove grid centering */
+    padding: 20px 10px;        /* breathing space */
+  }
+
+  .activation-galaxy-stage {
+    min-width: 520px;          /* 🔥 ensures full P39 fits */
+    min-height: 520px;
+    margin: 0 auto;            /* keeps it centered initially */
+  }
+}
+
+.activation-galaxy-container {
+  -webkit-overflow-scrolling: touch;
+  scroll-behavior: smooth;
+}
+
+
+@media (max-width: 768px) {
+  .activation-galaxy-container::after {
+    content: "Drag to explore →";
+    position: absolute;
+    bottom: 10px;
+    right: 14px;
+    font-size: 10px;
+    color: var(--text-secondary);
+    opacity: 0.6;
+    pointer-events: none;
+  }
+}

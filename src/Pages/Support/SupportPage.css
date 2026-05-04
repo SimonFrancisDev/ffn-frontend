@@ -1,4 +1,3 @@
-
 .support-page {
   width: 100%;
   max-width: 100%;
@@ -1674,13 +1673,6 @@ html {
 
 
 
-
-
-
-
-
-
-
 /* =========================================================
    SUPPORT HERO SECTION - BACKGROUND IMAGE
    ========================================================= */
@@ -1699,7 +1691,7 @@ html {
   transform: translateY(-50%);
   width: 410px;
   height: 410px;
-  background-image: url('/assets/images/support-hero-image.png');
+  /* background-image: url('/assets/images/support-hero-image.png'); */
   background-size: cover;
   background-repeat: no-repeat;
   background-position: center;
@@ -1771,4 +1763,1113 @@ html {
   margin-top: 60px
 }
 
+}
+
+
+
+
+
+/* =========================================================
+   SUPPORT HERO IMAGE + FAQ POLISH PATCH
+========================================================= */
+
+.support-hero {
+  position: relative;
+  min-height: clamp(620px, 78vh, 860px);
+  align-items: center;
+  padding: clamp(34px, 5vw, 82px);
+}
+
+.support-hero__bg {
+  position: absolute;
+  inset: 0;
+  z-index: -2;
+  pointer-events: none;
+}
+
+.support-hero__bg img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  object-position: center;
+}
+
+.support-hero__bg--light {
+  display: none;
+}
+
+[data-theme="light"] .support-hero__bg--dark {
+  display: none;
+}
+
+[data-theme="light"] .support-hero__bg--light {
+  display: block;
+}
+
+.support-hero::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  z-index: -1;
+  pointer-events: none;
+  background: linear-gradient(
+    90deg,
+    color-mix(in srgb, var(--bg-primary) 84%, transparent),
+    color-mix(in srgb, var(--bg-primary) 42%, transparent) 44%,
+    transparent 72%
+  );
+}
+
+.support-hero__left {
+  max-width: 760px;
+  margin-inline: 0 auto;
+  position: relative;
+  z-index: 2;
+}
+
+.support-search,
+.support-search-results,
+.support-hero__chip,
+.support-country-strip__card,
+.support-quick-help__card,
+.support-faq__item,
+.support-contact__input,
+.support-contact__select,
+.support-contact__textarea {
+  box-shadow:
+    0 18px 48px rgba(0, 0, 0, 0.16),
+    inset 0 1px 0 rgba(255, 255, 255, 0.04);
+}
+
+.support-faq__item {
+  transition:
+    transform .22s ease,
+    border-color .22s ease,
+    box-shadow .22s ease;
+}
+
+.support-faq__item:hover {
+  transform: translateY(-2px);
+  border-color: color-mix(in srgb, var(--glow-teal) 36%, var(--border-soft));
+  box-shadow: 0 18px 46px color-mix(in srgb, var(--glow-blue) 12%, transparent);
+}
+
+[data-theme="light"] .support-hero::after {
+  background: linear-gradient(
+    90deg,
+    rgba(255, 255, 255, 0.86),
+    rgba(255, 255, 255, 0.44) 46%,
+    transparent 74%
+  );
+}
+
+[data-theme="light"] .support-hero__title {
+  background: linear-gradient(135deg, #102033 0%, #0f766e 42%, #2563eb 100%);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+}
+
+@media (max-width: 640px) {
+  .support-hero {
+    min-height: 720px;
+    align-items: flex-end;
+    justify-content: center;
+    padding: 24px 16px 34px;
+  }
+
+  .support-hero__bg img {
+    object-position: center;
+  }
+
+  .support-hero::after {
+    background: linear-gradient(
+      to top,
+      color-mix(in srgb, var(--bg-primary) 92%, transparent),
+      color-mix(in srgb, var(--bg-primary) 58%, transparent) 42%,
+      transparent 72%
+    );
+  }
+
+  .support-hero__left {
+    max-width: 100%;
+    margin-inline: auto;
+    text-align: center;
+    align-items: center;
+  }
+
+  .support-hero__eyebrow,
+  .connect-wallet-btn {
+    margin-inline: auto;
+  }
+
+  .support-hero__tools {
+    grid-template-columns: 1fr;
+    width: 100%;
+  }
+
+  .support-hero__chips {
+    justify-content: center;
+  }
+
+  .support-country-strip__lead {
+    text-align: center;
+  }
+
+  [data-theme="light"] .support-hero::after {
+    background: linear-gradient(
+      to top,
+      rgba(255, 255, 255, 0.94),
+      rgba(255, 255, 255, 0.62) 42%,
+      transparent 72%
+    );
+  }
+}
+
+
+
+
+
+.support-hero::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  z-index: -1;
+  pointer-events: none;
+  background: linear-gradient(
+    90deg,
+    color-mix(in srgb, var(--bg-primary) 54%, transparent),  /* Reduced from 84% */
+    color-mix(in srgb, var(--bg-primary) 22%, transparent) 44%,  /* Reduced from 42% */
+    transparent 72%
+  );
+}
+
+[data-theme="light"] .support-hero::after {
+  background: linear-gradient(
+    90deg,
+    rgba(255, 255, 255, 0.56),  /* Reduced from 0.86 */
+    rgba(255, 255, 255, 0.24) 46%,  /* Reduced from 0.44 */
+    transparent 74%
+  );
+}
+
+
+
+/* =========================================================
+   EMERGENCY HERO VISIBILITY FIX (PATCH 2 UPDATED)
+   - object-fit: contain (no cropping)
+   - reduced height with clamp
+   - grid layout for text + image side-by-side
+========================================================= */
+
+
+/* =========================================================
+   EMERGENCY HERO VISIBILITY FIX (PATCH 2 UPDATED)
+   - object-fit: cover (fills hero, no empty space)
+   - object-position: right center (shows laptop on right)
+   - reduced height
+   - grid layout for text + image side-by-side
+========================================================= */
+
+.support-hero {
+  position: relative !important;
+  isolation: isolate !important;
+  overflow: hidden !important;
+  height: clamp(500px, 75vh, 700px) !important;
+  min-height: unset !important;
+  display: grid !important;
+  grid-template-columns: 1fr 1fr !important;
+  align-items: center !important;
+  justify-content: unset !important;
+  padding: clamp(34px, 5vw, 88px) !important;
+  margin-top: -30px;
+}
+
+
+/* Background image - cover fills the area, position shows laptop on right */
+.support-hero__bg {
+  position: absolute !important;
+  inset: 0 !important;
+  z-index: 0 !important;
+  display: block !important;
+  pointer-events: none !important;
+}
+
+
+/* Theme image switching */
+.support-hero__bg--light {
+  display: none !important;
+}
+
+[data-theme="light"] .support-hero__bg--dark {
+  display: none !important;
+}
+
+[data-theme="light"] .support-hero__bg--light {
+  display: block !important;
+}
+
+/* Overlay sits above image but below content */
+.support-hero::after {
+  content: "" !important;
+  position: absolute !important;
+  inset: 0 !important;
+  z-index: 1 !important;
+  pointer-events: none !important;
+  background:
+    linear-gradient(
+      90deg,
+      rgba(2, 8, 23, 0.88),
+      rgba(2, 8, 23, 0.58) 42%,
+      rgba(2, 8, 23, 0.16) 72%,
+      transparent
+    ) !important;
+}
+
+/* Kill old pseudo image layer */
+.support-hero::before {
+  display: none !important;
+}
+
+/* Content must be above overlay */
+.support-hero__left {
+  position: relative !important;
+  z-index: 3 !important;
+  width: min(100%, 720px) !important;
+  max-width: 720px !important;
+  margin: 0 auto 0 0 !important;
+  display: flex !important;
+  flex-direction: column !important;
+  gap: 18px !important;
+  opacity: 1 !important;
+  visibility: visible !important;
+  transform: none !important;
+}
+
+.support-hero__text-block,
+.support-hero__search-col,
+.support-search-results {
+  opacity: 1 !important;
+  visibility: visible !important;
+  transform: none !important;
+}
+
+.support-hero__title {
+  color: #ffffff !important;
+  background: linear-gradient(135deg, #ffffff 0%, var(--glow-teal) 42%, var(--glow-blue) 100%) !important;
+  -webkit-background-clip: text !important;
+  -webkit-text-fill-color: transparent !important;
+  background-clip: text !important;
+}
+
+.support-hero__description {
+  color: rgba(226, 232, 240, 0.88) !important;
+}
+
+.support-search {
+  position: relative !important;
+  z-index: 4 !important;
+  background: rgba(6, 18, 36, 0.94) !important;
+  border: 1px solid rgba(94, 234, 212, 0.2) !important;
+}
+
+.search-input {
+  color: #f8fafc !important;
+}
+
+.search-input::placeholder {
+  color: rgba(226, 232, 240, 0.72) !important;
+}
+
+/* Light theme */
+[data-theme="light"] .support-hero::after {
+  background:
+    linear-gradient(
+      90deg,
+      rgba(255, 255, 255, 0.9),
+      rgba(255, 255, 255, 0.58) 42%,
+      rgba(255, 255, 255, 0.16) 72%,
+      transparent
+    ) !important;
+}
+
+[data-theme="light"] .support-hero__title {
+  background: linear-gradient(135deg, #102033 0%, #0f766e 42%, #2563eb 100%) !important;
+  -webkit-background-clip: text !important;
+  -webkit-text-fill-color: transparent !important;
+  background-clip: text !important;
+}
+
+[data-theme="light"] .support-hero__description {
+  color: #405168 !important;
+}
+
+[data-theme="light"] .support-search {
+  background: rgba(255, 255, 255, 0.94) !important;
+  border-color: rgba(37, 99, 235, 0.18) !important;
+}
+
+[data-theme="light"] .search-input {
+  color: #0f172a !important;
+}
+
+[data-theme="light"] .search-input::placeholder {
+  color: #64748b !important;
+}
+
+/* Mobile: stack vertically */
+@media (max-width: 640px) {
+  .support-hero {
+    height: auto !important;
+    min-height: 760px !important;
+    grid-template-columns: 1fr !important;
+    align-items: flex-end !important;
+    justify-content: center !important;
+    padding: 24px 16px 36px !important;
+  }
+
+  .support-hero__bg img {
+    object-fit: cover !important;
+    object-position: center top !important;
+  }
+
+  .support-hero::after {
+    background:
+      linear-gradient(
+        to top,
+        rgba(2, 8, 23, 0.94),
+        rgba(2, 8, 23, 0.62) 44%,
+        rgba(2, 8, 23, 0.16) 72%,
+        transparent
+      ) !important;
+  }
+
+  .support-hero__left {
+    width: 100% !important;
+    max-width: 100% !important;
+    margin-inline: auto !important;
+    text-align: center !important;
+    align-items: center !important;
+  }
+
+  .support-hero__description {
+    margin-inline: auto !important;
+  }
+
+  .support-hero__search-col {
+    width: 100% !important;
+  }
+
+  [data-theme="light"] .support-hero::after {
+    background:
+      linear-gradient(
+        to top,
+        rgba(255, 255, 255, 0.94),
+        rgba(255, 255, 255, 0.62) 44%,
+        rgba(255, 255, 255, 0.16) 72%,
+        transparent
+      ) !important;
+  }
+}
+
+
+
+
+  .support-hero__left {
+    width: 100% !important;
+    max-width: 100% !important;
+    margin-inline: auto !important;
+    text-align: center !important;
+    align-items: center !important;
+  }
+
+  .support-hero__description {
+    margin-inline: auto !important;
+  }
+
+  .support-hero__search-col {
+    width: 100% !important;
+  }
+
+  [data-theme="light"] .support-hero::after {
+    background:
+      linear-gradient(
+        to top,
+        rgba(255, 255, 255, 0.94),
+        rgba(255, 255, 255, 0.62) 44%,
+        rgba(255, 255, 255, 0.16) 72%,
+        transparent
+      ) !important;
+  }
+
+
+
+/* =========================================================
+   SUPPORT PAGE SOLID UI + SEARCH RESULT POLISH
+========================================================= */
+
+/* Make all major sections solid */
+.support-quick-help,
+.support-contact,
+.support-faq,
+.support-safety,
+.support-announcements,
+.support-resources,
+.support-status-bar {
+  background:
+    radial-gradient(circle at top left, rgba(29, 233, 182, 0.06), transparent 34%),
+    linear-gradient(145deg, #07111f, #0b1628) !important;
+  border: 1px solid rgba(148, 163, 184, 0.22) !important;
+  box-shadow:
+    0 24px 70px rgba(0, 0, 0, 0.34),
+    inset 0 1px 0 rgba(255, 255, 255, 0.05) !important;
+}
+
+/* Inner cards/elements solid */
+.support-search,
+.support-search-results,
+.search-suggestions,
+.search-suggestions button,
+.support-search-results__item,
+.status-bar-item,
+.support-quick-help__card,
+.support-contact__select,
+.support-contact__input,
+.support-contact__textarea,
+.support-contact__wallet-display,
+.support-contact__assist-card,
+.support-faq__item,
+.support-safety__item,
+.announcement-item,
+.resource-link,
+.recent-ticket-item,
+.social-icon,
+.floating-support__menu,
+.floating-support__menu button,
+.support-guide-modal,
+.legal-modal {
+  background: #0b1628 !important;
+  border: 1px solid rgba(148, 163, 184, 0.22) !important;
+  color: var(--text-primary) !important;
+}
+
+/* Search suggestions: strong dropdown */
+.search-suggestions {
+  top: calc(100% + 12px) !important;
+  padding: 14px !important;
+  display: grid !important;
+  gap: 10px !important;
+  background: #07111f !important;
+  border-color: rgba(94, 234, 212, 0.28) !important;
+  box-shadow:
+    0 28px 80px rgba(0, 0, 0, 0.48),
+    0 0 0 1px rgba(255, 255, 255, 0.04) inset !important;
+  z-index: 999 !important;
+}
+
+.search-suggestions button {
+  margin-bottom: 0 !important;
+  min-height: 48px !important;
+  padding: 13px 14px !important;
+  background: #0d1b31 !important;
+  border-color: rgba(148, 163, 184, 0.2) !important;
+  color: #f8fafc !important;
+}
+
+.search-suggestions button span {
+  color: #f8fafc !important;
+  line-height: 1.45;
+}
+
+.search-suggestions button:hover {
+  background: rgba(29, 233, 182, 0.12) !important;
+  border-color: rgba(29, 233, 182, 0.36) !important;
+}
+
+/* Hero search results panel */
+.support-search-results {
+  margin-top: 14px !important;
+  padding: 16px !important;
+  background: #07111f !important;
+  border-color: rgba(94, 234, 212, 0.22) !important;
+  box-shadow: 0 24px 70px rgba(0, 0, 0, 0.42) !important;
+}
+
+.support-search-results__list {
+  margin-top: 12px;
+  gap: 10px !important;
+}
+
+.support-search-results__item {
+  background: #0d1b31 !important;
+  padding: 14px 16px !important;
+}
+
+.support-search-results__item strong,
+.support-search-results__item span,
+.support-search-results__header {
+  color: #f8fafc !important;
+}
+
+/* Form dropdown dark mode fix */
+.support-contact__select,
+.support-contact__select option,
+select,
+select option {
+  background: #081426 !important;
+  color: #f8fafc !important;
+}
+
+/* Modals should block what is underneath */
+.legal-modal-overlay,
+.support-guide-modal__backdrop {
+  background: rgba(2, 8, 23, 0.88) !important;
+  backdrop-filter: blur(10px);
+}
+
+.legal-modal,
+.support-guide-modal {
+  background: #081426 !important;
+  border: 1px solid rgba(148, 163, 184, 0.26) !important;
+  box-shadow: 0 30px 90px rgba(0, 0, 0, 0.56) !important;
+}
+
+.legal-modal__header,
+.legal-modal__footer,
+.support-guide-modal__header,
+.support-guide-modal__footer {
+  background: #0b1628 !important;
+  border-color: rgba(148, 163, 184, 0.2) !important;
+}
+
+/* Light theme equivalents */
+[data-theme="light"] .support-quick-help,
+[data-theme="light"] .support-contact,
+[data-theme="light"] .support-faq,
+[data-theme="light"] .support-safety,
+[data-theme="light"] .support-announcements,
+[data-theme="light"] .support-resources,
+[data-theme="light"] .support-status-bar {
+  background:
+    radial-gradient(circle at top left, rgba(20, 184, 166, 0.06), transparent 34%),
+    linear-gradient(145deg, #ffffff, #f3f7ff) !important;
+  border-color: rgba(100, 120, 150, 0.34) !important;
+  box-shadow:
+    0 20px 58px rgba(15, 23, 42, 0.09),
+    inset 0 1px 0 rgba(255, 255, 255, 0.92) !important;
+}
+
+[data-theme="light"] .support-search,
+[data-theme="light"] .support-search-results,
+[data-theme="light"] .search-suggestions,
+[data-theme="light"] .search-suggestions button,
+[data-theme="light"] .support-search-results__item,
+[data-theme="light"] .status-bar-item,
+[data-theme="light"] .support-quick-help__card,
+[data-theme="light"] .support-contact__select,
+[data-theme="light"] .support-contact__input,
+[data-theme="light"] .support-contact__textarea,
+[data-theme="light"] .support-contact__wallet-display,
+[data-theme="light"] .support-contact__assist-card,
+[data-theme="light"] .support-faq__item,
+[data-theme="light"] .support-safety__item,
+[data-theme="light"] .announcement-item,
+[data-theme="light"] .resource-link,
+[data-theme="light"] .recent-ticket-item,
+[data-theme="light"] .social-icon,
+[data-theme="light"] .floating-support__menu,
+[data-theme="light"] .floating-support__menu button,
+[data-theme="light"] .support-guide-modal,
+[data-theme="light"] .legal-modal {
+  background: #ffffff !important;
+  border-color: rgba(100, 120, 150, 0.28) !important;
+  color: #102033 !important;
+}
+
+[data-theme="light"] .search-suggestions {
+  background: #ffffff !important;
+  box-shadow: 0 28px 80px rgba(15, 23, 42, 0.18) !important;
+}
+
+[data-theme="light"] .search-suggestions button,
+[data-theme="light"] .support-search-results__item {
+  background: #f8fbff !important;
+}
+
+[data-theme="light"] .search-suggestions button span,
+[data-theme="light"] .support-search-results__item strong,
+[data-theme="light"] .support-search-results__item span,
+[data-theme="light"] .support-search-results__header {
+  color: #102033 !important;
+}
+
+[data-theme="light"] .support-contact__select,
+[data-theme="light"] .support-contact__select option,
+[data-theme="light"] select,
+[data-theme="light"] select option {
+  background: #ffffff !important;
+  color: #102033 !important;
+}
+
+
+
+/* HERO FULL WIDTH FIX */
+.support-hero {
+  width: 100vw !important;
+  margin-left: calc(50% - 50vw) !important;
+  margin-right: calc(50% - 50vw) !important;
+  border-radius: 0 !important;
+}
+
+
+
+/* =========================================================
+   HERO COMMUNITY FLAGS (PATCH 2 UPDATED - flag-icons)
+========================================================= */
+
+.support-hero__community {
+  margin-top: 28px;
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+
+.support-hero__community-title {
+  font-size: 13px;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--text-secondary);
+}
+
+.support-hero__flags {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 14px;
+}
+
+/* Flag button - sized for flag-icons */
+.support-hero__flag {
+  width: 56px;
+  height: 56px;
+  display: grid;
+  place-items: center;
+  border-radius: 16px;
+  text-decoration: none;
+
+  background: rgba(15, 23, 42, 0.6);
+  border: 1px solid rgba(148, 163, 184, 0.25);
+
+  backdrop-filter: blur(6px);
+
+  transition: transform 0.3s ease, box-shadow 0.3s ease;
+  animation: floatFlag 6s ease-in-out infinite;
+}
+
+/* flag-icons sizing */
+.support-hero__flag .fi {
+  font-size: 26px;
+  line-height: 1;
+}
+
+/* stagger animation */
+.support-hero__flag:nth-child(odd) {
+  animation-delay: 1s;
+}
+
+.support-hero__flag:nth-child(3n) {
+  animation-delay: 2s;
+}
+
+.support-hero__flag:hover {
+  transform: translateY(-6px) scale(1.08);
+  box-shadow: 0 18px 40px rgba(0, 0, 0, 0.35);
+}
+
+/* Floating animation */
+@keyframes floatFlag {
+  0% {
+    transform: translateY(0px);
+  }
+  50% {
+    transform: translateY(-10px);
+  }
+  100% {
+    transform: translateY(0px);
+  }
+}
+
+@media (max-width: 640px) {
+  .support-hero__community {
+    align-items: center;
+    text-align: center;
+  }
+
+  .support-hero__flags {
+    justify-content: center;
+    gap: 10px;
+  }
+
+  .support-hero__flag {
+    width: 48px;
+    height: 48px;
+  }
+
+  .support-hero__flag .fi {
+    font-size: 22px;
+  }
+}
+
+
+
+
+.support-hero__bg img {
+  width: 100% !important;
+  height: 100% !important;
+  object-fit: cover !important;
+  object-position: right center !important;
+  display: block !important;
+}
+
+
+
+
+
+/* =========================================================
+   EMERGENCY HERO VISIBILITY FIX (FINAL)
+   - cover fills hero, no empty space
+   - object-position shows laptop on right
+   - reduced height
+   - mobile: single column, no overflow issues
+========================================================= */
+
+.support-hero {
+  position: relative !important;
+  isolation: isolate !important;
+  overflow: hidden !important;
+  height: clamp(500px, 75vh, 700px) !important;
+  min-height: unset !important;
+  display: grid !important;
+  grid-template-columns: 1fr 1fr !important;
+  align-items: center !important;
+  justify-content: unset !important;
+  padding: clamp(34px, 5vw, 88px) !important;
+}
+
+/* Background image - cover fills the area */
+.support-hero__bg {
+  position: absolute !important;
+  inset: 0 !important;
+  z-index: 0 !important;
+  display: block !important;
+  pointer-events: none !important;
+}
+
+.support-hero__bg img {
+  width: 100% !important;
+  height: 100% !important;
+  object-fit: cover !important;
+  object-position: right center !important;
+  display: block !important;
+}
+
+/* Theme image switching */
+.support-hero__bg--light {
+  display: none !important;
+}
+
+[data-theme="light"] .support-hero__bg--dark {
+  display: none !important;
+}
+
+[data-theme="light"] .support-hero__bg--light {
+  display: block !important;
+}
+
+/* Overlay sits above image but below content */
+.support-hero::after {
+  content: "" !important;
+  position: absolute !important;
+  inset: 0 !important;
+  z-index: 1 !important;
+  pointer-events: none !important;
+  background:
+    linear-gradient(
+      90deg,
+      rgba(2, 8, 23, 0.88),
+      rgba(2, 8, 23, 0.58) 42%,
+      rgba(2, 8, 23, 0.16) 72%,
+      transparent
+    ) !important;
+}
+
+/* Kill old pseudo image layer */
+.support-hero::before {
+  display: none !important;
+}
+
+/* Content must be above overlay */
+.support-hero__left {
+  position: relative !important;
+  z-index: 3 !important;
+  width: min(100%, 720px) !important;
+  max-width: 720px !important;
+  margin: 0 auto 0 0 !important;
+  display: flex !important;
+  flex-direction: column !important;
+  gap: 18px !important;
+  opacity: 1 !important;
+  visibility: visible !important;
+  transform: none !important;
+}
+
+.support-hero__text-block,
+.support-hero__search-col,
+.support-search-results {
+  opacity: 1 !important;
+  visibility: visible !important;
+  transform: none !important;
+}
+
+.support-hero__title {
+  color: #ffffff !important;
+  background: linear-gradient(135deg, #ffffff 0%, var(--glow-teal) 42%, var(--glow-blue) 100%) !important;
+  -webkit-background-clip: text !important;
+  -webkit-text-fill-color: transparent !important;
+  background-clip: text !important;
+}
+
+.support-hero__description {
+  color: rgba(226, 232, 240, 0.88) !important;
+}
+
+.support-search {
+  position: relative !important;
+  z-index: 4 !important;
+  background: rgba(6, 18, 36, 0.94) !important;
+  border: 1px solid rgba(94, 234, 212, 0.2) !important;
+}
+
+.search-input {
+  color: #f8fafc !important;
+}
+
+.search-input::placeholder {
+  color: rgba(226, 232, 240, 0.72) !important;
+}
+
+/* Light theme */
+[data-theme="light"] .support-hero::after {
+  background:
+    linear-gradient(
+      90deg,
+      rgba(255, 255, 255, 0.9),
+      rgba(255, 255, 255, 0.58) 42%,
+      rgba(255, 255, 255, 0.16) 72%,
+      transparent
+    ) !important;
+}
+
+[data-theme="light"] .support-hero__title {
+  background: linear-gradient(135deg, #102033 0%, #0f766e 42%, #2563eb 100%) !important;
+  -webkit-background-clip: text !important;
+  -webkit-text-fill-color: transparent !important;
+  background-clip: text !important;
+}
+
+[data-theme="light"] .support-hero__description {
+  color: #405168 !important;
+}
+
+[data-theme="light"] .support-search {
+  background: rgba(255, 255, 255, 0.94) !important;
+  border-color: rgba(37, 99, 235, 0.18) !important;
+}
+
+[data-theme="light"] .search-input {
+  color: #0f172a !important;
+}
+
+[data-theme="light"] .search-input::placeholder {
+  color: #64748b !important;
+}
+
+/* =========================================================
+   MOBILE: stack vertically, keep navbar intact
+========================================================= */
+@media (max-width: 640px) {
+  .support-hero {
+    height: auto !important;
+    min-height: 100svh !important;
+    grid-template-columns: 1fr !important;
+    align-items: flex-end !important;
+    justify-content: center !important;
+    padding: 80px 16px 36px !important;
+    width: 100% !important;
+    margin-left: 0 !important;
+    margin-right: 0 !important;
+    border-radius: 0 !important;
+  }
+
+  .support-hero__bg img {
+    object-fit: cover !important;
+    object-position: center top !important;
+  }
+
+  .support-hero::after {
+    background:
+      linear-gradient(
+        to top,
+        rgba(2, 8, 23, 0.94),
+        rgba(2, 8, 23, 0.62) 44%,
+        rgba(2, 8, 23, 0.16) 72%,
+        transparent
+      ) !important;
+  }
+
+  .support-hero__left {
+    width: 100% !important;
+    max-width: 100% !important;
+    margin-inline: auto !important;
+    text-align: center !important;
+    align-items: center !important;
+  }
+
+  .support-hero__description {
+    margin-inline: auto !important;
+  }
+
+  .support-hero__search-col {
+    width: 100% !important;
+  }
+
+  .support-page {
+    padding: 0 !important;
+  }
+
+  [data-theme="light"] .support-hero::after {
+    background:
+      linear-gradient(
+        to top,
+        rgba(255, 255, 255, 0.94),
+        rgba(255, 255, 255, 0.62) 44%,
+        rgba(255, 255, 255, 0.16) 72%,
+        transparent
+      ) !important;
+  }
+}
+
+
+
+
+/* ==================== MAIN MOBILE FIXES ==================== */
+
+/* Prevent horizontal scroll + force proper width */
+.support-page {
+  width: 100vw !important;
+  max-width: 100% !important;
+  margin: 0 !important;
+  padding: 0 !important;
+  overflow-x: hidden !important;
+  box-sizing: border-box !important;
+}
+
+/* Make sure root/html also play nice */
+html, body {
+  overflow-x: hidden !important;
+}
+
+/* Fix Navbar sticking (same pattern used in FFP/other pages) */
+.support-page {
+  position: relative;
+  z-index: 1;
+}
+
+/* Hero full-width + mobile stacking (matching FFP hero pattern) */
+.support-hero {
+  width: 100vw !important;
+  margin-left: calc(50% - 50vw) !important;
+  margin-right: calc(50% - 50vw) !important;
+  border-radius: 0 !important;
+  overflow: hidden !important;
+  padding: 80px 16px 40px !important;   /* Better mobile spacing */
+  min-height: auto !important;
+}
+
+/* Inner containers should not exceed viewport */
+.support-hero__left,
+.support-section,
+.glass-panel,
+.support-quick-help__grid,
+.support-contact__grid,
+.support-faq__categories,
+.support-safety__grid,
+.resources-grid {
+  width: 100% !important;
+  max-width: 100% !important;
+  padding-left: 16px !important;
+  padding-right: 16px !important;
+  box-sizing: border-box !important;
+}
+
+/* Tables / wide elements scroll nicely if needed */
+.support-hero__tools,
+.status-bar-grid,
+.support-quick-help__grid {
+  grid-template-columns: 1fr !important;
+}
+
+/* Floating button stays in viewport */
+.floating-support {
+  position: fixed !important;
+  bottom: 16px !important;
+  right: 16px !important;
+  z-index: 9999 !important;
+}
+
+
+/* =============================================
+   HERO TEXT - MOBILE LIGHT MODE IMPROVEMENT
+============================================= */
+
+@media (max-width: 640px) {
+  [data-theme="light"] .support-hero__title {
+    color: #0f172a !important;
+    font-weight: 900 !important;
+    -webkit-text-fill-color: #0f172a !important;
+    background: none !important;
+    text-shadow: 0 2px 8px rgba(255,255,255,0.9) !important;
+  }
+
+  [data-theme="light"] .support-hero__description {
+    color: #1e2937 !important;
+    font-weight: 600 !important;
+    line-height: 1.65 !important;
+  }
+
+  [data-theme="light"] .support-hero__eyebrow-text {
+    color: #334155 !important;
+    font-weight: 800 !important;
+  }
+}
+
+/* Extra boldness for main title */
+.support-hero__title {
+  font-weight: 900 !important;
+  letter-spacing: -0.04em !important;
+}
+
+/* Ensure gradient doesn't interfere on mobile light */
+@media (max-width: 640px) {
+  .support-hero__title {
+    background: none !important;
+  }
+
+  .support-hero__community-title {
+  font-weight: 900 !important;
+  letter-spacing: -0.04em !important;
+}
+
+.support-hero__flag {
+    background: none;
+    border: 1px solid rgb(162, 152, 152)
+  }
 }

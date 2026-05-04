@@ -24,8 +24,8 @@
 .account-modal__dialog {
   position: relative;
   z-index: 1;
-  width: min(100%, 360px);
-  max-width: calc(100% - 24px);
+  width: 360px;
+  max-width: 92vw;
   max-height: min(88vh, 600px);
   padding: 14px;
   border-radius: 22px;
@@ -398,5 +398,17 @@
 @media (max-height: 500px) {
   .account-dropdown__menu {
     max-height: 200px;
+  }
+}
+
+/* Ensure desktop dropdowns don't take full width */
+@media (min-width: 768px) {
+  .language-modal__dialog,
+  .account-modal__dialog,
+  .notification-modal__dialog,
+  .wallet-modal__dialog {
+    width: auto !important;
+    min-width: 280px;
+    max-width: min(360px, calc(100vw - 24px));
   }
 }

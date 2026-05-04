@@ -128,15 +128,11 @@
 }
 
 .orbit-content.is-level-loading {
-  opacity: 0.88;
+  opacity: 1;
 }
 
 .orbit-content.is-level-loading .galaxy-container::after {
-  content: '';
-  position: absolute;
-  inset: 0;
-  background: rgba(7, 17, 31, 0.16);
-  pointer-events: none;
+  content: none;
 }
 
 .orbits-page {
@@ -2912,4 +2908,207 @@
 
 .activation-modal .galaxy-container {
   transform: translateX(-2%);
+}
+
+
+
+
+
+
+
+
+
+
+/* =========================================================
+   ORBIT-FIRST VISUAL STRUCTURE
+   Logic unchanged. Visual priority only.
+   ========================================================= */
+
+.orbits-control-shell {
+  display: grid;
+  gap: 12px;
+}
+
+.orbit-first-grid {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(280px, 340px);
+  gap: clamp(16px, 2vw, 22px);
+  align-items: start;
+  margin-top: 0;
+}
+
+.orbit-first-grid .orbits-main-grid__left,
+.orbit-first-grid .orbits-main-grid__right {
+  min-width: 0;
+}
+
+.orbit-first-grid .orbits-main-grid__left {
+  order: 1;
+}
+
+.orbit-first-grid .orbits-main-grid__right {
+  order: 2;
+}
+
+.orbit-first-grid .galaxy-container {
+  margin-top: 0;
+}
+
+.orbit-first-grid .orbit-header-card {
+  margin-bottom: 12px;
+}
+
+.orbit-first-grid .orbit-summary-strip {
+  margin-bottom: 12px;
+}
+
+@media (max-width: 1024px) {
+  .orbit-first-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .orbit-first-grid .orbits-main-grid__left {
+    order: 1;
+  }
+
+  .orbit-first-grid .orbits-main-grid__right {
+    order: 2;
+  }
+}
+
+/* =========================================================
+   ORBITS PERFORMANCE STABILITY PATCH
+   Stops flicker, shaking, blinking, and scroll cracking.
+   Logic unchanged.
+   ========================================================= */
+
+/* Isolate the page so internal paints do not shake the whole layout */
+.orbits-page {
+  overflow-x: hidden;
+  contain: layout paint;
+}
+
+/* Prevent expensive paint bleeding from large orbit area */
+.galaxy-container {
+  contain: layout paint;
+  transform: translateZ(0);
+  backface-visibility: hidden;
+  will-change: auto;
+}
+
+/* Keep the galaxy stable during measurement and scroll */
+.galaxy-inner,
+.galaxy-stage {
+  backface-visibility: hidden;
+  transform-style: flat;
+}
+
+/* Stop always-running ring rotation. It is beautiful but expensive on P39. */
+.orbit-ring.line1,
+.orbit-ring.line2,
+.orbit-ring.line3 {
+  animation: none !important;
+}
+
+/* Stop star drifting/twinkling. Static stars are cleaner and stable. */
+.star {
+  animation: none !important;
+  opacity: 0.38;
+}
+
+/* Stop every planet from floating forever. Hover still works. */
+.planet-content {
+  animation: none !important;
+}
+
+/* Stop loading dots from blinking too aggressively */
+.loading-dot {
+  animation: none !important;
+}
+
+/* Stop structural pulse from repainting during scroll */
+.planet-node.structural-preview {
+  animation: none !important;
+}
+
+/* Reduce expensive hover effects on dense orbit nodes */
+.planet-node,
+.planet-content,
+.orbit-core,
+.structural-connection,
+.structural-connection-grey {
+  will-change: auto;
+}
+
+/* Make hover cheaper */
+@media (hover: hover) {
+  .planet-node:hover .planet-content {
+    transform: scale(1.08);
+  }
+}
+
+/* Avoid costly backdrop filters on the page */
+.orbits-page .glass-panel,
+.modal-overlay,
+.position-modal {
+  backdrop-filter: none !important;
+  -webkit-backdrop-filter: none !important;
+}
+
+/* Use lighter modal overlay to reduce GPU repaint */
+.modal-overlay {
+  background: rgba(3, 8, 20, 0.78) !important;
+}
+
+/* Avoid duplicate skeleton blinking wars */
+.skeleton,
+.skeleton-line,
+.skeleton-item,
+.skeleton-progress,
+.skeleton-core,
+.skeleton-ring,
+.skeleton-user-item,
+.skeleton-grid-item,
+.skeleton-orbit,
+.skeleton-card,
+.skeleton-text,
+.skeleton-text-sm,
+.skeleton-title {
+  animation: skeleton-shimmer 1.8s linear infinite !important;
+}
+
+/* When user is scrolling/touching mobile, remove all expensive movement */
+@media (max-width: 768px) {
+  .star,
+  .orbit-ring.line1,
+  .orbit-ring.line2,
+  .orbit-ring.line3,
+  .planet-content,
+  .loading-dot,
+  .planet-node.structural-preview,
+  .structural-connection,
+  .structural-connection-grey {
+    animation: none !important;
+    transition: none !important;
+  }
+
+  .galaxy-container {
+    box-shadow: none;
+  }
+
+  .planet-node {
+    box-shadow: 0 4px 10px rgba(0,0,0,0.18);
+  }
+}
+
+/* Respect system reduced motion fully */
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.001ms !important;
+    animation-iteration-count: 1 !important;
+    scroll-behavior: auto !important;
+    transition-duration: 0.001ms !important;
+  }
 }

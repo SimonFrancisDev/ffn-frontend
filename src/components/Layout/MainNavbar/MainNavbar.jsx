@@ -15,6 +15,49 @@ const ABOUT_MENU_ITEMS = [
   { label: 'Our commitment', href: 'about', section: 'our-commitment' },
 ]
 
+// const SERVICES = [
+//   'F-Freedom Program',
+//   'Freedom-Plus Program',
+//   'Freedom NFT Program',
+//   'Fin Freedom Marketplace',
+//   'Fin Freedom Coin',
+//   'Fin Freedom Institute',
+// ]
+
+const SERVICES = [
+  {
+    label: 'F-Freedom Program',
+    description: 'Wallet-first participation flow, orbit progression, and live program entry.',
+    links: ['Get started', 'Level Manager', 'My Tokens', 'F-Freedom Program Dashboard'],
+  },
+  {
+    label: 'Freedom-Plus Program',
+    description: 'Advanced expansion layer for future premium participation utilities.',
+    links: ['Overview', 'Level Manager', 'My Tokens', 'Freedom Plus Progra Dashboard'],
+  },
+  {
+    label: 'Freedom NFT Program',
+    description: 'NFT identity, access visuals, and future collectible utility layer.',
+    links: ['NFT Overview', 'Nft Foundation', 'Nft InterMediate', 'Nft Advanced', 'Utility Role', 'Nft Program Dashboard'],
+  },
+  {
+    label: 'Fin Freedom Coin',
+    description: 'Coin visual layer for future network identity and ecosystem awareness.',
+    links: ['FFC Overview', 'Utility Tokens', 'Future Utility', 'FFC Program Dashboard'],
+  },
+  {
+    label: 'Fin Freedom Marketplace',
+    description: 'Future ecosystem marketplace for digital and program-related utilities.',
+    links: ['Marketplace Vision', 'Vendor Layer', 'Ecosystem Use', 'Fin Freedom Store', 'My Orders'],
+  },
+  {
+    label: 'Fin Freedom Institute',
+    description: 'Learning, onboarding, training, and community education layer.',
+    links: ['Overview', 'FFN-Digital Academy', 'FFN-Leadership Academy', 'Training Path', 'Community Learning', 'FFI-Dashboard'],
+  },
+]
+
+
 const MainNavbar = ({
   brand = 'Fin Freedom Network',
   navItems = [],
@@ -56,7 +99,11 @@ const MainNavbar = ({
   const [noticeHeight, setNoticeHeight] = useState(0)
   const [isScrolled, setIsScrolled] = useState(false)
   const [isAboutMenuOpen, setIsAboutMenuOpen] = useState(false)
+  const [isServicesOpen, setIsServicesOpen] = useState(false)
+//const [activeService, setActiveService] = useState(null)
+  const [activeService, setActiveService] = useState(SERVICES[0])
   const aboutMenuRef = useRef(null)
+  const servicesRef = useRef(null)
 
   useEffect(() => {
     const updateNoticeHeight = () => {
@@ -116,11 +163,17 @@ const MainNavbar = ({
       if (!aboutMenuRef.current.contains(event.target)) {
         setIsAboutMenuOpen(false)
       }
+      if (servicesRef.current && !servicesRef.current.contains(event.target)) {
+        setIsServicesOpen(false)
+        setActiveService(SERVICES[0])
+      }
     }
 
     const handleKeyDown = (event) => {
       if (event.key === 'Escape') {
         setIsAboutMenuOpen(false)
+        setIsServicesOpen(false)
+        setActiveService(SERVICES[0])
       }
     }
 
@@ -206,67 +259,163 @@ const MainNavbar = ({
               className="main-navbar__brand"
               onClick={() => onNavigate?.('home')}
             >
-              <div className="main-navbar__brand-text">
-                <span className="main-navbar__brand-name">Fin Freedom Network</span>
-                <span className="main-navbar__brand-tag soft-text">
-                  Biggest Orbit Ecosystem
-                </span>
-              </div>
+              {/* <div className="main-navbar__brand-logo-wrap">
+                <img
+                  src="/images/official_logo_2.png"
+                  alt="Fin Freedom Network"
+                  className="main-navbar__brand-logo"
+                />
+              </div> */}
+              <div className="main-navbar__brand-logo-wrap">
+                <picture className="main-navbar__brand-logo-picture">
+                    <img
+                    src={isDark ? '/images/official_logo_2.png' : '/images/official_logo_light.png'}
+                    alt="Fin Freedom Network"
+                    className="main-navbar__brand-logo"
+                    />
+                </picture>
+                </div>
             </button>
           </div>
 
           <nav className="main-navbar__center">
-            {navItems.map((item) => {
-              const isAbout = item.href === 'about'
 
-              if (isAbout) {
-                return (
-                  <div
-                    key={item.label}
-                    ref={aboutMenuRef}
-                    className={`main-navbar__nav-dropdown ${item.active ? 'is-active' : ''} ${
-                      isAboutMenuOpen ? 'is-open' : ''
-                    }`}
-                  >
-                    <button
-                      type="button"
-                      className={`main-navbar__link main-navbar__link--dropdown ${item.active ? 'is-active' : ''}`}
-                      onClick={handleToggleAboutMenu}
-                      aria-expanded={isAboutMenuOpen}
-                      aria-haspopup="menu"
+            {/* NORMAL NAV ITEMS */}
+            {navItems
+              .filter(item =>
+                !['dashboard', 'activation', 'orbits'].includes(item.href)
+              )
+              .map((item) => {
+                const isAbout = item.href === 'about'
+
+                if (isAbout) {
+                  return (
+                    <div
+                      key={item.label}
+                      ref={aboutMenuRef}
+                      className={`main-navbar__nav-dropdown ${isAboutMenuOpen ? 'is-open' : ''}`}
                     >
-                      <span>{item.label}</span>
-                      <ChevronDown size={14} />
-                    </button>
+                      <button
+                        className="main-navbar__link main-navbar__link--dropdown"
+                        onClick={handleToggleAboutMenu}
+                      >
+                        {item.label}
+                        <ChevronDown size={14} />
+                      </button>
 
-                    <div className="main-navbar__about-menu" role="menu">
-                      {ABOUT_MENU_ITEMS.map((aboutItem) => (
+                      <div className="main-navbar__about-menu">
+                        {ABOUT_MENU_ITEMS.map((aboutItem) => (
+                          <button
+                            key={aboutItem.section}
+                            className="main-navbar__about-menu-item"
+                            onClick={() => handleAboutItemClick(aboutItem)}
+                          >
+                            {aboutItem.label}
+                          </button>
+                        ))}
+                      </div>
+                    </div>
+                  )
+                }
+
+                return (
+                  <button
+                    key={item.label}
+                    className="main-navbar__link"
+                    onClick={() => onNavigate?.(item.href)}
+                  >
+                    {item.label}
+                  </button>
+                )
+              })}
+
+            {/* 🔥 SERVICES DROPDOWN */}
+            <div
+              className={`main-navbar__nav-dropdown ${isServicesOpen ? 'is-open' : ''}`}
+              ref={servicesRef}
+            >
+              <button
+                className="main-navbar__link main-navbar__link--dropdown"
+                onClick={() => setIsServicesOpen(!isServicesOpen)}
+              >
+                Services
+                <ChevronDown size={14} />
+              </button>
+
+              <div className="main-navbar__services-menu">
+
+                {/* <div className="main-navbar__services-left">
+                  {SERVICES.map((service) => (
+                    <button
+                      key={service}
+                      className={`main-navbar__service-item ${
+                        activeService === service ? 'is-active' : ''
+                      }`}
+                      onMouseEnter={() => setActiveService(service)}
+                    >
+                      {service}
+                    </button>
+                  ))}
+                </div>
+
+                <div className="main-navbar__services-right">
+                  {activeService && (
+                    <div className="main-navbar__service-content">
+                      {[1, 2, 3, 4, 5].map((i) => (
                         <button
-                          key={aboutItem.section}
-                          type="button"
-                          className="main-navbar__about-menu-item"
-                          onClick={() => handleAboutItemClick(aboutItem)}
-                          role="menuitem"
+                          key={i}
+                          className="main-navbar__service-subitem"
                         >
-                          {aboutItem.label}
+                          {activeService} Option {i}
                         </button>
                       ))}
                     </div>
-                  </div>
-                )
-              }
+                  )}
+                </div> */}
 
-              return (
-                <button
-                  key={item.label}
-                  type="button"
-                  className={`main-navbar__link ${item.active ? 'is-active' : ''}`}
-                  onClick={() => onNavigate?.(item.href)}
-                >
-                  {item.label}
-                </button>
-              )
-            })}
+                <div className="main-navbar__services-left">
+                    {SERVICES.map((service) => (
+                      <button
+                        key={service.label}
+                        className={`main-navbar__service-item ${
+                          activeService?.label === service.label ? 'is-active' : ''
+                        }`}
+                        onMouseEnter={() => setActiveService(service)}
+                        onFocus={() => setActiveService(service)}
+                        onClick={() => setActiveService(service)}
+                      >
+                        {service.label}
+                      </button>
+                    ))}
+                  </div>
+
+                  <div className="main-navbar__services-right">
+                    {activeService && (
+                      <div className="main-navbar__service-content">
+                        <div className="main-navbar__service-summary">
+                          {/* <strong>{activeService.label}</strong> */}
+                          <span>{activeService.description}</span>
+                        </div>
+
+                        {activeService.links.map((link) => (
+                          <button
+                            key={link}
+                            className="main-navbar__service-subitem"
+                            onClick={() => {
+                              setIsServicesOpen(false)
+                              onNavigate?.('services')
+                            }}
+                          >
+                            {link}
+                          </button>
+                        ))}
+                      </div>
+                    )}
+                  </div>
+
+              </div>
+            </div>
+
           </nav>
 
           <div className="main-navbar__right">

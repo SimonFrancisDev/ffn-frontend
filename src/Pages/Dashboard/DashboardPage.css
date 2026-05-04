@@ -821,3 +821,664 @@
     box-shadow: 0 4px 12px rgba(0, 0, 0, 0.06);
   }
 }
+
+
+
+
+/* =========================================================
+   F-FREEDOM DASHBOARD REDESIGN PATCH
+   Solid surfaces + access states + final reference section
+========================================================= */
+
+.dashboard-page {
+  gap: clamp(24px, 3vw, 42px);
+}
+
+/* Stronger, less transparent panels */
+.dashboard-surface {
+  background:
+    radial-gradient(circle at 12% 0%, rgba(77, 163, 255, 0.08), transparent 34%),
+    linear-gradient(
+      145deg,
+      color-mix(in srgb, var(--bg-secondary) 92%, #020817),
+      color-mix(in srgb, var(--bg-primary) 96%, #020817)
+    ) !important;
+  border: 1px solid color-mix(in srgb, var(--border-strong) 72%, transparent) !important;
+  box-shadow:
+    0 22px 70px rgba(0, 0, 0, 0.28),
+    inset 0 1px 0 rgba(255, 255, 255, 0.05) !important;
+}
+
+.dashboard-surface--inner {
+  background:
+    linear-gradient(
+      145deg,
+      color-mix(in srgb, var(--surface-1) 96%, #020817),
+      color-mix(in srgb, var(--surface-2) 92%, #020817)
+    ) !important;
+  border-color: color-mix(in srgb, var(--border-soft) 84%, transparent) !important;
+}
+
+/* Access / registered-only screens */
+.dashboard-access {
+  min-height: calc(100dvh - 120px);
+  display: grid;
+  place-items: center;
+  padding: clamp(24px, 5vw, 72px);
+}
+
+.dashboard-access__card {
+  width: min(100%, 760px);
+  padding: clamp(28px, 5vw, 58px);
+  text-align: center;
+  border-radius: 34px;
+}
+
+.dashboard-access__eyebrow {
+  display: inline-flex;
+  margin-bottom: 14px;
+  padding: 8px 14px;
+  border-radius: 999px;
+  background: rgba(29, 233, 182, 0.1);
+  border: 1px solid rgba(29, 233, 182, 0.24);
+  color: var(--glow-teal);
+  font-size: 12px;
+  font-weight: 900;
+  text-transform: uppercase;
+  letter-spacing: 0.1em;
+}
+
+.dashboard-access__card h1 {
+  margin: 0;
+  color: var(--text-primary);
+  font-size: clamp(2rem, 5vw, 4rem);
+  line-height: 1;
+  letter-spacing: -0.055em;
+}
+
+.dashboard-access__card p {
+  max-width: 58ch;
+  margin: 18px auto 0;
+  line-height: 1.8;
+}
+
+/* Hero stronger identity */
+.dashboard-hero {
+  background:
+    radial-gradient(circle at 12% 0%, rgba(29, 233, 182, 0.12), transparent 34%),
+    radial-gradient(circle at 88% 10%, rgba(77, 163, 255, 0.14), transparent 36%),
+    linear-gradient(145deg, rgba(5, 14, 30, 0.98), rgba(8, 24, 48, 0.96)) !important;
+}
+
+.dashboard-hero__title {
+  max-width: 14ch;
+}
+
+/* Activity section becomes full-width and important */
+.dashboard-activity {
+  padding: clamp(22px, 3vw, 34px);
+}
+
+.dashboard-activity__list {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 14px;
+}
+
+@media (min-width: 900px) {
+  .dashboard-activity__list {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+
+.dashboard-activity__item {
+  grid-template-columns: 46px minmax(0, 1fr) auto;
+  align-items: start;
+}
+
+.dashboard-activity__time {
+  grid-column: auto;
+  font-size: 12px;
+  white-space: nowrap;
+}
+
+/* Final reference section */
+.dashboard-reference {
+  padding: clamp(24px, 3vw, 38px);
+  display: grid;
+  gap: 24px;
+}
+
+.dashboard-reference__grid {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 22px;
+}
+
+.dashboard-reference__column {
+  min-width: 0;
+  display: grid;
+  gap: 16px;
+}
+
+.dashboard-reference__subhead {
+  display: grid;
+  gap: 4px;
+}
+
+.dashboard-reference__subhead span {
+  font-size: 11px;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+}
+
+.dashboard-reference__subhead h3 {
+  margin: 0;
+  color: var(--text-primary);
+  font-size: clamp(1.1rem, 2vw, 1.55rem);
+}
+
+.dashboard-reference .dashboard-contracts__grid {
+  grid-template-columns: 1fr;
+}
+
+.dashboard-treasury__grid--indexed {
+  grid-template-columns: 1fr;
+}
+
+@media (min-width: 900px) {
+  .dashboard-reference__grid {
+    grid-template-columns: minmax(0, 1.35fr) minmax(320px, 0.65fr);
+    align-items: start;
+  }
+
+  .dashboard-reference .dashboard-contracts__grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .dashboard-treasury__grid--indexed {
+    grid-template-columns: 1fr;
+  }
+}
+
+@media (min-width: 1400px) {
+  .dashboard-reference .dashboard-contracts__grid {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+  }
+}
+
+/* Light theme solid surfaces */
+[data-theme="light"] .dashboard-surface {
+  background:
+    radial-gradient(circle at 12% 0%, rgba(37, 99, 235, 0.06), transparent 34%),
+    linear-gradient(145deg, rgba(255, 255, 255, 0.98), rgba(241, 247, 255, 0.96)) !important;
+  border-color: rgba(100, 120, 150, 0.32) !important;
+  box-shadow:
+    0 18px 48px rgba(15, 23, 42, 0.08),
+    inset 0 1px 0 rgba(255, 255, 255, 0.85) !important;
+}
+
+[data-theme="light"] .dashboard-surface--inner {
+  background: rgba(255, 255, 255, 0.96) !important;
+}
+
+[data-theme="light"] .dashboard-hero {
+  background:
+    radial-gradient(circle at 12% 0%, rgba(20, 184, 166, 0.08), transparent 34%),
+    radial-gradient(circle at 88% 10%, rgba(37, 99, 235, 0.09), transparent 36%),
+    linear-gradient(145deg, rgba(255, 255, 255, 0.99), rgba(239, 246, 255, 0.96)) !important;
+}
+
+
+
+
+
+
+
+
+/* =========================================================
+   FINAL DASHBOARD SECTION FLOW PATCH
+   Silent refresh friendly layout + full-width sections
+========================================================= */
+
+.dashboard-section-full {
+  width: 100%;
+  max-width: 100%;
+}
+
+/* Kill the previous split layout if it still exists anywhere */
+.dashboard-main-grid {
+  display: contents !important;
+}
+
+.dashboard-main-grid__left,
+.dashboard-main-grid__right {
+  display: contents !important;
+}
+
+/* Recent activity gets its own full section */
+.dashboard-activity.dashboard-section-full {
+  padding: clamp(24px, 3vw, 40px);
+}
+
+.dashboard-activity.dashboard-section-full .dashboard-activity__list {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 16px;
+}
+
+@media (min-width: 900px) {
+  .dashboard-activity.dashboard-section-full .dashboard-activity__list {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+
+@media (min-width: 1400px) {
+  .dashboard-activity.dashboard-section-full .dashboard-activity__list {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+  }
+}
+
+/* Make activity cards breathe inside their own section */
+.dashboard-activity.dashboard-section-full .dashboard-activity__item {
+  grid-template-columns: 46px minmax(0, 1fr);
+  gap: 14px;
+  min-height: 150px;
+}
+
+.dashboard-activity.dashboard-section-full .dashboard-activity__time {
+  grid-column: 2;
+  width: fit-content;
+  padding: 5px 9px;
+  border-radius: 999px;
+  background: color-mix(in srgb, var(--surface-2) 82%, transparent);
+  border: 1px solid var(--border-soft);
+}
+
+/* Reference layer gets its own full section */
+.dashboard-reference.dashboard-section-full {
+  padding: clamp(24px, 3vw, 42px);
+}
+
+.dashboard-reference.dashboard-section-full .dashboard-reference__grid {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: clamp(22px, 3vw, 36px);
+}
+
+@media (min-width: 1100px) {
+  .dashboard-reference.dashboard-section-full .dashboard-reference__grid {
+    grid-template-columns: minmax(0, 1.35fr) minmax(340px, 0.65fr);
+    align-items: start;
+  }
+}
+
+.dashboard-reference.dashboard-section-full .dashboard-contracts__grid {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 14px;
+}
+
+@media (min-width: 760px) {
+  .dashboard-reference.dashboard-section-full .dashboard-contracts__grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+
+@media (min-width: 1500px) {
+  .dashboard-reference.dashboard-section-full .dashboard-contracts__grid {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+  }
+}
+
+.dashboard-reference.dashboard-section-full .dashboard-treasury__grid--indexed {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 14px;
+}
+
+@media (min-width: 760px) and (max-width: 1099px) {
+  .dashboard-reference.dashboard-section-full .dashboard-treasury__grid--indexed {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+
+
+
+/* =========================================================
+   FINAL DASHBOARD METRICS + ACTIVITY FILTER + REFERENCE GRID
+========================================================= */
+
+/* 5 top cards: clean responsive layout */
+.dashboard-stats__grid {
+  grid-template-columns: 1fr !important;
+}
+
+@media (min-width: 640px) {
+  .dashboard-stats__grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
+  }
+}
+
+@media (min-width: 1100px) {
+  .dashboard-stats__grid {
+    grid-template-columns: repeat(5, minmax(0, 1fr)) !important;
+  }
+}
+
+/* Section heading with filter buttons */
+.dashboard-section-heading--row {
+  display: flex !important;
+  flex-direction: column;
+  gap: 16px;
+}
+
+@media (min-width: 720px) {
+  .dashboard-section-heading--row {
+    flex-direction: row !important;
+    align-items: flex-start;
+    justify-content: space-between;
+  }
+}
+
+.dashboard-activity-filter {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 6px;
+  border-radius: 999px;
+  background: color-mix(in srgb, var(--surface-2) 82%, transparent);
+  border: 1px solid var(--border-soft);
+}
+
+.dashboard-activity-filter button {
+  min-height: 34px;
+  padding: 0 14px;
+  border-radius: 999px;
+  border: 0;
+  cursor: pointer;
+  background: transparent;
+  color: var(--text-secondary);
+  font-size: 12px;
+  font-weight: 800;
+  transition:
+    background var(--transition-fast),
+    color var(--transition-fast),
+    transform var(--transition-fast);
+}
+
+.dashboard-activity-filter button.is-active {
+  background: linear-gradient(135deg, var(--glow-teal), var(--glow-blue));
+  color: #03111f;
+}
+
+@media (hover: hover) {
+  .dashboard-activity-filter button:hover {
+    transform: translateY(-1px);
+    color: var(--text-primary);
+  }
+
+  .dashboard-activity-filter button.is-active:hover {
+    color: #03111f;
+  }
+}
+
+/* Reference section now contracts-only */
+.dashboard-reference__grid--contracts-only {
+  display: block !important;
+}
+
+.dashboard-reference__grid--contracts-only .dashboard-reference__column {
+  width: 100%;
+}
+
+.dashboard-reference.dashboard-section-full .dashboard-reference__grid--contracts-only .dashboard-contracts__grid {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: clamp(14px, 1.8vw, 22px);
+}
+
+@media (min-width: 760px) {
+  .dashboard-reference.dashboard-section-full .dashboard-reference__grid--contracts-only .dashboard-contracts__grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
+  }
+}
+
+@media (min-width: 1180px) {
+  .dashboard-reference.dashboard-section-full .dashboard-reference__grid--contracts-only .dashboard-contracts__grid {
+    grid-template-columns: repeat(3, minmax(0, 1fr)) !important;
+  }
+}
+
+@media (min-width: 1640px) {
+  .dashboard-reference.dashboard-section-full .dashboard-reference__grid--contracts-only .dashboard-contracts__grid {
+    grid-template-columns: repeat(6, minmax(0, 1fr)) !important;
+  }
+}
+
+
+
+
+
+
+/* Animated Numbers */
+.dashboard-stats__value--animated {
+  color: var(--glow-blue);
+  text-shadow:
+    0 0 12px color-mix(in srgb, var(--glow-blue) 28%, transparent),
+    0 0 22px color-mix(in srgb, var(--glow-blue) 10%, transparent);
+}
+
+[data-theme="dark"] .dashboard-hero__mini-value,
+[data-theme="dark"] .dashboard-stats__value {
+  color: var(--glow-blue);
+}
+
+/* Pulse line animation for graph */
+.dashboard-line-chart__pulse-line {
+  filter: drop-shadow(0 0 6px color-mix(in srgb, var(--glow-blue) 35%, transparent));
+  stroke-dasharray: 240;
+  stroke-dashoffset: 0;
+  animation: dashboardPulseLine 20.8s linear infinite;
+}
+
+.dashboard-line-chart__pulse-glow {
+  filter: blur(1px);
+  animation: dashboardPulseGlow 2.8s ease-in-out infinite;
+}
+
+@keyframes dashboardPulseLine {
+  0% {
+    stroke-dashoffset: 240;
+  }
+  100% {
+    stroke-dashoffset: 0;
+  }
+}
+
+@keyframes dashboardPulseGlow {
+  0%, 100% {
+    opacity: 0.08;
+  }
+  50% {
+    opacity: 0.22;
+  }
+}
+
+/* Activity section grid for many items */
+.dashboard-activity.dashboard-section-full .dashboard-activity__list {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 16px;
+  max-height: min(78vh, 980px);
+  overflow-y: auto;
+  padding-right: 4px;
+}
+
+@media (min-width: 900px) {
+  .dashboard-activity.dashboard-section-full .dashboard-activity__list {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+
+@media (min-width: 1400px) {
+  .dashboard-activity.dashboard-section-full .dashboard-activity__list {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+  }
+}
+
+
+
+/* =========================================================
+   AOS SAFETY FIX FOR DASHBOARD
+   Prevents dashboard content from staying invisible
+========================================================= */
+
+.dashboard-page [data-aos] {
+  visibility: visible;
+}
+
+.dashboard-page [data-aos].aos-init:not(.aos-animate) {
+  pointer-events: none;
+}
+
+.dashboard-page [data-aos].aos-animate {
+  pointer-events: auto;
+}
+
+/* Emergency fallback - ensures content never stays hidden */
+.dashboard-page [data-aos]:not(.aos-init) {
+  opacity: 1 !important;
+  transform: none !important;
+}
+
+
+
+
+/* =========================================================
+   DASHBOARD ACCESS ROUTE ACTIONS
+========================================================= */
+
+.dashboard-access__actions {
+  margin-top: clamp(22px, 3vw, 34px);
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 12px;
+}
+
+.dashboard-access__btn {
+  min-height: 46px;
+  padding: 0 18px;
+  border-radius: 999px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  text-decoration: none;
+  font-size: 13px;
+  font-weight: 900;
+  letter-spacing: 0.01em;
+  transition:
+    transform var(--transition-fast),
+    border-color var(--transition-fast),
+    background var(--transition-fast),
+    color var(--transition-fast),
+    box-shadow var(--transition-fast);
+}
+
+.dashboard-access__btn--primary {
+  color: #03111f;
+  background: linear-gradient(135deg, var(--glow-teal), var(--glow-blue));
+  box-shadow:
+    0 12px 28px color-mix(in srgb, var(--glow-blue) 24%, transparent),
+    0 0 0 1px rgba(255, 255, 255, 0.08) inset;
+}
+
+.dashboard-access__btn--ghost {
+  color: var(--text-primary);
+  background: color-mix(in srgb, var(--surface-2) 82%, transparent);
+  border: 1px solid var(--border-soft);
+}
+
+@media (hover: hover) {
+  .dashboard-access__btn:hover {
+    transform: translateY(-2px);
+  }
+
+  .dashboard-access__btn--ghost:hover {
+    border-color: var(--border-strong);
+    background: color-mix(in srgb, var(--surface-2) 96%, transparent);
+  }
+}
+
+[data-theme="light"] .dashboard-access__btn--primary {
+  color: #ffffff;
+  background: linear-gradient(135deg, #0f766e, #2563eb);
+  box-shadow:
+    0 14px 30px rgba(37, 99, 235, 0.18),
+    0 0 0 1px rgba(255, 255, 255, 0.65) inset;
+}
+
+[data-theme="light"] .dashboard-access__btn--ghost {
+  color: #102033;
+  background: rgba(255, 255, 255, 0.86);
+  border-color: rgba(100, 120, 150, 0.3);
+}
+
+
+
+/* Dashboard Access Buttons */
+.dashboard-access__actions {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 16px;
+  margin-top: 28px;
+}
+
+.dashboard-access__btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 52px;
+  padding: 0 28px;
+  border-radius: 999px;
+  font-weight: 800;
+  font-size: 15px;
+  text-decoration: none;
+  transition: all 0.22s ease;
+  cursor: pointer;
+}
+
+.dashboard-access__btn--primary {
+  background: linear-gradient(135deg, var(--glow-teal), var(--glow-blue));
+  color: #07111f;
+  border: none;
+}
+
+.dashboard-access__btn--ghost {
+  background: transparent;
+  border: 1px solid var(--border-soft);
+  color: var(--text-primary);
+}
+
+.dashboard-access__btn--primary:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 8px 20px rgba(29, 233, 182, 0.3);
+}
+
+.dashboard-access__btn--ghost:hover {
+  background: var(--surface-2);
+  border-color: var(--border-strong);
+  transform: translateY(-1px);
+}
+
+@media (max-width: 640px) {
+  .dashboard-access__actions {
+    flex-direction: column;
+  }
+  
+  .dashboard-access__btn {
+    width: 100%;
+  }
+}

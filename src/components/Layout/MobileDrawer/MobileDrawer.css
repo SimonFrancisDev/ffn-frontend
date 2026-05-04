@@ -329,3 +329,410 @@
   background: rgba(255, 255, 255, 0.78);
   border-color: rgba(100, 120, 150, 0.28);
 }
+
+
+
+
+/* =========================================
+   SERVICES SECTION UPGRADE
+========================================= */
+
+.mobile-drawer__nav-group .mobile-drawer__link {
+  font-weight: 700;
+}
+
+/* Colored accent line for Services */
+.mobile-drawer__nav-group.is-open {
+  position: relative;
+}
+
+.mobile-drawer__nav-group.is-open::before {
+  content: '';
+  position: absolute;
+  left: 0;
+  top: 8px;
+  bottom: 8px;
+  width: 3px;
+  border-radius: 4px;
+  background: linear-gradient(180deg, #1e5eff, #00c2ff, #4cff9a);
+}
+
+/* Submenu polish */
+.mobile-drawer__submenu-link {
+  font-weight: 700;
+}
+
+/* Light theme colored text (no black) */
+[data-theme='light'] .mobile-drawer__link-text {
+  color: #1e5eff;
+}
+
+[data-theme='light'] .mobile-drawer__submenu-link {
+  color: #4da3ff;
+}
+
+[data-theme='light'] .mobile-drawer__submenu-link:hover {
+  color: #00c2ff;
+}
+
+
+
+/* FIX SERVICES MOBILE SUBMENU VISIBILITY */
+.mobile-drawer__nav-group--services.is-open .mobile-drawer__submenu {
+  max-height: 520px;
+  opacity: 1;
+  transform: translateY(0);
+  pointer-events: auto;
+  padding: 6px 0 6px 14px;
+  border-left-color: var(--border-soft);
+}
+
+.mobile-drawer__nav-group--services .mobile-drawer__submenu-link {
+  min-height: 46px;
+  font-weight: 800;
+}
+
+
+
+/* =========================================
+   2-LEVEL SERVICES SYSTEM (DESKTOP MATCH)
+========================================= */
+
+.mobile-drawer__service-group {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+/* inner submenu */
+.mobile-drawer__service-submenu {
+  display: grid;
+  gap: 6px;
+  max-height: 0;
+  overflow: hidden;
+  opacity: 0;
+  transform: translateY(-4px);
+  pointer-events: none;
+  padding-left: 12px;
+  border-left: 1px solid transparent;
+  transition:
+    max-height var(--transition-base),
+    opacity var(--transition-fast),
+    transform var(--transition-fast);
+}
+
+.mobile-drawer__service-group.is-open .mobile-drawer__service-submenu {
+  max-height: 260px;
+  opacity: 1;
+  transform: translateY(0);
+  pointer-events: auto;
+  border-left-color: var(--border-soft);
+}
+
+/* second level items */
+.mobile-drawer__service-subitem {
+  min-height: 40px;
+  padding: 0 12px;
+  border-radius: 12px;
+  background: rgba(255, 255, 255, 0.04);
+  border: 1px solid var(--border-soft);
+  color: var(--text-secondary);
+  font-size: 13px;
+  font-weight: 700;
+  text-align: left;
+}
+
+.mobile-drawer__service-subitem:hover {
+  background: var(--surface-2);
+  color: var(--text-primary);
+}
+
+/* arrow alignment */
+.mobile-drawer__submenu-link svg {
+  margin-left: auto;
+  transition: transform 0.2s ease;
+}
+
+.mobile-drawer__service-group.is-open .mobile-drawer__submenu-link svg {
+  transform: rotate(180deg);
+}
+
+
+
+
+/* =========================================
+   ELITE MOBILE SERVICES ANIMATION + COLORS
+========================================= */
+
+.mobile-drawer__nav-group--services .mobile-drawer__submenu {
+  transition:
+    max-height 0.42s cubic-bezier(0.22, 1, 0.36, 1),
+    opacity 0.22s ease,
+    transform 0.28s ease,
+    padding 0.22s ease;
+}
+
+.mobile-drawer__service-group {
+  animation: drawerServiceIn 0.32s ease both;
+}
+
+.mobile-drawer__service-group:nth-child(1) { animation-delay: 0.02s; }
+.mobile-drawer__service-group:nth-child(2) { animation-delay: 0.04s; }
+.mobile-drawer__service-group:nth-child(3) { animation-delay: 0.06s; }
+.mobile-drawer__service-group:nth-child(4) { animation-delay: 0.08s; }
+.mobile-drawer__service-group:nth-child(5) { animation-delay: 0.1s; }
+.mobile-drawer__service-group:nth-child(6) { animation-delay: 0.12s; }
+
+@keyframes drawerServiceIn {
+  from {
+    opacity: 0;
+    transform: translateX(-10px) scale(0.98);
+  }
+  to {
+    opacity: 1;
+    transform: translateX(0) scale(1);
+  }
+}
+
+.mobile-drawer__service-submenu {
+  transition:
+    max-height 0.38s cubic-bezier(0.22, 1, 0.36, 1),
+    opacity 0.22s ease,
+    transform 0.26s ease,
+    border-color 0.22s ease;
+}
+
+.mobile-drawer__service-group.is-open .mobile-drawer__service-subitem {
+  animation: drawerSubItemIn 0.28s ease both;
+}
+
+.mobile-drawer__service-group.is-open .mobile-drawer__service-subitem:nth-child(1) { animation-delay: 0.03s; }
+.mobile-drawer__service-group.is-open .mobile-drawer__service-subitem:nth-child(2) { animation-delay: 0.06s; }
+.mobile-drawer__service-group.is-open .mobile-drawer__service-subitem:nth-child(3) { animation-delay: 0.09s; }
+.mobile-drawer__service-group.is-open .mobile-drawer__service-subitem:nth-child(4) { animation-delay: 0.12s; }
+.mobile-drawer__service-group.is-open .mobile-drawer__service-subitem:nth-child(5) { animation-delay: 0.15s; }
+
+@keyframes drawerSubItemIn {
+  from {
+    opacity: 0;
+    transform: translateX(-8px);
+  }
+  to {
+    opacity: 1;
+    transform: translateX(0);
+  }
+}
+
+/* Premium service parent row */
+.mobile-drawer__nav-group--services .mobile-drawer__submenu-link {
+  background:
+    linear-gradient(135deg, rgba(30, 94, 255, 0.1), rgba(0, 194, 255, 0.06)),
+    rgba(255, 255, 255, 0.04);
+}
+
+.mobile-drawer__service-group.is-open > .mobile-drawer__submenu-link {
+  border-color: rgba(0, 194, 255, 0.32);
+  background:
+    linear-gradient(135deg, rgba(30, 94, 255, 0.2), rgba(0, 194, 255, 0.12), rgba(76, 255, 154, 0.08));
+}
+
+/* Dark submenu colors */
+[data-theme='dark'] .mobile-drawer__service-subitem {
+  color: rgba(230, 234, 242, 0.82);
+}
+
+[data-theme='dark'] .mobile-drawer__service-subitem:hover {
+  color: #ffffff;
+  border-color: rgba(0, 194, 255, 0.28);
+  background: rgba(0, 194, 255, 0.1);
+}
+
+/* Light theme colored submenu text */
+[data-theme='light'] .mobile-drawer__nav-group--services .mobile-drawer__submenu-link {
+  color: #1e5eff;
+  background:
+    linear-gradient(135deg, rgba(30, 94, 255, 0.1), rgba(0, 194, 255, 0.06)),
+    rgba(255, 255, 255, 0.86);
+  border-color: rgba(77, 163, 255, 0.22);
+}
+
+[data-theme='light'] .mobile-drawer__service-group.is-open > .mobile-drawer__submenu-link {
+  color: #00a7d8;
+  border-color: rgba(0, 194, 255, 0.34);
+  background:
+    linear-gradient(135deg, rgba(30, 94, 255, 0.14), rgba(0, 194, 255, 0.1), rgba(76, 255, 154, 0.08)),
+    rgba(255, 255, 255, 0.92);
+}
+
+[data-theme='light'] .mobile-drawer__service-subitem {
+  color: #2563eb;
+  background:
+    linear-gradient(135deg, rgba(77, 163, 255, 0.1), rgba(29, 233, 182, 0.05)),
+    rgba(255, 255, 255, 0.78);
+  border-color: rgba(77, 163, 255, 0.2);
+}
+
+[data-theme='light'] .mobile-drawer__service-subitem:hover {
+  color: #00a7d8;
+  background:
+    linear-gradient(135deg, rgba(0, 194, 255, 0.14), rgba(76, 255, 154, 0.1)),
+    rgba(255, 255, 255, 0.96);
+  border-color: rgba(0, 194, 255, 0.34);
+}
+
+/* Respect reduced motion */
+@media (prefers-reduced-motion: reduce) {
+  .mobile-drawer__service-group,
+  .mobile-drawer__service-subitem {
+    animation: none !important;
+  }
+}
+
+
+
+/* =========================================
+   FINAL DRAWER COLOR SYSTEM
+   Dark + Light, Icons + Text
+========================================= */
+
+/* Base icon behavior */
+.mobile-drawer svg {
+  stroke: currentColor;
+}
+
+/* Dark mode drawer text */
+[data-theme='dark'] .mobile-drawer__brand-name {
+  color: #ffffff;
+}
+
+[data-theme='dark'] .mobile-drawer__brand-tag,
+[data-theme='dark'] .mobile-drawer__profile-status {
+  color: rgba(77, 163, 255, 0.82);
+}
+
+[data-theme='dark'] .mobile-drawer__profile-name {
+  color: #4cff9a;
+}
+
+[data-theme='dark'] .mobile-drawer__link-text {
+  color: #e6eaf2;
+}
+
+[data-theme='dark'] .mobile-drawer__link:hover .mobile-drawer__link-text,
+[data-theme='dark'] .mobile-drawer__link.is-active .mobile-drawer__link-text,
+[data-theme='dark'] .mobile-drawer__nav-group.is-open > .mobile-drawer__link .mobile-drawer__link-text {
+  color: #00c2ff;
+}
+
+[data-theme='dark'] .mobile-drawer__submenu-link {
+  color: #4da3ff;
+}
+
+[data-theme='dark'] .mobile-drawer__service-subitem {
+  color: #4cff9a;
+}
+
+/* Light mode drawer text */
+[data-theme='light'] .mobile-drawer__brand-name {
+  color: #1e5eff;
+}
+
+[data-theme='light'] .mobile-drawer__brand-tag,
+[data-theme='light'] .mobile-drawer__profile-status {
+  color: #00a7d8;
+}
+
+[data-theme='light'] .mobile-drawer__profile-name {
+  color: #2f6fe8;
+}
+
+[data-theme='light'] .mobile-drawer__link-text {
+  color: #1e5eff;
+}
+
+[data-theme='light'] .mobile-drawer__link:hover .mobile-drawer__link-text,
+[data-theme='light'] .mobile-drawer__link.is-active .mobile-drawer__link-text,
+[data-theme='light'] .mobile-drawer__nav-group.is-open > .mobile-drawer__link .mobile-drawer__link-text {
+  color: #00a7d8;
+}
+
+[data-theme='light'] .mobile-drawer__submenu-link {
+  color: #2563eb;
+}
+
+[data-theme='light'] .mobile-drawer__service-subitem {
+  color: #00a7d8;
+}
+
+/* Utility icons + text */
+.mobile-drawer__utility:nth-child(1) {
+  color: #4da3ff;
+}
+
+.mobile-drawer__utility:nth-child(2) {
+  color: #4cff9a;
+}
+
+.mobile-drawer__utility:nth-child(3) {
+  color: #00c2ff;
+}
+
+.mobile-drawer__utility:nth-child(4) {
+  color: #f59e0b;
+}
+
+.mobile-drawer__utility:nth-child(5) {
+  color: #8b5cf6;
+}
+
+.mobile-drawer__utility-icon,
+.mobile-drawer__utility-text {
+  color: currentColor;
+}
+
+/* Arrows */
+.mobile-drawer__link-arrow,
+.mobile-drawer__link--about svg,
+.mobile-drawer__submenu-link svg {
+  color: #00c2ff;
+}
+
+/* Hover glow */
+.mobile-drawer__utility:hover,
+.mobile-drawer__link:hover,
+.mobile-drawer__submenu-link:hover,
+.mobile-drawer__service-subitem:hover {
+  box-shadow: 0 10px 24px rgba(0, 194, 255, 0.12);
+}
+
+
+.mobile-drawer__service-main {
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.mobile-drawer__service-main svg {
+  flex-shrink: 0;
+  transition: transform 0.2s ease;
+}
+
+.mobile-drawer__service-group.is-open .mobile-drawer__service-main svg {
+  transform: rotate(180deg);
+}
+
+.mobile-drawer__service-description {
+  margin: 8px 0 10px;
+  padding: 10px 12px;
+  border-radius: 14px;
+  color: rgba(230, 234, 242, 0.72);
+  background: rgba(255, 255, 255, 0.045);
+  border: 1px solid rgba(0, 194, 255, 0.12);
+  font-size: 12.5px;
+  line-height: 1.5;
+}
+
+[data-theme='light'] .mobile-drawer__service-description {
+  color: rgba(15, 23, 42, 0.68);
+  background: rgba(255, 255, 255, 0.72);
+  border-color: rgba(0, 114, 188, 0.12);
+}

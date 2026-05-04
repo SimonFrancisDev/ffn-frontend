@@ -1,10 +1,10 @@
-import './AccountDropdown.css'
-import { useEffect, useRef, useState } from 'react'
-import { createPortal } from 'react-dom'
+import "./AccountDropdown.css";
+import { useEffect, useRef, useState } from "react";
+import { createPortal } from "react-dom";
 
 function ModalPortal({ children }) {
-  if (typeof document === 'undefined') return null
-  return createPortal(children, document.body)
+  if (typeof document === "undefined") return null;
+  return createPortal(children, document.body);
 }
 
 const AccountDropdown = ({
@@ -20,95 +20,155 @@ const AccountDropdown = ({
   isAdmin = false,
   anchorRef = null, // NEW: Accept anchor ref for positioning
 }) => {
-  const dialogRef = useRef(null)
+  const dialogRef = useRef(null);
   const [desktopPosition, setDesktopPosition] = useState({
     top: 76,
     left: null,
     right: 20,
-  })
+  });
 
   // Body scroll lock - exactly like NotificationDropdown
   useEffect(() => {
-    if (!isOpen) return undefined
+    if (!isOpen) return undefined;
 
-    const previousOverflow = document.body.style.overflow
-    const previousTouchAction = document.body.style.touchAction
+    const previousOverflow = document.body.style.overflow;
+    const previousTouchAction = document.body.style.touchAction;
 
-    document.body.style.overflow = 'hidden'
-    document.body.style.touchAction = 'none'
+    document.body.style.overflow = "hidden";
+    document.body.style.touchAction = "none";
 
     return () => {
-      document.body.style.overflow = previousOverflow
-      document.body.style.touchAction = previousTouchAction
-    }
-  }, [isOpen])
+      document.body.style.overflow = previousOverflow;
+      document.body.style.touchAction = previousTouchAction;
+    };
+  }, [isOpen]);
 
   // Desktop positioning logic
+  // const updateDesktopPosition = () => {
+  //   if (typeof window === 'undefined') return
+  //   if (window.innerWidth < 768) return
+
+  //   const anchorEl = anchorRef?.current
+  //   const dialogEl = dialogRef.current
+
+  //   if (!anchorEl || !dialogEl) {
+  //     setDesktopPosition({ top: 76, left: null, right: 20 })
+  //     return
+  //   }
+
+  //   const rect = anchorEl.getBoundingClientRect()
+  //   const dialogWidth = dialogEl.offsetWidth || 360
+  //   const viewportWidth = window.innerWidth
+  //   const gap = 12
+  //   const minMargin = 12
+
+  //   // Align dropdown right edge with anchor right edge
+  //   let left = rect.right - dialogWidth
+  //   left = Math.max(minMargin, left)
+  //   left = Math.min(left, viewportWidth - dialogWidth - minMargin)
+
+  //   const top = rect.bottom + gap
+
+  //   setDesktopPosition({
+  //     top,
+  //     left,
+  //     right: 'auto',
+  //   })
+  // }
+
   const updateDesktopPosition = () => {
-    if (typeof window === 'undefined') return
-    if (window.innerWidth < 768) return
+    if (typeof window === "undefined") return;
+    if (window.innerWidth < 768) return;
 
-    const anchorEl = anchorRef?.current
-    const dialogEl = dialogRef.current
+    const anchorEl = anchorRef?.current;
+    const dialogEl = dialogRef.current;
 
+    // CRITICAL FIX: Don't fall back to centered position if anchor is missing
+    // Instead, use the button's last known position or default to top-right
     if (!anchorEl || !dialogEl) {
-      setDesktopPosition({ top: 76, left: null, right: 20 })
-      return
+      // Find the actual button element by selector as fallback
+      const button =
+        document.querySelector(
+          '.main-navbar__action-btn[aria-label*="Language"]',
+        ) || document.querySelector(".main-navbar__action-btn:has(> svg)");
+
+      if (button) {
+        const rect = button.getBoundingClientRect();
+        const dialogWidth = dialogEl?.offsetWidth || 320;
+        const viewportWidth = window.innerWidth;
+        const gap = 12;
+        const minMargin = 12;
+
+        let left = rect.right - dialogWidth;
+        left = Math.max(minMargin, left);
+        left = Math.min(left, viewportWidth - dialogWidth - minMargin);
+
+        setDesktopPosition({
+          top: rect.bottom + gap,
+          left,
+          right: "auto",
+        });
+      } else {
+        // Last resort: position near the top-right corner
+        setDesktopPosition({
+          top: 76,
+          left: "auto",
+          right: 20,
+        });
+      }
+      return;
     }
 
-    const rect = anchorEl.getBoundingClientRect()
-    const dialogWidth = dialogEl.offsetWidth || 360
-    const viewportWidth = window.innerWidth
-    const gap = 12
-    const minMargin = 12
+    const rect = anchorEl.getBoundingClientRect();
+    const dialogWidth = dialogEl.offsetWidth || 320;
+    const viewportWidth = window.innerWidth;
+    const gap = 12;
+    const minMargin = 12;
 
     // Align dropdown right edge with anchor right edge
-    let left = rect.right - dialogWidth
-    left = Math.max(minMargin, left)
-    left = Math.min(left, viewportWidth - dialogWidth - minMargin)
+    let left = rect.right - dialogWidth;
+    left = Math.max(minMargin, left);
+    left = Math.min(left, viewportWidth - dialogWidth - minMargin);
 
-    const top = rect.bottom + gap
+    const top = rect.bottom + gap;
 
     setDesktopPosition({
       top,
       left,
-      right: 'auto',
-    })
-  }
+      right: "auto",
+    });
+  };
 
   // Position update on open/resize/scroll
   useEffect(() => {
-    if (!isOpen) return undefined
+    if (!isOpen) return undefined;
 
-    updateDesktopPosition()
+    updateDesktopPosition();
 
-    const handleResize = () => updateDesktopPosition()
-    const handleScroll = () => updateDesktopPosition()
+    const handleResize = () => updateDesktopPosition();
+    const handleScroll = () => updateDesktopPosition();
 
-    window.addEventListener('resize', handleResize)
-    window.addEventListener('scroll', handleScroll, true)
+    window.addEventListener("resize", handleResize);
+    window.addEventListener("scroll", handleScroll, true);
 
     return () => {
-      window.removeEventListener('resize', handleResize)
-      window.removeEventListener('scroll', handleScroll, true)
-    }
-  }, [isOpen, anchorRef])
+      window.removeEventListener("resize", handleResize);
+      window.removeEventListener("scroll", handleScroll, true);
+    };
+  }, [isOpen, anchorRef]);
 
-  if (!isOpen || !account) return null
+  if (!isOpen || !account) return null;
 
   const handleAction = (callback) => {
-    if (onClose) onClose()
-    if (callback) callback()
-  }
+    if (onClose) onClose();
+    if (callback) callback();
+  };
 
   return (
     <ModalPortal>
       <div className="account-modal" role="presentation">
         {/* Backdrop for click-outside */}
-        <div
-          className="account-modal__backdrop"
-          onClick={onClose}
-        />
+        <div className="account-modal__backdrop" onClick={onClose} />
 
         <div
           ref={dialogRef}
@@ -117,7 +177,7 @@ const AccountDropdown = ({
           aria-label="Account menu"
           onClick={(event) => event.stopPropagation()}
           style={
-            typeof desktopPosition.left === 'number'
+            typeof desktopPosition.left === "number"
               ? {
                   top: `${desktopPosition.top}px`,
                   left: `${desktopPosition.left}px`,
@@ -146,18 +206,20 @@ const AccountDropdown = ({
 
           <div className="account-dropdown__profile">
             <div className="account-dropdown__avatar">
-              {account.initials || 'U'}
+              {account.initials || "U"}
             </div>
 
             <div className="account-dropdown__identity">
               <p className="account-dropdown__name">{account.name}</p>
-              <p className="account-dropdown__meta soft-text">{account.emailOrWallet}</p>
+              <p className="account-dropdown__meta soft-text">
+                {account.emailOrWallet}
+              </p>
             </div>
           </div>
 
           <div className="account-dropdown__chips">
             <span className="account-dropdown__chip">
-              {account.status || 'Active'}
+              {account.status || "Active"}
             </span>
             <span className="account-dropdown__chip">
               Level {account.level || 1}
@@ -227,7 +289,9 @@ const AccountDropdown = ({
               >
                 <span className="account-dropdown__item-left">
                   <span className="account-dropdown__item-icon">🛡️</span>
-                  <span className="account-dropdown__item-text">Admin Panel</span>
+                  <span className="account-dropdown__item-text">
+                    Admin Panel
+                  </span>
                 </span>
                 <span className="account-dropdown__item-arrow">›</span>
               </button>
@@ -247,22 +311,10 @@ const AccountDropdown = ({
         </div>
       </div>
     </ModalPortal>
-  )
-}
+  );
+};
 
-export default AccountDropdown
-
-
-
-
-
-
-
-
-
-
-
-
+export default AccountDropdown;
 
 // import './AccountDropdown.css'
 

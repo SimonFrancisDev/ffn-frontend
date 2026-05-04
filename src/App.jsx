@@ -5,11 +5,14 @@ import i18n from './i18n'
 import AppShell from './components/Layout/AppShell/AppShell'
 import TopNoticeBar from './components/Layout/TopNoticeBar/TopNoticeBar'
 import MainNavbar from './components/Layout/MainNavbar/MainNavbar'
+import Footer from './components/Footer/Footer'
 import MobileDrawer from './components/Layout/MobileDrawer/MobileDrawer'
 import LandingPage from './Pages/Landing/LandingPage'
+import FFreedomProgramPage from './Pages/FFreedomProgram/FFreedomProgramPage'
 import AboutPage from './Pages/About/AboutPage'
 import DashboardPage from './Pages/Dashboard/DashboardPage'
 import ActivationCenterPage from './Pages/ActivationCenter/ActivationCenterPage'
+import { MyTokens } from './Pages/MyTokens/MyTokens';
 import OrbitsPage from './Pages/Orbits/OrbitsPage'
 import CommunityPage from './Pages/Community/CommunityPage'
 import SupportPage from './Pages/Support/SupportPage'
@@ -32,12 +35,19 @@ const API_BASE_URL =
   import.meta.env.VITE_API_BASE_URL?.replace(/\/$/, '') ||
   'https://fin-freedom-backend-3.onrender.com'
 
+// const navItems = [
+//   { label: 'Home', href: 'home', active: false },
+//   { label: 'About Us', href: 'about', active: false },
+//   { label: 'Dashboard', href: 'dashboard', active: false },
+//   { label: 'Activation Center', href: 'activation', active: false },
+//   { label: 'Orbits', href: 'orbits', active: false },
+//   { label: 'Community', href: 'community', active: false },
+//   { label: 'Support', href: 'support', active: false },
+// ]
+
 const navItems = [
   { label: 'Home', href: 'home', active: false },
   { label: 'About Us', href: 'about', active: false },
-  { label: 'Dashboard', href: 'dashboard', active: false },
-  { label: 'Activation Center', href: 'activation', active: false },
-  { label: 'Orbits', href: 'orbits', active: false },
   { label: 'Community', href: 'community', active: false },
   { label: 'Support', href: 'support', active: false },
 ]
@@ -89,6 +99,8 @@ const routeMap = {
   '/home': 'home',
   '/about': 'about',
   '/dashboard': 'dashboard',
+  '/f-freedom-program': 'fFreedomProgram',
+  '/my-tokens': 'myTokens',
   '/activation': 'activation',
   '/orbits': 'orbits',
   '/community': 'community',
@@ -104,6 +116,8 @@ const pageToPathMap = {
   home: '/home',
   about: '/about',
   dashboard: '/dashboard',
+  fFreedomProgram: '/f-freedom-program',
+  myTokens: '/my-tokens', // Add this
   activation: '/activation',
   orbits: '/orbits',
   community: '/community',
@@ -868,6 +882,10 @@ function App() {
             <Routes>
               <Route path="/" element={<LandingPage onNavigate={handleNavigate} />} />
               <Route path="/home" element={<LandingPage onNavigate={handleNavigate} />} />
+              <Route
+                  path="/f-freedom-program"
+                  element={<FFreedomProgramPage onNavigate={handleNavigate} />}
+                />
               <Route path="/about" element={<AboutPage onNavigate={handleNavigate} />} />
               <Route path="/dashboard" element={<DashboardPage />} />
               <Route path="/activation" element={<ActivationCenterPage />} />
@@ -879,7 +897,14 @@ function App() {
               <Route path="/security" element={<SecurityPage />} />
               <Route path="/activity" element={<ActivityPage />} />
               <Route path="/admin" element={<AdminPanel />} />
+              <Route path="/my-tokens" element={<MyTokens />} />
             </Routes>
+            <Footer
+              onNavigate={handleNavigate}
+              onOpenProgram={(program) => console.log(program)}
+              onOpenLegal={(type) => console.log(type)}
+              onOpenSecurityNotice={() => console.log('security')}
+            />
           </AppShell>
 
           <MobileDrawer

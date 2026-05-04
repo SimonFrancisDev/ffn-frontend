@@ -1,45 +1,7 @@
-/* .main-navbar {
-  position: relative;
-  padding-top: var(--space-3);
-  padding-bottom: var(--space-3);
-}
-
-.main-navbar__inner {
-  min-height: var(--nav-height);
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: var(--space-3);
-  padding: 10px 12px;
-  border-radius: var(--radius-xl);
-  background: var(--glass-bg-strong);
-  overflow: visible;
-} */
-
-
-/* .main-navbar {
-  position: fixed;
-  top: 10;
-  left: 0;
-  right: 0;
-  z-index: 1000;
-  padding-top: 12px;
-  padding-bottom: 12px;
-  background: transparent;
-} */
-
-
-/* .main-navbar {
-  position: fixed;
-  top: 0;
-  left: 0;
-  right: 0;
-  z-index: 1000;
-  padding-top: 12px;
-  padding-bottom: 22px;
-  background: transparent;
-  transition: transform 0.3s ease;
-} */
+/* ===============================
+   FIN FREEDOM PREMIUM NAVBAR
+   Dark + Light Theme Aware
+================================ */
 
 .main-navbar {
   position: fixed;
@@ -47,189 +9,491 @@
   left: 0;
   right: 0;
   z-index: 1000;
-  padding-top: 12px;
-  padding-bottom: 12px;
+  padding: 12px 0;
   background: transparent;
-  transition: top 0.3s ease;
+  transition:
+    top 0.3s ease,
+    background-color 0.25s ease,
+    backdrop-filter 0.25s ease,
+    box-shadow 0.25s ease;
 }
-
-
 
 .main-navbar .app-container {
   position: relative;
   z-index: 2;
 }
 
-
-
 .main-navbar__inner {
-  min-height: var(--nav-height);
-  display: flex;
+  min-height: 72px;
+  display: grid;
+  grid-template-columns: minmax(170px, auto) minmax(0, 1fr) auto;
   align-items: center;
-  justify-content: space-between;
-  gap: var(--space-3);
-  padding: 10px 12px;
-  border-radius: var(--radius-xl);
-  background: var(--glass-bg-strong);
+  gap: clamp(12px, 1.5vw, 24px);
+  padding: 10px 14px;
+  border-radius: 999px;
   overflow: visible;
+
+  background:
+    linear-gradient(135deg, rgba(2, 6, 23, 0.82), rgba(10, 42, 108, 0.42)),
+    rgba(2, 6, 23, 0.68);
+  border: 1px solid rgba(0, 194, 255, 0.18);
+  box-shadow:
+    0 24px 70px rgba(0, 0, 0, 0.34),
+    inset 0 1px 0 rgba(255, 255, 255, 0.08),
+    0 0 0 1px rgba(76, 255, 154, 0.035);
+  backdrop-filter: blur(22px);
+  -webkit-backdrop-filter: blur(22px);
 }
+
+.main-navbar__inner::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+  pointer-events: none;
+  background:
+    radial-gradient(circle at 8% 50%, rgba(0, 194, 255, 0.2), transparent 24%),
+    radial-gradient(circle at 92% 50%, rgba(76, 255, 154, 0.12), transparent 24%);
+  opacity: 0.8;
+}
+
+.main-navbar.is-scrolled {
+  background: rgba(2, 6, 23, 0.72);
+  backdrop-filter: blur(18px);
+  -webkit-backdrop-filter: blur(18px);
+  box-shadow: 0 14px 42px rgba(0, 0, 0, 0.18);
+}
+
+.main-navbar.is-scrolled .main-navbar__inner {
+  min-height: 64px;
+  background:
+    linear-gradient(135deg, rgba(2, 6, 23, 0.92), rgba(10, 42, 108, 0.5)),
+    rgba(2, 6, 23, 0.82);
+  border-color: rgba(0, 194, 255, 0.26);
+}
+
+/* LEFT */
 
 .main-navbar__left {
   display: flex;
   align-items: center;
-  gap: var(--space-3);
+  gap: 12px;
   min-width: 0;
 }
+
+.main-navbar__brand {
+  position: relative;
+  min-width: 0;
+  height: 52px;
+  display: inline-flex;
+  align-items: center;
+  padding: 0;
+  background: transparent;
+  border: 0;
+  cursor: pointer;
+}
+
+.main-navbar__brand-logo-wrap {
+  width: clamp(138px, 13vw, 210px);
+  height: 52px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: flex-start;
+  overflow: visible;
+}
+
+.main-navbar__brand-logo {
+  width: 600px;
+  height: 600px;
+  object-fit: contain;
+  object-position: left center;
+  display: block;
+  filter:
+    drop-shadow(0 0 10px rgba(0, 194, 255, 0.18))
+    drop-shadow(0 0 18px rgba(76, 255, 154, 0.08));
+}
+
+.main-navbar__brand:hover .main-navbar__brand-logo {
+  filter:
+    drop-shadow(0 0 14px rgba(0, 194, 255, 0.3))
+    drop-shadow(0 0 22px rgba(76, 255, 154, 0.13));
+}
+
+/* MOBILE MENU */
 
 .main-navbar__menu-btn {
   width: 42px;
   height: 42px;
   border-radius: 999px;
-  display: inline-flex;
+  display: none;
   flex-direction: column;
   align-items: center;
   justify-content: center;
   gap: 4px;
   flex-shrink: 0;
-  background: var(--surface-1);
-  border: 1px solid var(--border-soft);
+  cursor: pointer;
+
+  background: rgba(255, 255, 255, 0.07);
+  border: 1px solid rgba(0, 194, 255, 0.18);
   transition:
-    transform var(--transition-fast),
-    background var(--transition-fast),
-    border-color var(--transition-fast);
+    transform 0.18s ease,
+    background 0.18s ease,
+    border-color 0.18s ease;
 }
 
 .main-navbar__menu-btn span {
   width: 16px;
   height: 2px;
   border-radius: 999px;
-  background: var(--text-primary);
-  opacity: 0.9;
+  background: #ffffff;
+  opacity: 0.92;
 }
 
 .main-navbar__menu-btn:active {
   transform: scale(0.96);
 }
 
-/* .main-navbar__brand {
-  min-width: 0;
-  display: flex;
-  align-items: center;
-  gap: 10px;
-} */
-
-
-.main-navbar__brand {
-  min-width: 0;
-  display: flex;
-  align-items: center;
-  gap: 10px;
-}
-
-.main-navbar__brand-logo-wrap {
-  width: 40px;
-  height: 40px;
-  border-radius: 14px;
-  flex-shrink: 0;
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  overflow: hidden;
-  background: transparent;
-}
-
-.main-navbar__brand-logo {
-  width: 100%;
-  height: 100%;
-  object-fit: cover;
-  display: block;
-}
-
-
-.main-navbar__brand-mark {
-  width: 40px;
-  height: 40px;
-  border-radius: 14px;
-  flex-shrink: 0;
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  font-size: 13px;
-  font-weight: 700;
-  letter-spacing: 0.04em;
-  color: var(--text-primary);
-  background:
-    linear-gradient(135deg, rgba(29, 233, 182, 0.24), rgba(77, 163, 255, 0.22), rgba(139, 92, 246, 0.2));
-  border: 1px solid var(--border-strong);
-  box-shadow: 0 8px 20px rgba(29, 233, 182, 0.08);
-}
-
-/* .main-navbar__brand-text {
-  min-width: 0;
-  display: flex;
-  flex-direction: column;
-  gap: 1px;
-} */
-
-
-.main-navbar__brand-text {
-  min-width: 0;
-  display: flex;
-  flex-direction: column;
-  gap: 1px;
-}
-/* 
-.main-navbar__brand-name {
-  font-size: 14px;
-  font-weight: 700;
-  color: var(--text-primary);
-  white-space: nowrap;
-} */
-
-.main-navbar__brand-name {
-  font-size: 14px;
-  font-weight: 700;
-  color: var(--text-primary);
-  white-space: nowrap;
-}
-
-/* .main-navbar__brand-tag {
-  font-size: 11px;
-  line-height: 1.1;
-  white-space: nowrap;
-} */
-
-.main-navbar__brand-tag {
-  font-size: 11px;
-  line-height: 1.1;
-  white-space: nowrap;
-}
+/* CENTER LINKS */
 
 .main-navbar__center {
-  display: none;
+  display: flex;
   align-items: center;
-  gap: 8px;
+  justify-content: center;
+  min-width: 0;
+  gap: clamp(4px, 0.7vw, 10px);
 }
 
 .main-navbar__link {
-  padding: 10px 14px;
+  position: relative;
+  min-width: max-content;
+  height: 42px;
+  padding: 0 15px;
   border-radius: 999px;
-  font-size: 14px;
-  color: var(--text-secondary);
-  transition:
-    color var(--transition-fast),
-    background var(--transition-fast),
-    border-color var(--transition-fast),
-    transform var(--transition-fast);
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 7px;
+
+  color: rgba(230, 234, 242, 0.78);
+  background: transparent;
   border: 1px solid transparent;
+  font-size: 13.5px;
+  font-weight: 750;
+  letter-spacing: -0.01em;
+  white-space: nowrap;
+  cursor: pointer;
+
+  transition:
+    color 0.18s ease,
+    background 0.18s ease,
+    border-color 0.18s ease,
+    transform 0.18s ease,
+    box-shadow 0.18s ease;
 }
 
-.main-navbar__link.is-active {
-  color: var(--text-primary);
-  background: var(--surface-1);
-  border-color: var(--border-soft);
-  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.04);
+.main-navbar__link::after {
+  content: '';
+  position: absolute;
+  left: 18px;
+  right: 18px;
+  bottom: 5px;
+  height: 2px;
+  border-radius: 999px;
+  background: linear-gradient(90deg, #1e5eff, #00c2ff, #4cff9a);
+  opacity: 0;
+  transform: scaleX(0.45);
+  transition:
+    opacity 0.18s ease,
+    transform 0.18s ease;
 }
+
+.main-navbar__link:hover,
+.main-navbar__link.is-active,
+.main-navbar__nav-dropdown.is-open .main-navbar__link {
+  color: #ffffff;
+  background: rgba(255, 255, 255, 0.075);
+  border-color: rgba(0, 194, 255, 0.18);
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.08);
+}
+
+.main-navbar__link:hover::after,
+.main-navbar__link.is-active::after,
+.main-navbar__nav-dropdown.is-open .main-navbar__link::after {
+  opacity: 1;
+  transform: scaleX(1);
+}
+
+.main-navbar__link--dropdown svg {
+  flex-shrink: 0;
+  transition: transform 0.18s ease;
+}
+
+.main-navbar__nav-dropdown.is-open .main-navbar__link--dropdown svg {
+  transform: rotate(180deg);
+}
+
+.main-navbar__nav-dropdown {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+}
+
+/* ABOUT DROPDOWN */
+
+.main-navbar__about-menu {
+  position: absolute;
+  top: calc(100% + 14px);
+  left: 50%;
+  min-width: 240px;
+  padding: 10px;
+  border-radius: 22px;
+
+  background:
+    linear-gradient(135deg, rgba(2, 6, 23, 0.96), rgba(10, 42, 108, 0.82)),
+    rgba(2, 6, 23, 0.96);
+  border: 1px solid rgba(0, 194, 255, 0.18);
+  box-shadow:
+    0 26px 70px rgba(0, 0, 0, 0.42),
+    inset 0 1px 0 rgba(255, 255, 255, 0.08);
+  backdrop-filter: blur(22px);
+  -webkit-backdrop-filter: blur(22px);
+
+  transform: translateX(-50%) translateY(-8px);
+  opacity: 0;
+  visibility: hidden;
+  pointer-events: none;
+
+  transition:
+    opacity 0.18s ease,
+    visibility 0.18s ease,
+    transform 0.18s ease;
+}
+
+.main-navbar__nav-dropdown.is-open .main-navbar__about-menu {
+  opacity: 1;
+  visibility: visible;
+  pointer-events: auto;
+  transform: translateX(-50%) translateY(0);
+}
+
+.main-navbar__about-menu::before,
+.main-navbar__services-menu::before {
+  content: '';
+  position: absolute;
+  left: 0;
+  right: 0;
+  top: -14px;
+  height: 14px;
+}
+
+.main-navbar__about-menu-item {
+  width: 100%;
+  min-height: 44px;
+  padding: 0 13px;
+  border-radius: 14px;
+  display: flex;
+  align-items: center;
+  text-align: left;
+
+  color: rgba(230, 234, 242, 0.76);
+  background: rgba(255, 255, 255, 0.035);
+  border: 1px solid transparent;
+  font-size: 13px;
+  font-weight: 750;
+  cursor: pointer;
+
+  transition:
+    background-color 0.18s ease,
+    color 0.18s ease,
+    transform 0.18s ease,
+    border-color 0.18s ease;
+}
+
+.main-navbar__about-menu-item:hover,
+.main-navbar__about-menu-item:focus-visible {
+  color: #ffffff;
+  background: rgba(0, 194, 255, 0.095);
+  border-color: rgba(0, 194, 255, 0.16);
+  transform: translateX(2px);
+}
+
+/* SERVICES MEGA MENU */
+
+.main-navbar__services-menu {
+  position: absolute;
+  top: calc(100% + 14px);
+  left: 50%;
+  width: min(760px, calc(100vw - 32px));
+  min-height: 360px;
+  display: grid;
+  grid-template-columns: 300px minmax(0, 1fr);
+  gap: 10px;
+  padding: 12px;
+  border-radius: 28px;
+
+  background:
+    radial-gradient(circle at top left, rgba(0, 194, 255, 0.18), transparent 34%),
+    radial-gradient(circle at bottom right, rgba(76, 255, 154, 0.1), transparent 34%),
+    linear-gradient(135deg, rgba(2, 6, 23, 0.98), rgba(10, 42, 108, 0.86));
+  border: 1px solid rgba(0, 194, 255, 0.2);
+  box-shadow:
+    0 34px 90px rgba(0, 0, 0, 0.5),
+    inset 0 1px 0 rgba(255, 255, 255, 0.08);
+  backdrop-filter: blur(26px);
+  -webkit-backdrop-filter: blur(26px);
+
+  transform: translateX(-50%) translateY(-8px) scale(0.98);
+  transform-origin: top center;
+  opacity: 0;
+  visibility: hidden;
+  pointer-events: none;
+
+  transition:
+    opacity 0.2s ease,
+    visibility 0.2s ease,
+    transform 0.2s ease;
+}
+
+.main-navbar__nav-dropdown.is-open .main-navbar__services-menu {
+  opacity: 1;
+  visibility: visible;
+  pointer-events: auto;
+  transform: translateX(-50%) translateY(0) scale(1);
+}
+
+.main-navbar__services-left,
+.main-navbar__services-right {
+  border-radius: 22px;
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  background: rgba(255, 255, 255, 0.045);
+}
+
+.main-navbar__services-left {
+  padding: 8px;
+  display: grid;
+  gap: 7px;
+  align-content: start;
+}
+
+.main-navbar__service-item {
+  position: relative;
+  width: 100%;
+  min-height: 50px;
+  padding: 0 14px 0 16px;
+  border-radius: 16px;
+  display: flex;
+  align-items: center;
+  text-align: left;
+  cursor: pointer;
+
+  color: rgba(230, 234, 242, 0.78);
+  background: transparent;
+  border: 1px solid transparent;
+  font-size: 13.5px;
+  font-weight: 850;
+  letter-spacing: -0.015em;
+
+  transition:
+    color 0.18s ease,
+    background 0.18s ease,
+    border-color 0.18s ease,
+    transform 0.18s ease,
+    box-shadow 0.18s ease;
+}
+
+.main-navbar__service-item::before {
+  content: '';
+  width: 9px;
+  height: 9px;
+  margin-right: 10px;
+  border-radius: 999px;
+  background: linear-gradient(135deg, #1e5eff, #00c2ff, #4cff9a);
+  box-shadow: 0 0 12px rgba(0, 194, 255, 0.42);
+  opacity: 0.55;
+}
+
+.main-navbar__service-item::after {
+  content: '›';
+  margin-left: auto;
+  color: rgba(0, 194, 255, 0.72);
+  font-size: 22px;
+  line-height: 1;
+}
+
+.main-navbar__service-item:hover,
+.main-navbar__service-item.is-active {
+  color: #ffffff;
+  background:
+    linear-gradient(135deg, rgba(30, 94, 255, 0.18), rgba(0, 194, 255, 0.11)),
+    rgba(255, 255, 255, 0.055);
+  border-color: rgba(0, 194, 255, 0.2);
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.08),
+    0 10px 24px rgba(0, 194, 255, 0.08);
+  transform: translateX(2px);
+}
+
+.main-navbar__services-right {
+  padding: 12px;
+  min-width: 0;
+}
+
+.main-navbar__service-content {
+  height: 100%;
+  display: grid;
+  gap: 10px;
+  align-content: start;
+}
+
+.main-navbar__service-content::before {
+  content: 'Service Menu';
+  display: block;
+  margin-bottom: 2px;
+  padding: 12px 14px;
+  border-radius: 16px;
+  color: #ffffff;
+  background:
+    linear-gradient(135deg, rgba(0, 194, 255, 0.15), rgba(76, 255, 154, 0.09)),
+    rgba(255, 255, 255, 0.04);
+  border: 1px solid rgba(0, 194, 255, 0.16);
+  font-size: 12px;
+  font-weight: 900;
+  text-transform: uppercase;
+  letter-spacing: 0.12em;
+}
+
+.main-navbar__service-subitem {
+  width: 100%;
+  min-height: 48px;
+  padding: 0 14px;
+  border-radius: 16px;
+  display: flex;
+  align-items: center;
+  text-align: left;
+  cursor: pointer;
+
+  color: rgba(230, 234, 242, 0.78);
+  background: rgba(255, 255, 255, 0.045);
+  border: 1px solid rgba(255, 255, 255, 0.075);
+  font-size: 13px;
+  font-weight: 750;
+
+  transition:
+    color 0.18s ease,
+    background 0.18s ease,
+    border-color 0.18s ease,
+    transform 0.18s ease;
+}
+
+.main-navbar__service-subitem:hover,
+.main-navbar__service-subitem:focus-visible {
+  color: #ffffff;
+  background: rgba(0, 194, 255, 0.1);
+  border-color: rgba(0, 194, 255, 0.18);
+  transform: translateX(2px);
+}
+
+/* RIGHT UTILITY AREA */
 
 .main-navbar__right {
   display: flex;
@@ -239,158 +503,46 @@
   flex-shrink: 0;
 }
 
+.main-navbar__floating-wrap {
+  position: relative;
+  display: flex;
+  align-items: center;
+}
+
 .main-navbar__action-btn,
 .main-navbar__account {
-  width: 40px;
-  height: 40px;
+  width: 42px;
+  height: 42px;
   border-radius: 999px;
   display: inline-flex;
   align-items: center;
   justify-content: center;
   flex-shrink: 0;
-  background: var(--surface-1);
-  border: 1px solid var(--border-soft);
+  cursor: pointer;
+
+  color: rgba(230, 234, 242, 0.9);
+  background: rgba(255, 255, 255, 0.07);
+  border: 1px solid rgba(0, 194, 255, 0.14);
+
   transition:
-    transform var(--transition-fast),
-    background var(--transition-fast),
-    border-color var(--transition-fast);
+    transform 0.18s ease,
+    background 0.18s ease,
+    border-color 0.18s ease,
+    color 0.18s ease,
+    box-shadow 0.18s ease;
+}
+
+.main-navbar__action-btn:hover,
+.main-navbar__account:hover {
+  color: #ffffff;
+  background: rgba(0, 194, 255, 0.1);
+  border-color: rgba(0, 194, 255, 0.26);
+  box-shadow: 0 0 22px rgba(0, 194, 255, 0.1);
 }
 
 .main-navbar__action-btn:active,
 .main-navbar__account:active {
   transform: scale(0.96);
-}
-
-.main-navbar__wallet {
-  height: 40px;
-  padding: 0 12px;
-  border-radius: 999px;
-  display: inline-flex;
-  align-items: center;
-  gap: 8px;
-  background: var(--surface-1);
-  border: 1px solid var(--border-soft);
-  color: var(--text-primary);
-  transition:
-    transform var(--transition-fast),
-    background var(--transition-fast),
-    border-color var(--transition-fast);
-}
-
-.main-navbar__wallet:active {
-  transform: scale(0.98);
-}
-
-.main-navbar__wallet-dot {
-  width: 8px;
-  height: 8px;
-  border-radius: 999px;
-  background: var(--success);
-  box-shadow: 0 0 12px rgba(34, 197, 94, 0.5);
-}
-
-.main-navbar__wallet-text {
-  font-size: 13px;
-  font-weight: 600;
-}
-
-/* .main-navbar__account-avatar {
-  width: 26px;
-  height: 26px;
-  border-radius: 999px;
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  background: linear-gradient(135deg, rgba(77, 163, 255, 0.35), rgba(139, 92, 246, 0.28));
-  font-size: 12px;
-  font-weight: 700;
-} */
-
-.main-navbar__account-avatar {
-  width: 26px;
-  height: 26px;
-  border-radius: 999px;
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  background: linear-gradient(135deg, rgba(77, 163, 255, 0.35), rgba(139, 92, 246, 0.28));
-  color: var(--text-primary);
-}
-
-
-.main-navbar__account-avatar svg {
-  width: 18px;
-  height: 18px;
-  stroke-width: 2;
-}
-
-@media (hover: hover) {
-  .main-navbar__menu-btn:hover,
-  .main-navbar__action-btn:hover,
-  .main-navbar__wallet:hover,
-  .main-navbar__account:hover,
-  .main-navbar__link:hover {
-    background: var(--surface-2);
-    border-color: var(--border-strong);
-  }
-
-  .main-navbar__link:hover {
-    color: var(--text-primary);
-  }
-}
-
-@media (max-width: 767px) {
-  .main-navbar__right {
-    gap: 6px;
-  }
-
-  .main-navbar__action-btn:first-child,
-  .main-navbar__wallet-text {
-    display: none;
-  }
-
-  .main-navbar__wallet {
-    width: 40px;
-    padding: 0;
-    justify-content: center;
-  }
-
-  .main-navbar__brand-tag {
-    display: none;
-  }
-}
-
-@media (min-width: 768px) {
-  .main-navbar__inner {
-    padding: 12px 16px;
-  }
-
-  .main-navbar__menu-btn {
-    display: none;
-  }
-
-  .main-navbar__center {
-    display: flex;
-  }
-
-  .main-navbar__brand-name {
-    font-size: 15px;
-  }
-
-  .main-navbar__brand-tag {
-    display: inline;
-  }
-
-  .main-navbar__wallet-text {
-    display: inline;
-  }
-}
-
-
-.main-navbar__notifications {
-  position: relative;
-  display: flex;
-  align-items: center;
 }
 
 .main-navbar__notification-btn {
@@ -408,60 +560,97 @@
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  background: linear-gradient(135deg, var(--danger), #ff7b7b);
-  color: white;
+
+  background: linear-gradient(135deg, #ff477e, #ff7b7b);
+  color: #ffffff;
   font-size: 10px;
-  font-weight: 700;
+  font-weight: 900;
   line-height: 1;
-  border: 2px solid var(--bg-primary);
+  border: 2px solid #020617;
 }
 
-
-.main-navbar__language {
-  position: relative;
-  display: flex;
+.main-navbar__wallet {
+  height: 42px;
+  padding: 0 14px;
+  border-radius: 999px;
+  display: inline-flex;
   align-items: center;
+  gap: 8px;
+  cursor: pointer;
+
+  color: #ffffff;
+  background:
+    linear-gradient(135deg, rgba(30, 94, 255, 0.24), rgba(0, 194, 255, 0.12)),
+    rgba(255, 255, 255, 0.07);
+  border: 1px solid rgba(0, 194, 255, 0.2);
+
+  transition:
+    transform 0.18s ease,
+    background 0.18s ease,
+    border-color 0.18s ease,
+    box-shadow 0.18s ease;
 }
 
-.main-navbar__wallet-wrap {
-  position: relative;
-  display: flex;
-  align-items: center;
+.main-navbar__wallet:hover {
+  border-color: rgba(76, 255, 154, 0.35);
+  box-shadow:
+    0 0 24px rgba(0, 194, 255, 0.12),
+    inset 0 1px 0 rgba(255, 255, 255, 0.08);
 }
 
-.main-navbar__account-wrap {
-  position: relative;
-  display: flex;
-  align-items: center;
+.main-navbar__wallet:active {
+  transform: scale(0.98);
 }
 
+.main-navbar__wallet-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 999px;
+  background: #4cff9a;
+  box-shadow: 0 0 14px rgba(76, 255, 154, 0.68);
+}
 
 .main-navbar__wallet-dot.is-disconnected {
-  background: var(--danger);
-  box-shadow: 0 0 12px rgba(239, 68, 68, 0.45);
+  background: #ff477e;
+  box-shadow: 0 0 14px rgba(255, 71, 126, 0.56);
 }
 
 .main-navbar__wallet-dot.is-loading {
-  background: var(--warning);
-  box-shadow: 0 0 12px rgba(245, 158, 11, 0.45);
+  background: #f59e0b;
+  box-shadow: 0 0 14px rgba(245, 158, 11, 0.58);
 }
 
+.main-navbar__wallet-text {
+  font-size: 13px;
+  font-weight: 850;
+  max-width: 120px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
 
-
-
-
-
-/* =========================
-   FIX: FLOATING DROPDOWNS
-========================= */
-
-.main-navbar__floating-wrap {
-  position: relative;
-  display: flex;
+.main-navbar__account-avatar {
+  width: 28px;
+  height: 28px;
+  border-radius: 999px;
+  display: inline-flex;
   align-items: center;
+  justify-content: center;
+
+  color: #ffffff;
+  background:
+    linear-gradient(135deg, rgba(30, 94, 255, 0.82), rgba(0, 194, 255, 0.72), rgba(76, 255, 154, 0.52));
+  box-shadow: 0 0 18px rgba(0, 194, 255, 0.2);
 }
 
-/* THE FIX */
+.main-navbar__account-avatar svg {
+  width: 18px;
+  height: 18px;
+  stroke-width: 2;
+}
+
+/* LEGACY FLOATING DROPDOWN SUPPORT */
+
 .main-navbar__dropdown {
   position: absolute;
   top: calc(100% + 10px);
@@ -483,182 +672,814 @@
   visibility: visible;
 }
 
-
-
-/* =========================================================
-   PRODUCTION NAVBAR REFINEMENT
-   ========================================================= */
-
-.main-navbar {
-  transition:
-    top 0.3s ease,
-    background-color 0.25s ease,
-    backdrop-filter 0.25s ease,
-    box-shadow 0.25s ease;
-}
-
-.main-navbar.is-scrolled {
-  background: color-mix(in srgb, var(--bg-primary) 78%, transparent);
-  backdrop-filter: blur(18px);
-  -webkit-backdrop-filter: blur(18px);
-  box-shadow: 0 14px 42px rgba(0, 0, 0, 0.18);
-}
-
-.main-navbar.is-scrolled .main-navbar__inner {
-  background: color-mix(in srgb, var(--glass-bg-strong) 96%, var(--bg-primary));
-  border-color: color-mix(in srgb, var(--border-strong) 72%, var(--glass-border));
-}
-
-.main-navbar__brand {
-  gap: 0;
-}
-
-.main-navbar__nav-dropdown {
-  position: relative;
-  display: inline-flex;
-  align-items: center;
-}
-
-.main-navbar__link--dropdown {
-  gap: 6px;
-}
-
-.main-navbar__link--dropdown svg {
-  transition: transform var(--transition-fast);
-}
-
-.main-navbar__nav-dropdown.is-open .main-navbar__link--dropdown svg {
-  transform: rotate(180deg);
-}
-
-.main-navbar__about-menu {
-  position: absolute;
-  top: calc(100% + 10px);
-  left: 50%;
-  min-width: 230px;
-  padding: 8px;
-  border-radius: 18px;
-  background: color-mix(in srgb, var(--glass-bg-strong) 98%, var(--bg-primary));
-  border: 1px solid var(--glass-border);
-  box-shadow: 0 18px 50px rgba(0, 0, 0, 0.24);
-  transform: translateX(-50%) translateY(-6px);
-  opacity: 0;
-  visibility: hidden;
-  pointer-events: none;
-  transition:
-    opacity var(--transition-fast),
-    visibility var(--transition-fast),
-    transform var(--transition-fast);
-}
-
-.main-navbar__nav-dropdown.is-open .main-navbar__about-menu {
-  opacity: 1;
-  visibility: visible;
-  pointer-events: auto;
-  transform: translateX(-50%) translateY(0);
-}
-
-.main-navbar__about-menu::before {
-  content: '';
-  position: absolute;
-  left: 0;
-  right: 0;
-  top: -12px;
-  height: 12px;
-}
-
-.main-navbar__about-menu-item {
-  width: 100%;
-  min-height: 42px;
-  padding: 0 12px;
-  border-radius: 12px;
-  display: flex;
-  align-items: center;
-  text-align: left;
-  color: var(--text-secondary);
-  background: transparent;
-  border: 0;
-  font-size: 13px;
-  font-weight: 700;
-  transition:
-    background-color var(--transition-fast),
-    color var(--transition-fast),
-    transform var(--transition-fast);
-}
-
-.main-navbar__about-menu-item:hover,
-.main-navbar__about-menu-item:focus-visible {
-  color: var(--text-primary);
-  background: var(--surface-2);
-  transform: translateX(2px);
-}
+/* LIGHT THEME */
 
 [data-theme='light'] .main-navbar.is-scrolled {
   background: rgba(247, 250, 255, 0.82);
   box-shadow: 0 14px 34px rgba(15, 23, 42, 0.1);
 }
 
-[data-theme='light'] .main-navbar.is-scrolled .main-navbar__inner,
-[data-theme='light'] .main-navbar__about-menu {
-  background: rgba(255, 255, 255, 0.96);
-  border-color: rgba(100, 120, 150, 0.28);
+[data-theme='light'] .main-navbar__inner {
+  background:
+    linear-gradient(135deg, rgba(255, 255, 255, 0.92), rgba(232, 248, 255, 0.78)),
+    rgba(255, 255, 255, 0.82);
+  border-color: rgba(0, 114, 188, 0.18);
+  box-shadow:
+    0 22px 60px rgba(15, 23, 42, 0.12),
+    inset 0 1px 0 rgba(255, 255, 255, 0.9);
 }
 
+[data-theme='light'] .main-navbar__link {
+  color: rgba(15, 23, 42, 0.68);
+}
 
-/* =========================
-   FINAL NAVBAR FLEX + ABOUT DROPDOWN FIX
-========================= */
+[data-theme='light'] .main-navbar__link:hover,
+[data-theme='light'] .main-navbar__link.is-active,
+[data-theme='light'] .main-navbar__nav-dropdown.is-open .main-navbar__link {
+  color: #020617;
+  background: rgba(0, 194, 255, 0.08);
+  border-color: rgba(0, 114, 188, 0.16);
+}
 
-@media (min-width: 768px) {
+[data-theme='light'] .main-navbar__about-menu,
+[data-theme='light'] .main-navbar__services-menu {
+  background:
+    radial-gradient(circle at top left, rgba(0, 194, 255, 0.12), transparent 34%),
+    linear-gradient(135deg, rgba(255, 255, 255, 0.98), rgba(239, 250, 255, 0.96));
+  border-color: rgba(0, 114, 188, 0.18);
+  box-shadow:
+    0 34px 80px rgba(15, 23, 42, 0.16),
+    inset 0 1px 0 rgba(255, 255, 255, 0.9);
+}
+
+[data-theme='light'] .main-navbar__about-menu-item,
+[data-theme='light'] .main-navbar__service-item,
+[data-theme='light'] .main-navbar__service-subitem {
+  color: rgba(15, 23, 42, 0.72);
+}
+
+[data-theme='light'] .main-navbar__about-menu-item:hover,
+[data-theme='light'] .main-navbar__service-item:hover,
+[data-theme='light'] .main-navbar__service-item.is-active,
+[data-theme='light'] .main-navbar__service-subitem:hover {
+  color: #020617;
+  background: rgba(0, 194, 255, 0.08);
+  border-color: rgba(0, 114, 188, 0.14);
+}
+
+[data-theme='light'] .main-navbar__services-left,
+[data-theme='light'] .main-navbar__services-right,
+[data-theme='light'] .main-navbar__service-content::before {
+  background: rgba(255, 255, 255, 0.66);
+  border-color: rgba(0, 114, 188, 0.12);
+  color: #020617;
+}
+
+[data-theme='light'] .main-navbar__action-btn,
+[data-theme='light'] .main-navbar__account,
+[data-theme='light'] .main-navbar__wallet,
+[data-theme='light'] .main-navbar__menu-btn {
+  color: #020617;
+  background: rgba(255, 255, 255, 0.72);
+  border-color: rgba(0, 114, 188, 0.16);
+}
+
+[data-theme='light'] .main-navbar__menu-btn span {
+  background: #020617;
+}
+
+[data-theme='light'] .main-navbar__notification-badge {
+  border-color: #ffffff;
+}
+
+/* RESPONSIVE */
+
+@media (max-width: 1180px) {
   .main-navbar__inner {
-    display: grid;
-    grid-template-columns: minmax(190px, auto) minmax(0, 1fr) auto;
-    gap: clamp(12px, 1.4vw, 22px);
+    grid-template-columns: minmax(130px, auto) minmax(0, 1fr) auto;
   }
 
-  .main-navbar__left,
-  .main-navbar__right {
-    min-width: 0;
-  }
-
-  .main-navbar__center {
-    min-width: 0;
-    justify-content: center;
-    gap: clamp(4px, 0.7vw, 10px);
+  .main-navbar__brand-logo-wrap {
+    width: 150px;
   }
 
   .main-navbar__link {
-    min-width: max-content;
-    white-space: nowrap;
+    padding: 0 11px;
+    font-size: 13px;
+  }
+
+  .main-navbar__services-menu {
+    width: min(700px, calc(100vw - 28px));
+    grid-template-columns: 280px minmax(0, 1fr);
+  }
+}
+
+@media (max-width: 980px) {
+  .main-navbar__inner {
+    display: flex;
+    justify-content: space-between;
+    min-height: 66px;
+    border-radius: 28px;
+  }
+
+  .main-navbar__menu-btn {
     display: inline-flex;
-    align-items: center;
+  }
+
+  .main-navbar__center {
+    display: none;
+  }
+
+  .main-navbar__brand-logo-wrap {
+    width: 170px;
+  }
+}
+
+@media (max-width: 767px) {
+  .main-navbar {
+    padding: 8px 0;
+  }
+
+  .main-navbar__inner {
+    min-height: 62px;
+    padding: 8px 10px;
+    border-radius: 24px;
+  }
+
+  .main-navbar__right {
+    gap: 6px;
+  }
+
+  .main-navbar__action-btn:first-child,
+  .main-navbar__wallet-text {
+    display: none;
+  }
+
+  .main-navbar__wallet {
+    width: 42px;
+    padding: 0;
     justify-content: center;
   }
 
-  .main-navbar__link--dropdown {
-    flex-wrap: nowrap;
-  }
-
-  .main-navbar__link--dropdown span,
-  .main-navbar__link--dropdown svg {
-    flex-shrink: 0;
+  .main-navbar__brand-logo-wrap {
+    width: 138px;
+    height: 44px;
   }
 }
 
-.main-navbar__about-menu {
-  background: rgba(7, 17, 31, 0.98);
-  border-color: rgba(255, 255, 255, 0.14);
+@media (max-width: 420px) {
+  .main-navbar__brand-logo-wrap {
+    width: 118px;
+  }
+
+  .main-navbar__action-btn,
+  .main-navbar__account,
+  .main-navbar__wallet,
+  .main-navbar__menu-btn {
+    width: 38px;
+    height: 38px;
+  }
+
+  .main-navbar__right {
+    gap: 4px;
+  }
 }
 
-.main-navbar__about-menu-item {
-  background: rgba(255, 255, 255, 0.035);
+@media (prefers-reduced-motion: reduce) {
+  .main-navbar,
+  .main-navbar *,
+  .main-navbar *::before,
+  .main-navbar *::after {
+    transition: none !important;
+  }
 }
 
-.main-navbar__about-menu-item:hover,
-.main-navbar__about-menu-item:focus-visible {
-  background: rgba(255, 255, 255, 0.095);
+
+
+
+
+
+/* =========================================================
+   FINAL PREMIUM NAVBAR OVERRIDES
+   Bigger Logo + Better Light Theme + Stronger Typography
+========================================================= */
+
+.main-navbar__inner {
+  min-height: 82px;
+  padding: 12px 18px;
 }
 
-[data-theme='light'] .main-navbar__about-menu {
-  background: rgba(255, 255, 255, 0.98);
+.main-navbar.is-scrolled .main-navbar__inner {
+  min-height: 74px;
+}
+
+.main-navbar__brand {
+  height: 66px;
+}
+
+.main-navbar__brand-logo-wrap {
+  width: clamp(190px, 18vw, 280px);
+  height: 66px;
+}
+
+.main-navbar__brand-logo {
+  object-fit: contain;
+  object-position: left center;
+}
+
+/* Theme-aware navbar items - fixed to respond to both dark and light themes */
+.main-navbar__link,
+.main-navbar__service-item,
+.main-navbar__service-subitem,
+.main-navbar__about-menu-item,
+.main-navbar__wallet-text {
+  font-weight: 900;
+}
+
+/* Dark theme active states - enhanced */
+.main-navbar__link,
+.main-navbar__service-item,
+.main-navbar__about-menu-item,
+.main-navbar__service-subitem {
+  transition: all 0.2s cubic-bezier(0.2, 0.9, 0.4, 1.1);
+}
+
+/* Theme-aware link hover states - fully responsive to theme */
+[data-theme='dark'] .main-navbar__link {
+  color: rgba(230, 234, 242, 0.82);
+}
+
+[data-theme='dark'] .main-navbar__link:hover,
+[data-theme='dark'] .main-navbar__link.is-active,
+[data-theme='dark'] .main-navbar__nav-dropdown.is-open .main-navbar__link {
+  color: #ffffff;
+  background: rgba(0, 194, 255, 0.12);
+  border-color: rgba(0, 194, 255, 0.25);
+}
+
+[data-theme='dark'] .main-navbar__service-item,
+[data-theme='dark'] .main-navbar__about-menu-item,
+[data-theme='dark'] .main-navbar__service-subitem {
+  color: rgba(230, 234, 242, 0.8);
+}
+
+[data-theme='dark'] .main-navbar__service-item:hover,
+[data-theme='dark'] .main-navbar__service-item.is-active,
+[data-theme='dark'] .main-navbar__about-menu-item:hover,
+[data-theme='dark'] .main-navbar__service-subitem:hover {
+  color: #ffffff;
+  background: rgba(0, 194, 255, 0.1);
+  border-color: rgba(0, 194, 255, 0.22);
+}
+
+/* Light theme - navbar items now properly themed */
+[data-theme='light'] .main-navbar__link {
+  color: rgba(21, 31, 52, 0.75);
+  font-weight: 800;
+}
+
+[data-theme='light'] .main-navbar__link:hover,
+[data-theme='light'] .main-navbar__link.is-active,
+[data-theme='light'] .main-navbar__nav-dropdown.is-open .main-navbar__link {
+  color: #0f1a2e;
+  background: rgba(0, 114, 188, 0.08);
+  border-color: rgba(0, 114, 188, 0.2);
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.6);
+}
+
+[data-theme='light'] .main-navbar__link::after {
+  background: linear-gradient(90deg, #0a5c8e, #1e8ab3, #2bbd8e);
+}
+
+[data-theme='light'] .main-navbar__service-item,
+[data-theme='light'] .main-navbar__about-menu-item,
+[data-theme='light'] .main-navbar__service-subitem {
+  color: rgba(21, 31, 52, 0.72);
+  font-weight: 800;
+}
+
+[data-theme='light'] .main-navbar__service-item:hover,
+[data-theme='light'] .main-navbar__service-item.is-active,
+[data-theme='light'] .main-navbar__about-menu-item:hover,
+[data-theme='light'] .main-navbar__service-subitem:hover {
+  color: #0f1a2e;
+  background: rgba(0, 114, 188, 0.07);
+  border-color: rgba(0, 114, 188, 0.16);
+}
+
+[data-theme='light'] .main-navbar__service-item::before {
+  background: linear-gradient(135deg, #0a5c8e, #1e8ab3, #2bbd8e);
+}
+
+[data-theme='light'] .main-navbar__service-item::after {
+  color: #1e8ab3;
+}
+
+[data-theme='light'] .main-navbar__services-left,
+[data-theme='light'] .main-navbar__services-right {
+  background: rgba(248, 250, 252, 0.85);
+  border-color: rgba(0, 114, 188, 0.12);
+}
+
+[data-theme='light'] .main-navbar__service-content::before {
+  background: linear-gradient(135deg, rgba(10, 92, 142, 0.08), rgba(43, 189, 142, 0.05));
+  color: #0f1a2e;
+  border-color: rgba(0, 114, 188, 0.14);
+}
+
+/* LIGHT THEME — stronger and cleaner */
+[data-theme='light'] .main-navbar {
+  background: transparent;
+}
+
+[data-theme='light'] .main-navbar.is-scrolled {
+  background: rgba(244, 247, 252, 0.78);
+}
+
+[data-theme='light'] .main-navbar__inner {
+  background:
+    radial-gradient(circle at 8% 50%, rgba(77, 163, 255, 0.16), transparent 26%),
+    radial-gradient(circle at 92% 50%, rgba(29, 233, 182, 0.12), transparent 26%),
+    linear-gradient(135deg, rgba(255, 255, 255, 0.96), rgba(237, 243, 251, 0.92));
+  border: 1px solid var(--glass-border, rgba(0, 114, 188, 0.18));
+  box-shadow:
+    0 18px 50px rgba(44, 72, 112, 0.14),
+    inset 0 1px 0 rgba(255, 255, 255, 0.95);
+}
+
+[data-theme='light'] .main-navbar__inner::before {
+  opacity: 0.55;
+}
+
+[data-theme='light'] .main-navbar__action-btn,
+[data-theme='light'] .main-navbar__account,
+[data-theme='light'] .main-navbar__wallet,
+[data-theme='light'] .main-navbar__menu-btn {
+  color: var(--text-primary, #0f1a2e);
+  background: rgba(255, 255, 255, 0.88);
+  border-color: var(--border-strong, rgba(0, 114, 188, 0.2));
+  box-shadow: 0 8px 20px rgba(44, 72, 112, 0.08);
+}
+
+[data-theme='light'] .main-navbar__action-btn:hover,
+[data-theme='light'] .main-navbar__account:hover,
+[data-theme='light'] .main-navbar__wallet:hover {
+  background: rgba(237, 243, 251, 0.96);
+  border-color: rgba(77, 163, 255, 0.34);
+}
+
+[data-theme='light'] .main-navbar__about-menu,
+[data-theme='light'] .main-navbar__services-menu {
+  background:
+    radial-gradient(circle at top left, rgba(77, 163, 255, 0.16), transparent 34%),
+    radial-gradient(circle at bottom right, rgba(29, 233, 182, 0.12), transparent 34%),
+    linear-gradient(135deg, rgba(255, 255, 255, 0.98), rgba(244, 247, 252, 0.98));
+  border-color: var(--glass-border, rgba(0, 114, 188, 0.18));
+}
+
+[data-theme='light'] .main-navbar__services-left,
+[data-theme='light'] .main-navbar__services-right,
+[data-theme='light'] .main-navbar__about-menu-item,
+[data-theme='light'] .main-navbar__service-subitem {
+  background: rgba(255, 255, 255, 0.72);
+}
+
+/* MOBILE FIX */
+@media (max-width: 980px) {
+  .main-navbar__inner {
+    min-height: 76px;
+    padding: 10px 14px;
+  }
+
+  .main-navbar__brand {
+    height: 58px;
+  }
+
+  .main-navbar__brand-logo-wrap {
+    width: clamp(170px, 38vw, 230px);
+    height: 58px;
+  }
+
+  .main-navbar__menu-btn {
+    display: inline-flex;
+  }
+}
+
+@media (max-width: 767px) {
+  .main-navbar__inner {
+    min-height: 70px;
+    border-radius: 26px;
+  }
+
+  .main-navbar__brand-logo-wrap {
+    width: clamp(150px, 44vw, 200px);
+    height: 54px;
+  }
+
+  .main-navbar__action-btn,
+  .main-navbar__account,
+  .main-navbar__wallet,
+  .main-navbar__menu-btn {
+    width: 42px;
+    height: 42px;
+  }
+}
+
+@media (max-width: 430px) {
+  .main-navbar__brand-logo-wrap {
+    width: clamp(132px, 40vw, 170px);
+  }
+
+  .main-navbar__right {
+    gap: 5px;
+  }
+
+  .main-navbar__action-btn,
+  .main-navbar__account,
+  .main-navbar__wallet,
+  .main-navbar__menu-btn {
+    width: 39px;
+    height: 39px;
+  }
+}
+
+
+
+/* =========================================================
+   FIX: SCROLLED LIGHT THEME + LOGO STABILITY
+========================================================= */
+
+/* Fix logo size: never force 600px inside navbar */
+.main-navbar__brand-logo {
+  width: 100%;
+  height: 100%;
+  max-width: 100%;
+  max-height: 100%;
+  object-fit: contain;
+  object-position: left center;
+}
+
+/* Keep logo strong when navbar scrolls */
+.main-navbar.is-scrolled .main-navbar__brand {
+  height: 64px;
+}
+
+.main-navbar.is-scrolled .main-navbar__brand-logo-wrap {
+  height: 64px;
+}
+
+/* Light theme normal state */
+[data-theme='light'] .main-navbar__inner {
+  background:
+    radial-gradient(circle at 8% 50%, rgba(77, 163, 255, 0.14), transparent 28%),
+    radial-gradient(circle at 92% 50%, rgba(29, 233, 182, 0.1), transparent 28%),
+    linear-gradient(135deg, rgba(255, 255, 255, 0.97), rgba(237, 243, 251, 0.94));
+}
+
+/* Light theme scrolled state: keep it light, not dark */
+[data-theme='light'] .main-navbar.is-scrolled {
+  background: rgba(244, 247, 252, 0.74);
+}
+
+[data-theme='light'] .main-navbar.is-scrolled .main-navbar__inner {
+  background:
+    radial-gradient(circle at 8% 50%, rgba(77, 163, 255, 0.13), transparent 28%),
+    radial-gradient(circle at 92% 50%, rgba(29, 233, 182, 0.08), transparent 28%),
+    linear-gradient(135deg, rgba(255, 255, 255, 0.98), rgba(237, 243, 251, 0.96));
+  border-color: rgba(120, 144, 176, 0.28);
+  box-shadow:
+    0 16px 46px rgba(44, 72, 112, 0.13),
+    inset 0 1px 0 rgba(255, 255, 255, 0.96);
+}
+
+/* Light theme nav text must remain dark before and after scroll */
+[data-theme='light'] .main-navbar__link,
+[data-theme='light'] .main-navbar.is-scrolled .main-navbar__link {
+  color: rgba(15, 23, 42, 0.78);
+}
+
+[data-theme='light'] .main-navbar__link:hover,
+[data-theme='light'] .main-navbar__link.is-active,
+[data-theme='light'] .main-navbar__nav-dropdown.is-open .main-navbar__link,
+[data-theme='light'] .main-navbar.is-scrolled .main-navbar__link:hover,
+[data-theme='light'] .main-navbar.is-scrolled .main-navbar__link.is-active,
+[data-theme='light'] .main-navbar.is-scrolled .main-navbar__nav-dropdown.is-open .main-navbar__link {
+  color: rgba(0, 0, 0, 0.96);
+  background: rgba(77, 163, 255, 0.12);
+  border-color: rgba(77, 163, 255, 0.24);
+}
+
+/* Light theme utility buttons remain visible on scroll */
+[data-theme='light'] .main-navbar.is-scrolled .main-navbar__action-btn,
+[data-theme='light'] .main-navbar.is-scrolled .main-navbar__account,
+[data-theme='light'] .main-navbar.is-scrolled .main-navbar__wallet,
+[data-theme='light'] .main-navbar.is-scrolled .main-navbar__menu-btn {
+  color: rgba(0, 0, 0, 0.96);
+  background: rgba(255, 255, 255, 0.9);
+  border-color: rgba(120, 144, 176, 0.28);
+}
+
+/* Dark theme remains dark when scrolled */
+[data-theme='dark'] .main-navbar.is-scrolled .main-navbar__inner {
+  background:
+    linear-gradient(135deg, rgba(2, 6, 23, 0.94), rgba(10, 42, 108, 0.52)),
+    rgba(2, 6, 23, 0.86);
+}
+
+/* Mobile logo stability */
+@media (max-width: 767px) {
+  .main-navbar__brand-logo-wrap,
+  .main-navbar.is-scrolled .main-navbar__brand-logo-wrap {
+    width: clamp(150px, 44vw, 205px);
+    height: 56px;
+  }
+
+  .main-navbar__brand,
+  .main-navbar.is-scrolled .main-navbar__brand {
+    height: 56px;
+  }
+}
+
+@media (max-width: 430px) {
+  .main-navbar__brand-logo-wrap,
+  .main-navbar.is-scrolled .main-navbar__brand-logo-wrap {
+    width: clamp(132px, 42vw, 175px);
+    height: 52px;
+  }
+}
+
+
+
+
+/* =========================================================
+   EPIC FINAL NAVBAR POLISH
+   No logo size change
+========================================================= */
+
+/* Colored utility icons */
+.main-navbar__action-btn svg,
+.main-navbar__account svg {
+  /* stroke: url(#ffnIconGradient); */
+}
+
+/* Fallback colored icons */
+.main-navbar__action-btn:nth-child(1) svg {
+  color: #00c2ff;
+}
+
+.main-navbar__floating-wrap:nth-of-type(1) .main-navbar__action-btn svg {
+  color: #4da3ff;
+}
+
+.main-navbar__notification-btn svg {
+  color: #4cff9a;
+}
+
+.main-navbar__account-avatar svg {
+  color: #ffffff;
+}
+
+/* Make buttons feel premium */
+.main-navbar__action-btn,
+.main-navbar__account,
+.main-navbar__wallet,
+.main-navbar__menu-btn {
+  position: relative;
+  isolation: isolate;
+}
+
+.main-navbar__action-btn::before,
+.main-navbar__account::before,
+.main-navbar__wallet::before,
+.main-navbar__menu-btn::before {
+  content: '';
+  position: absolute;
+  inset: -1px;
+  z-index: -1;
+  border-radius: inherit;
+  background: linear-gradient(135deg, rgba(30, 94, 255, 0.45), rgba(0, 194, 255, 0.28), rgba(76, 255, 154, 0.2));
+  opacity: 0;
+  transition: opacity 0.2s ease;
+}
+
+.main-navbar__action-btn:hover::before,
+.main-navbar__account:hover::before,
+.main-navbar__wallet:hover::before,
+.main-navbar__menu-btn:hover::before {
+  opacity: 1;
+}
+
+/* Stronger nav item taste */
+.main-navbar__link {
+  font-size: 14.5px;
+  font-weight: 950;
+  letter-spacing: -0.02em;
+}
+
+.main-navbar__link:hover {
+  transform: translateY(-1px);
+}
+
+/* Keep light theme clean and premium */
+[data-theme='light'] .main-navbar__link {
+  color: rgba(7, 17, 31, 0.78);
+}
+
+[data-theme='light'] .main-navbar__link:hover,
+[data-theme='light'] .main-navbar__link.is-active,
+[data-theme='light'] .main-navbar__nav-dropdown.is-open .main-navbar__link {
+  color: #07111f;
+  background:
+    linear-gradient(135deg, rgba(77, 163, 255, 0.14), rgba(29, 233, 182, 0.08));
+  border-color: rgba(77, 163, 255, 0.28);
+}
+
+/* Keep dark theme powerful */
+[data-theme='dark'] .main-navbar__link:hover,
+[data-theme='dark'] .main-navbar__link.is-active,
+[data-theme='dark'] .main-navbar__nav-dropdown.is-open .main-navbar__link {
+  background:
+    linear-gradient(135deg, rgba(30, 94, 255, 0.22), rgba(0, 194, 255, 0.12));
+}
+
+/* More stylish navbar glass */
+.main-navbar__inner {
+  position: relative;
+}
+
+.main-navbar__inner::after {
+  content: '';
+  position: absolute;
+  left: 24px;
+  right: 24px;
+  bottom: 0;
+  height: 1px;
+  background: linear-gradient(90deg, transparent, rgba(0, 194, 255, 0.55), rgba(76, 255, 154, 0.38), transparent);
+  opacity: 0.75;
+  pointer-events: none;
+}
+
+/* Color hamburger */
+.main-navbar__menu-btn span:nth-child(1) {
+  background: #4da3ff;
+}
+
+.main-navbar__menu-btn span:nth-child(2) {
+  background: #00c2ff;
+}
+
+.main-navbar__menu-btn span:nth-child(3) {
+  background: #4cff9a;
+}
+
+
+
+
+/* FIX ICONS: no SVG gradient dependency */
+.main-navbar__action-btn svg,
+.main-navbar__account svg,
+.main-navbar__notification-btn svg,
+.main-navbar__account-avatar svg {
+  stroke: currentColor;
+}
+
+.main-navbar__right > .main-navbar__action-btn {
+  color: #00c2ff;
+}
+
+.main-navbar__floating-wrap:nth-of-type(1) .main-navbar__action-btn {
+  color: #4da3ff;
+}
+
+.main-navbar__notification-btn {
+  color: #4cff9a;
+}
+
+.main-navbar__account {
+  color: #8b5cf6;
+}
+
+
+
+
+/* =========================================================
+   PREMIUM LIGHT THEME TEXT (NO BLACK — BRAND COLORS)
+========================================================= */
+
+/* Main nav links */
+[data-theme='light'] .main-navbar__link {
+  color: #1e5eff; /* deep blue */
+}
+
+/* Hover / active → gradient feel */
+[data-theme='light'] .main-navbar__link:hover,
+[data-theme='light'] .main-navbar__link.is-active,
+[data-theme='light'] .main-navbar__nav-dropdown.is-open .main-navbar__link {
+  color: #00c2ff; /* cyan highlight */
+}
+
+/* ABOUT + SERVICES items */
+[data-theme='light'] .main-navbar__about-menu-item,
+[data-theme='light'] .main-navbar__service-item,
+[data-theme='light'] .main-navbar__service-subitem {
+  color: #1e5eff;
+}
+
+/* Hover states */
+[data-theme='light'] .main-navbar__about-menu-item:hover,
+[data-theme='light'] .main-navbar__service-item:hover,
+[data-theme='light'] .main-navbar__service-item.is-active,
+[data-theme='light'] .main-navbar__service-subitem:hover {
+  color: #00c2ff;
+  background: rgba(0, 194, 255, 0.08);
+}
+
+/* Secondary text (wallet, small texts) */
+[data-theme='light'] .main-navbar__wallet-text {
+  color: #4da3ff;
+}
+
+/* Add subtle gradient text effect (premium feel) */
+[data-theme='light'] .main-navbar__link,
+[data-theme='light'] .main-navbar__service-item {
+  background: linear-gradient(90deg, #1e5eff, #00c2ff);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+}
+
+/* On hover → brighter gradient */
+[data-theme='light'] .main-navbar__link:hover,
+[data-theme='light'] .main-navbar__service-item:hover {
+  background: linear-gradient(90deg, #00c2ff, #4cff9a);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+}
+
+
+
+/* =========================================================
+   FIX: NAVBAR DEFAULT BACKGROUND BEFORE SCROLL
+========================================================= */
+
+/* Dark mode: blue/dark navbar background immediately */
+[data-theme='dark'] .main-navbar {
+  background:
+    linear-gradient(135deg, rgba(2, 6, 23, 0.94), rgba(10, 42, 108, 0.74));
+  backdrop-filter: blur(18px);
+  -webkit-backdrop-filter: blur(18px);
+}
+
+/* Light mode: white navbar background immediately */
+[data-theme='light'] .main-navbar {
+  background: rgba(255, 255, 255, 0.96) !important;
+  backdrop-filter: blur(18px);
+  -webkit-backdrop-filter: blur(18px);
+  box-shadow: 0 10px 30px rgba(15, 23, 42, 0.08);
+}
+
+/* Keep scrolled state consistent */
+[data-theme='light'] .main-navbar.is-scrolled {
+  background: rgba(255, 255, 255, 0.96) !important;
+}
+
+[data-theme='dark'] .main-navbar.is-scrolled {
+  background:
+    linear-gradient(135deg, rgba(2, 6, 23, 0.96), rgba(10, 42, 108, 0.78));
+}
+
+/* Service summary card */
+.main-navbar__service-summary {
+  display: grid;
+  gap: 6px;
+  padding: 14px;
+  border-radius: 16px;
+  background:
+    linear-gradient(135deg, rgba(0, 194, 255, 0.14), rgba(76, 255, 154, 0.08)),
+    rgba(255, 255, 255, 0.04);
+  border: 1px solid rgba(0, 194, 255, 0.16);
+}
+
+.main-navbar__service-summary strong {
+  color: #ffffff;
+  font-size: 14px;
+  font-weight: 950;
+}
+
+.main-navbar__service-summary span {
+  color: rgba(230, 234, 242, 0.72);
+  font-size: 13px;
+  line-height: 1.5;
+}
+
+[data-theme='light'] .main-navbar__service-summary {
+  background: rgba(255, 255, 255, 0.78);
+  border-color: rgba(0, 114, 188, 0.14);
+}
+
+[data-theme='light'] .main-navbar__service-summary strong {
+  color: #1e5eff;
+}
+
+[data-theme='light'] .main-navbar__service-summary span {
+  color: rgba(15, 23, 42, 0.68);
 }

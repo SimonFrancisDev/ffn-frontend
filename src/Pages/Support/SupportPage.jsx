@@ -1,4 +1,5 @@
 import './SupportPage.css'
+import 'flag-icons/css/flag-icons.min.css'
 import { useEffect, useState, useCallback, useMemo, useRef } from 'react'
 import { useWallet } from '../../hooks/useWallet'
 import { useContracts } from '../../hooks/useContracts'
@@ -13,11 +14,27 @@ import { FaXTwitter } from 'react-icons/fa6'
 
 const API_BASE_URL = 'https://fin-freedom-backend-3.onrender.com'
 
-const SUPPORT_COUNTRIES = Array.from({ length: 9 }, (_, index) => ({
-  id: `country-${index + 1}`,
-  name: `Support Region ${index + 1}`,
-  image: `/assets/images/support-country-${index + 1}.png`,
-}))
+const SUPPORT_HERO_IMAGES = {
+  dark: '/images/support/support-laptop-dark.png',
+  light: '/images/support/support-laptop-light.png',
+  mobileDark: '/images/support/support-mobile-dark.png',
+  mobileLight: '/images/support/support-mobile-light.png',
+}
+
+
+const COMMUNITY_LANGUAGES = [
+  { code: 'us', label: 'English', link: 'https://t.me/your_en_group' },
+  { code: 'it', label: 'Italian', link: 'https://t.me/your_it_group' },
+  { code: 'cn', label: 'Chinese', link: 'https://t.me/your_zh_group' },
+  { code: 'in', label: 'Hindi', link: 'https://t.me/your_hi_group' },
+  { code: 'ir', label: 'Persian', link: 'https://t.me/your_fa_group' },
+  { code: 'id', label: 'Indonesian', link: 'https://t.me/your_id_group' },
+  { code: 'kr', label: 'Korean', link: 'https://t.me/your_ko_group' },
+  { code: 'fr', label: 'French', link: 'https://t.me/your_fr_group' },
+  { code: 'vn', label: 'Vietnamese', link: 'https://t.me/your_vi_group' },
+  { code: 'ru', label: 'Russian', link: 'https://t.me/your_ru_group' },
+  { code: 'es', label: 'Spanish', link: 'https://t.me/your_es_group' },
+]
 
 const QUICK_HELP_GUIDES = {
   registration: {
@@ -297,15 +314,52 @@ const SupportPage = ({ onNavigate }) => {
     }
   }
 
+  const normalizeFaqItem = (item, index) => ({
+    ...item,
+    _id: item._id || item.id || `faq-${index}`,
+    question:
+      item.question ||
+      item.title ||
+      item.questionText ||
+      item.name ||
+      '',
+    answer:
+      item.answer ||
+      item.content ||
+      item.body ||
+      item.description ||
+      '',
+    category:
+      item.category ||
+      item.categoryName ||
+      item.type ||
+      'General',
+  })
+
   const fetchFaqs = useCallback(async () => {
-    try {
-      const res = await fetch(`${API_BASE_URL}/api/support/faqs`)
-      const data = await res.json()
-      setFaqs(data?.ok && data?.data ? data.data : [])
-    } catch {
-      setFaqs([])
-    }
-  }, [])
+  try {
+    const res = await fetch(`${API_BASE_URL}/api/support/faqs`)
+    const data = await res.json()
+
+    const rawItems = Array.isArray(data?.data)
+      ? data.data
+      : Array.isArray(data?.data?.items)
+        ? data.data.items
+        : Array.isArray(data?.items)
+          ? data.items
+          : []
+
+    const items = rawItems.map(normalizeFaqItem).filter((item) => item.question || item.answer)
+
+    console.log('[SUPPORT_FAQS_RESPONSE]', data)
+    console.log('[SUPPORT_FAQS_ITEMS]', items)
+
+    setFaqs(items)
+  } catch (err) {
+    console.error('Error fetching FAQs:', err)
+    setFaqs([])
+  }
+}, [])
 
   const fetchAnnouncements = useCallback(async () => {
     try {
@@ -416,14 +470,25 @@ const SupportPage = ({ onNavigate }) => {
 
   const handleSearchChange = (e) => {
     const query = e.target.value
+    const normalizedQuery = query.trim().toLowerCase()
+
     setSearchQuery(query)
-    
-    if (query.length > 1) {
+
+    if (normalizedQuery.length > 1) {
       const suggestions = faqs
-        .filter(faq => 
-          faq.question?.toLowerCase().includes(query.toLowerCase())
-        )
-        .slice(0, 5)
+        .filter((faq) => {
+          const question = String(faq.question || '').toLowerCase()
+          const answer = String(faq.answer || '').toLowerCase()
+          const category = String(faq.category || '').toLowerCase()
+
+          return (
+            question.includes(normalizedQuery) ||
+            answer.includes(normalizedQuery) ||
+            category.includes(normalizedQuery)
+          )
+        })
+        .slice(0, 6)
+
       setSearchSuggestions(suggestions)
     } else {
       setSearchSuggestions([])
@@ -431,12 +496,28 @@ const SupportPage = ({ onNavigate }) => {
   }
 
   const filteredFaqs = useMemo(() => {
-    let filtered = faqs
-    if (selectedCategory !== 'all') filtered = filtered.filter((faq) => faq.category === selectedCategory)
-    if (searchQuery.trim()) {
-      const query = searchQuery.toLowerCase()
-      filtered = filtered.filter((faq) => String(faq.question || '').toLowerCase().includes(query) || String(faq.answer || '').toLowerCase().includes(query))
+    let filtered = Array.isArray(faqs) ? faqs : []
+
+    if (selectedCategory !== 'all') {
+      filtered = filtered.filter((faq) => faq.category === selectedCategory)
     }
+
+    if (searchQuery.trim()) {
+      const query = searchQuery.trim().toLowerCase()
+
+      filtered = filtered.filter((faq) => {
+        const question = String(faq.question || '').toLowerCase()
+        const answer = String(faq.answer || '').toLowerCase()
+        const category = String(faq.category || '').toLowerCase()
+
+        return (
+          question.includes(query) ||
+          answer.includes(query) ||
+          category.includes(query)
+        )
+      })
+    }
+
     return filtered
   }, [faqs, selectedCategory, searchQuery])
 
@@ -508,21 +589,28 @@ const SupportPage = ({ onNavigate }) => {
     return (
       <section className="support-page">
         <div className="support-hero glass-panel">
+          <picture className="support-hero__bg support-hero__bg--dark" aria-hidden="true">
+            <source media="(max-width: 640px)" srcSet={SUPPORT_HERO_IMAGES.mobileDark} />
+            <img src={SUPPORT_HERO_IMAGES.dark} alt="" />
+          </picture>
+
+          <picture className="support-hero__bg support-hero__bg--light" aria-hidden="true">
+            <source media="(max-width: 640px)" srcSet={SUPPORT_HERO_IMAGES.mobileLight} />
+            <img src={SUPPORT_HERO_IMAGES.light} alt="" />
+          </picture>
+
           <div className="support-hero__left">
             <div className="support-hero__text-block">
               <h1 className="support-hero__title">Support Center</h1>
-              <p className="support-hero__description soft-text">Connect your wallet to access support resources, guided help, and personalized ticket submission. Fin Freedom Network rewards intentional participation, not shortcuts.</p>
+
+              <p className="support-hero__description soft-text">
+                Connect your wallet to access personalized support, guided help, and ticket submission.
+              </p>
             </div>
-            <button type="button" onClick={connect} className="connect-wallet-btn"><Wallet size={18} /> Connect Wallet</button>
-          </div>
-          <div className="support-hero__right">
-            <div className="support-country-mosaic">
-              {SUPPORT_COUNTRIES.map((country) => (
-                <a key={country.id} href="https://t.me/" className="support-country-mosaic__card" target="_blank" rel="noopener noreferrer">
-                  <img src={country.image} alt={country.name} className="support-country-mosaic__image" />
-                </a>
-              ))}
-            </div>
+
+            <button type="button" onClick={connect} className="connect-wallet-btn">
+              <Wallet size={18} /> Connect Wallet
+            </button>
           </div>
         </div>
       </section>
@@ -601,117 +689,148 @@ const SupportPage = ({ onNavigate }) => {
       <ComingSoonModal isOpen={showTutorialModal} onClose={() => setShowTutorialModal(false)} title="Tutorial Videos" />
 
       <div className="support-hero glass-panel">
-        <div className="support-hero__left">
-          <div className="support-hero__eyebrow glass-panel">
-            <span className="support-hero__eyebrow-dot" />
-            <span className="support-hero__eyebrow-text">Wallet-first support and guidance</span>
-          </div>
+        <picture className="support-hero__bg support-hero__bg--dark" aria-hidden="true">
+          <source media="(max-width: 640px)" srcSet={SUPPORT_HERO_IMAGES.mobileDark} />
+          <img src={SUPPORT_HERO_IMAGES.dark} alt="" />
+        </picture>
 
+        <picture className="support-hero__bg support-hero__bg--light" aria-hidden="true">
+          <source media="(max-width: 640px)" srcSet={SUPPORT_HERO_IMAGES.mobileLight} />
+          <img src={SUPPORT_HERO_IMAGES.light} alt="" />
+        </picture>
+
+        <div className="support-hero__left">
           <div className="support-hero__text-block">
             <h1 className="support-hero__title">Support Center</h1>
+
             <p className="support-hero__description soft-text">
-              Fin Freedom Network is built on transparent, on-chain mechanisms. Find the right help path quickly, review trusted answers, and contact support with relevant wallet addresses and transaction hashes for faster resolution.
+              Find trusted answers, search common issues, and contact support with the right wallet
+              details or transaction hash for faster resolution.
             </p>
           </div>
 
-          <div className="support-hero__tools">
-            <div className="support-hero__search-col">
-              <div className="support-search glass-panel">
-                <Search size={18} className="search-icon" />
-                <input
-                  type="text"
-                  className="search-input"
-                  placeholder="Search support topics, registration help, activation issues, or orbit questions..."
-                  value={searchQuery}
-                  onChange={handleSearchChange}
-                />
-                {searchQuery ? <button className="search-clear" onClick={() => setSearchQuery('')} type="button"><X size={14} /></button> : null}
-                {searchSuggestions.length > 0 && (
-                  <div className="search-suggestions glass-panel">
-                    {searchSuggestions.map(suggestion => (
-                      <button 
-                        key={suggestion._id}
-                        onClick={() => {
-                          setSearchQuery(suggestion.question)
-                          setSearchSuggestions([])
-                        }}
-                      >
-                        <Search size={12} />
-                        {suggestion.question}
-                      </button>
-                    ))}
-                  </div>
-                )}
-              </div>
-            </div>
+          <div className="support-hero__search-col">
+            <div className="support-search glass-panel">
+              <Search size={18} className="search-icon" />
 
-            <div className="support-hero__topics-col">
-              <div className="support-hero__chips">
-                <button type="button" className={`support-hero__chip glass-panel ${selectedCategory === 'all' ? 'active' : ''}`} onClick={() => setSelectedCategory('all')}>All Topics</button>
-                {categories.slice(1, 5).map((cat) => (
-                  <button type="button" key={cat} className={`support-hero__chip glass-panel ${selectedCategory === cat ? 'active' : ''}`} onClick={() => setSelectedCategory(cat)}>{cat}</button>
-                ))}
-              </div>
+              <input
+                type="text"
+                className="search-input"
+                placeholder="Search registration, activation, wallet, orbit, or support topics..."
+                value={searchQuery}
+                onChange={handleSearchChange}
+              />
+
+              {searchQuery ? (
+                <button
+                  className="search-clear"
+                  onClick={() => {
+                    setSearchQuery('')
+                    setSearchSuggestions([])
+                  }}
+                  type="button"
+                  aria-label="Clear search"
+                >
+                  <X size={14} />
+                </button>
+              ) : null}
+
+              {searchSuggestions.length > 0 && (
+                <div className="search-suggestions glass-panel">
+                  {searchSuggestions.map((suggestion) => (
+                    <button
+                      key={suggestion._id || suggestion.id}
+                      type="button"
+                      onClick={() => {
+                        setSearchQuery(suggestion.question)
+                        setFaqOpenIndex(suggestion._id || suggestion.id)
+                        setSearchSuggestions([])
+                        document.getElementById('faq-section')?.scrollIntoView({
+                          behavior: 'smooth',
+                          block: 'start',
+                        })
+                      }}
+                    >
+                      <Search size={12} />
+                      <span>{suggestion.question}</span>
+                    </button>
+                  ))}
+                </div>
+              )}
             </div>
           </div>
 
           {searchQuery ? (
             <div className="support-search-results glass-panel">
               <div className="support-search-results__header">
-                <span><Search size={14} /> {filteredFaqs.length} result{filteredFaqs.length === 1 ? '' : 's'} for "{searchQuery}"</span>
-                <button type="button" className="support-search-results__link" onClick={() => document.getElementById('faq-section')?.scrollIntoView({ behavior: 'smooth' })}>View full results <ChevronRight size={12} /></button>
+                <span>
+                  <Search size={14} /> {filteredFaqs.length} result{filteredFaqs.length === 1 ? '' : 's'} for "{searchQuery}"
+                </span>
+
+                <button
+                  type="button"
+                  className="support-search-results__link"
+                  onClick={() =>
+                    document.getElementById('faq-section')?.scrollIntoView({
+                      behavior: 'smooth',
+                      block: 'start',
+                    })
+                  }
+                >
+                  View full results <ChevronRight size={12} />
+                </button>
               </div>
+
               <div className="support-search-results__list">
-                {searchPreview.length ? searchPreview.map((faq) => (
-                  <button key={faq._id || faq.id} type="button" className="support-search-results__item" onClick={() => { setFaqOpenIndex(faq._id || faq.id); document.getElementById('faq-section')?.scrollIntoView({ behavior: 'smooth' }) }}>
-                    <strong>{faq.question}</strong>
-                    <span>{faq.category}</span>
-                  </button>
-                )) : <div className="support-search-results__empty soft-text">No direct matches found yet. Try a broader keyword or use the support request section below.</div>}
+                {searchPreview.length ? (
+                  searchPreview.map((faq) => (
+                    <button
+                      key={faq._id || faq.id}
+                      type="button"
+                      className="support-search-results__item"
+                      onClick={() => {
+                        setFaqOpenIndex(faq._id || faq.id)
+                        document.getElementById('faq-section')?.scrollIntoView({
+                          behavior: 'smooth',
+                          block: 'start',
+                        })
+                      }}
+                    >
+                      <strong>{faq.question}</strong>
+                      <span>{faq.category}</span>
+                    </button>
+                  ))
+                ) : (
+                  <div className="support-search-results__empty soft-text">
+                    No direct matches found yet. Try a broader keyword or use the support request section below.
+                  </div>
+                )}
               </div>
             </div>
           ) : null}
 
-          <div className="support-country-strip-block">
-            <p className="support-country-strip__lead soft-text">You can also get direct Telegram support with dedicated community guidance for these supported countries.</p>
-          
-            <div className="support-country-strip-container">
-              <div className="support-country-strip">
-                {SUPPORT_COUNTRIES.map((country) => (
-                  <a
-                    key={country.id}
-                    href={telegramSupportLink}
-                    className="support-country-strip__card"
-                    target="_blank"
-                    rel="noopener noreferrer"
-                  >
-                    <img src={country.image} alt={country.name} className="support-country-strip__image" />
-                    <span>{country.name}</span>
-                  </a>
-                ))}
-              </div>
+          <div className="support-hero__community">
+            <p className="support-hero__community-title">
+              Get Help With The Social Community For the supported coutries and Regions via telegram
+            </p>
+
+            <div className="support-hero__flags">
+              {COMMUNITY_LANGUAGES.map((lang) => (
+                <a
+                  key={lang.code}
+                  href={lang.link}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="support-hero__flag"
+                  title={lang.label}
+                >
+                  <span className={`fi fi-${lang.code}`}></span>
+                </a>
+              ))}
             </div>
           </div>
         </div>
       </div>
-
-      <section className="support-status-bar glass-panel">
-        <div className="status-bar-grid">
-          <AnimatedCounter 
-            value={systemStatus.network === 'Healthy' ? 100 : systemStatus.network === 'Wrong Network' ? 50 : 0} 
-            label="Network" 
-            icon={Wifi} 
-            suffix="%" 
-          />
-          <div className="status-bar-item">
-            <Activity size={14} />
-            <span>API</span>
-            <strong>{systemStatus.api}</strong>
-          </div>
-          <AnimatedCounter value={faqs.length} label="FAQs" icon={BookOpen} />
-          <AnimatedCounter value={resources.length || fallbackResources.length} label="Resources" icon={Database} />
-        </div>
-      </section>
 
       <section className="support-quick-help glass-panel">
         <div className="support-section-heading">
@@ -869,6 +988,7 @@ const SupportPage = ({ onNavigate }) => {
             )}
           </div>
         }
+
       </section>
 
       <section className="support-safety glass-panel">
@@ -922,86 +1042,7 @@ const SupportPage = ({ onNavigate }) => {
         </div>
       </section>
 
-      <section className="support-announcements glass-panel">
-        <div className="support-section-heading">
-          <span className="support-section-heading__eyebrow muted-text">Updates</span>
-          <h2 className="support-section-heading__title">Announcements</h2>
-          <p className="soft-text">Transparent communication and community updates</p>
-        </div>
-        <div className="announcements-list">
-          {announcements.length ? announcements.map((item) => 
-            <div key={item._id || item.title} className={`announcement-item type-${item.type || 'info'}`}>
-              <div className="announcement-header">
-                <span className="announcement-title">
-                  {item.type === 'warning' ? <AlertTriangle size={14} /> : item.type === 'success' ? <CheckCircle size={14} /> : <Info size={14} />}
-                  {item.title}
-                </span>
-                <span className="announcement-date">{item.date}</span>
-              </div>
-              <p className="announcement-content">{item.content}</p>
-            </div>
-          ) : 
-            <div className="announcement-item type-info">
-              <div className="announcement-header">
-                <span className="announcement-title"><Info size={14} /> All systems are currently operating normally</span>
-                <span className="announcement-date">Today</span>
-              </div>
-              <p className="announcement-content">Fresh platform announcements will appear here as soon as they are published.</p>
-            </div>
-          }
-        </div>
-      </section>
-
-      <section className="support-resources glass-panel">
-        <div className="support-section-heading">
-          <span className="support-section-heading__eyebrow muted-text">Resources</span>
-          <h2 className="support-section-heading__title">Helpful Links</h2>
-        </div>
-        <div className="resources-grid">
-          {(resources.length ? resources : fallbackResources).map((item) => {
-            const Icon = getResourceIcon(item.key || item.label || '')
-            return (
-              <button
-                key={item._id || item.id || item.label}
-                className="resource-link resource-link--modal"
-                onClick={() => handleResourceClick(item)}
-                type="button"
-              >
-                <span className="resource-link__icon"><Icon size={16} /></span>
-                <span>{item.label}</span>
-                {item.isComingSoon && <span className="coming-soon-badge">Soon</span>}
-              </button>
-            )
-          })}
-        </div>
-        <div className="support-community-links">
-          <h4>Join our community</h4>
-          <div className="social-icons">
-            {(socialLinks.length ? socialLinks : [
-              { platform: 'Telegram', href: 'https://t.me/' },
-              { platform: 'Discord', href: 'https://discord.gg/' },
-              { platform: 'X', href: 'https://x.com/' },
-            ]).map((link) => {
-              const platformLabel = link.platform || link.label || link.key || 'Community'
-              const visual = getSocialVisual(platformLabel)
-              const SocialIcon = visual.icon
-              return (
-                <a key={link._id || platformLabel} href={link.href || '#'} className={`social-icon ${visual.className}`} target="_blank" rel="noopener noreferrer">
-                  <span className="social-icon__badge"><SocialIcon size={15} /></span>
-                </a>
-              )
-            })}
-          </div>
-        </div>
-        {/* <div className="support-contact-info">
-          <h4>Direct contact</h4>
-          <div className="contact-methods">
-            <a href="mailto:support@finfreedom.io" className="contact-method"><Mail size={14} /> support@finfreedom.io</a>
-            <span className="response-time">Average response window: within 24 hours</span>
-          </div>
-        </div> */}
-      </section>
-
+  
       {activeGuide ? 
         <div className="support-guide-modal__backdrop" onClick={() => setActiveGuideKey(null)}>
           <div className="support-guide-modal glass-panel" onClick={(e) => e.stopPropagation()}>

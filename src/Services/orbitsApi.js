@@ -332,3 +332,17 @@ export async function fetchUserSummaryApi(address, options = {}) {
     }
   );
 }
+
+
+
+export async function fetchAddressActivationEventsApi(address, options = {}) {
+  return apiGet(
+    `/api/orbits/events/${encodeURIComponent(address)}`,   // We'll use this route
+    null,
+    {
+      ttlMs: 1800,                    // 30 minutes cache
+      timeoutMs: DEFAULT_REQUEST_TIMEOUT_MS,
+      forceRefresh: !!options.forceRefresh,
+    }
+  )
+}

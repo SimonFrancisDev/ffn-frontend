@@ -1,6 +1,6 @@
 import './ActivationCenterPage.css'
 import { useEffect, useState, useCallback, useMemo } from 'react'
-import { useNavigate } from 'react-router-dom'
+import { useNavigate, useLocation } from 'react-router-dom'
 import { useWallet } from '../../hooks/useWallet'
 import { useContracts } from '../../hooks/useContracts'
 import { useSpace } from '../../context/SpaceContext'
@@ -20,7 +20,11 @@ import {
   FaTimesCircle,
   FaChevronDown,
   FaChevronUp,
+  FaCopy,
+  FaShare,
 } from 'react-icons/fa'
+const API_BASE = import.meta.env.VITE_API_BASE_URL?.replace(/\/$/, '') || ''
+
 
 const AMOY_CHAIN_ID = '0x13882'
 
@@ -168,6 +172,7 @@ const ActivationOrbitGalaxy = ({ level, viewer, snapshot }) => {
     2: orbitType === 'P39' ? 165 : 165,
     3: 225,
   }
+
 
   return (
     <div className="activation-orbit-preview">
@@ -353,8 +358,86 @@ const ActivationCenterPage = () => {
     loadContracts,
   } = useContracts()
 
+  const navigate = useNavigate()
+  const location = useLocation()
+
   const viewer = subjectAddress || account
 
+  // ==================== NEW: REFERRAL SYSTEM ====================
+  const [myShortCode, setMyShortCode] = useState('')
+  const [myReferralLink, setMyReferralLink] = useState('')
+  const [incomingReferrer, setIncomingReferrer] = useState('') // from URL
+
+  
+
+useEffect(() => {
+  const params = new URLSearchParams(location.search)
+  let ref = params.get('ref')
+
+  if (!ref) {
+    const pathParts = location.pathname.split('/')
+    const refIndex = pathParts.indexOf('ref')
+    if (refIndex !== -1 && pathParts[refIndex + 1]) {
+      ref = pathParts[refIndex + 1]
+    }
+  }
+
+  if (!ref) return
+
+  setIncomingReferrer(ref)
+
+    // Handle system/no-referrer special code
+  if (ref.toUpperCase() === 'FIN-FREEDOM') {
+    setRegistrationReferrer(ethers.ZeroAddress)
+    return
+  }
+
+  // If it's already a 0x address, use it directly
+  if (ethers.isAddress(ref)) {
+    setRegistrationReferrer(ref)
+    return
+  }
+
+  // Otherwise resolve the short code to a wallet address
+  fetch(`${API_BASE}/api/referral/resolve/${ref}`)
+    .then(res => res.json())
+    .then(data => {
+      if (data?.walletAddress) {
+        setRegistrationReferrer(data.walletAddress)
+      }
+    })
+    .catch(err => console.error('Failed to resolve referral code:', err))
+}, [location])
+
+  // Generate / Fetch user's own short code
+
+  const fetchMyReferralCode = useCallback(async () => {
+  if (!account) return
+  try {
+    const res = await fetch(`${API_BASE}/api/referral/code/${account}`)
+    const data = await res.json()
+    
+    if (data.success && data.shortCode) {
+      setMyShortCode(data.shortCode)
+      // setMyReferralLink(`https://finfreedomnetwork.io/ref/${data.shortCode}`)
+      setMyReferralLink(`https://finfreedomnetwork.io/activation?ref=${data.shortCode}`)
+    }
+  } catch (err) {
+    console.error('Failed to fetch short code:', err)
+  }
+}, [account])
+
+  const copyReferralLink = async () => {
+  if (!myReferralLink) return
+  try {
+    await navigator.clipboard.writeText(myReferralLink)
+    alert('✅ Referral link copied successfully!')
+  } catch (err) {
+    alert('Failed to copy')
+  }
+}
+
+  // ==================== REST OF YOUR EXISTING CODE ====================
   const [isRegistered, setIsRegistered] = useState(false)
   const [referrer, setReferrer] = useState('')
   const [activeLevels, setActiveLevels] = useState({})
@@ -396,7 +479,7 @@ const ActivationCenterPage = () => {
   const [receiptsSupported, setReceiptsSupported] = useState(false)
   const [cycleData, setCycleData] = useState({})
   const [orbitDataLoading, setOrbitDataLoading] = useState(false)
-  const navigate = useNavigate()
+  // const navigate = useNavigate()
 
   const [tokenSummary, setTokenSummary] = useState({
     fgtByLevel: {},
@@ -409,6 +492,20 @@ const ActivationCenterPage = () => {
   const [selectedOrbitSnapshot, setSelectedOrbitSnapshot] = useState(null)
   const [selectedOrbitLoading, setSelectedOrbitLoading] = useState(false)
   const [isLevelOrbitModalOpen, setIsLevelOrbitModalOpen] = useState(false)
+
+
+  //   useEffect(() => {
+  //   if (account && isRegistered) {
+  //     fetchMyReferralCode()
+  //   }
+  // }, [account, isRegistered, fetchMyReferralCode])
+
+
+  useEffect(() => {
+  if (account && isRegistered) {
+    fetchMyReferralCode()
+  }
+}, [account, isRegistered])
 
   const isViewerConnectedWallet = useMemo(() => {
     if (!viewer || !account) return false
@@ -1018,12 +1115,14 @@ const ActivationCenterPage = () => {
     [contracts, account, formatUsdt]
   )
 
-  const refreshAllAfterWrite = useCallback(async () => {
+
+    const refreshAllAfterWrite = useCallback(async () => {
     await fetchUserData()
     await fetchAllOrbitLevelData()
     await fetchTokenSummary()
+    await fetchMyReferralCode()
     setLastUpdated(new Date().toLocaleTimeString())
-  }, [fetchUserData, fetchAllOrbitLevelData, fetchTokenSummary])
+  }, [fetchUserData, fetchAllOrbitLevelData, fetchTokenSummary, fetchMyReferralCode])
 
   const handleCombinedRegisterAndActivateLevelOne = useCallback(async () => {
     if (!ensureWritableSpace()) return
@@ -1337,6 +1436,33 @@ const ActivationCenterPage = () => {
     setShowSecurityNotice(false)
     setIsRegistrationModalOpen(true)
   }
+
+  // ==================== REFERRAL CARD UI ====================
+  const ReferralCard = () => (
+    <section className="referral-card glass-panel">
+      <div className="referral-card__header">
+        <h3>Your Referral Link</h3>
+        <p>Share this link and earn from your network</p>
+      </div>
+
+      {myShortCode ? (
+        <>
+          <div className="referral-link-box">
+            {/* <code>https://finfreedomnetwork.io/ref/{myShortCode}</code> */}
+              <code>https://finfreedomnetwork.io/activation?ref={myShortCode}</code>
+            <button type="button" onClick={copyReferralLink} className="copy-btn">
+              <FaCopy /> Copy
+            </button>
+          </div>
+          <p className="referral-hint">
+            Your short code: <strong>{myShortCode}</strong>
+          </p>
+        </>
+      ) : (
+        <p className="referral-hint">Complete registration to generate your referral link.</p>
+      )}
+    </section>
+  )
 
   const highestLevel = useMemo(() => {
     const active = Object.entries(activeLevels)
@@ -1656,6 +1782,11 @@ const ActivationCenterPage = () => {
           </div>
         </div>
       </section>
+
+      {/* Add Referral Card after Registration Status */}
+      {isRegistered && account && (
+        <ReferralCard />
+      )}
 
       <section className="activation-levels glass-panel activation-levels--fullwidth">
         <div className="activation-section-heading">
@@ -2316,7 +2447,7 @@ const ActivationCenterPage = () => {
                     type="text"
                     className="referrer-input"
                     placeholder="Paste referrer wallet address, or leave empty"
-                    value={registrationReferrer}
+                    value={registrationReferrer || incomingReferrer}
                     onChange={(e) => setRegistrationReferrer(e.target.value)}
                   />
                   <p className="referrer-hint">
@@ -2381,6 +2512,7 @@ const ActivationCenterPage = () => {
 }
 
 export default ActivationCenterPage
+
 
 
 
@@ -2683,6 +2815,7 @@ export default ActivationCenterPage
 //   snapshot,
 //   loading,
 //   onClose,
+//   onViewFullOrbit,
 // }) => {
 //   const orbitType = snapshot?.orbitType || levelToOrbitType[level]
 
@@ -2725,6 +2858,16 @@ export default ActivationCenterPage
 //             Orbit data could not be loaded for Level {level}.
 //           </div>
 //         )}
+
+//         <div className="activation-modal__actions">
+//           <button
+//             type="button"
+//             className="view-orbit-btn full-orbit-btn"
+//             onClick={() => onViewFullOrbit?.(level)}
+//           >
+//             See more details about this orbit →
+//           </button>
+//         </div>
 //       </div>
 //     </div>
 //   )
@@ -4755,6 +4898,10 @@ export default ActivationCenterPage
 //                 setSelectedOrbitLevel(null)
 //                 setSelectedOrbitSnapshot(null)
 //               }}
+//               onViewFullOrbit={(level) => {
+//                 setIsLevelOrbitModalOpen(false)
+//                 navigate('/orbits', { state: { level } })
+//               }}
 //             />
 //           )}
 //         </div>
@@ -4764,3 +4911,9 @@ export default ActivationCenterPage
 // }
 
 // export default ActivationCenterPage
+
+
+
+
+
+

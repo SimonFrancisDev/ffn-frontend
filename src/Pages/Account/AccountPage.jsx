@@ -1,559 +1,248 @@
 import './AccountPage.css'
 import { useEffect, useState, useCallback, useMemo } from 'react'
+import { useNavigate } from 'react-router-dom'
 import { useWallet } from '../../hooks/useWallet'
 import { useContracts } from '../../hooks/useContracts'
 import { useSpace } from '../../context/SpaceContext'
 import { ethers } from 'ethers'
-import { fetchAddressReceiptsApi } from '../../Services/orbitsApi'
-
-const LEVELS = Array.from({ length: 10 }, (_, index) => index + 1)
+import { fetchUserSummaryApi } from '../../Services/orbitsApi'
+import { 
+  FaUserFriends, FaCoins, FaArrowRight, FaTelegram, 
+  FaWhatsapp, FaWallet, FaShieldAlt, FaExternalLinkAlt, FaCopy 
+} from 'react-icons/fa'
 
 const AccountPage = () => {
+  const navigate = useNavigate()
   const { isConnected, account, balance: polBalance, connect } = useWallet()
-  const { contracts, isLoading: contractsLoading, loadContracts } = useContracts()
+  const { contracts, isLoading: contractsLoading } = useContracts()
   const { viewedAddress, isOwnSpace, switchToSelf, switchToVisitor } = useSpace()
 
   const resolvedAddress = viewedAddress || account || ''
 
-  const [isRegistered, setIsRegistered] = useState(false)
-  const [referrer, setReferrer] = useState('')
-  const [activeLevels, setActiveLevels] = useState({})
-  const [usdtBalance, setUsdtBalance] = useState('0.00')
-  const [allowance, setAllowance] = useState('0.00')
-  const [totalEarnings, setTotalEarnings] = useState('0.00')
-  const [levelEarnings, setLevelEarnings] = useState({})
-  const [downlineCount, setDownlineCount] = useState(0)
-  const [registrationDate, setRegistrationDate] = useState(null)
-  const [isId1Wallet, setIsId1Wallet] = useState(false)
-  const [lastUpdated, setLastUpdated] = useState(new Date().toLocaleTimeString())
-  const [language, setLanguage] = useState('English')
-  const [notificationsEnabled, setNotificationsEnabled] = useState(true)
-  const [saveNotice, setSaveNotice] = useState('')
+  // --- STATE ---
+  const [summary, setSummary] = useState(null)
   const [profileInput, setProfileInput] = useState('')
   const [profileError, setProfileError] = useState('')
+  const [lastUpdated, setLastUpdated] = useState(new Date().toLocaleTimeString())
+  const [copySuccess, setCopySuccess] = useState(false)
+  const [referralShortCode, setReferralShortCode] = useState('')
 
-  const formatUsdt = useCallback((value) => {
-    try {
-      return Number(ethers.formatUnits(value ?? 0, 6))
-    } catch {
-      return 0
-    }
+  // --- HELPERS ---
+  const formatDisplay = useCallback((value) => {
+    // Backend sends human-readable strings (e.g. "7.00"). 
+    // We just ensure it's a number for formatting.
+    const num = parseFloat(value) || 0
+    return new Intl.NumberFormat('en-US', {
+      minimumFractionDigits: 2,
+      maximumFractionDigits: 2,
+    }).format(num)
   }, [])
 
-  const shortAddress = useCallback((addr) => {
+  const shortAddress = (addr) => {
     if (!addr || addr === ethers.ZeroAddress) return '—'
     return `${addr.slice(0, 8)}...${addr.slice(-6)}`
-  }, [])
-
-  const getInitials = useCallback((address) => {
-    if (!address) return '??'
-    return address.slice(2, 4).toUpperCase()
-  }, [])
-
-  const fetchUserData = useCallback(async () => {
-    if (!contracts || !resolvedAddress) return
-
-    try {
-      const id1WalletAddress = await contracts.registration.id1Wallet()
-      const isId1 = id1WalletAddress?.toLowerCase() === resolvedAddress.toLowerCase()
-      setIsId1Wallet(isId1)
-
-      const registered = await contracts.registration.isRegistered(resolvedAddress)
-      setIsRegistered(registered)
-
-      if (registered) {
-        const ref = await contracts.registration.getReferrer(resolvedAddress)
-        setReferrer(ref === ethers.ZeroAddress ? '' : ref)
-        setRegistrationDate('2024-01-15')
-      } else {
-        setReferrer('')
-        setRegistrationDate(null)
-      }
-
-      const levels = {}
-      for (let i = 1; i <= 10; i += 1) {
-        try {
-          levels[i] = await contracts.registration.isLevelActivated(resolvedAddress, i)
-        } catch {
-          levels[i] = false
-        }
-      }
-      setActiveLevels(levels)
-
-      const balance = await contracts.usdt.balanceOf(resolvedAddress)
-      setUsdtBalance(formatUsdt(balance).toFixed(2))
-
-      const spender = contracts.levelManager.target
-      const currentAllowance = await contracts.usdt.allowance(resolvedAddress, spender)
-      setAllowance(formatUsdt(currentAllowance).toFixed(2))
-    } catch (err) {
-      console.error('Error fetching user data:', err)
-    }
-  }, [contracts, resolvedAddress, formatUsdt])
-
-  const fetchEarningsData = useCallback(async () => {
-    if (!resolvedAddress || !isRegistered) {
-      setTotalEarnings('0.00')
-      setLevelEarnings({})
-      setDownlineCount(0)
-      return
-    }
-
-    try {
-      const result = await fetchAddressReceiptsApi(resolvedAddress)
-      const receipts = Array.isArray(result) ? result : []
-
-      let total = 0
-      const earningsByLevel = {}
-
-      receipts.forEach((receipt) => {
-        const level = Number(receipt.level || 0)
-        const liquid = Number(receipt.liquidPaid || 0)
-        total += liquid
-        earningsByLevel[level] = (earningsByLevel[level] || 0) + liquid
-      })
-
-      setTotalEarnings(total.toFixed(2))
-      setLevelEarnings(earningsByLevel)
-
-      const uniqueFromUsers = new Set(
-        receipts
-          .map((r) => r.fromUser)
-          .filter((addr) => addr && addr !== ethers.ZeroAddress)
-      )
-      setDownlineCount(uniqueFromUsers.size)
-    } catch (err) {
-      console.error('Error fetching earnings:', err)
-      setTotalEarnings('0.00')
-      setLevelEarnings({})
-      setDownlineCount(0)
-    }
-  }, [resolvedAddress, isRegistered])
-
-  useEffect(() => {
-    if (isConnected) {
-      loadContracts().catch(console.error)
-    }
-  }, [isConnected, loadContracts])
-
-  useEffect(() => {
-    if (contracts && resolvedAddress) {
-      fetchUserData()
-    }
-  }, [contracts, resolvedAddress, fetchUserData])
-
-  useEffect(() => {
-    fetchEarningsData()
-  }, [fetchEarningsData])
-
-  useEffect(() => {
-    if (!contracts || !resolvedAddress) return
-
-    const interval = setInterval(() => {
-      fetchUserData()
-      fetchEarningsData()
-      setLastUpdated(new Date().toLocaleTimeString())
-    }, 30000)
-
-    return () => clearInterval(interval)
-  }, [contracts, resolvedAddress, fetchUserData, fetchEarningsData])
-
-  useEffect(() => {
-    const savedLanguage = localStorage.getItem('ffn_language')
-    const savedNotifications = localStorage.getItem('ffn_notifications')
-    if (savedLanguage) setLanguage(savedLanguage)
-    if (savedNotifications) setNotificationsEnabled(savedNotifications === 'true')
-  }, [])
-
-  const savePreferences = useCallback(() => {
-    localStorage.setItem('ffn_language', language)
-    localStorage.setItem('ffn_notifications', String(notificationsEnabled))
-    setSaveNotice('Preferences saved')
-    window.setTimeout(() => setSaveNotice(''), 1800)
-  }, [language, notificationsEnabled])
-
-  const handleViewProfile = useCallback(() => {
-    const nextValue = profileInput.trim()
-
-    if (!nextValue) {
-      setProfileError('Enter a wallet address to view a public profile.')
-      return
-    }
-
-    if (!ethers.isAddress(nextValue)) {
-      setProfileError('Enter a valid wallet address.')
-      return
-    }
-
-    setProfileError('')
-    switchToVisitor?.(nextValue)
-  }, [profileInput, switchToVisitor])
-
-  const handleReturnToMyProfile = useCallback(() => {
-    setProfileError('')
-    setProfileInput('')
-    switchToSelf?.()
-  }, [switchToSelf])
-
-  const highestLevel = useMemo(() => {
-    const active = Object.entries(activeLevels)
-      .filter(([, active]) => active)
-      .map(([level]) => Number(level))
-    return active.length ? Math.max(...active) : 0
-  }, [activeLevels])
-
-  const activeCount = useMemo(
-    () => Object.values(activeLevels).filter(Boolean).length,
-    [activeLevels]
-  )
-
-  const visibleEarnings = useMemo(
-    () => LEVELS.filter((level) => Number(levelEarnings[level] || 0) > 0 || activeLevels[level]),
-    [levelEarnings, activeLevels]
-  )
-
-  const sponsorLabel = isId1Wallet
-    ? 'ID1 Wallet'
-    : referrer
-      ? shortAddress(referrer)
-      : isRegistered
-        ? 'System ID'
-        : 'None'
-
-  const memberStatusLabel = isRegistered ? 'Active Member' : 'Not Registered'
-
-  if (!isConnected && !resolvedAddress) {
-    return (
-      <section className="account-page">
-        <div className="account-hero account-surface">
-          <div className="account-hero__content">
-            <div className="account-hero__eyebrow account-chip">
-              <span className="account-hero__eyebrow-dot" />
-              <span className="account-hero__eyebrow-text">Identity & Status</span>
-            </div>
-            <div className="account-hero__text-block">
-              <h1 className="account-hero__title">My Account</h1>
-              <p className="account-hero__description soft-text">
-                Connect your wallet to view your account details and profile status.
-              </p>
-            </div>
-            <button type="button" onClick={connect} className="connect-wallet-btn">Connect Wallet</button>
-          </div>
-          <div className="account-hero__visual account-surface account-surface--inner">
-            <div className="account-hero__visual-box">
-              <div className="profile-viz profile-viz--empty">
-                <div className="profile-avatar-large">👤</div>
-              </div>
-            </div>
-          </div>
-        </div>
-      </section>
-    )
   }
 
-  if (contractsLoading) {
+  // const referralLink = useMemo(() => {
+  //   return `https://finfreedomnetwork.io/activation?ref=${resolvedAddress}`
+  // }, [resolvedAddress])
+
+
+  const referralLink = useMemo(() => {
+  const code = referralShortCode || resolvedAddress
+  return `https://finfreedomnetwork.io/activation?ref=${code}`
+}, [resolvedAddress, referralShortCode])
+
+  // --- DATA FETCHING ---
+  const fetchData = useCallback(async () => {
+    if (!resolvedAddress) return
+    try {
+      // Production Standard: One single source of truth for growth and tokens
+      const data = await fetchUserSummaryApi(resolvedAddress)
+      setSummary(data)
+      setLastUpdated(new Date().toLocaleTimeString())
+    } catch (err) {
+      console.error("Dashboard Sync Error:", err)
+    }
+  }, [resolvedAddress])
+
+  useEffect(() => {
+  if (!resolvedAddress) return
+  const fetchShortCode = async () => {
+    try {
+      const API_BASE = import.meta.env.VITE_API_BASE_URL?.replace(/\/$/, '') || ''
+      const res = await fetch(`${API_BASE}/api/referral/code/${resolvedAddress}`)
+      const data = await res.json()
+      if (data.success && data.shortCode) {
+        setReferralShortCode(data.shortCode)
+      }
+    } catch (err) {
+      console.error('Failed to fetch short code:', err)
+    }
+  }
+  fetchShortCode()
+}, [resolvedAddress])
+
+  useEffect(() => {
+    fetchData()
+    const interval = setInterval(fetchData, 60000) // 60s for performance
+    return () => clearInterval(interval)
+  }, [fetchData])
+
+  const handleCopyLink = () => {
+    navigator.clipboard.writeText(referralLink)
+    setCopySuccess(true)
+    setTimeout(() => setCopySuccess(false), 2000)
+  }
+
+  const handleShare = (platform) => {
+    const text = `Join my orbit on Fin Freedom Network! 🚀 ${referralLink}`
+    const url = platform === 'tg' 
+      ? `https://t.me/share/url?url=${encodeURIComponent(referralLink)}&text=${encodeURIComponent(text)}`
+      : `https://wa.me/?text=${encodeURIComponent(text)}`
+    window.open(url, '_blank')
+  }
+
+  const handleViewProfile = () => {
+    if (!ethers.isAddress(profileInput)) {
+      setProfileError('Invalid wallet address')
+      return
+    }
+    setProfileError('')
+    switchToVisitor?.(profileInput)
+    setProfileInput('')
+  }
+
+  if (contractsLoading || (!summary && isConnected)) {
     return (
-      <section className="account-page">
-        <div className="loading-container">
-          <div className="spinner" />
-          <p>Loading account data...</p>
-        </div>
-      </section>
+      <div className="account-loading-gate">
+        <div className="spinner" />
+        <p>Syncing Protocol Data...</p>
+      </div>
     )
   }
 
   return (
     <section className="account-page">
-      <div className="account-hero account-surface">
-        <div className="account-hero__content">
-          <div className="account-hero__eyebrow account-chip">
-            <span className="account-hero__eyebrow-dot" />
-            <span className="account-hero__eyebrow-text">
-              Core account details, progress, and wallet status
-            </span>
+      
+      {/* 1. CENTERED HERO SECTION (MATURED) */}
+      <header className="account-hero-matured account-surface">
+        <div className="profile-identity-group">
+          <div className="avatar-circle">
+            {resolvedAddress.slice(2, 4).toUpperCase()}
           </div>
-
-          <div className="account-hero__text-block">
-            <h1 className="account-hero__title">My Account</h1>
-            <p className="account-hero__description soft-text">
-              A simpler view of your profile, current status, wallet balances, and level progress.
-            </p>
-            <div className="small muted-text">Last updated: {lastUpdated}</div>
-          </div>
-
-          <div className="account-hero__chips">
-            <span className="account-chip">{memberStatusLabel}</span>
-            <span className="account-chip">Level {highestLevel || 0}</span>
-            <span className="account-chip">{activeCount}/10 Activated</span>
-            {isId1Wallet ? <span className="account-chip account-chip--accent">ID1 Wallet</span> : null}
-          </div>
-
-          <div className="account-profile-switcher account-surface account-surface--inner">
-            <div className="account-profile-switcher__head">
-              <div>
-                <span className="account-profile-switcher__label muted-text">
-                  Profile switcher
-                </span>
-                <p className="account-profile-switcher__note soft-text">
-                  View another public wallet account without leaving this page.
-                </p>
-              </div>
-
-              {!isOwnSpace ? (
-                <button
-                  type="button"
-                  className="account-profile-switcher__return"
-                  onClick={handleReturnToMyProfile}
-                >
-                  Return to my profile
-                </button>
-              ) : null}
-            </div>
-
-            <div className="account-profile-switcher__row">
-              <input
-                type="text"
-                className="account-profile-switcher__input"
-                value={profileInput}
-                onChange={(event) => setProfileInput(event.target.value)}
-                placeholder="Enter wallet address to view account"
-              />
-
-              <button
-                type="button"
-                className="account-profile-switcher__submit"
-                onClick={handleViewProfile}
-              >
-                View Profile
-              </button>
-            </div>
-
-            <div className="account-profile-switcher__meta">
-              <span className="account-profile-switcher__chip">
-                {isOwnSpace ? 'Your connected space' : 'Visitor space'}
-              </span>
-
-              <span className="account-profile-switcher__address">
-                {shortAddress(resolvedAddress)}
-              </span>
-            </div>
-
-            {profileError ? (
-              <p className="account-profile-switcher__error">{profileError}</p>
-            ) : null}
+          <div className={`status-pill ${summary?.earnings?.count > 0 ? 'active' : 'guest'}`}>
+             {summary?.earnings?.count > 0 ? 'Active Builder' : 'Ecosystem Guest'}
           </div>
         </div>
-
-        <div className="account-hero__visual account-surface account-surface--inner">
-          <div className="account-hero__visual-box">
-            <div className="profile-viz">
-              <div className="profile-avatar-large">{getInitials(resolvedAddress)}</div>
-              <div className="profile-status online" />
-            </div>
-          </div>
-          <p className="account-hero__visual-note muted-text">
-            {shortAddress(resolvedAddress)} • {memberStatusLabel}
-          </p>
+        <h1 className="hero-display-address">{shortAddress(resolvedAddress)}</h1>
+        <p className="hero-member-type">F-Freedom Program Participant</p>
+        <div className="hero-stats-row">
+          <span className="hero-stat-chip">Level {summary?.earnings?.highestLevel || 0}</span>
+          <span className="hero-stat-chip">{summary?.earnings?.count || 0} Referrals</span>
+          <span className="hero-stat-chip">Amoy Network</span>
         </div>
+      </header>
+
+      {/* 2. PROFILE SWITCHER (CENTERED & CLEAN) */}
+      <div className="account-surface profile-switcher-box">
+        <div className="switcher-header">
+          <h3>Explore Network Spaces</h3>
+          {!isOwnSpace && (
+            <button className="return-btn" onClick={switchToSelf}>Return to My Profile</button>
+          )}
+        </div>
+        <div className="switcher-input-group">
+          <input 
+            value={profileInput} 
+            onChange={(e) => setProfileInput(e.target.value)} 
+            placeholder="Paste wallet address (0x...)"
+          />
+          <button onClick={handleViewProfile}>View Space</button>
+        </div>
+        {profileError && <p className="error-text">{profileError}</p>}
       </div>
 
       <div className="account-main-grid">
         <div className="account-main-grid__left">
-          <section className="account-summary account-surface">
-            <div className="account-section-heading">
-              <span className="account-section-heading__eyebrow muted-text">Account Summary</span>
-              <h2 className="account-section-heading__title">The most important information</h2>
+          
+          {/* 3. REFERRAL ENGINE */}
+          <section className="account-surface referral-engine">
+            <div className="section-title-group">
+              <FaUserFriends />
+              <h2>Referral Engine</h2>
             </div>
-
-            <div className="account-summary__card account-surface account-surface--inner">
-              <div className="account-summary__avatar">{getInitials(resolvedAddress)}</div>
-              <div className="account-summary__details">
-                <strong className="account-summary__name">{shortAddress(resolvedAddress)}</strong>
-                <span className="account-summary__meta soft-text">{resolvedAddress}</span>
-                <span className="account-summary__meta soft-text">
-                  Member since: {registrationDate || 'Register to start'}
-                </span>
+            <div className="referral-link-container">
+              <label>Your Secure Invitation Link</label>
+              <div className="copy-box">
+                <input readOnly value={referralLink} />
+                <button onClick={handleCopyLink}>
+                  {copySuccess ? 'Copied!' : <FaCopy />}
+                </button>
               </div>
             </div>
-
-            <div className="account-summary__grid">
-              <div className="account-info-card account-surface account-surface--inner">
-                <span className="account-info-card__label muted-text">Status</span>
-                <strong className="account-info-card__value">{memberStatusLabel}</strong>
-              </div>
-              <div className="account-info-card account-surface account-surface--inner">
-                <span className="account-info-card__label muted-text">Sponsor</span>
-                <strong className="account-info-card__value">{sponsorLabel}</strong>
-              </div>
-              <div className="account-info-card account-surface account-surface--inner">
-                <span className="account-info-card__label muted-text">Highest Level</span>
-                <strong className="account-info-card__value">{highestLevel || 0}</strong>
-              </div>
-              <div className="account-info-card account-surface account-surface--inner">
-                <span className="account-info-card__label muted-text">Total Earned</span>
-                <strong className="account-info-card__value">${totalEarnings}</strong>
-              </div>
-              <div className="account-info-card account-surface account-surface--inner">
-                <span className="account-info-card__label muted-text">Downline Count</span>
-                <strong className="account-info-card__value">{downlineCount}</strong>
-              </div>
-              <div className="account-info-card account-surface account-surface--inner">
-                <span className="account-info-card__label muted-text">Allowance</span>
-                <strong className="account-info-card__value">{allowance} USDT</strong>
-              </div>
+            <div className="social-share-row">
+              <button onClick={() => handleShare('tg')} className="share-btn tg"><FaTelegram /> Telegram</button>
+              <button onClick={() => handleShare('wa')} className="share-btn wa"><FaWhatsapp /> WhatsApp</button>
             </div>
           </section>
 
-          <section className="account-levels account-surface">
-            <div className="account-section-heading">
-              <span className="account-section-heading__eyebrow muted-text">Level Progress</span>
-              <h2 className="account-section-heading__title">Your activation journey</h2>
+          {/* 4. PROTOCOL REWARDS (FGT & FGTR) */}
+          <section className="account-surface rewards-center">
+            <div className="section-title-group">
+              <FaCoins />
+              <h2>F-Freedom Rewards</h2>
             </div>
-
-            <div className="level-progress-grid">
-              {LEVELS.map((level) => (
-                <div
-                  key={level}
-                  className={`level-progress-item ${activeLevels[level] ? 'activated' : ''}`}
-                >
-                  <span className="level-number">{level}</span>
-                  {activeLevels[level] ? <span className="level-check">✓</span> : null}
-                </div>
-              ))}
+            <div className="reward-grid">
+              <div className="reward-tile inner-surface">
+                <span className="tile-label">FGT (Activation)</span>
+                <strong className="tile-value glow-blue">{formatDisplay(summary?.tokens?.FGT?.total)}</strong>
+              </div>
+              <div className="reward-tile inner-surface">
+                <span className="tile-label">FGTr (Recycle)</span>
+                <strong className="tile-value glow-teal">{formatDisplay(summary?.tokens?.FGTr?.total)}</strong>
+              </div>
             </div>
-
-            <div className="level-progress-bar">
-              <div className="level-progress-fill" style={{ width: `${(activeCount / 10) * 100}%` }} />
-            </div>
-            <p className="level-progress-text">{activeCount} of 10 levels activated</p>
+            <button className="nav-action-btn" onClick={() => navigate('/my-tokens')}>
+              See full token history <FaArrowRight />
+            </button>
           </section>
         </div>
 
         <div className="account-main-grid__right">
-          <section className="account-wallet account-surface">
-            <div className="account-section-heading">
-              <span className="account-section-heading__eyebrow muted-text">Wallet Snapshot</span>
-              <h2 className="account-section-heading__title">Connected wallet details</h2>
+          
+          {/* 5. CUMULATIVE EARNINGS */}
+          <section className="account-surface earnings-highlight">
+            <div className="section-title-group">
+              <FaShieldAlt />
+              <h2>System Earnings</h2>
             </div>
-
-            <div className="account-wallet__list">
-              <div className="account-wallet__item account-surface account-surface--inner">
-                <span className="account-wallet__label muted-text">Address</span>
-                <strong className="account-wallet__value">{shortAddress(resolvedAddress)}</strong>
-              </div>
-              <div className="account-wallet__item account-surface account-surface--inner">
-                <span className="account-wallet__label muted-text">Network</span>
-                <strong className="account-wallet__value">Polygon Amoy Testnet</strong>
-              </div>
-              <div className="account-wallet__item account-surface account-surface--inner">
-                <span className="account-wallet__label muted-text">POL Balance</span>
-                <strong className="account-wallet__value">
-                  {polBalance ? parseFloat(polBalance).toFixed(4) : '0.0000'} POL
-                </strong>
-              </div>
-              <div className="account-wallet__item account-surface account-surface--inner">
-                <span className="account-wallet__label muted-text">USDT Balance</span>
-                <strong className="account-wallet__value">{usdtBalance} USDT</strong>
-              </div>
+            <div className="earnings-hero">
+              <span className="hero-label">Cumulative USDT Payouts</span>
+              <h2 className="hero-value">${formatDisplay(summary?.earnings?.totalLiquid)}</h2>
             </div>
+            <button className="nav-action-btn" onClick={() => navigate('/activation')}>
+              Inspect Orbits YOu earned From <FaArrowRight />
+            </button>
           </section>
 
-          <section className="account-earnings account-surface">
-            <div className="account-section-heading">
-              <span className="account-section-heading__eyebrow muted-text">Earnings</span>
-              <h2 className="account-section-heading__title">Earnings by active level</h2>
+          {/* 6. WALLET SNAPSHOT */}
+          <section className="account-surface wallet-snapshot">
+            <div className="section-title-group">
+              <FaWallet />
+              <h2>Wallet Snapshot</h2>
             </div>
-
-            <div className="earnings-list">
-              {visibleEarnings.length ? (
-                visibleEarnings.map((level) => {
-                  const earned = Number(levelEarnings[level] || 0)
-                  const share = Number(totalEarnings) > 0 ? Math.min((earned / Number(totalEarnings)) * 100, 100) : 0
-
-                  return (
-                    <div key={level} className="earnings-item">
-                      <span className="earnings-level">Level {level}</span>
-                      <div className="earnings-bar-container">
-                        <div className="earnings-bar" style={{ width: `${share}%` }} />
-                      </div>
-                      <span className="earnings-amount">${earned.toFixed(2)}</span>
-                    </div>
-                  )
-                })
-              ) : (
-                <div className="earnings-empty">
-                  <p className="soft-text">No earnings yet</p>
-                  <p className="small muted-text">Activate levels to start earning</p>
-                </div>
-              )}
+            <div className="snapshot-list">
+              <div className="snapshot-row"><span>POL Balance</span> <strong>{Number(polBalance).toFixed(4)}</strong></div>
+              <div className="snapshot-row"><span>Program USDT</span> <strong>{formatDisplay(summary?.earnings?.totalLiquid)}</strong></div>
             </div>
           </section>
         </div>
       </div>
-
-      {/* Preferences section - moved OUTSIDE the grid for full width */}
-      <section className="account-preferences account-surface account-preferences--fullwidth">
-        <div className="account-section-heading">
-          <span className="account-section-heading__eyebrow muted-text">Preferences</span>
-          <h2 className="account-section-heading__title">Simple account settings</h2>
-        </div>
-
-        <div className="preferences-list">
-          {/* <div className="preference-item">
-            <span className="preference-label">Language</span>
-            <select
-              className="preference-select"
-              value={language}
-              onChange={(e) => setLanguage(e.target.value)}
-            >
-              <option value="English">English</option>
-              <option value="Spanish">Español</option>
-              <option value="French">Français</option>
-              <option value="Arabic">العربية</option>
-            </select>
-          </div> */}
-
-          <div className="preference-item">
-            <span className="preference-label">Language</span>
-            <select
-              className="preference-select"
-              value={language}
-              onChange={(e) => setLanguage(e.target.value)}
-            >
-              <option value="English">English</option>
-              <option value="Italian">Italian</option>
-              <option value="Chinese">Chinese (China, Taiwan, Singapore)</option>
-              <option value="Hindi">Hindi (India)</option>
-              <option value="Persian">Persian (Iran, Afghanistan, Tajikistan)</option>
-              <option value="Indonesian">Indonesian</option>
-              <option value="Korean">Korean (South Korea)</option>
-              <option value="French">French (France, Belgium, Switzerland, Canada)</option>
-              <option value="Spanish">Spanish (Spain)</option>
-              <option value="Russian">Russian</option>
-              <option value="Vietnamese">Vietnamese</option>
-            </select>
-          </div>
-
-          <div className="preference-item">
-            <span className="preference-label">Notifications</span>
-            <label className="preference-toggle">
-              <input
-                type="checkbox"
-                checked={notificationsEnabled}
-                onChange={(e) => setNotificationsEnabled(e.target.checked)}
-              />
-              <span className="toggle-slider" />
-              <span className="toggle-label">{notificationsEnabled ? 'ON' : 'OFF'}</span>
-            </label>
-          </div>
-
-          <button type="button" className="save-preferences-btn" onClick={savePreferences}>
-            Save Preferences
-          </button>
-
-          {saveNotice ? <div className="save-notice">{saveNotice}</div> : null}
-        </div>
-      </section>
+      
+      <footer className="account-footer">
+        Verified on-chain synchronization: {lastUpdated}
+      </footer>
     </section>
   )
 }

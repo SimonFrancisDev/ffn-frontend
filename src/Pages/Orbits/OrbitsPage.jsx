@@ -11,9 +11,9 @@ import {
   fetchOrbitPositionDetailsApi,
   fetchOrbitCycleSnapshotApi,
   fetchAddressReceiptsApi,
-  fetchActivationReceiptsApi
+  fetchActivationReceiptsApi,
+  clearAddressScopedOrbitsApiCache
 } from '../../Services/orbitsApi'
-
 // Skeleton Loader Components
 const SkeletonOrbitLevel = () => (
   <div className="skeleton-orbit-level glass-panel">
@@ -58,6 +58,10 @@ const OrbitsPage = () => {
   const { contracts, isLoading: contractsLoading, error: contractsError, loadContracts } = useContracts()
   const location = useLocation()
   const routedLevel = Number(location.state?.level || 0)
+  const routedAddress = location.state?.address || ''
+  const routedDisplayId = location.state?.displayId || ''
+  const focusedOnly = location.state?.focusedOnly === true && routedLevel >= 1 && routedLevel <= 10
+  const visibleLevels = focusedOnly ? [routedLevel] : [1, 2, 3, 4, 5, 6, 7, 8, 9, 10]
 
   const [orbitData, setOrbitData] = useState({})
   const [userLocks, setUserLocks] = useState({})
@@ -84,12 +88,15 @@ const OrbitsPage = () => {
   const [receiptsSupported, setReceiptsSupported] = useState(false)
   const [lastUpdated, setLastUpdated] = useState(new Date().toLocaleTimeString())
   const [isRefreshing, setIsRefreshing] = useState(false)
-  const [activeTab, setActiveTab] = useState('level1')
+  const [activeTab, setActiveTab] = useState(
+    focusedOnly ? `level${routedLevel}` : 'level1'
+  )
   const [isLoadingOrbits, setIsLoadingOrbits] = useState(true)
   const [loadingLevelsMap, setLoadingLevelsMap] = useState({})
 
   const [viewedLevelsReady, setViewedLevelsReady] = useState(false)
   const [receiptsLoading, setReceiptsLoading] = useState(false)
+  const [resolvedMemberIds, setResolvedMemberIds] = useState({})
 
   const galaxyRef = useRef(null)
   const modalRef = useRef(null)
@@ -106,6 +113,7 @@ const OrbitsPage = () => {
   const lastResetAddressRef = useRef('')
   const bootstrapAddressRef = useRef('')
   const bootInFlightRef = useRef(false)
+  const memberIdCacheRef = useRef(new Map())
 
   const RECEIPT_TYPES = {
     FOUNDER_PATH: 1,
@@ -196,6 +204,27 @@ const OrbitsPage = () => {
       .toLowerCase()
       .replace(/\b\w/g, (c) => c.toUpperCase())
   }, [])
+
+  const fetchMemberId = useCallback(async (address) => {
+    if (!address || !ethers.isAddress(address)) return '—'
+
+    const key = address.toLowerCase()
+    if (memberIdCacheRef.current.has(key)) {
+      return memberIdCacheRef.current.get(key)
+    }
+
+    try {
+      const res = await fetch(`${import.meta.env.VITE_API_BASE_URL?.replace(/\/$/, '') || ''}/api/referral/code/${address}`)
+      const data = await res.json()
+
+      const displayId = data?.shortCode || shortAddress(address)
+      memberIdCacheRef.current.set(key, displayId)
+      return displayId
+    } catch {
+      memberIdCacheRef.current.set(key, shortAddress(address))
+      return shortAddress(address)
+    }
+  }, [shortAddress])
 
   const getExecutedEscrowLocked = useCallback((position) => {
     if (!position) return 0
@@ -585,13 +614,21 @@ const OrbitsPage = () => {
     }
   }, [viewAddress])
 
-  const fetchStoredCycleForLevel = useCallback(async (level, cycleNumber) => {
+ const fetchStoredCycleForLevel = useCallback(async (level, cycleNumber, forceRefresh = false) => {
     if (!viewAddress || !ethers.isAddress(viewAddress) || !orbitData[level]) return []
     const cacheKey = `${viewAddress.toLowerCase()}-${level}-${cycleNumber}`
-    if (cycleHistoryCacheRef.current.has(cacheKey)) return cycleHistoryCacheRef.current.get(cacheKey)
+    if (!forceRefresh && cycleHistoryCacheRef.current.has(cacheKey)) {
+        return cycleHistoryCacheRef.current.get(cacheKey)
+      }
+
+      if (forceRefresh) {
+        cycleHistoryCacheRef.current.delete(cacheKey)
+      }
 
     try {
-      const snapshot = await fetchOrbitCycleSnapshotApi(viewAddress, level, cycleNumber)
+      const snapshot = await fetchOrbitCycleSnapshotApi(viewAddress, level, cycleNumber, {
+          forceRefresh,
+        })
       const orbitType = snapshot?.orbitType || levelToOrbitType[level]
 
       const positions = await Promise.all(
@@ -608,14 +645,14 @@ const OrbitsPage = () => {
     }
   }, [viewAddress, orbitData, mergePositionTruth])
 
-  const loadCycleHistoryForLevel = useCallback(async (level, cycleNumber) => {
+  const loadCycleHistoryForLevel = useCallback(async (level, cycleNumber, forceRefresh = false) => {
     if (!viewAddress || !ethers.isAddress(viewAddress) || !orbitData[level]) return
     const cycleKey = String(cycleNumber)
-    if (cycleHistoryData[level]?.[cycleKey]) return
+    if (!forceRefresh && cycleHistoryData[level]?.[cycleKey]) return
 
     setLoadingCycleByLevel(prev => ({ ...prev, [level]: true }))
     try {
-      const positions = await fetchStoredCycleForLevel(level, cycleNumber)
+      const positions = await fetchStoredCycleForLevel(level, cycleNumber, forceRefresh)
       setCycleHistoryData(prev => ({
         ...prev,
         [level]: { ...(prev[level] || {}), [cycleKey]: positions }
@@ -646,7 +683,9 @@ const OrbitsPage = () => {
     setLoadingLevelsMap(prev => ({ ...prev, [level]: true }))
 
     try {
-      const snapshot = await fetchOrbitLevelSnapshotApi(viewAddress, level)
+        const snapshot = await fetchOrbitLevelSnapshotApi(viewAddress, level, {
+          forceRefresh,
+        })
       if (requestEpoch !== fetchIdRef.current) return
 
       const orbitType = snapshot.orbitType
@@ -740,7 +779,11 @@ const OrbitsPage = () => {
   const fetchAllOrbitData = useCallback(async (forceRefresh = false) => {
     if (!viewAddress || !ethers.isAddress(viewAddress)) return
     const match = activeTab?.match(/^level(\d+)$/)
-    const currentLevel = match ? Number(match[1]) : 1
+    const currentLevel = focusedOnly
+      ? routedLevel
+      : match
+        ? Number(match[1])
+        : 1
 
     if (forceRefresh) {
       const lowerView = viewAddress.toLowerCase()
@@ -750,7 +793,7 @@ const OrbitsPage = () => {
     }
 
     await fetchOrbitLevelData(currentLevel, { forceRefresh, silent: false })
-  }, [viewAddress, activeTab, fetchOrbitLevelData])
+  }, [viewAddress, activeTab, fetchOrbitLevelData, focusedOnly, routedLevel])
 
   const hydrateLivePositionDetails = useCallback(async (level, position) => {
     if (!viewAddress || !ethers.isAddress(viewAddress) || !position) return position
@@ -860,26 +903,43 @@ const OrbitsPage = () => {
   }
 
   const refreshData = async () => {
-    if (!viewAddress || !ethers.isAddress(viewAddress)) return
-    setIsRefreshing(true)
-    try {
-      const lower = viewAddress.toLowerCase()
-      activationReceiptCacheRef.current.clear()
-      positionDetailsCacheRef.current.clear()
-      positionHydrationPromisesRef.current.clear()
-      receiptCacheRef.current.delete(`${lower}-backend-receipts`)
-      viewedLevelsCacheRef.current.delete(lower)
-      loadedLevelsRef.current.delete(`${lower}-${Number(activeTab.replace('level', '')) || 1}`)
-      await fetchViewedLevels(true)
-      await fetchViewedAddressReceipts(true)
-      await fetchAllOrbitData(true)
-      setLastUpdated(new Date().toLocaleTimeString())
-    } catch (err) {
-      console.error('Refresh error:', err)
-    } finally {
-      setIsRefreshing(false)
+  if (!viewAddress || !ethers.isAddress(viewAddress)) return
+  setIsRefreshing(true)
+
+  try {
+    const lower = viewAddress.toLowerCase()
+    const activeLevel = Number(activeTab.replace('level', '')) || 1
+    clearAddressScopedOrbitsApiCache(viewAddress)
+
+    activationReceiptCacheRef.current.clear()
+    positionDetailsCacheRef.current.clear()
+    positionHydrationPromisesRef.current.clear()
+    receiptCacheRef.current.delete(`${lower}-backend-receipts`)
+    viewedLevelsCacheRef.current.delete(lower)
+
+    cycleHistoryCacheRef.current.clear()
+    setCycleHistoryData({})
+    setCycleHistorySupportByLevel({})
+    setLoadingCycleByLevel({})
+
+    loadedLevelsRef.current.delete(`${lower}-${activeLevel}`)
+
+    await fetchViewedLevels(true)
+    await fetchViewedAddressReceipts(true)
+    await fetchAllOrbitData(true)
+
+    const selectedCycle = selectedCycleByLevel[activeLevel]
+    if (selectedCycle && selectedCycle !== 'current') {
+      await loadCycleHistoryForLevel(activeLevel, Number(selectedCycle), true)
     }
+
+    setLastUpdated(new Date().toLocaleTimeString())
+  } catch (err) {
+    console.error('Refresh error:', err)
+  } finally {
+    setIsRefreshing(false)
   }
+}
 
   const handlePositionClick = useCallback(async (position) => {
     console.log('[PLANET_CLICKED]', position)
@@ -937,6 +997,33 @@ const OrbitsPage = () => {
     return active[0] || 0
   }, [viewedLevels])
 
+  // Effect to resolve member IDs for display
+  useEffect(() => {
+    const run = async () => {
+      const addresses = new Set()
+
+      Object.values(orbitData).forEach((levelData) => {
+        ;(levelData?.positions || []).forEach((p) => {
+          if (p?.occupant && ethers.isAddress(p.occupant)) {
+            addresses.add(p.occupant.toLowerCase())
+          }
+        })
+      })
+
+      const next = {}
+
+      await Promise.all(
+        [...addresses].map(async (addr) => {
+          next[addr] = await fetchMemberId(addr)
+        })
+      )
+
+      setResolvedMemberIds(next)
+    }
+
+    run()
+  }, [orbitData, fetchMemberId])
+
   useEffect(() => {
     if (routedLevel >= 1 && routedLevel <= 10) {
       setActiveTab(`level${routedLevel}`)
@@ -952,11 +1039,17 @@ const OrbitsPage = () => {
   }, [isConnected, loadContracts])
 
   useEffect(() => {
+    if (focusedOnly && routedAddress && ethers.isAddress(routedAddress)) {
+      setViewAddress(routedAddress)
+      setInputAddress(routedDisplayId || routedAddress)
+      return
+    }
+
     if (account && !viewAddress) {
       setViewAddress(account)
       setInputAddress(account)
     }
-  }, [account, viewAddress])
+  }, [account, viewAddress, focusedOnly, routedAddress, routedDisplayId])
 
   useEffect(() => {
     if (!normalizedViewAddress) return
@@ -1144,6 +1237,11 @@ const OrbitsPage = () => {
       escrowLocked: 0
     }
 
+    // Get display name for occupant (ID if available, otherwise shortened address)
+    const occupantDisplay = position.occupant && ethers.isAddress(position.occupant)
+      ? resolvedMemberIds[position.occupant.toLowerCase()] || shortAddress(position.occupant)
+      : shortAddress(position.occupant)
+
     if (!position.occupant) {
       return (
         <div className="custom-tooltip">
@@ -1177,7 +1275,7 @@ const OrbitsPage = () => {
         <div className="custom-tooltip__title">Position #{position.number}</div>
         <div className="custom-tooltip__row">
           <span>Occupant</span>
-          <strong>{shortAddress(position.occupant)}</strong>
+          <strong>{occupantDisplay}</strong>
         </div>
         <div className="custom-tooltip__row">
           <span>Line</span>
@@ -1249,42 +1347,44 @@ const OrbitsPage = () => {
 
   return (
     <section className="orbits-page">
-      <div className="orbits-control-shell">
-        <div className="address-input-bar glass-panel">
-          <input
-            type="text"
-            className="address-input"
-            placeholder="Enter wallet address (0x...)"
-            value={inputAddress}
-            onChange={(e) => setInputAddress(e.target.value)}
-          />
-          <button className="address-btn" onClick={applyViewerAddress}>Load Address</button>
-          <button className="address-btn secondary" onClick={viewMyOrbit}>My Orbits</button>
-          <button className="refresh-btn" onClick={refreshData} disabled={isRefreshing}>⟳</button>
-          <span className="last-sync">Last sync: {lastUpdated}</span>
-        </div>
+      {!focusedOnly && (
+        <div className="orbits-control-shell">
+          <div className="address-input-bar glass-panel">
+            <input
+              type="text"
+              className="address-input"
+              placeholder="Enter wallet address (0x...)"
+              value={inputAddress}
+              onChange={(e) => setInputAddress(e.target.value)}
+            />
+            <button className="address-btn" onClick={applyViewerAddress}>Load Address</button>
+            <button className="address-btn secondary" onClick={viewMyOrbit}>My Orbits</button>
+            <button className="refresh-btn" onClick={refreshData} disabled={isRefreshing}>⟳</button>
+            <span className="last-sync">Last sync: {lastUpdated}</span>
+          </div>
 
-        <div className="view-toggle-bar glass-panel">
-          <button
-            className={`toggle-btn ${viewMode === 'global' ? 'active' : ''}`}
-            onClick={() => setViewMode('global')}
-          >
-            Orbit View
-          </button>
-          <button
-            className={`toggle-btn ${viewMode === 'downline' ? 'active' : ''}`}
-            onClick={() => setViewMode('downline')}
-          >
-            Downline View {totalDownline > 0 && <span className="badge">{totalDownline}</span>}
-          </button>
-          <div className="receipt-status">
-            Receipts: {receiptsLoading ? 'Checking…' : receiptsSupported ? '✓ ON' : 'OFF'}
+          <div className="view-toggle-bar glass-panel">
+            <button
+              className={`toggle-btn ${viewMode === 'global' ? 'active' : ''}`}
+              onClick={() => setViewMode('global')}
+            >
+              Orbit View
+            </button>
+            <button
+              className={`toggle-btn ${viewMode === 'downline' ? 'active' : ''}`}
+              onClick={() => setViewMode('downline')}
+            >
+              Downline View {totalDownline > 0 && <span className="badge">{totalDownline}</span>}
+            </button>
+            <div className="receipt-status">
+              Receipts: {receiptsLoading ? 'Checking…' : receiptsSupported ? '✓ ON' : 'OFF'}
+            </div>
           </div>
         </div>
-      </div>
+      )}
 
       <div className="level-tabs glass-panel">
-        {[1, 2, 3, 4, 5, 6, 7, 8, 9, 10].map(level => {
+        {visibleLevels.map(level => {
           const orbitType = levelToOrbitType[level]
           const isActive = viewedLevelsReady ? !!viewedLevels[level] : true
           const isLoading = loadingLevelsMap[level]
@@ -1302,18 +1402,20 @@ const OrbitsPage = () => {
         })}
       </div>
 
-      <div className="orbit-tips glass-panel">
-        <p>
-          ⚡ You may experience a slight delay when opening <strong>P12</strong> and <strong>P39</strong> orbits.
-        </p>
-        <p>
-          🚀 [Blinking Yellow Dots] Other orbit visuals load silently when you click the next level while viewing your current level.
-        </p>
-      </div>
+      {!focusedOnly && (
+        <div className="orbit-tips glass-panel">
+          <p>
+            ⚡ You may experience a slight delay when opening <strong>P12</strong> and <strong>P39</strong> orbits.
+          </p>
+          <p>
+            🚀 [Blinking Yellow Dots] Other orbit visuals load silently when you click the next level while viewing your current level.
+          </p>
+        </div>
+      )}
 
       <div className="orbits-main-grid orbit-first-grid">
         <div className="orbits-main-grid__left">
-          {[1, 2, 3, 4, 5, 6, 7, 8, 9, 10].map(level => {
+          {visibleLevels.map(level => {
             if (activeTab !== `level${level}`) return null
             const data = orbitData[level]
 
@@ -1663,7 +1765,7 @@ const OrbitsPage = () => {
                                 style={{ width: coreSize, height: coreSize }}
                               >
                                 <span className="core-label">{isLevelActive ? 'ORBIT' : 'INACTIVE'}</span>
-                                <span className="core-value">{isLevelActive ? (isViewingSelf ? 'YOU' : shortAddress(viewAddress)) : 'LOCKED'}</span>
+                                <span className="core-value">{isLevelActive ? (isViewingSelf ? 'YOU' : (resolvedMemberIds[viewAddress?.toLowerCase()] || shortAddress(viewAddress))) : 'LOCKED'}</span>
                               </div>
 
                               {structure.lines.map(lineNum => {
@@ -1720,6 +1822,9 @@ const OrbitsPage = () => {
                                 }
 
                                 const badgeValue = getPlanetBadgeValue(pos)
+                                const occupantDisplay = pos.occupant && ethers.isAddress(pos.occupant)
+                                  ? resolvedMemberIds[pos.occupant.toLowerCase()] || shortAddress(pos.occupant)
+                                  : null
 
                                 return (
                                   <div
@@ -1743,8 +1848,8 @@ const OrbitsPage = () => {
                                     <div className="planet-content">
                                       <span className="node-number">{pos.number}</span>
                                       {pos.occupant && pos.occupantType === 'mine' && <span className="planet-icon">👤</span>}
-                                      {pos.occupant && pos.occupantType === 'downline' && <span className="planet-icon">⬇</span>}
-                                      {pos.occupant && pos.occupantType === 'other' && <span className="planet-icon">👥</span>}
+                                      {pos.occupant && pos.occupantType === 'downline' && occupantDisplay && <span className="planet-icon-short">{occupantDisplay.slice(0, 3)}</span>}
+                                      {pos.occupant && pos.occupantType === 'other' && occupantDisplay && <span className="planet-icon-short">{occupantDisplay.slice(0, 3)}</span>}
                                       {badgeValue > 0 && pos.occupantType !== 'mine' && (
                                         <span className="planet-earn-badge">{formatUsdtDisplay(badgeValue)}</span>
                                       )}
@@ -1868,14 +1973,14 @@ const OrbitsPage = () => {
                   </div>
                 </div>
 
-                {viewMode === 'downline' && !(selectedCycleByLevel[level] !== 'current') && (
+                {!focusedOnly && viewMode === 'downline' && !(selectedCycleByLevel[level] !== 'current') && (
                   <div className="info-card glass-panel">
                     <h3>Direct Downline</h3>
                     {downlineAtLevel.length > 0 ? (
                       <div className="user-list">
                         {downlineAtLevel.map((d, idx) => (
                           <div key={idx} className="user-item">
-                            <span className="user-address">{shortAddress(d.occupant || d.user)}</span>
+                            <span className="user-address">{resolvedMemberIds[d.occupant?.toLowerCase()] || shortAddress(d.occupant || d.user)}</span>
                             <span className="user-position">Pos {d.number || d.position}</span>
                             <span className="user-amount">{formatUsdtDisplay(d.amount)} USDT</span>
                           </div>
@@ -1885,14 +1990,14 @@ const OrbitsPage = () => {
                   </div>
                 )}
 
-                {viewMode === 'downline' && !(selectedCycleByLevel[level] !== 'current') && (
+                {!focusedOnly && viewMode === 'downline' && !(selectedCycleByLevel[level] !== 'current') && (
                   <div className="info-card glass-panel">
                     <h3>Spillover / Other Occupants</h3>
                     {spilloverAtLevel.length > 0 ? (
                       <div className="user-list">
                         {spilloverAtLevel.map((d, idx) => (
                           <div key={idx} className="user-item">
-                            <span className="user-address">{shortAddress(d.occupant || d.user)}</span>
+                            <span className="user-address">{resolvedMemberIds[d.occupant?.toLowerCase()] || shortAddress(d.occupant || d.user)}</span>
                             <span className="user-position">Pos {d.number || d.position}</span>
                             <span className="user-amount">{formatUsdtDisplay(d.amount)} USDT</span>
                           </div>
@@ -1917,8 +2022,6 @@ const OrbitsPage = () => {
         </div>
       </div>
 
-      {/* {showPositionModal && selectedPosition && (
-        <div className="modal-overlay" onClick={() => setShowPositionModal(false)}> */}
       {showPositionModal && selectedPosition && createPortal(
         <div className="modal-overlay" onClick={() => setShowPositionModal(false)}>
           <div
@@ -1984,7 +2087,7 @@ const OrbitsPage = () => {
                   <>
                     <div className="modal-detail">
                       <span className="modal-label">Occupant</span>
-                      <span>{shortAddress(selectedPosition.occupant)}</span>
+                      <span>{resolvedMemberIds[selectedPosition.occupant?.toLowerCase()] || shortAddress(selectedPosition.occupant)}</span>
                     </div>
 
                     {(selectedPosition.referrer || selectedPosition.originalReferrer || selectedPosition.occupantReferrer) &&
@@ -2193,6 +2296,8 @@ export default OrbitsPage
 
 
 
+
+
 // import './OrbitsPage.css'
 // import { useEffect, useState, useCallback, useRef, useMemo } from 'react'
 // import { useWallet } from '../../hooks/useWallet'
@@ -2206,9 +2311,9 @@ export default OrbitsPage
 //   fetchOrbitPositionDetailsApi,
 //   fetchOrbitCycleSnapshotApi,
 //   fetchAddressReceiptsApi,
-//   fetchActivationReceiptsApi
+//   fetchActivationReceiptsApi,
+//   clearAddressScopedOrbitsApiCache
 // } from '../../Services/orbitsApi'
-
 // // Skeleton Loader Components
 // const SkeletonOrbitLevel = () => (
 //   <div className="skeleton-orbit-level glass-panel">
@@ -2780,13 +2885,23 @@ export default OrbitsPage
 //     }
 //   }, [viewAddress])
 
-//   const fetchStoredCycleForLevel = useCallback(async (level, cycleNumber) => {
+//  const fetchStoredCycleForLevel = useCallback(async (level, cycleNumber, forceRefresh = false) => {
 //     if (!viewAddress || !ethers.isAddress(viewAddress) || !orbitData[level]) return []
 //     const cacheKey = `${viewAddress.toLowerCase()}-${level}-${cycleNumber}`
-//     if (cycleHistoryCacheRef.current.has(cacheKey)) return cycleHistoryCacheRef.current.get(cacheKey)
+//     // if (cycleHistoryCacheRef.current.has(cacheKey)) return cycleHistoryCacheRef.current.get(cacheKey)
+//     if (!forceRefresh && cycleHistoryCacheRef.current.has(cacheKey)) {
+//         return cycleHistoryCacheRef.current.get(cacheKey)
+//       }
+
+//       if (forceRefresh) {
+//         cycleHistoryCacheRef.current.delete(cacheKey)
+//       }
 
 //     try {
-//       const snapshot = await fetchOrbitCycleSnapshotApi(viewAddress, level, cycleNumber)
+//       // const snapshot = await fetchOrbitCycleSnapshotApi(viewAddress, level, cycleNumber)
+//       const snapshot = await fetchOrbitCycleSnapshotApi(viewAddress, level, cycleNumber, {
+//           forceRefresh,
+//         })
 //       const orbitType = snapshot?.orbitType || levelToOrbitType[level]
 
 //       const positions = await Promise.all(
@@ -2803,14 +2918,17 @@ export default OrbitsPage
 //     }
 //   }, [viewAddress, orbitData, mergePositionTruth])
 
-//   const loadCycleHistoryForLevel = useCallback(async (level, cycleNumber) => {
+//   // const loadCycleHistoryForLevel = useCallback(async (level, cycleNumber) => {
+//     const loadCycleHistoryForLevel = useCallback(async (level, cycleNumber, forceRefresh = false) => {
 //     if (!viewAddress || !ethers.isAddress(viewAddress) || !orbitData[level]) return
 //     const cycleKey = String(cycleNumber)
-//     if (cycleHistoryData[level]?.[cycleKey]) return
+//     // if (cycleHistoryData[level]?.[cycleKey]) return
+//     if (!forceRefresh && cycleHistoryData[level]?.[cycleKey]) return
 
 //     setLoadingCycleByLevel(prev => ({ ...prev, [level]: true }))
 //     try {
-//       const positions = await fetchStoredCycleForLevel(level, cycleNumber)
+//       // const positions = await fetchStoredCycleForLevel(level, cycleNumber)
+//       const positions = await fetchStoredCycleForLevel(level, cycleNumber, forceRefresh)
 //       setCycleHistoryData(prev => ({
 //         ...prev,
 //         [level]: { ...(prev[level] || {}), [cycleKey]: positions }
@@ -2841,7 +2959,10 @@ export default OrbitsPage
 //     setLoadingLevelsMap(prev => ({ ...prev, [level]: true }))
 
 //     try {
-//       const snapshot = await fetchOrbitLevelSnapshotApi(viewAddress, level)
+//       // const snapshot = await fetchOrbitLevelSnapshotApi(viewAddress, level)
+//         const snapshot = await fetchOrbitLevelSnapshotApi(viewAddress, level, {
+//           forceRefresh,
+//         })
 //       if (requestEpoch !== fetchIdRef.current) return
 
 //       const orbitType = snapshot.orbitType
@@ -3054,27 +3175,69 @@ export default OrbitsPage
 //     setViewMode('global')
 //   }
 
+//   // const refreshData = async () => {
+//   //   if (!viewAddress || !ethers.isAddress(viewAddress)) return
+//   //   setIsRefreshing(true)
+//   //   try {
+//   //     const lower = viewAddress.toLowerCase()
+//   //     activationReceiptCacheRef.current.clear()
+//   //     positionDetailsCacheRef.current.clear()
+//   //     positionHydrationPromisesRef.current.clear()
+//   //     receiptCacheRef.current.delete(`${lower}-backend-receipts`)
+//   //     viewedLevelsCacheRef.current.delete(lower)
+//   //     loadedLevelsRef.current.delete(`${lower}-${Number(activeTab.replace('level', '')) || 1}`)
+//   //     await fetchViewedLevels(true)
+//   //     await fetchViewedAddressReceipts(true)
+//   //     await fetchAllOrbitData(true)
+//   //     setLastUpdated(new Date().toLocaleTimeString())
+//   //   } catch (err) {
+//   //     console.error('Refresh error:', err)
+//   //   } finally {
+//   //     setIsRefreshing(false)
+//   //   }
+//   // }
+
 //   const refreshData = async () => {
-//     if (!viewAddress || !ethers.isAddress(viewAddress)) return
-//     setIsRefreshing(true)
-//     try {
-//       const lower = viewAddress.toLowerCase()
-//       activationReceiptCacheRef.current.clear()
-//       positionDetailsCacheRef.current.clear()
-//       positionHydrationPromisesRef.current.clear()
-//       receiptCacheRef.current.delete(`${lower}-backend-receipts`)
-//       viewedLevelsCacheRef.current.delete(lower)
-//       loadedLevelsRef.current.delete(`${lower}-${Number(activeTab.replace('level', '')) || 1}`)
-//       await fetchViewedLevels(true)
-//       await fetchViewedAddressReceipts(true)
-//       await fetchAllOrbitData(true)
-//       setLastUpdated(new Date().toLocaleTimeString())
-//     } catch (err) {
-//       console.error('Refresh error:', err)
-//     } finally {
-//       setIsRefreshing(false)
+//   if (!viewAddress || !ethers.isAddress(viewAddress)) return
+//   setIsRefreshing(true)
+
+//   try {
+//     const lower = viewAddress.toLowerCase()
+//     const activeLevel = Number(activeTab.replace('level', '')) || 1
+//     clearAddressScopedOrbitsApiCache(viewAddress)
+
+//     activationReceiptCacheRef.current.clear()
+//     positionDetailsCacheRef.current.clear()
+//     positionHydrationPromisesRef.current.clear()
+//     receiptCacheRef.current.delete(`${lower}-backend-receipts`)
+//     viewedLevelsCacheRef.current.delete(lower)
+
+//     // important: clear historical cycle caches too
+//     cycleHistoryCacheRef.current.clear()
+//     setCycleHistoryData({})
+//     setCycleHistorySupportByLevel({})
+//     setLoadingCycleByLevel({})
+
+//     // reload active level cleanly
+//     loadedLevelsRef.current.delete(`${lower}-${activeLevel}`)
+
+//     await fetchViewedLevels(true)
+//     await fetchViewedAddressReceipts(true)
+//     await fetchAllOrbitData(true)
+
+//     const selectedCycle = selectedCycleByLevel[activeLevel]
+//     if (selectedCycle && selectedCycle !== 'current') {
+//       // await loadCycleHistoryForLevel(activeLevel, Number(selectedCycle))
+//       await loadCycleHistoryForLevel(activeLevel, Number(selectedCycle), true)
 //     }
+
+//     setLastUpdated(new Date().toLocaleTimeString())
+//   } catch (err) {
+//     console.error('Refresh error:', err)
+//   } finally {
+//     setIsRefreshing(false)
 //   }
+// }
 
 //   const handlePositionClick = useCallback(async (position) => {
 //     console.log('[PLANET_CLICKED]', position)
@@ -3444,34 +3607,38 @@ export default OrbitsPage
 
 //   return (
 //     <section className="orbits-page">
-//       <div className="address-input-bar glass-panel">
-//         <input
-//           type="text"
-//           className="address-input"
-//           placeholder="Enter wallet address (0x...)"
-//           value={inputAddress}
-//           onChange={(e) => setInputAddress(e.target.value)}
-//         />
-//         <button className="address-btn" onClick={applyViewerAddress}>Load Address</button>
-//         <button className="address-btn secondary" onClick={viewMyOrbit}>My Orbits</button>
-//         <button className="refresh-btn" onClick={refreshData} disabled={isRefreshing}>⟳</button>
-//         <span className="last-sync">Last sync: {lastUpdated}</span>
-//       </div>
+//       <div className="orbits-control-shell">
+//         <div className="address-input-bar glass-panel">
+//           <input
+//             type="text"
+//             className="address-input"
+//             placeholder="Enter wallet address (0x...)"
+//             value={inputAddress}
+//             onChange={(e) => setInputAddress(e.target.value)}
+//           />
+//           <button className="address-btn" onClick={applyViewerAddress}>Load Address</button>
+//           <button className="address-btn secondary" onClick={viewMyOrbit}>My Orbits</button>
+//           <button className="refresh-btn" onClick={refreshData} disabled={isRefreshing}>⟳</button>
+//           <span className="last-sync">Last sync: {lastUpdated}</span>
+//         </div>
 
-//       <div className="view-toggle-bar glass-panel">
-//         <button
-//           className={`toggle-btn ${viewMode === 'global' ? 'active' : ''}`}
-//           onClick={() => setViewMode('global')}
-//         >
-//           Orbit View
-//         </button>
-//         <button
-//           className={`toggle-btn ${viewMode === 'downline' ? 'active' : ''}`}
-//           onClick={() => setViewMode('downline')}
-//         >
-//           Downline View {totalDownline > 0 && <span className="badge">{totalDownline}</span>}
-//         </button>
-//         <div className="receipt-status">Receipts: {receiptsLoading ? 'Checking…' : receiptsSupported ? '✓ ON' : 'OFF'}</div>
+//         <div className="view-toggle-bar glass-panel">
+//           <button
+//             className={`toggle-btn ${viewMode === 'global' ? 'active' : ''}`}
+//             onClick={() => setViewMode('global')}
+//           >
+//             Orbit View
+//           </button>
+//           <button
+//             className={`toggle-btn ${viewMode === 'downline' ? 'active' : ''}`}
+//             onClick={() => setViewMode('downline')}
+//           >
+//             Downline View {totalDownline > 0 && <span className="badge">{totalDownline}</span>}
+//           </button>
+//           <div className="receipt-status">
+//             Receipts: {receiptsLoading ? 'Checking…' : receiptsSupported ? '✓ ON' : 'OFF'}
+//           </div>
+//         </div>
 //       </div>
 
 //       <div className="level-tabs glass-panel">
@@ -3502,7 +3669,7 @@ export default OrbitsPage
 //         </p>
 //       </div>
 
-//       <div className="orbits-main-grid">
+//       <div className="orbits-main-grid orbit-first-grid">
 //         <div className="orbits-main-grid__left">
 //           {[1, 2, 3, 4, 5, 6, 7, 8, 9, 10].map(level => {
 //             if (activeTab !== `level${level}`) return null

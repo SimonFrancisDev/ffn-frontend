@@ -261,7 +261,7 @@ const ActivationOrbitGalaxy = ({ level, viewer, snapshot }) => {
                     left: coords.x,
                     top: coords.y,
                   }}
-                  title={`Position ${posNumber} • ${shortOrbitAddress(position.occupant)}`}
+                  title={`Position ${posNumber}`}
                 >
                   <span className="activation-planet-content">
                     <strong>{posNumber}</strong>
@@ -367,47 +367,81 @@ const ActivationCenterPage = () => {
   const [myShortCode, setMyShortCode] = useState('')
   const [myReferralLink, setMyReferralLink] = useState('')
   const [incomingReferrer, setIncomingReferrer] = useState('') // from URL
+  const [referrerInputDisplay, setReferrerInputDisplay] = useState('')
+  const [resolvedReferrerStatus, setResolvedReferrerStatus] = useState('')
+  const [resolvedReferrerShortCode, setResolvedReferrerShortCode] = useState('')
 
-  
+  useEffect(() => {
+    const params = new URLSearchParams(location.search)
+    let ref = params.get('ref')
 
-useEffect(() => {
-  const params = new URLSearchParams(location.search)
-  let ref = params.get('ref')
-
-  if (!ref) {
-    const pathParts = location.pathname.split('/')
-    const refIndex = pathParts.indexOf('ref')
-    if (refIndex !== -1 && pathParts[refIndex + 1]) {
-      ref = pathParts[refIndex + 1]
-    }
-  }
-
-  if (!ref) return
-
-  setIncomingReferrer(ref)
-
-    // Handle system/no-referrer special code
-  if (ref.toUpperCase() === 'FIN-FREEDOM') {
-    setRegistrationReferrer(ethers.ZeroAddress)
-    return
-  }
-
-  // If it's already a 0x address, use it directly
-  if (ethers.isAddress(ref)) {
-    setRegistrationReferrer(ref)
-    return
-  }
-
-  // Otherwise resolve the short code to a wallet address
-  fetch(`${API_BASE}/api/referral/resolve/${ref}`)
-    .then(res => res.json())
-    .then(data => {
-      if (data?.walletAddress) {
-        setRegistrationReferrer(data.walletAddress)
+    if (!ref) {
+      const pathParts = location.pathname.split('/')
+      const refIndex = pathParts.indexOf('ref')
+      if (refIndex !== -1 && pathParts[refIndex + 1]) {
+        ref = pathParts[refIndex + 1]
       }
-    })
-    .catch(err => console.error('Failed to resolve referral code:', err))
-}, [location])
+    }
+
+    if (!ref) return
+
+    setIncomingReferrer(ref)
+    setReferrerInputDisplay(ref)
+
+    if (ref.toUpperCase() === 'FIN-FREEDOM') {
+      setRegistrationReferrer(ethers.ZeroAddress)
+      setResolvedReferrerStatus('System placement selected.')
+      setResolvedReferrerShortCode('')
+      return
+    }
+
+    if (ethers.isAddress(ref)) {
+      setRegistrationReferrer(ref)
+      setResolvedReferrerStatus('Wallet address detected.')
+      // Fetch the referrer's short code
+      fetch(`${API_BASE}/api/referral/code/${ref}`)
+        .then((res) => res.json())
+        .then((codeData) => {
+          if (codeData.success && codeData.shortCode) {
+            setResolvedReferrerShortCode(codeData.shortCode)
+          }
+        })
+        .catch((err) => console.error('Failed to fetch referrer short code:', err))
+      return
+    }
+
+    setResolvedReferrerStatus('Resolving referral ID...')
+
+    fetch(`${API_BASE}/api/referral/resolve/${encodeURIComponent(ref)}`)
+      .then((res) => res.json())
+      .then(async (data) => {
+        if (data?.walletAddress && ethers.isAddress(data.walletAddress)) {
+          setRegistrationReferrer(data.walletAddress)
+          setResolvedReferrerStatus('Referral ID resolved successfully.')
+          
+          // Fetch the referrer's short code
+          try {
+            const codeRes = await fetch(`${API_BASE}/api/referral/code/${data.walletAddress}`)
+            const codeData = await codeRes.json()
+            if (codeData.success && codeData.shortCode) {
+              setResolvedReferrerShortCode(codeData.shortCode)
+            }
+          } catch (err) {
+            console.error('Failed to fetch referrer short code:', err)
+          }
+        } else {
+          setRegistrationReferrer('')
+          setResolvedReferrerStatus('Referral ID could not be resolved.')
+          setResolvedReferrerShortCode('')
+        }
+      })
+      .catch((err) => {
+        console.error('Failed to resolve referral code:', err)
+        setRegistrationReferrer('')
+        setResolvedReferrerStatus('Referral ID lookup failed.')
+        setResolvedReferrerShortCode('')
+      })
+  }, [location])
 
   // Generate / Fetch user's own short code
 
@@ -536,6 +570,20 @@ useEffect(() => {
       setSelectedOrbitLoading(false)
     }
   }, [viewer])
+
+  const handleOpenFocusedOrbitPage = useCallback((level) => {
+    if (!viewer) return
+
+    navigate('/orbits', {
+      state: {
+        level,
+        address: viewer,
+        displayId: myShortCode || '',
+        focusedOnly: true,
+        source: 'activation-center',
+      },
+    })
+  }, [navigate, viewer, myShortCode])
 
   const formatViewerAddress = useCallback((value) => {
     if (!value) return '—'
@@ -2173,7 +2221,15 @@ useEffect(() => {
                   <h2 className="activation-section-heading__title">Explore your orbit network</h2>
                 </div>
 
-                <div className="activation-visual__box orbit-preview" onClick={() => navigate('/orbits')}>
+                <div className="activation-visual__box orbit-preview" onClick={() => navigate('/orbits', {
+                  state: {
+                    level: highestLevel,
+                    address: viewer,
+                    displayId: myShortCode || '',
+                    focusedOnly: true,
+                    source: 'activation-center',
+                  },
+                })}>
                   {orbitDataLoading ? (
                     <div className="orbit-loading">Loading orbit data...</div>
                   ) : highestLevel > 0 && orbitLevelData[highestLevel] ? (
@@ -2275,7 +2331,15 @@ useEffect(() => {
                       className="activation-modal__button activation-modal__button--ghost"
                       onClick={() => {
                         setIsNextActionModalOpen(false)
-                        navigate('/orbits')
+                        navigate('/orbits', {
+                          state: {
+                            level: highestLevel,
+                            address: viewer,
+                            displayId: myShortCode || '',
+                            focusedOnly: true,
+                            source: 'activation-center',
+                          },
+                        })
                       }}
                     >
                       Go to FFN Space
@@ -2441,18 +2505,43 @@ useEffect(() => {
 
                 <div className="referrer-input-group">
                   <label className="referrer-label">
-                    Do you have a referrer? Paste your referral wallet/link below.
+                    {incomingReferrer || referrerInputDisplay
+                      ? `Referrer detected: ${referrerInputDisplay}`
+                      : 'Do you have a referrer? Paste your referral ID, link, or wallet address below.'}
                   </label>
                   <input
                     type="text"
                     className="referrer-input"
-                    placeholder="Paste referrer wallet address, or leave empty"
-                    value={registrationReferrer || incomingReferrer}
-                    onChange={(e) => setRegistrationReferrer(e.target.value)}
+                    placeholder="Paste referral ID, referral link, or wallet address"
+                    value={referrerInputDisplay}
+                    onChange={(e) => {
+                      const value = e.target.value.trim()
+                      setReferrerInputDisplay(value)
+                      setIncomingReferrer(value)
+
+                      if (!value) {
+                        setRegistrationReferrer('')
+                        setResolvedReferrerStatus('')
+                        setResolvedReferrerShortCode('')
+                        return
+                      }
+
+                      if (ethers.isAddress(value)) {
+                        setRegistrationReferrer(value)
+                        setResolvedReferrerStatus('Wallet address detected.')
+                      } else {
+                        setRegistrationReferrer('')
+                        setResolvedReferrerStatus('Referral ID will be resolved before registration.')
+                      }
+                    }}
                   />
                   <p className="referrer-hint">
-                    {registrationReferrer
-                      ? `Your referrer will be ${registrationReferrer}.`
+                    {referrerInputDisplay
+                      ? `${resolvedReferrerStatus || 'Referral input captured.'} ${
+                          registrationReferrer && registrationReferrer !== ethers.ZeroAddress
+                            ? `Referrer ID: ${resolvedReferrerShortCode || 'loading...'}`
+                            : 'System placement selected.'
+                        }`
                       : 'No referrer added. You will be placed under the system ID automatically.'}
                   </p>
                   <p className="referrer-hint referrer-hint--important">
@@ -2499,10 +2588,7 @@ useEffect(() => {
                 setSelectedOrbitLevel(null)
                 setSelectedOrbitSnapshot(null)
               }}
-              onViewFullOrbit={(level) => {
-                setIsLevelOrbitModalOpen(false)
-                navigate('/orbits', { state: { level } })
-              }}
+              onViewFullOrbit={handleOpenFocusedOrbitPage}
             />
           )}
         </div>
@@ -2524,13 +2610,9 @@ export default ActivationCenterPage
 
 
 
-
-
-
-
 // import './ActivationCenterPage.css'
 // import { useEffect, useState, useCallback, useMemo } from 'react'
-// import { useNavigate } from 'react-router-dom'
+// import { useNavigate, useLocation } from 'react-router-dom'
 // import { useWallet } from '../../hooks/useWallet'
 // import { useContracts } from '../../hooks/useContracts'
 // import { useSpace } from '../../context/SpaceContext'
@@ -2550,7 +2632,11 @@ export default ActivationCenterPage
 //   FaTimesCircle,
 //   FaChevronDown,
 //   FaChevronUp,
+//   FaCopy,
+//   FaShare,
 // } from 'react-icons/fa'
+// const API_BASE = import.meta.env.VITE_API_BASE_URL?.replace(/\/$/, '') || ''
+
 
 // const AMOY_CHAIN_ID = '0x13882'
 
@@ -2698,6 +2784,7 @@ export default ActivationCenterPage
 //     2: orbitType === 'P39' ? 165 : 165,
 //     3: 225,
 //   }
+
 
 //   return (
 //     <div className="activation-orbit-preview">
@@ -2883,8 +2970,86 @@ export default ActivationCenterPage
 //     loadContracts,
 //   } = useContracts()
 
+//   const navigate = useNavigate()
+//   const location = useLocation()
+
 //   const viewer = subjectAddress || account
 
+//   // ==================== NEW: REFERRAL SYSTEM ====================
+//   const [myShortCode, setMyShortCode] = useState('')
+//   const [myReferralLink, setMyReferralLink] = useState('')
+//   const [incomingReferrer, setIncomingReferrer] = useState('') // from URL
+
+  
+
+// useEffect(() => {
+//   const params = new URLSearchParams(location.search)
+//   let ref = params.get('ref')
+
+//   if (!ref) {
+//     const pathParts = location.pathname.split('/')
+//     const refIndex = pathParts.indexOf('ref')
+//     if (refIndex !== -1 && pathParts[refIndex + 1]) {
+//       ref = pathParts[refIndex + 1]
+//     }
+//   }
+
+//   if (!ref) return
+
+//   setIncomingReferrer(ref)
+
+//     // Handle system/no-referrer special code
+//   if (ref.toUpperCase() === 'FIN-FREEDOM') {
+//     setRegistrationReferrer(ethers.ZeroAddress)
+//     return
+//   }
+
+//   // If it's already a 0x address, use it directly
+//   if (ethers.isAddress(ref)) {
+//     setRegistrationReferrer(ref)
+//     return
+//   }
+
+//   // Otherwise resolve the short code to a wallet address
+//   fetch(`${API_BASE}/api/referral/resolve/${ref}`)
+//     .then(res => res.json())
+//     .then(data => {
+//       if (data?.walletAddress) {
+//         setRegistrationReferrer(data.walletAddress)
+//       }
+//     })
+//     .catch(err => console.error('Failed to resolve referral code:', err))
+// }, [location])
+
+//   // Generate / Fetch user's own short code
+
+//   const fetchMyReferralCode = useCallback(async () => {
+//   if (!account) return
+//   try {
+//     const res = await fetch(`${API_BASE}/api/referral/code/${account}`)
+//     const data = await res.json()
+    
+//     if (data.success && data.shortCode) {
+//       setMyShortCode(data.shortCode)
+//       // setMyReferralLink(`https://finfreedomnetwork.io/ref/${data.shortCode}`)
+//       setMyReferralLink(`https://finfreedomnetwork.io/activation?ref=${data.shortCode}`)
+//     }
+//   } catch (err) {
+//     console.error('Failed to fetch short code:', err)
+//   }
+// }, [account])
+
+//   const copyReferralLink = async () => {
+//   if (!myReferralLink) return
+//   try {
+//     await navigator.clipboard.writeText(myReferralLink)
+//     alert('✅ Referral link copied successfully!')
+//   } catch (err) {
+//     alert('Failed to copy')
+//   }
+// }
+
+//   // ==================== REST OF YOUR EXISTING CODE ====================
 //   const [isRegistered, setIsRegistered] = useState(false)
 //   const [referrer, setReferrer] = useState('')
 //   const [activeLevels, setActiveLevels] = useState({})
@@ -2926,7 +3091,7 @@ export default ActivationCenterPage
 //   const [receiptsSupported, setReceiptsSupported] = useState(false)
 //   const [cycleData, setCycleData] = useState({})
 //   const [orbitDataLoading, setOrbitDataLoading] = useState(false)
-//   const navigate = useNavigate()
+//   // const navigate = useNavigate()
 
 //   const [tokenSummary, setTokenSummary] = useState({
 //     fgtByLevel: {},
@@ -2939,6 +3104,20 @@ export default ActivationCenterPage
 //   const [selectedOrbitSnapshot, setSelectedOrbitSnapshot] = useState(null)
 //   const [selectedOrbitLoading, setSelectedOrbitLoading] = useState(false)
 //   const [isLevelOrbitModalOpen, setIsLevelOrbitModalOpen] = useState(false)
+
+
+//   //   useEffect(() => {
+//   //   if (account && isRegistered) {
+//   //     fetchMyReferralCode()
+//   //   }
+//   // }, [account, isRegistered, fetchMyReferralCode])
+
+
+//   useEffect(() => {
+//   if (account && isRegistered) {
+//     fetchMyReferralCode()
+//   }
+// }, [account, isRegistered])
 
 //   const isViewerConnectedWallet = useMemo(() => {
 //     if (!viewer || !account) return false
@@ -3548,12 +3727,14 @@ export default ActivationCenterPage
 //     [contracts, account, formatUsdt]
 //   )
 
-//   const refreshAllAfterWrite = useCallback(async () => {
+
+//     const refreshAllAfterWrite = useCallback(async () => {
 //     await fetchUserData()
 //     await fetchAllOrbitLevelData()
 //     await fetchTokenSummary()
+//     await fetchMyReferralCode()
 //     setLastUpdated(new Date().toLocaleTimeString())
-//   }, [fetchUserData, fetchAllOrbitLevelData, fetchTokenSummary])
+//   }, [fetchUserData, fetchAllOrbitLevelData, fetchTokenSummary, fetchMyReferralCode])
 
 //   const handleCombinedRegisterAndActivateLevelOne = useCallback(async () => {
 //     if (!ensureWritableSpace()) return
@@ -3867,6 +4048,33 @@ export default ActivationCenterPage
 //     setShowSecurityNotice(false)
 //     setIsRegistrationModalOpen(true)
 //   }
+
+//   // ==================== REFERRAL CARD UI ====================
+//   const ReferralCard = () => (
+//     <section className="referral-card glass-panel">
+//       <div className="referral-card__header">
+//         <h3>Your Referral Link</h3>
+//         <p>Share this link and earn from your network</p>
+//       </div>
+
+//       {myShortCode ? (
+//         <>
+//           <div className="referral-link-box">
+//             {/* <code>https://finfreedomnetwork.io/ref/{myShortCode}</code> */}
+//               <code>https://finfreedomnetwork.io/activation?ref={myShortCode}</code>
+//             <button type="button" onClick={copyReferralLink} className="copy-btn">
+//               <FaCopy /> Copy
+//             </button>
+//           </div>
+//           <p className="referral-hint">
+//             Your short code: <strong>{myShortCode}</strong>
+//           </p>
+//         </>
+//       ) : (
+//         <p className="referral-hint">Complete registration to generate your referral link.</p>
+//       )}
+//     </section>
+//   )
 
 //   const highestLevel = useMemo(() => {
 //     const active = Object.entries(activeLevels)
@@ -4186,6 +4394,11 @@ export default ActivationCenterPage
 //           </div>
 //         </div>
 //       </section>
+
+//       {/* Add Referral Card after Registration Status */}
+//       {isRegistered && account && (
+//         <ReferralCard />
+//       )}
 
 //       <section className="activation-levels glass-panel activation-levels--fullwidth">
 //         <div className="activation-section-heading">
@@ -4846,7 +5059,7 @@ export default ActivationCenterPage
 //                     type="text"
 //                     className="referrer-input"
 //                     placeholder="Paste referrer wallet address, or leave empty"
-//                     value={registrationReferrer}
+//                     value={registrationReferrer || incomingReferrer}
 //                     onChange={(e) => setRegistrationReferrer(e.target.value)}
 //                   />
 //                   <p className="referrer-hint">
@@ -4911,9 +5124,3 @@ export default ActivationCenterPage
 // }
 
 // export default ActivationCenterPage
-
-
-
-
-
-

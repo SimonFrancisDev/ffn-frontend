@@ -3485,58 +3485,8 @@ body {
    FINAL OVERRIDE PATCH — PROGRAM CARDS / LIVE GRAPH / MODALS / FOOTER
 ========================================================= */
 
-/* PROGRAM SECTION: laptop image fixed, right content scrollable */
-@media (min-width: 981px) {
-  .program-hybrid-card {
-    height: clamp(680px, 78vh, 860px) !important;
-    display: grid !important;
-    grid-template-columns: minmax(440px, 48%) minmax(0, 52%) !important;
-    align-items: stretch !important;
-    overflow: hidden !important;
-  }
 
-  .program-hybrid-card__media {
-    position: sticky !important;
-    top: 92px !important;
-    align-self: stretch !important;
-    height: 100% !important;
-    min-height: 100% !important;
-    overflow: hidden !important;
-  }
-
-  .program-hybrid-card__image {
-    width: 108% !important;
-    height: 100% !important;
-    min-height: 100% !important;
-    aspect-ratio: auto !important;
-    object-fit: cover !important;
-    object-position: center !important;
-    animation: programImageSoftReveal 14s ease-in-out infinite !important;
-  }
-
-  .program-hybrid-card__content {
-    height: 100% !important;
-    max-height: 100% !important;
-    overflow-y: auto !important;
-    overscroll-behavior: contain;
-    padding-right: clamp(18px, 2.4vw, 34px) !important;
-    scrollbar-width: thin;
-  }
-
-  .program-hybrid-card__content::-webkit-scrollbar {
-    width: 7px;
-  }
-
-  .program-hybrid-card__content::-webkit-scrollbar-track {
-    background: rgba(148, 163, 184, 0.08);
-    border-radius: 999px;
-  }
-
-  .program-hybrid-card__content::-webkit-scrollbar-thumb {
-    background: linear-gradient(180deg, #22c55e, #facc15);
-    border-radius: 999px;
-  }
-}
+  
 
 @keyframes programImageSoftReveal {
   0%,

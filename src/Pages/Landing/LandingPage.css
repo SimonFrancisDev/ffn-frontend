@@ -4130,40 +4130,10 @@ body {
   }
 
   /* Keep the title/header centered and readable */
-  .landing-section.landing-program-showcase .landing-section__header {
-    width: min(1180px, 100%) !important;
-    max-width: 1180px !important;
-    margin-left: auto !important;
-    margin-right: auto !important;
-  }
-
-  /* Two wider cards per row on laptop */
-  .landing-section.landing-program-showcase .program-hybrid-grid {
-    width: min(100%, 1720px) !important;
-    max-width: 1720px !important;
-    margin-left: auto !important;
-    margin-right: auto !important;
-
-    display: grid !important;
-    grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
-    gap: clamp(28px, 2.8vw, 46px) !important;
-    align-items: stretch !important;
-  }
+  
 
   /* Keep each card wide and balanced */
-  .landing-section.landing-program-showcase .program-hybrid-card {
-    width: 100% !important;
-    min-width: 0 !important;
-
-    display: grid !important;
-    grid-template-columns: minmax(280px, 44%) minmax(0, 56%) !important;
-
-    min-height: 700px !important;
-    height: clamp(700px, 76vh, 860px) !important;
-
-    overflow: hidden !important;
-    border-radius: 34px !important;
-  }
+ 
 
   /* Laptop image side only */
   .landing-section.landing-program-showcase .program-hybrid-card__media {
@@ -4200,14 +4170,7 @@ body {
     gap: clamp(12px, 1.25vw, 18px) !important;
   }
 
-  /* Make internal grids fit better inside 2-column card layout */
-  .landing-section.landing-program-showcase .program-detail-grid,
-  .landing-section.landing-program-showcase .program-token-grid,
-  .landing-section.landing-program-showcase .program-trust-grid,
-  .landing-section.landing-program-showcase .program-academy-grid,
-  .landing-section.landing-program-showcase .program-tier-grid {
-    grid-template-columns: 1fr !important;
-  }
+ 
 }
 
 /* Very wide desktop only: 3 cards per row */

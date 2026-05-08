@@ -736,3 +736,128 @@
   background: rgba(255, 255, 255, 0.72);
   border-color: rgba(0, 114, 188, 0.12);
 }
+
+
+
+/* =========================================================
+   MOBILE DRAWER TRUE SCROLL FIX
+   One scroll owner: the drawer body.
+   Submenus expand naturally and remain clickable.
+========================================================= */
+
+.mobile-drawer {
+  height: 100dvh;
+  max-height: 100dvh;
+  overflow-y: auto;
+  overflow-x: hidden;
+  overscroll-behavior: contain;
+  -webkit-overflow-scrolling: touch;
+  padding-bottom: calc(var(--space-4) + env(safe-area-inset-bottom, 0px));
+}
+
+/* Allow the nav content to grow normally inside the drawer */
+.mobile-drawer__nav {
+  flex: 0 0 auto;
+  min-height: 0;
+  overflow: visible;
+}
+
+/* Utilities should not pin themselves over menu content */
+.mobile-drawer__utilities {
+  margin-top: var(--space-2);
+  flex: 0 0 auto;
+}
+
+/* Normal closed submenu state */
+.mobile-drawer__submenu,
+.mobile-drawer__submenu--services,
+.mobile-drawer__service-submenu {
+  overflow: hidden;
+}
+
+/* About submenu opens normally */
+.mobile-drawer__nav-group.is-open:not(.mobile-drawer__nav-group--services) .mobile-drawer__submenu {
+  max-height: 900px;
+  overflow: visible;
+  padding: 6px 0 6px 14px;
+  border-left-color: var(--border-soft);
+  opacity: 1;
+  transform: translateY(0);
+  pointer-events: auto;
+}
+
+/* Services parent submenu opens fully and lets the drawer scroll */
+.mobile-drawer__nav-group--services.is-open .mobile-drawer__submenu--services {
+  max-height: none;
+  overflow: visible;
+  padding: 8px 0 8px 14px;
+  border-left-color: var(--border-soft);
+  opacity: 1;
+  transform: translateY(0);
+  pointer-events: auto;
+}
+
+/* Each service submenu opens fully and lets the drawer scroll */
+.mobile-drawer__service-group.is-open .mobile-drawer__service-submenu {
+  max-height: none;
+  overflow: visible;
+  padding: 8px 0 8px 12px;
+  border-left-color: var(--border-soft);
+  opacity: 1;
+  transform: translateY(0);
+  pointer-events: auto;
+}
+
+/* Keep inactive service submenus collapsed */
+.mobile-drawer__service-group:not(.is-open) .mobile-drawer__service-submenu {
+  max-height: 0;
+  overflow: hidden;
+  padding-top: 0;
+  padding-bottom: 0;
+  opacity: 0;
+  pointer-events: none;
+}
+
+/* Make every service item comfortably tappable */
+.mobile-drawer__service-subitem {
+  width: 100%;
+  min-height: 46px;
+  padding: 10px 12px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  line-height: 1.25;
+}
+
+.mobile-drawer__service-subitem span {
+  min-width: 0;
+  white-space: normal;
+  overflow: visible;
+  text-overflow: unset;
+}
+
+/* Coming soon badge */
+.mobile-drawer__service-coming-soon {
+  flex: 0 0 auto;
+  padding: 4px 7px;
+  border-radius: 999px;
+  color: #06111f;
+  background: linear-gradient(135deg, #facc15, #4cff9a);
+  font-size: 9px;
+  font-weight: 950;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+}
+
+[data-theme='light'] .mobile-drawer__service-coming-soon {
+  color: #0f172a;
+  background: linear-gradient(135deg, #facc15, #38bdf8);
+}
+
+/* Give the last content breathing room so it is not hidden behind phone safe area */
+.mobile-drawer__utilities::after {
+  content: '';
+  display: block;
+  height: env(safe-area-inset-bottom, 0px);
+}

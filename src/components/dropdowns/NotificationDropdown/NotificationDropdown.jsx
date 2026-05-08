@@ -27,6 +27,9 @@ const NotificationDropdown = ({
     left: null,
     right: 20,
   })
+  const [isDesktop, setIsDesktop] = useState(
+    typeof window !== 'undefined' ? window.innerWidth >= 768 : false
+  )
 
   useEffect(() => {
     if (typeof window === 'undefined') {
@@ -99,8 +102,14 @@ const NotificationDropdown = ({
     [localNotifications]
   )
 
+  // Body scroll lock - only on mobile or when notification details modal is open
   useEffect(() => {
     if (!(isOpen || selectedNotification)) return undefined
+    if (typeof window === 'undefined') return undefined
+
+    const shouldLockBody = selectedNotification || window.innerWidth < 768
+
+    if (!shouldLockBody) return undefined
 
     const previousOverflow = document.body.style.overflow
     const previousTouchAction = document.body.style.touchAction
@@ -114,6 +123,23 @@ const NotificationDropdown = ({
     }
   }, [isOpen, selectedNotification])
 
+  // Desktop detection effect
+  useEffect(() => {
+    if (typeof window === 'undefined') return undefined
+
+    const updateMode = () => {
+      setIsDesktop(window.innerWidth >= 768)
+    }
+
+    updateMode()
+
+    window.addEventListener('resize', updateMode)
+
+    return () => {
+      window.removeEventListener('resize', updateMode)
+    }
+  }, [])
+
   const updateDesktopPosition = () => {
     if (typeof window === 'undefined') return
     if (window.innerWidth < 768) return
@@ -121,25 +147,30 @@ const NotificationDropdown = ({
     const anchorEl = anchorRef?.current
     const dialogEl = dialogRef.current
 
-    if (!anchorEl || !dialogEl) {
-      setDesktopPosition({ top: 76, left: null, right: 20 })
+    if (!dialogEl) return
+
+    const dialogWidth = dialogEl.offsetWidth || 380
+    const viewportWidth = window.innerWidth
+    const gap = 12
+    const minMargin = 12
+
+    if (!anchorEl) {
+      setDesktopPosition({
+        top: 82,
+        left: Math.max(minMargin, viewportWidth - dialogWidth - 20),
+        right: 'auto',
+      })
       return
     }
 
     const rect = anchorEl.getBoundingClientRect()
-    const dialogWidth = dialogEl.offsetWidth || 360
-    const viewportWidth = window.innerWidth
-    const gap = 12
-    const minMargin = 12
 
     let left = rect.right - dialogWidth
     left = Math.max(minMargin, left)
     left = Math.min(left, viewportWidth - dialogWidth - minMargin)
 
-    const top = rect.bottom + gap
-
     setDesktopPosition({
-      top,
+      top: rect.bottom + gap,
       left,
       right: 'auto',
     })
@@ -148,7 +179,7 @@ const NotificationDropdown = ({
   useEffect(() => {
     if (!isOpen) return undefined
 
-    updateDesktopPosition()
+    const frame = window.requestAnimationFrame(updateDesktopPosition)
 
     const handleResize = () => updateDesktopPosition()
     const handleScroll = () => updateDesktopPosition()
@@ -157,10 +188,32 @@ const NotificationDropdown = ({
     window.addEventListener('scroll', handleScroll, true)
 
     return () => {
+      window.cancelAnimationFrame(frame)
       window.removeEventListener('resize', handleResize)
       window.removeEventListener('scroll', handleScroll, true)
     }
   }, [isOpen, anchorRef])
+
+  // Laptop outside-click handler
+  useEffect(() => {
+    if (!isOpen || !isDesktop) return undefined
+
+    const handlePointerDown = (event) => {
+      const dialogEl = dialogRef.current
+      const anchorEl = anchorRef?.current
+
+      if (dialogEl?.contains(event.target)) return
+      if (anchorEl?.contains(event.target)) return
+
+      onClose?.()
+    }
+
+    document.addEventListener('mousedown', handlePointerDown)
+
+    return () => {
+      document.removeEventListener('mousedown', handlePointerDown)
+    }
+  }, [isOpen, isDesktop, anchorRef, onClose])
 
   if (!isOpen && !selectedNotification) return null
 
@@ -228,25 +281,44 @@ const NotificationDropdown = ({
   return (
     <ModalPortal>
       {isOpen ? (
-        <div className="notification-modal" role="presentation">
-          <div
-            className="notification-modal__backdrop"
-            onClick={onClose}
-          />
+        <div
+          className={`notification-modal ${
+            isDesktop ? 'notification-modal--desktop' : 'notification-modal--mobile'
+          }`}
+          role="presentation"
+        >
+          {!isDesktop && (
+            <div
+              className="notification-modal__backdrop"
+              onClick={onClose}
+            />
+          )}
 
           <div
             ref={dialogRef}
-            className="notification-modal__dialog glass-panel"
+            className={`notification-modal__dialog ${
+              isDesktop ? 'notification-modal__dialog--desktop' : 'notification-modal__dialog--mobile'
+            } glass-panel`}
             role="dialog"
             aria-modal="true"
             aria-label="Notifications"
             onClick={(event) => event.stopPropagation()}
             style={
-              typeof desktopPosition.left === 'number'
+              isDesktop
                 ? {
+                    position: 'fixed',
                     top: `${desktopPosition.top}px`,
-                    left: `${desktopPosition.left}px`,
-                    right: desktopPosition.right,
+                    left:
+                      typeof desktopPosition.left === 'number'
+                        ? `${desktopPosition.left}px`
+                        : 'auto',
+                    right:
+                      typeof desktopPosition.right === 'number'
+                        ? `${desktopPosition.right}px`
+                        : desktopPosition.right || 'auto',
+                    width: '380px',
+                    minWidth: '380px',
+                    maxWidth: '380px',
                   }
                 : undefined
             }
@@ -457,7 +529,11 @@ export default NotificationDropdown
 //   const dialogRef = useRef(null)
 //   const [selectedNotification, setSelectedNotification] = useState(null)
 //   const [localNotifications, setLocalNotifications] = useState([])
-//   const [desktopPosition, setDesktopPosition] = useState({ top: 76, left: null, right: 20 })
+//   const [desktopPosition, setDesktopPosition] = useState({
+//     top: 76,
+//     left: null,
+//     right: 20,
+//   })
 
 //   useEffect(() => {
 //     if (typeof window === 'undefined') {
@@ -626,14 +702,18 @@ export default NotificationDropdown
 //     if (!selectedNotification) return
 
 //     updateNotifications((prev) =>
-//       prev.filter((notification) => notification.id !== selectedNotification.id)
+//       prev.filter(
+//         (notification) => notification.id !== selectedNotification.id
+//       )
 //     )
 
 //     setSelectedNotification(null)
 //   }
 
 //   const handleRemoveRead = () => {
-//     updateNotifications((prev) => prev.filter((notification) => !notification.read))
+//     updateNotifications((prev) =>
+//       prev.filter((notification) => !notification.read)
+//     )
 //   }
 
 //   const handleMarkAllRead = () => {
@@ -736,7 +816,10 @@ export default NotificationDropdown
 //                       className={`notification-dropdown__item ${item.read ? '' : 'is-unread'}`}
 //                       onClick={() => handleOpenNotification(item)}
 //                     >
-//                       <div className="notification-dropdown__icon" aria-hidden="true">
+//                       <div
+//                         className="notification-dropdown__icon"
+//                         aria-hidden="true"
+//                       >
 //                         {renderIcon(item)}
 //                       </div>
 

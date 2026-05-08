@@ -10,44 +10,188 @@ const ABOUT_MENU_ITEMS = [
   { label: 'Our commitment', href: 'about', section: 'our-commitment' },
 ]
 
-// const SERVICES = [
-//   'F-Freedom Program',
-//   'Freedom-Plus Program',
-//   'Freedom NFT Program',
-//   'Fin Freedom Marketplace',
-//   'Fin Freedom Coin',
-//   'Fin Freedom Institute',
-// ]
 const SERVICES = [
   {
     label: 'F-Freedom Program',
     description: 'Wallet-first participation flow, orbit progression, and live program entry.',
-    links: ['Get started', 'Level Manager', 'My Tokens', 'F-Freedom Program Dashboard'],
+    links: [
+      {
+        label: 'F-Freedom Overview',
+        target: 'fFreedomProgram',
+      },
+      {
+        label: 'Activations & Level Manager',
+        target: 'activation',
+      },
+      {
+        label: 'My F-Freedom Tokens',
+        target: 'myTokens',
+      },
+      {
+        label: 'F-Freedom Program Dashboard',
+        target: 'dashboard',
+      },
+    ],
   },
   {
     label: 'Freedom-Plus Program',
     description: 'Advanced expansion layer for future premium participation utilities.',
-    links: ['Overview', 'Level Manager', 'My Tokens', 'Freedom Plus Progra Dashboard'],
+    links: [
+      {
+        label: 'Freedom-Plus Overview',
+        target: 'home',
+        section: 'programs',
+      },
+      {
+        label: 'Freedom-Plus Activations & Level Manager',
+        target: 'home',
+        section: 'programs',
+      },
+      {
+        label: 'My Freedom-Plus Tokens',
+        target: 'home',
+        section: 'programs',
+      },
+      {
+        label: 'Freedom-Plus Program Dashboard',
+        target: 'home',
+        section: 'programs',
+      },
+    ],
   },
   {
     label: 'Freedom NFT Program',
     description: 'NFT identity, access visuals, and future collectible utility layer.',
-    links: ['NFT Overview', 'Nft Foundation', 'Nft InterMediate', 'Nft Advanced', 'Utility Role', 'Nft Program Dashboard'],
+    links: [
+      {
+        label: 'NFT Overview',
+        target: 'home',
+        section: 'programs',
+      },
+      {
+        label: 'NFT Foundation',
+        target: 'home',
+        section: 'programs',
+      },
+      {
+        label: 'NFT Intermediate',
+        target: 'home',
+        section: 'programs',
+      },
+      {
+        label: 'NFT Advanced',
+        target: 'home',
+        section: 'programs',
+      },
+      {
+        label: 'Utility Role',
+        target: 'home',
+        section: 'programs',
+      },
+      {
+        label: 'NFT Program Dashboard',
+        target: 'home',
+        section: 'programs',
+      },
+    ],
   },
   {
     label: 'Fin Freedom Coin',
     description: 'Coin visual layer for future network identity and ecosystem awareness.',
-    links: ['FFC Overview', 'Utility Tokens', 'Future Utility', 'FFC Program Dashboard'],
+    links: [
+      {
+        label: 'FFC Overview',
+        target: 'home',
+        section: 'programs',
+      },
+      {
+        label: 'Utility Tokens',
+        target: 'home',
+        section: 'programs',
+      },
+      {
+        label: 'Future Utility',
+        target: 'home',
+        section: 'programs',
+      },
+      {
+        label: 'FFC Program Dashboard',
+        target: 'home',
+        section: 'programs',
+      },
+    ],
   },
   {
     label: 'Fin Freedom Marketplace',
     description: 'Future ecosystem marketplace for digital and program-related utilities.',
-    links: ['Marketplace Vision', 'Vendor Layer', 'Ecosystem Use', 'Fin Freedom Store', 'My Orders'],
+    links: [
+      {
+        label: 'Marketplace Overview',
+        target: 'home',
+        section: 'programs',
+      },
+      {
+        label: 'Vendor Layer',
+        target: 'home',
+        section: 'programs',
+      },
+      {
+        label: 'Ecosystem Use',
+        target: 'home',
+        section: 'programs',
+      },
+      {
+        label: 'Fin Freedom Store',
+        target: 'home',
+        section: 'programs',
+      },
+      {
+        label: 'Checkout',
+        target: 'home',
+        section: 'programs',
+      },
+      {
+        label: 'My Orders',
+        target: 'home',
+        section: 'programs',
+      },
+    ],
   },
   {
     label: 'Fin Freedom Institute',
     description: 'Learning, onboarding, training, and community education layer.',
-    links: ['Overview', 'FFN-Digital Academy', 'FFN-Leadership Academy', 'Training Path', 'Community Learning', 'FFI-Dashboard'],
+    links: [
+      {
+        label: 'Freedom Institute Overview',
+        target: 'home',
+        section: 'programs',
+      },
+      {
+        label: 'FFN Digital Academy',
+        target: 'home',
+        section: 'programs',
+      },
+      {
+        label: 'FFN Leadership Academy',
+        target: 'home',
+        section: 'programs',
+      },
+      {
+        label: 'Training Path',
+        target: 'home',
+        section: 'programs',
+      },
+      {
+        label: 'Community Learning',
+        target: 'home',
+        section: 'programs',
+      },
+      {
+        label: 'FFI Dashboard',
+        target: 'home',
+        section: 'programs',
+      },
+    ],
   },
 ]
 
@@ -71,7 +215,6 @@ const MobileDrawer = ({
   const isDark = theme === 'dark'
   const [isAboutOpen, setIsAboutOpen] = useState(false)
   const [isServicesOpen, setIsServicesOpen] = useState(false)
-  // const [activeService, setActiveService] = useState(null)
   const [activeService, setActiveService] = useState(SERVICES[0])
   const profileName = account?.name || 'Your Account'
   const profileStatus =
@@ -85,7 +228,7 @@ const MobileDrawer = ({
     if (!isOpen) {
       setIsAboutOpen(false)
       setIsServicesOpen(false)
-      setActiveService(null)
+      setActiveService(SERVICES[0])
     }
   }, [isOpen])
 
@@ -115,6 +258,10 @@ const MobileDrawer = ({
   const handleNavigate = (page, section) => {
     onNavigate?.(page, section)
     onClose?.()
+  }
+
+  const handleServiceLinkClick = (link) => {
+    handleNavigate(link?.target || 'home', link?.section)
   }
 
   const handleToggleAbout = () => {
@@ -168,49 +315,137 @@ const MobileDrawer = ({
         </div>
 
         <nav className="mobile-drawer__nav" aria-label="Mobile navigation">
-          {navItems.map((item) => {
-            const isAbout = item.href === 'about'
+          {navItems
+            .filter((item) => item.href === 'home' || item.href === 'about')
+            .map((item) => {
+              const isAbout = item.href === 'about'
 
-            if (isAbout) {
+              if (isAbout) {
+                return (
+                  <div
+                    key={item.label}
+                    className={`mobile-drawer__nav-group ${item.active ? 'is-active' : ''} ${
+                      isAboutOpen ? 'is-open' : ''
+                    }`}
+                  >
+                    <button
+                      type="button"
+                      className={`mobile-drawer__link mobile-drawer__link--about ${item.active ? 'is-active' : ''}`}
+                      onClick={handleToggleAbout}
+                      aria-expanded={isAboutOpen}
+                      aria-controls="mobile-about-submenu"
+                    >
+                      <span className="mobile-drawer__link-text">About</span>
+                      <ChevronDown size={16} />
+                    </button>
+
+                    <div
+                      id="mobile-about-submenu"
+                      className="mobile-drawer__submenu"
+                      aria-hidden={!isAboutOpen}
+                    >
+                      {ABOUT_MENU_ITEMS.map((aboutItem) => (
+                        <button
+                          key={aboutItem.section}
+                          type="button"
+                          className="mobile-drawer__submenu-link"
+                          onClick={() => handleNavigate(aboutItem.href, aboutItem.section)}
+                        >
+                          {aboutItem.label}
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+                )
+              }
+
               return (
-                <div
+                <button
                   key={item.label}
-                  className={`mobile-drawer__nav-group ${item.active ? 'is-active' : ''} ${
-                    isAboutOpen ? 'is-open' : ''
+                  type="button"
+                  className={`mobile-drawer__link ${item.active ? 'is-active' : ''}`}
+                  onClick={() => handleNavigate(item.href)}
+                >
+                  <span className="mobile-drawer__link-text">{item.label}</span>
+                  <span className="mobile-drawer__link-arrow">›</span>
+                </button>
+              )
+            })}
+
+          <div
+            className={`mobile-drawer__nav-group mobile-drawer__nav-group--services ${
+              isServicesOpen ? 'is-open' : ''
+            }`}
+          >
+            <button
+              type="button"
+              className="mobile-drawer__link mobile-drawer__link--about"
+              onClick={() => {
+                setIsServicesOpen((current) => !current)
+                setActiveService(SERVICES[0])
+              }}
+              aria-expanded={isServicesOpen}
+              aria-controls="mobile-services-submenu"
+            >
+              <span className="mobile-drawer__link-text">Services</span>
+              <ChevronDown size={16} />
+            </button>
+
+            <div
+              id="mobile-services-submenu"
+              className="mobile-drawer__submenu mobile-drawer__submenu--services"
+              aria-hidden={!isServicesOpen}
+            >
+              {SERVICES.map((service) => (
+                <div
+                  key={service.label}
+                  className={`mobile-drawer__service-group ${
+                    activeService?.label === service.label ? 'is-open' : ''
                   }`}
                 >
                   <button
                     type="button"
-                    className={`mobile-drawer__link mobile-drawer__link--about ${item.active ? 'is-active' : ''}`}
-                    onClick={handleToggleAbout}
-                    aria-expanded={isAboutOpen}
-                    aria-controls="mobile-about-submenu"
+                    className="mobile-drawer__submenu-link mobile-drawer__service-main"
+                    onClick={() =>
+                      setActiveService(
+                        activeService?.label === service.label ? null : service
+                      )
+                    }
                   >
-                    <span className="mobile-drawer__link-text">{item.label}</span>
-                    <ChevronDown size={16} />
+                    <span>{service.label}</span>
+                    <ChevronDown size={14} />
                   </button>
 
-                  <div
-                    id="mobile-about-submenu"
-                    className="mobile-drawer__submenu"
-                    aria-hidden={!isAboutOpen}
-                  >
-                    {ABOUT_MENU_ITEMS.map((aboutItem) => (
+                  <div className="mobile-drawer__service-submenu">
+                    <p className="mobile-drawer__service-description">
+                      {service.description}
+                    </p>
+
+                    {service.links.map((link) => (
                       <button
-                        key={aboutItem.section}
+                        key={link.label}
                         type="button"
-                        className="mobile-drawer__submenu-link"
-                        onClick={() => handleNavigate(aboutItem.href, aboutItem.section)}
+                        className="mobile-drawer__service-subitem"
+                        onClick={() => handleServiceLinkClick(link)}
                       >
-                        {aboutItem.label}
+                        <span>{link.label}</span>
+
+                        {link.target === 'home' && (
+                          <small className="mobile-drawer__service-coming-soon">
+                            Coming soon
+                          </small>
+                        )}
                       </button>
                     ))}
                   </div>
                 </div>
-              )
-            }
+              ))}
+            </div>
+          </div>
 
-            return (
+          {navItems
+            .filter((item) => item.href === 'community' || item.href === 'support')
+            .map((item) => (
               <button
                 key={item.label}
                 type="button"
@@ -220,72 +455,7 @@ const MobileDrawer = ({
                 <span className="mobile-drawer__link-text">{item.label}</span>
                 <span className="mobile-drawer__link-arrow">›</span>
               </button>
-            )
-          })}
-
-
-          {/* SERVICES SECTION */}
-              <div
-                className={`mobile-drawer__nav-group mobile-drawer__nav-group--services ${
-                  isServicesOpen ? 'is-open' : ''
-                }`}
-              >
-                <button
-                  type="button"
-                  className="mobile-drawer__link mobile-drawer__link--about"
-                  onClick={() => setIsServicesOpen((current) => !current)}
-                  aria-expanded={isServicesOpen}
-                  aria-controls="mobile-services-submenu"
-                >
-                  <span className="mobile-drawer__link-text">Services</span>
-                  <ChevronDown size={16} />
-                </button>
-
-                <div
-                  id="mobile-services-submenu"
-                  className="mobile-drawer__submenu"
-                  aria-hidden={!isServicesOpen}
-                >
-                  {SERVICES.map((service) => (
-                    <div
-                      key={service.label}
-                      className={`mobile-drawer__service-group ${
-                        activeService?.label === service.label ? 'is-open' : ''
-                      }`}
-                    >
-                      <button
-                        type="button"
-                        className="mobile-drawer__submenu-link mobile-drawer__service-main"
-                        onClick={() =>
-                          setActiveService(
-                            activeService?.label === service.label ? null : service
-                          )
-                        }
-                      >
-                        <span>{service.label}</span>
-                        <ChevronDown size={14} />
-                      </button>
-
-                      <div className="mobile-drawer__service-submenu">
-                        <p className="mobile-drawer__service-description">
-                          {service.description}
-                        </p>
-
-                        {service.links.map((link) => (
-                          <button
-                            key={link}
-                            type="button"
-                            className="mobile-drawer__service-subitem"
-                            onClick={() => handleNavigate('services')}
-                          >
-                            {link}
-                          </button>
-                        ))}
-                      </div>
-                    </div>
-                  ))}
-                </div>
-              </div>
+            ))}
 
           {isAdmin && (
             <button

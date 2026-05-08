@@ -15,45 +15,188 @@ const ABOUT_MENU_ITEMS = [
   { label: 'Our commitment', href: 'about', section: 'our-commitment' },
 ]
 
-// const SERVICES = [
-//   'F-Freedom Program',
-//   'Freedom-Plus Program',
-//   'Freedom NFT Program',
-//   'Fin Freedom Marketplace',
-//   'Fin Freedom Coin',
-//   'Fin Freedom Institute',
-// ]
-
 const SERVICES = [
   {
     label: 'F-Freedom Program',
     description: 'Wallet-first participation flow, orbit progression, and live program entry.',
-    links: ['F-Freedom Overview', 'Actvations & Level Manager', 'My F-Freedom Tokens', 'F-Freedom Program Dashboard'],
+    links: [
+      {
+        label: 'F-Freedom Overview',
+        target: 'fFreedomProgram',
+      },
+      {
+        label: 'Activations & Level Manager',
+        target: 'activation',
+      },
+      {
+        label: 'My F-Freedom Tokens',
+        target: 'myTokens',
+      },
+      {
+        label: 'F-Freedom Program Dashboard',
+        target: 'dashboard',
+      },
+    ],
   },
   {
     label: 'Freedom-Plus Program',
     description: 'Advanced expansion layer for future premium participation utilities.',
-    links: ['Freedom Plus', 'Level Manager', 'My Tokens', 'Freedom Plus Progra Dashboard'],
+    links: [
+      {
+        label: 'Freedom-Plus Overview',
+        target: 'home',
+        section: 'programs',
+      },
+      {
+        label: 'Freedom-Plus Activations & Level Manager',
+        target: 'home',
+        section: 'programs',
+      },
+      {
+        label: 'My Freedom-Plus Tokens',
+        target: 'home',
+        section: 'programs',
+      },
+      {
+        label: 'Freedom-Plus Program Dashboard',
+        target: 'home',
+        section: 'programs',
+      },
+    ],
   },
   {
     label: 'Freedom NFT Program',
     description: 'NFT identity, access visuals, and future collectible utility layer.',
-    links: ['NFT Overview', 'Nft Foundation', 'Nft InterMediate', 'Nft Advanced', 'Utility Role', 'Nft Program Dashboard'],
+    links: [
+      {
+        label: 'NFT Overview',
+        target: 'home',
+        section: 'programs',
+      },
+      {
+        label: 'NFT Foundation',
+        target: 'home',
+        section: 'programs',
+      },
+      {
+        label: 'NFT Intermediate',
+        target: 'home',
+        section: 'programs',
+      },
+      {
+        label: 'NFT Advanced',
+        target: 'home',
+        section: 'programs',
+      },
+      {
+        label: 'Utility Role',
+        target: 'home',
+        section: 'programs',
+      },
+      {
+        label: 'NFT Program Dashboard',
+        target: 'home',
+        section: 'programs',
+      },
+    ],
   },
   {
     label: 'Fin Freedom Coin',
     description: 'Coin visual layer for future network identity and ecosystem awareness.',
-    links: ['FFC Overview', 'Utility Tokens', 'Future Utility', 'FFC Program Dashboard'],
+    links: [
+      {
+        label: 'FFC Overview',
+        target: 'home',
+        section: 'programs',
+      },
+      {
+        label: 'Utility Tokens',
+        target: 'home',
+        section: 'programs',
+      },
+      {
+        label: 'Future Utility',
+        target: 'home',
+        section: 'programs',
+      },
+      {
+        label: 'FFC Program Dashboard',
+        target: 'home',
+        section: 'programs',
+      },
+    ],
   },
   {
     label: 'Fin Freedom Marketplace',
     description: 'Future ecosystem marketplace for digital and program-related utilities.',
-    links: ['Marketplace Vision', 'Vendor Layer', 'Ecosystem Use', 'Fin Freedom Store', 'My Orders'],
+    links: [
+      {
+        label: 'Marketplace Overview',
+        target: 'home',
+        section: 'programs',
+      },
+      {
+        label: 'Vendor Layer',
+        target: 'home',
+        section: 'programs',
+      },
+      {
+        label: 'Ecosystem Use',
+        target: 'home',
+        section: 'programs',
+      },
+      {
+        label: 'Fin Freedom Store',
+        target: 'home',
+        section: 'programs',
+      },
+      {
+        label: 'Checkout',
+        target: 'home',
+        section: 'programs',
+      },
+      {
+        label: 'My Orders',
+        target: 'home',
+        section: 'programs',
+      },
+    ],
   },
   {
     label: 'Fin Freedom Institute',
     description: 'Learning, onboarding, training, and community education layer.',
-    links: ['Overview', 'FFN-Digital Academy', 'FFN-Leadership Academy', 'Training Path', 'Community Learning', 'FFI-Dashboard'],
+    links: [
+      {
+        label: 'Freedom Institute Overview',
+        target: 'home',
+        section: 'programs',
+      },
+      {
+        label: 'FFN Digital Academy',
+        target: 'home',
+        section: 'programs',
+      },
+      {
+        label: 'FFN Leadership Academy',
+        target: 'home',
+        section: 'programs',
+      },
+      {
+        label: 'Training Path',
+        target: 'home',
+        section: 'programs',
+      },
+      {
+        label: 'Community Learning',
+        target: 'home',
+        section: 'programs',
+      },
+      {
+        label: 'FFI Dashboard',
+        target: 'home',
+        section: 'programs',
+      },
+    ],
   },
 ]
 
@@ -100,7 +243,6 @@ const MainNavbar = ({
   const [isScrolled, setIsScrolled] = useState(false)
   const [isAboutMenuOpen, setIsAboutMenuOpen] = useState(false)
   const [isServicesOpen, setIsServicesOpen] = useState(false)
-//const [activeService, setActiveService] = useState(null)
   const [activeService, setActiveService] = useState(SERVICES[0])
   const aboutMenuRef = useRef(null)
   const servicesRef = useRef(null)
@@ -194,13 +336,6 @@ const MainNavbar = ({
   const notificationButtonRef = useRef(null)
   const walletButtonRef = useRef(null)
   const accountButtonRef = useRef(null)
-  
-  // Wrapper ref - ONLY for Wallet until it's portaled
-  // Language, Notifications, and Account use portal backdrops
-  // const walletWrapperRef = useRef(null)
-
-  // TEMPORARY: useOutsideClick only for Wallet (remove after updating to portal)
-  // useOutsideClick(walletWrapperRef, onCloseWallet, isWalletOpen)
 
   const walletStatus = wallet?.status || 'Disconnected'
 
@@ -236,6 +371,18 @@ const MainNavbar = ({
     onNavigate?.(aboutItem.href, aboutItem.section)
   }
 
+  const handleServiceLinkClick = (link) => {
+    setIsServicesOpen(false)
+    setActiveService(SERVICES[0])
+
+    if (!link?.target) {
+      onNavigate?.('home', 'programs')
+      return
+    }
+
+    onNavigate?.(link.target, link.section)
+  }
+
   return (
     <header
       className={`main-navbar ${isScrolled ? 'is-scrolled' : ''}`}
@@ -259,13 +406,6 @@ const MainNavbar = ({
               className="main-navbar__brand"
               onClick={() => onNavigate?.('home')}
             >
-              {/* <div className="main-navbar__brand-logo-wrap">
-                <img
-                  src="/images/official_logo_2.png"
-                  alt="Fin Freedom Network"
-                  className="main-navbar__brand-logo"
-                />
-              </div> */}
               <div className="main-navbar__brand-logo-wrap">
                 <picture className="main-navbar__brand-logo-picture">
                     <img
@@ -279,12 +419,8 @@ const MainNavbar = ({
           </div>
 
           <nav className="main-navbar__center">
-
-            {/* NORMAL NAV ITEMS */}
             {navItems
-              .filter(item =>
-                !['dashboard', 'activation', 'orbits'].includes(item.href)
-              )
+              .filter((item) => item.href === 'home' || item.href === 'about')
               .map((item) => {
                 const isAbout = item.href === 'about'
 
@@ -296,10 +432,11 @@ const MainNavbar = ({
                       className={`main-navbar__nav-dropdown ${isAboutMenuOpen ? 'is-open' : ''}`}
                     >
                       <button
+                        type="button"
                         className="main-navbar__link main-navbar__link--dropdown"
                         onClick={handleToggleAboutMenu}
                       >
-                        {item.label}
+                        About
                         <ChevronDown size={14} />
                       </button>
 
@@ -307,6 +444,7 @@ const MainNavbar = ({
                         {ABOUT_MENU_ITEMS.map((aboutItem) => (
                           <button
                             key={aboutItem.section}
+                            type="button"
                             className="main-navbar__about-menu-item"
                             onClick={() => handleAboutItemClick(aboutItem)}
                           >
@@ -321,6 +459,7 @@ const MainNavbar = ({
                 return (
                   <button
                     key={item.label}
+                    type="button"
                     className="main-navbar__link"
                     onClick={() => onNavigate?.(item.href)}
                   >
@@ -329,31 +468,33 @@ const MainNavbar = ({
                 )
               })}
 
-            {/* 🔥 SERVICES DROPDOWN */}
             <div
               className={`main-navbar__nav-dropdown ${isServicesOpen ? 'is-open' : ''}`}
               ref={servicesRef}
             >
               <button
+                type="button"
                 className="main-navbar__link main-navbar__link--dropdown"
-                onClick={() => setIsServicesOpen(!isServicesOpen)}
+                onClick={() => setIsServicesOpen((current) => !current)}
               >
                 Services
                 <ChevronDown size={14} />
               </button>
 
               <div className="main-navbar__services-menu">
-
-                {/* <div className="main-navbar__services-left">
+                <div className="main-navbar__services-left">
                   {SERVICES.map((service) => (
                     <button
-                      key={service}
+                      key={service.label}
+                      type="button"
                       className={`main-navbar__service-item ${
-                        activeService === service ? 'is-active' : ''
+                        activeService?.label === service.label ? 'is-active' : ''
                       }`}
                       onMouseEnter={() => setActiveService(service)}
+                      onFocus={() => setActiveService(service)}
+                      onClick={() => setActiveService(service)}
                     >
-                      {service}
+                      {service.label}
                     </button>
                   ))}
                 </div>
@@ -361,61 +502,45 @@ const MainNavbar = ({
                 <div className="main-navbar__services-right">
                   {activeService && (
                     <div className="main-navbar__service-content">
-                      {[1, 2, 3, 4, 5].map((i) => (
+                      <div className="main-navbar__service-summary">
+                        <strong>{activeService.label}</strong>
+                        <span>{activeService.description}</span>
+                      </div>
+
+                      {activeService.links.map((link) => (
                         <button
-                          key={i}
+                          key={link.label}
+                          type="button"
                           className="main-navbar__service-subitem"
+                          onClick={() => handleServiceLinkClick(link)}
                         >
-                          {activeService} Option {i}
+                          <span>{link.label}</span>
+
+                          {link.target === 'home' && (
+                            <small className="main-navbar__service-coming-soon">
+                              Coming soon
+                            </small>
+                          )}
                         </button>
                       ))}
                     </div>
                   )}
-                </div> */}
-
-                <div className="main-navbar__services-left">
-                    {SERVICES.map((service) => (
-                      <button
-                        key={service.label}
-                        className={`main-navbar__service-item ${
-                          activeService?.label === service.label ? 'is-active' : ''
-                        }`}
-                        onMouseEnter={() => setActiveService(service)}
-                        onFocus={() => setActiveService(service)}
-                        onClick={() => setActiveService(service)}
-                      >
-                        {service.label}
-                      </button>
-                    ))}
-                  </div>
-
-                  <div className="main-navbar__services-right">
-                    {activeService && (
-                      <div className="main-navbar__service-content">
-                        <div className="main-navbar__service-summary">
-                          {/* <strong>{activeService.label}</strong> */}
-                          <span>{activeService.description}</span>
-                        </div>
-
-                        {activeService.links.map((link) => (
-                          <button
-                            key={link}
-                            className="main-navbar__service-subitem"
-                            onClick={() => {
-                              setIsServicesOpen(false)
-                              onNavigate?.('services')
-                            }}
-                          >
-                            {link}
-                          </button>
-                        ))}
-                      </div>
-                    )}
-                  </div>
-
+                </div>
               </div>
             </div>
 
+            {navItems
+              .filter((item) => item.href === 'community' || item.href === 'support')
+              .map((item) => (
+                <button
+                  key={item.label}
+                  type="button"
+                  className="main-navbar__link"
+                  onClick={() => onNavigate?.(item.href)}
+                >
+                  {item.label}
+                </button>
+              ))}
           </nav>
 
           <div className="main-navbar__right">
@@ -473,7 +598,6 @@ const MainNavbar = ({
             </div>
 
             {/* WALLET PANEL - Still uses useOutsideClick (update to portal later) */}
-            {/* <div className="main-navbar__floating-wrap" ref={walletWrapperRef}> */}
             <div className="main-navbar__floating-wrap">
               <button
                 ref={walletButtonRef}

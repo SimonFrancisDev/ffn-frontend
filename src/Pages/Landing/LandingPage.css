@@ -4847,3 +4847,624 @@ body {
     grid-template-columns: 1fr;
   }
 }
+
+
+
+
+
+
+
+
+
+
+
+
+
+/* =========================================================
+   HERO SLIDER CONTROLS + MOBILE CLEANUP + STABILITY FIX
+   Does not touch Program Card V2 structure.
+========================================================= */
+
+/* Give the full hero a real base/foundation */
+.landing-hero {
+  position: relative;
+  background:
+    radial-gradient(circle at 50% 0%, rgba(56, 189, 248, 0.08), transparent 36%),
+    linear-gradient(180deg, #020817 0%, #020817 82%, rgba(2, 8, 23, 0.98) 100%);
+  border-bottom: 1px solid rgba(56, 189, 248, 0.18);
+  box-shadow:
+    inset 0 -1px 0 rgba(255, 255, 255, 0.04),
+    0 28px 90px rgba(2, 8, 23, 0.28);
+  isolation: isolate;
+}
+
+.landing-hero::after {
+  content: '';
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: -1px;
+  z-index: 4;
+  height: clamp(58px, 8vw, 120px);
+  pointer-events: none;
+  background:
+    linear-gradient(180deg, transparent, var(--bg-primary, #020817) 88%),
+    radial-gradient(circle at 50% 100%, rgba(56, 189, 248, 0.18), transparent 46%);
+}
+
+[data-theme='light'] .landing-hero {
+  background:
+    radial-gradient(circle at 50% 0%, rgba(37, 99, 235, 0.08), transparent 36%),
+    linear-gradient(180deg, #f8fbff 0%, #f8fbff 82%, rgba(248, 251, 255, 0.98) 100%);
+  border-bottom-color: rgba(37, 99, 235, 0.14);
+  box-shadow:
+    inset 0 -1px 0 rgba(15, 23, 42, 0.04),
+    0 24px 70px rgba(15, 23, 42, 0.1);
+}
+
+/* Prevent image shake/flicker during slide/AOS activity */
+.landing-hero__slide,
+.landing-hero__image,
+.program-card-v2,
+.program-card-v2__media,
+.program-card-v2__image,
+.ecosystem-banner__image {
+  backface-visibility: hidden;
+  -webkit-backface-visibility: hidden;
+  transform-style: preserve-3d;
+}
+
+.landing-hero__image,
+.program-card-v2__image,
+.ecosystem-banner__image {
+  will-change: transform, opacity;
+  transform: translateZ(0);
+}
+
+/* New hero control deck */
+.landing-hero__control-deck {
+  position: absolute;
+  left: 50%;
+  bottom: clamp(18px, 2.2vw, 30px);
+  z-index: 7;
+  transform: translateX(-50%);
+  display: inline-flex;
+  align-items: center;
+  gap: 9px;
+  padding: 8px;
+  border-radius: 999px;
+
+  background:
+    linear-gradient(135deg, rgba(2, 8, 23, 0.62), rgba(15, 23, 42, 0.38)),
+    rgba(2, 8, 23, 0.42);
+  border: 1px solid rgba(147, 197, 253, 0.22);
+  box-shadow:
+    0 20px 54px rgba(0, 0, 0, 0.3),
+    inset 0 1px 0 rgba(255, 255, 255, 0.1);
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
+}
+
+[data-theme='light'] .landing-hero__control-deck {
+  background:
+    linear-gradient(135deg, rgba(255, 255, 255, 0.76), rgba(219, 234, 254, 0.58)),
+    rgba(255, 255, 255, 0.48);
+  border-color: rgba(37, 99, 235, 0.18);
+  box-shadow:
+    0 18px 44px rgba(15, 23, 42, 0.14),
+    inset 0 1px 0 rgba(255, 255, 255, 0.72);
+}
+
+.landing-hero__control-btn {
+  min-width: 38px;
+  height: 38px;
+  padding: 0 12px;
+  border-radius: 999px;
+  border: 1px solid rgba(147, 197, 253, 0.18);
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 7px;
+  color: #eaf2ff;
+  background:
+    linear-gradient(135deg, rgba(30, 94, 255, 0.18), rgba(0, 194, 255, 0.1)),
+    rgba(255, 255, 255, 0.055);
+  cursor: pointer;
+  transition:
+    transform 180ms ease,
+    background 180ms ease,
+    border-color 180ms ease,
+    box-shadow 180ms ease;
+}
+
+.landing-hero__control-btn:hover {
+  transform: translateY(-1px);
+  border-color: rgba(94, 234, 212, 0.34);
+  box-shadow: 0 0 24px rgba(56, 189, 248, 0.16);
+}
+
+.landing-hero__control-btn:active {
+  transform: scale(0.96);
+}
+
+.landing-hero__control-btn--pause {
+  min-width: 96px;
+  font-size: 12px;
+  font-weight: 900;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+}
+
+.landing-hero__control-btn--pause.is-paused {
+  color: #06111f;
+  background: linear-gradient(135deg, #5eead4, #38bdf8);
+  border-color: transparent;
+}
+
+[data-theme='light'] .landing-hero__control-btn {
+  color: #0f172a;
+  background:
+    linear-gradient(135deg, rgba(255, 255, 255, 0.78), rgba(219, 234, 254, 0.62));
+  border-color: rgba(37, 99, 235, 0.18);
+}
+
+/* Dots now live inside the control deck */
+.landing-hero__control-deck .landing-hero__dots {
+  position: static;
+  left: auto;
+  bottom: auto;
+  z-index: auto;
+  transform: none;
+  padding: 0 4px;
+  background: transparent;
+  border: 0;
+  box-shadow: none;
+  backdrop-filter: none;
+  -webkit-backdrop-filter: none;
+}
+
+/* Mobile hero: image only, no text, no CTA */
+@media (max-width: 767px) {
+  .landing-hero,
+  .landing-hero__stage,
+  .landing-hero__slider {
+    min-height: 100dvh;
+  }
+
+  .landing-hero__image {
+    height: 100dvh;
+    object-fit: cover;
+    object-position: center;
+  }
+
+  .landing-hero__content {
+    display: none !important;
+  }
+
+  .landing-hero__control-deck {
+    bottom: max(14px, env(safe-area-inset-bottom, 0px));
+    gap: 6px;
+    padding: 7px;
+    max-width: calc(100vw - 18px);
+  }
+
+  .landing-hero__control-btn {
+    min-width: 34px;
+    height: 34px;
+    padding: 0 9px;
+  }
+
+  .landing-hero__control-btn--pause {
+    min-width: 42px;
+    padding: 0 10px;
+  }
+
+  .landing-hero__control-btn--pause span {
+    display: none;
+  }
+
+  .landing-hero__dot {
+    width: 7px;
+    height: 7px;
+  }
+
+  .landing-hero__dot.is-active {
+    width: 22px;
+  }
+}
+
+/* AOS speed override: keep beautiful animation, make it faster */
+[data-aos] {
+  transition-duration: 650ms !important;
+  transition-delay: 0ms;
+}
+
+.program-card-v2[data-aos],
+.ecosystem-banner[data-aos],
+.landing-section__header[data-aos] {
+  transition-duration: 680ms !important;
+}
+
+/* Respect reduced motion users and also prevent flicker on weaker devices */
+@media (prefers-reduced-motion: reduce) {
+  .landing-hero__slide,
+  .landing-hero__image,
+  .program-card-v2,
+  .program-card-v2__image,
+  .ecosystem-banner__image,
+  [data-aos] {
+    animation: none !important;
+    transition: none !important;
+    transform: none !important;
+  }
+}
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+/* =========================================================
+   MINIMAL FIX — HERO CONTROLS VISIBILITY + MOBILE CARD IMAGE NATURAL SIZE
+========================================================= */
+
+/* Make hero controls clearly visible in dark theme */
+[data-theme='dark'] .landing-hero__control-deck {
+  background:
+    radial-gradient(circle at 18% 20%, rgba(0, 194, 255, 0.2), transparent 34%),
+    radial-gradient(circle at 82% 80%, rgba(76, 255, 154, 0.14), transparent 34%),
+    linear-gradient(135deg, rgba(2, 6, 23, 0.92), rgba(10, 42, 108, 0.76)) !important;
+  border: 1px solid rgba(0, 194, 255, 0.36) !important;
+  box-shadow:
+    0 22px 70px rgba(0, 0, 0, 0.48),
+    0 0 34px rgba(0, 194, 255, 0.16),
+    inset 0 1px 0 rgba(255, 255, 255, 0.12) !important;
+}
+
+[data-theme='dark'] .landing-hero__control-btn {
+  color: #ffffff !important;
+  background:
+    linear-gradient(135deg, rgba(30, 94, 255, 0.28), rgba(0, 194, 255, 0.18)),
+    rgba(255, 255, 255, 0.08) !important;
+  border-color: rgba(147, 197, 253, 0.3) !important;
+}
+
+[data-theme='dark'] .landing-hero__control-btn:hover {
+  background:
+    linear-gradient(135deg, rgba(0, 194, 255, 0.24), rgba(76, 255, 154, 0.16)),
+    rgba(255, 255, 255, 0.1) !important;
+  border-color: rgba(94, 234, 212, 0.45) !important;
+}
+
+/* Make hero controls clean in light theme */
+[data-theme='light'] .landing-hero__control-deck {
+  background:
+    radial-gradient(circle at 18% 20%, rgba(77, 163, 255, 0.18), transparent 34%),
+    radial-gradient(circle at 82% 80%, rgba(29, 233, 182, 0.12), transparent 34%),
+    linear-gradient(135deg, rgba(255, 255, 255, 0.96), rgba(237, 243, 251, 0.9)) !important;
+  border: 1px solid rgba(77, 163, 255, 0.28) !important;
+  box-shadow:
+    0 18px 54px rgba(15, 23, 42, 0.16),
+    inset 0 1px 0 rgba(255, 255, 255, 0.9) !important;
+}
+
+[data-theme='light'] .landing-hero__control-btn {
+  color: #0f172a !important;
+  background:
+    linear-gradient(135deg, rgba(255, 255, 255, 0.94), rgba(219, 234, 254, 0.72)) !important;
+  border-color: rgba(37, 99, 235, 0.22) !important;
+}
+
+[data-theme='light'] .landing-hero__control-btn:hover {
+  color: #075985 !important;
+  background:
+    linear-gradient(135deg, rgba(219, 234, 254, 0.95), rgba(224, 242, 254, 0.82)) !important;
+  border-color: rgba(14, 165, 233, 0.34) !important;
+}
+
+[data-theme='light'] .landing-hero__control-btn--pause.is-paused,
+[data-theme='dark'] .landing-hero__control-btn--pause.is-paused {
+  color: #06111f !important;
+  background: linear-gradient(135deg, #5eead4, #38bdf8) !important;
+  border-color: transparent !important;
+}
+
+/* Mobile only: program card images should show natural/full image shape */
+@media (max-width: 760px) {
+  .landing-section.landing-program-showcase .program-card-v2__media {
+    height: auto !important;
+    max-height: none !important;
+    aspect-ratio: auto !important;
+    background: transparent !important;
+  }
+
+  .landing-section.landing-program-showcase .program-card-v2__media picture {
+    display: block !important;
+    width: 100% !important;
+    height: auto !important;
+  }
+
+  .landing-section.landing-program-showcase .program-card-v2__image {
+    width: 100% !important;
+    height: auto !important;
+    max-height: none !important;
+    aspect-ratio: auto !important;
+    object-fit: contain !important;
+    object-position: center top !important;
+  }
+}
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+/* =========================================================
+   PROGRAM MODAL EXISTING IMAGE FIX
+   Keeps existing left-image modal design. No JSX change.
+========================================================= */
+
+.landing-program-modal__image-wrap {
+  position: relative !important;
+  display: block !important;
+  min-width: 0 !important;
+  width: 100% !important;
+  height: auto !important;
+  min-height: clamp(240px, 34vw, 520px) !important;
+  overflow: hidden !important;
+  border-radius: 28px !important;
+  background:
+    radial-gradient(circle at 20% 0%, rgba(0, 194, 255, 0.18), transparent 34%),
+    linear-gradient(135deg, rgba(2, 6, 23, 0.98), rgba(10, 42, 108, 0.86)) !important;
+}
+
+.landing-program-modal__image-wrap picture {
+  display: block !important;
+  width: 100% !important;
+  height: 100% !important;
+  min-height: inherit !important;
+}
+
+.landing-program-modal__image {
+  display: block !important;
+  width: 100% !important;
+  height: 100% !important;
+  min-height: inherit !important;
+  object-fit: cover !important;
+  object-position: center !important;
+  opacity: 1 !important;
+  visibility: visible !important;
+}
+
+[data-theme='light'] .landing-program-modal__image-wrap {
+  background:
+    radial-gradient(circle at 20% 0%, rgba(77, 163, 255, 0.16), transparent 34%),
+    linear-gradient(135deg, rgba(255, 255, 255, 0.98), rgba(237, 243, 251, 0.94)) !important;
+}
+
+@media (min-width: 900px) {
+  .landing-program-modal__dialog {
+    display: grid !important;
+    grid-template-columns: minmax(300px, 0.95fr) minmax(0, 1.05fr) !important;
+    align-items: stretch !important;
+  }
+
+  .landing-program-modal__image-wrap {
+    height: 100% !important;
+    min-height: 520px !important;
+  }
+}
+
+@media (max-width: 899px) {
+  .landing-program-modal__dialog {
+    display: flex !important;
+    flex-direction: column !important;
+  }
+
+  .landing-program-modal__image-wrap {
+    min-height: 220px !important;
+  }
+
+  .landing-program-modal__image {
+    object-fit: contain !important;
+  }
+}
+
+
+
+
+
+/* =========================================================
+   PROGRAM MODAL IMAGE DRAG CONTROL
+   Allows users to drag the existing left image horizontally.
+========================================================= */
+
+.landing-program-modal__image-wrap {
+  cursor: grab !important;
+  user-select: none !important;
+  touch-action: pan-y !important;
+}
+
+.landing-program-modal__image-wrap.is-dragging {
+  cursor: grabbing !important;
+}
+
+.landing-program-modal__image {
+  width: 118% !important;
+  max-width: none !important;
+  transition:
+    object-position 120ms ease,
+    transform 220ms ease !important;
+  pointer-events: none !important;
+}
+
+.landing-program-modal__image-wrap.is-dragging .landing-program-modal__image {
+  transition: none !important;
+}
+
+.landing-program-modal__drag-hint {
+  position: absolute;
+  left: 50%;
+  bottom: 16px;
+  z-index: 3;
+  transform: translateX(-50%);
+  padding: 8px 12px;
+  border-radius: 999px;
+  color: rgba(234, 242, 255, 0.95);
+  background:
+    linear-gradient(135deg, rgba(2, 8, 23, 0.72), rgba(10, 42, 108, 0.58)),
+    rgba(2, 8, 23, 0.56);
+  border: 1px solid rgba(147, 197, 253, 0.22);
+  box-shadow: 0 14px 34px rgba(0, 0, 0, 0.26);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  font-size: 11px;
+  font-weight: 850;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  pointer-events: none;
+  opacity: 0.86;
+}
+
+.landing-program-modal__image-wrap:hover .landing-program-modal__drag-hint,
+.landing-program-modal__image-wrap.is-dragging .landing-program-modal__drag-hint {
+  opacity: 1;
+}
+
+[data-theme='light'] .landing-program-modal__drag-hint {
+  color: #0f172a;
+  background:
+    linear-gradient(135deg, rgba(255, 255, 255, 0.88), rgba(219, 234, 254, 0.72)),
+    rgba(255, 255, 255, 0.68);
+  border-color: rgba(37, 99, 235, 0.18);
+  box-shadow: 0 14px 30px rgba(15, 23, 42, 0.14);
+}
+
+@media (max-width: 899px) {
+  .landing-program-modal__image {
+    width: 112% !important;
+    object-fit: cover !important;
+  }
+
+  .landing-program-modal__drag-hint {
+    bottom: 12px;
+    font-size: 10px;
+    padding: 7px 10px;
+  }
+}
+
+
+
+
+
+
+
+
+/* =========================================================
+   PROGRAM MODAL IMAGE REAL DRAG FIX
+   Uses CSS variable so it overrides older !important rules.
+========================================================= */
+
+.landing-program-modal__image-wrap {
+  cursor: grab !important;
+  user-select: none !important;
+  touch-action: none !important;
+  overflow: hidden !important;
+}
+
+.landing-program-modal__image-wrap.is-dragging {
+  cursor: grabbing !important;
+}
+
+.landing-program-modal__image-wrap picture {
+  pointer-events: none !important;
+}
+
+.landing-program-modal__image {
+  width: 122% !important;
+  max-width: none !important;
+  height: 100% !important;
+  object-fit: cover !important;
+  object-position: var(--program-modal-image-x, 50%) center !important;
+  pointer-events: none !important;
+  user-select: none !important;
+  -webkit-user-drag: none !important;
+  animation: none !important;
+  transition: object-position 120ms ease !important;
+}
+
+.landing-program-modal__image-wrap.is-dragging .landing-program-modal__image {
+  transition: none !important;
+}
+
+.landing-program-modal__drag-hint {
+  position: absolute;
+  left: 50%;
+  bottom: 16px;
+  z-index: 5;
+  transform: translateX(-50%);
+  padding: 8px 12px;
+  border-radius: 999px;
+  color: rgba(234, 242, 255, 0.96);
+  background:
+    linear-gradient(135deg, rgba(2, 8, 23, 0.74), rgba(10, 42, 108, 0.58)),
+    rgba(2, 8, 23, 0.58);
+  border: 1px solid rgba(147, 197, 253, 0.24);
+  box-shadow: 0 14px 34px rgba(0, 0, 0, 0.28);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  font-size: 11px;
+  font-weight: 850;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  pointer-events: none;
+  opacity: 0.88;
+}
+
+.landing-program-modal__image-wrap:hover .landing-program-modal__drag-hint,
+.landing-program-modal__image-wrap.is-dragging .landing-program-modal__drag-hint {
+  opacity: 1;
+}
+
+[data-theme='light'] .landing-program-modal__drag-hint {
+  color: #0f172a;
+  background:
+    linear-gradient(135deg, rgba(255, 255, 255, 0.9), rgba(219, 234, 254, 0.76)),
+    rgba(255, 255, 255, 0.72);
+  border-color: rgba(37, 99, 235, 0.2);
+  box-shadow: 0 14px 30px rgba(15, 23, 42, 0.14);
+}
+
+@media (max-width: 899px) {
+  .landing-program-modal__image {
+    width: 118% !important;
+    object-fit: cover !important;
+    object-position: var(--program-modal-image-x, 50%) center !important;
+  }
+
+  .landing-program-modal__drag-hint {
+    bottom: 12px;
+    font-size: 10px;
+    padding: 7px 10px;
+  }
+}

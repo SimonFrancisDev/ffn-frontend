@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState, useCallback } from 'react'
-import { useLocation, useNavigate, Routes, Route } from 'react-router-dom'
+import { useLocation, useNavigate, Routes, Route, Navigate } from 'react-router-dom'
 import { useTranslation } from 'react-i18next'
 import i18n from './i18n'
 import AppShell from './components/Layout/AppShell/AppShell'
@@ -129,6 +129,33 @@ const pageToPathMap = {
   admin: '/admin',
 }
 
+const ROUTE_ACCESS_REASON = {
+  dashboard: 'Dashboard opens from your wallet/account space.',
+  activation: 'Activation Center opens from the F-Freedom Program or wallet flow.',
+  orbits: 'Orbit details open from a selected level or activation flow.',
+  myTokens: 'My Tokens opens from your account or dashboard space.',
+  account: 'Account opens from the account menu.',
+  preferences: 'Preferences opens from the account menu.',
+  security: 'Security opens from the account menu.',
+  activity: 'Activity opens from notifications, account, or dashboard.',
+  admin: 'Admin opens only from the verified admin menu.',
+}
+
+const FLOW_ONLY_PAGES = new Set([
+  'dashboard',
+  'activation',
+  'orbits',
+  'myTokens',
+  'account',
+  'preferences',
+  'security',
+  'activity',
+])
+
+const isInternalNavigationState = (state) => {
+  return Boolean(state?.ffnInternalNavigation)
+}
+
 const getInitialNotifications = () => {
   if (typeof window === 'undefined') return baseNotifications
 
@@ -229,6 +256,24 @@ const cleanOldNotifications = (notifications) => {
     if (!n.createdAt) return true
     return new Date(n.createdAt) > thirtyDaysAgo
   })
+}
+
+function RouteAccessFallback({ title = 'Page access required', message }) {
+  return (
+    <div className="route-access-fallback">
+      <section className="route-access-fallback__card">
+        <p className="route-access-fallback__eyebrow">Fin Freedom Network</p>
+        <h1>{title}</h1>
+        <p>
+          {message ||
+            'This page is part of a guided platform flow. Please open it from the correct button, menu, or account section.'}
+        </p>
+        <a href="/home" className="route-access-fallback__button">
+          Return Home
+        </a>
+      </section>
+    </div>
+  )
 }
 
 function App() {
@@ -475,50 +520,46 @@ function App() {
     }))
   }, [location.pathname, t])
 
-  // const handleNavigate = useCallback(
-  //   (page) => {
-  //     const nextPath = pageToPathMap[page] || '/home'
-
-  //     if (location.pathname !== nextPath) {
-  //       navigate(nextPath)
-  //     }
-
-  //     setIsDrawerOpen(false)
-  //     closeAllUtilities()
-  //   },
-  //   [closeAllUtilities, location.pathname, navigate]
-  // )
-
   const handleNavigate = useCallback(
-  (page, section) => {
-    const nextPath = pageToPathMap[page] || '/home'
+    (page, section, options = {}) => {
+      const nextPath = pageToPathMap[page] || '/home'
 
-    const scrollToSection = () => {
-      if (!section || typeof document === 'undefined') return
+      const scrollToSection = () => {
+        if (!section || typeof document === 'undefined') return
 
-      window.setTimeout(() => {
-        const target = document.getElementById(section)
-        if (!target) return
+        window.setTimeout(() => {
+          const target = document.getElementById(section)
+          if (!target) return
 
-        target.scrollIntoView({
-          behavior: 'smooth',
-          block: 'start',
+          target.scrollIntoView({
+            behavior: 'smooth',
+            block: 'start',
+          })
+        }, 120)
+      }
+
+      const navigationState = {
+        ffnInternalNavigation: true,
+        fromPath: location.pathname,
+        fromPage: routeMap[location.pathname] || 'home',
+        openedAt: Date.now(),
+        ...options,
+      }
+
+      if (location.pathname !== nextPath) {
+        navigate(nextPath, {
+          state: navigationState,
         })
-      }, 120)
-    }
+        scrollToSection()
+      } else {
+        scrollToSection()
+      }
 
-    if (location.pathname !== nextPath) {
-      navigate(nextPath)
-      scrollToSection()
-    } else {
-      scrollToSection()
-    }
-
-    setIsDrawerOpen(false)
-    closeAllUtilities()
-  },
-  [closeAllUtilities, location.pathname, navigate]
-)
+      setIsDrawerOpen(false)
+      closeAllUtilities()
+    },
+    [closeAllUtilities, location.pathname, navigate]
+  )
 
   const handleToggleTheme = () => {
     setTheme((current) => (current === 'dark' ? 'light' : 'dark'))
@@ -673,9 +714,9 @@ function App() {
         : 'No wallet connected',
       network: isConnected ? 'Polygon Amoy Testnet' : 'Not connected',
       provider:
-        typeof window !== 'undefined' && window.ethereum
-          ? 'MetaMask'
-          : 'No wallet provider',
+    typeof window !== 'undefined' && window.ethereum
+      ? 'Browser Wallet'
+      : 'No wallet provider',
       balance: balance ? Number(balance).toFixed(4) : null,
       isConnected,
       isLoading: isWalletLoading,
@@ -725,7 +766,7 @@ function App() {
         type: 'danger',
         label: 'Wallet Required',
         message:
-          'MetaMask is not installed. Install a wallet to connect and use live platform data.',
+          'No compatible browser wallet was detected. Install MetaMask or another EVM-compatible wallet to connect and use live platform data.',
         source: 'wallet',
         sticky: true,
         dismissible: false,
@@ -836,6 +877,43 @@ function App() {
     walletError,
   ])
 
+  const hasInternalRouteAccess = isInternalNavigationState(location.state)
+
+  const renderFlowOnlyPage = useCallback(
+    (pageKey, element) => {
+      if (!FLOW_ONLY_PAGES.has(pageKey)) return element
+
+      if (!hasInternalRouteAccess) {
+        return (
+          <RouteAccessFallback
+            title="Open this page from the app"
+            message={ROUTE_ACCESS_REASON[pageKey]}
+          />
+        )
+      }
+
+      return element
+    },
+    [hasInternalRouteAccess]
+  )
+
+  const renderAdminPage = useCallback(() => {
+    if (!adminCheckComplete) {
+      return (
+        <RouteAccessFallback
+          title="Checking admin access"
+          message="Please connect the verified admin wallet and open this page from the admin menu."
+        />
+      )
+    }
+
+    if (!hasInternalRouteAccess || !isMultisigOwner) {
+      return <Navigate to="/home" replace />
+    }
+
+    return <AdminPanel />
+  }, [adminCheckComplete, hasInternalRouteAccess, isMultisigOwner])
+
   return (
     <SessionProvider>
       <SpaceProvider walletAddress={walletAccount}>
@@ -882,22 +960,59 @@ function App() {
             <Routes>
               <Route path="/" element={<LandingPage onNavigate={handleNavigate} />} />
               <Route path="/home" element={<LandingPage onNavigate={handleNavigate} />} />
+
               <Route
-                  path="/f-freedom-program"
-                  element={<FFreedomProgramPage onNavigate={handleNavigate} />}
-                />
+                path="/f-freedom-program"
+                element={<FFreedomProgramPage onNavigate={handleNavigate} />}
+              />
+
               <Route path="/about" element={<AboutPage onNavigate={handleNavigate} />} />
-              <Route path="/dashboard" element={<DashboardPage />} />
-              <Route path="/activation" element={<ActivationCenterPage />} />
-              <Route path="/orbits" element={<OrbitsPage />} />
               <Route path="/community" element={<CommunityPage />} />
               <Route path="/support" element={<SupportPage />} />
-              <Route path="/account" element={<AccountPage />} />
-              <Route path="/preferences" element={<PreferencesPage />} />
-              <Route path="/security" element={<SecurityPage />} />
-              <Route path="/activity" element={<ActivityPage />} />
-              <Route path="/admin" element={<AdminPanel />} />
-              <Route path="/my-tokens" element={<MyTokens />} />
+
+              <Route
+                path="/dashboard"
+                element={renderFlowOnlyPage('dashboard', <DashboardPage />)}
+              />
+
+              <Route
+                path="/activation"
+                element={renderFlowOnlyPage('activation', <ActivationCenterPage />)}
+              />
+
+              <Route
+                path="/orbits"
+                element={renderFlowOnlyPage('orbits', <OrbitsPage />)}
+              />
+
+              <Route
+                path="/account"
+                element={renderFlowOnlyPage('account', <AccountPage />)}
+              />
+
+              <Route
+                path="/preferences"
+                element={renderFlowOnlyPage('preferences', <PreferencesPage />)}
+              />
+
+              <Route
+                path="/security"
+                element={renderFlowOnlyPage('security', <SecurityPage />)}
+              />
+
+              <Route
+                path="/activity"
+                element={renderFlowOnlyPage('activity', <ActivityPage />)}
+              />
+
+              <Route
+                path="/my-tokens"
+                element={renderFlowOnlyPage('myTokens', <MyTokens />)}
+              />
+
+              <Route path="/admin" element={renderAdminPage()} />
+
+              <Route path="*" element={<Navigate to="/home" replace />} />
             </Routes>
             <Footer
               onNavigate={handleNavigate}

@@ -28,12 +28,12 @@ const SERVICES = [
   {
     label: 'F-Freedom Program',
     description: 'Wallet-first participation flow, orbit progression, and live program entry.',
-    links: ['Get started', 'Level Manager', 'My Tokens', 'F-Freedom Program Dashboard'],
+    links: ['F-Freedom Overview', 'Actvations & Level Manager', 'My F-Freedom Tokens', 'F-Freedom Program Dashboard'],
   },
   {
     label: 'Freedom-Plus Program',
     description: 'Advanced expansion layer for future premium participation utilities.',
-    links: ['Overview', 'Level Manager', 'My Tokens', 'Freedom Plus Progra Dashboard'],
+    links: ['Freedom Plus', 'Level Manager', 'My Tokens', 'Freedom Plus Progra Dashboard'],
   },
   {
     label: 'Freedom NFT Program',

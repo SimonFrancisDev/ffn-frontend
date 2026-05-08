@@ -3711,7 +3711,7 @@ body {
 
 
 /* FINAL PROGRAM CARD FIX */
-@media (min-width: 981px) {
+/* @media (min-width: 981px) {
   .program-hybrid-card {
     height: clamp(660px, 82vh, 880px) !important;
     grid-template-columns: minmax(430px, 48%) minmax(0, 52%) !important;
@@ -3756,8 +3756,164 @@ body {
     padding-bottom: clamp(28px, 3vw, 44px) !important;
     scroll-padding-top: 28px !important;
   }
+} */
+
+
+/* =========================================================
+   FINAL PROGRAM CARD FIX — TOP IMAGE / BOTTOM CONTENT
+   Laptop/Desktop: 3 cards per row
+   Tablet: 2 cards per row
+   Mobile: 1 card per row
+========================================================= */
+
+.landing-section.landing-program-showcase {
+  width: min(1500px, calc(100% - 32px)) !important;
+  max-width: 1500px !important;
+  margin-left: auto !important;
+  margin-right: auto !important;
+  padding-inline: 0 !important;
 }
 
+.landing-section.landing-program-showcase .program-hybrid-grid {
+  width: 100% !important;
+  max-width: 1500px !important;
+  margin-left: auto !important;
+  margin-right: auto !important;
+
+  display: grid !important;
+  grid-template-columns: repeat(3, minmax(0, 1fr)) !important;
+  gap: clamp(22px, 2.5vw, 36px) !important;
+  align-items: stretch !important;
+}
+
+.landing-section.landing-program-showcase .program-hybrid-card {
+  width: 100% !important;
+  min-width: 0 !important;
+  height: auto !important;
+  min-height: 0 !important;
+
+  display: flex !important;
+  flex-direction: column !important;
+  grid-template-columns: none !important;
+
+  align-items: stretch !important;
+  overflow: hidden !important;
+  border-radius: 34px !important;
+}
+
+.landing-section.landing-program-showcase .program-hybrid-card__media {
+  position: relative !important;
+  top: auto !important;
+  left: auto !important;
+  right: auto !important;
+
+  display: block !important;
+  width: 100% !important;
+  height: clamp(220px, 18vw, 300px) !important;
+  min-height: 0 !important;
+  max-height: 300px !important;
+
+  align-self: stretch !important;
+  overflow: hidden !important;
+
+  border-right: 0 !important;
+  border-bottom: 1px solid rgba(250, 204, 21, 0.18) !important;
+  border-radius: 34px 34px 0 0 !important;
+}
+
+.landing-section.landing-program-showcase .program-hybrid-card__media picture {
+  display: block !important;
+  width: 100% !important;
+  height: 100% !important;
+}
+
+.landing-section.landing-program-showcase .program-hybrid-card__image {
+  display: block !important;
+  width: 100% !important;
+  height: 100% !important;
+  min-height: 0 !important;
+  max-height: none !important;
+  aspect-ratio: auto !important;
+
+  object-fit: cover !important;
+  object-position: center !important;
+  transform: none !important;
+  animation: none !important;
+}
+
+.landing-section.landing-program-showcase .program-hybrid-card:hover .program-hybrid-card__image {
+  transform: scale(1.025) !important;
+}
+
+.landing-section.landing-program-showcase .program-hybrid-card__content {
+  flex: 1 1 auto !important;
+  width: 100% !important;
+  min-width: 0 !important;
+
+  height: auto !important;
+  max-height: none !important;
+  overflow: visible !important;
+
+  display: flex !important;
+  flex-direction: column !important;
+  justify-content: flex-start !important;
+  align-items: flex-start !important;
+
+  padding: clamp(20px, 2vw, 30px) !important;
+  gap: clamp(12px, 1.2vw, 18px) !important;
+}
+
+.landing-section.landing-program-showcase .program-detail-grid,
+.landing-section.landing-program-showcase .program-token-grid,
+.landing-section.landing-program-showcase .program-trust-grid,
+.landing-section.landing-program-showcase .program-academy-grid {
+  grid-template-columns: 1fr !important;
+}
+
+.landing-section.landing-program-showcase .program-tier-grid {
+  grid-template-columns: repeat(3, minmax(0, 1fr)) !important;
+}
+
+@media (max-width: 1180px) {
+  .landing-section.landing-program-showcase .program-hybrid-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
+  }
+
+  .landing-section.landing-program-showcase .program-hybrid-card__media {
+    height: clamp(220px, 28vw, 320px) !important;
+    max-height: 320px !important;
+  }
+}
+
+@media (max-width: 760px) {
+  .landing-section.landing-program-showcase {
+    width: calc(100% - 20px) !important;
+  }
+
+  .landing-section.landing-program-showcase .program-hybrid-grid {
+    grid-template-columns: 1fr !important;
+  }
+
+  .landing-section.landing-program-showcase .program-hybrid-card {
+    border-radius: 26px !important;
+  }
+
+  .landing-section.landing-program-showcase .program-hybrid-card__media {
+    height: clamp(220px, 62vw, 380px) !important;
+    max-height: 380px !important;
+    border-radius: 26px 26px 0 0 !important;
+  }
+
+  .landing-section.landing-program-showcase .program-hybrid-card__content {
+    padding: 18px !important;
+    align-items: center !important;
+    text-align: center !important;
+  }
+
+  .landing-section.landing-program-showcase .program-tier-grid {
+    grid-template-columns: 1fr !important;
+  }
+}
 
 
 @media (max-width: 768px) {
@@ -4267,19 +4423,6 @@ body {
     justify-content: center; /* Helps keep content visually balanced when pushed up */
   }
 }
-
-
-
-
-
-
-
-
-
-
-
-
-
 
 /* =========================================================
    FINAL PRODUCTION OVERRIDE — PROGRAM CARDS

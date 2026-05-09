@@ -374,8 +374,8 @@ const PROGRAMS = [
     id: 'f-freedom-program',
     type: 'standard',
     title: 'F-Freedom Program',
-    eyebrow: 'Current Program',
-    status: 'Live Program',
+    eyebrow: 'Participation Gateway',
+    status: 'Current Program',
 
     headline: 'The Core Participation Engine of Fin Freedom Network.',
 
@@ -433,27 +433,27 @@ Powered by the Triple-P Orbit Engine, it ensures predictable earnings, controlle
     id: 'freedom-plus-program',
     type: 'advanced',
     title: 'Freedom-Plus Program',
-    eyebrow: 'Advanced Growth Engine',
-    status: 'Future Phase',
+    eyebrow: 'Expansion Pathway',
+    status: 'Coming Soon',
 
     headline: 'Growth Engine. Higher Levels. Greater Freedom.',
 
     description: `The Freedom-Plus Program is the advanced earning layer of Fin Freedom Network, designed for participants who are ready to scale beyond the F-Freedom Program.
 
-With higher levels, wider earnings, and the Infinity Bonus Pool, it delivers greater rewards, deeper engagement, and sustainable long-term growth.`,
+It delivers greater rewards, deeper engagement, and sustainable long-term growth.`,
 
     features: [
       {
         title: '7 Advance Levels',
-        text: '7 advance levels with price tripling from one level to the other with massive earning potential.',
+        text: 'There are 7 powerful levels with price tripling from one level to the other with massive earning potential.',
         extra: [
-          'L1 $50',
-          'L2 $150',
-          'L3 $450',
-          'L4 $1,350',
-          'L5 $4,050',
-          'L6 $12,150',
-          'L7 $36,450',
+          'L1 = $50',
+          'L2 = $150',
+          'L3 = $450',
+          'L4 = $1,350',
+          'L5 = $4,050',
+          'L6 = $12,150',
+          'L7 = $36,450',
         ],
       },
       {
@@ -466,7 +466,7 @@ With higher levels, wider earnings, and the Infinity Bonus Pool, it delivers gre
       },
       {
         title: 'Manual Upgrade',
-        text: 'Participants have the flexibility to advance at their own pace. Levels 1–7 only.',
+        text: 'Participants have the flexibility to advance at their own pace from Levels 1–7',
       },
       {
         title: 'Accelerated NFT Path',
@@ -510,7 +510,7 @@ With higher levels, wider earnings, and the Infinity Bonus Pool, it delivers gre
     id: 'freedom-nft-program',
     type: 'tiered',
     title: 'Freedom NFT Program',
-    eyebrow: 'Membership & Reward Layer',
+    eyebrow: 'Tiered Access Program',
     status: 'Coming Soon',
 
     headline:
@@ -572,14 +572,30 @@ With higher levels, wider earnings, and the Infinity Bonus Pool, it delivers gre
     headline: 'The Engine of Value, Participation, and Reward.',
 
     description:
-      'A structured digital token system powering participation, progression, and sustainable ecosystem growth.',
+      'The core digital asset of the Fin Freedom Ecosystem designed to power ultility, governance, participation, incentives and value exchange across all interconnceted programs, platforms and services.',
 
-    coreToken: {
-      name: 'FFC',
-      title: 'Fin Freedom Coin',
-      description: 'The foundation of the ecosystem.',
-      attributes: ['Stability', 'Governance', 'Coordination'],
-    },
+   tokenShowcase: [
+      {
+        name: 'FGT',
+        label: 'Freedom Game Token',
+        image: '/images/fgt.png',
+      },
+      {
+        name: 'FGTr',
+        label: 'Freedom Game Reactivation Token',
+        image: '/images/fgtr.png',
+      },
+      {
+        name: 'FPT',
+        label: 'Freedom Plus Token',
+        image: '/images/fpt.png',
+      },
+      {
+        name: 'FPTr',
+        label: 'Freedom Plus Reactivation Token',
+        image: '/images/fptr.png',
+      },
+  ],
 
     tokens: [
       {
@@ -649,7 +665,7 @@ With higher levels, wider earnings, and the Infinity Bonus Pool, it delivers gre
     headline: 'Shop. Trust. Connect. Grow.',
 
     description:
-      'The official digital marketplace of Fin Freedom Network. Discover premium products, digital assets, and services powered by blockchain trust and community.',
+      'The official digital marketplace of Fin Freedom Ecosystem, designed to provide access to premium products, digital assets and services within a trusted blockchain-powered ecosystem.',
 
     features: [
       {
@@ -671,9 +687,10 @@ With higher levels, wider earnings, and the Infinity Bonus Pool, it delivers gre
     ],
 
     categories: [
-      'Electronics',
-      'Lifestyle',
-      'Fashion',
+      'Web3 Tools',
+      'Softwares',
+      'Tokenized Services',
+      'Immersive Programs',
       'Events',
       'Digital Assets',
       'Online Courses',
@@ -700,8 +717,8 @@ With higher levels, wider earnings, and the Infinity Bonus Pool, it delivers gre
     ],
 
     cta: {
-      title: 'Explore. Buy. Earn.',
-      subtitle: 'Welcome to Freedom.',
+      title: 'Digital Marketplace',
+      subtitle: 'An Access to Digital Premium Assets',
     },
 
     footerLine: 'One Network. One Ecosystem. Endless Possibilities.',
@@ -727,7 +744,7 @@ With higher levels, wider earnings, and the Infinity Bonus Pool, it delivers gre
     headline: 'One Institute. Two Academies. One Mission.',
 
     description:
-      'A structured learning layer designed to equip builders, entrepreneurs, and ecosystem participants with digital skills, leadership capacity, and practical knowledge.',
+      'A structured educational ecosystem designed to equip builders, entrepreneurs, leaders and ecosystem participants, with future ready digital skills, leadership capacity and pratical knowlege for the elvolving digital economy',
 
     academies: [
       {
@@ -1121,7 +1138,7 @@ function ProgramTokenSystem({ program }) {
 
   return (
     <>
-      <div className="program-core-token">
+      {/* <div className="program-core-token">
         <span>{program.coreToken.name}</span>
         <strong>{program.coreToken.title}</strong>
         <p>{program.coreToken.description}</p>
@@ -1130,7 +1147,32 @@ function ProgramTokenSystem({ program }) {
             <em key={item}>{item}</em>
           ))}
         </div>
-      </div>
+      </div> */}
+      {program.tokenShowcase?.length ? (
+        <div className="program-token-showcase" aria-label={`${program.title} token visuals`}>
+          <div className="program-token-showcase__orb">
+            {program.tokenShowcase.map((token, index) => (
+              <figure
+                key={token.name}
+                className="program-token-showcase__slide"
+                style={{ '--token-slide-index': index }}
+              >
+                <img
+                  src={token.image}
+                  alt={token.label}
+                  className="program-token-showcase__image"
+                  loading="lazy"
+                  decoding="async"
+                />
+                <figcaption>
+                  <strong>{token.name}</strong>
+                  <span>{token.label}</span>
+                </figcaption>
+              </figure>
+            ))}
+          </div>
+        </div>
+      ) : null}
 
       <div className="program-token-grid">
         {program.tokens.map((token) => {
@@ -1526,30 +1568,6 @@ function LandingPage({ onNavigate }) {
   }
 
 
-//   const updateProgramModalImagePosition = (event) => {
-//   const rect = event.currentTarget.getBoundingClientRect()
-//   const rawPercent = ((event.clientX - rect.left) / rect.width) * 100
-//   const clampedPercent = Math.max(0, Math.min(100, rawPercent))
-
-//   setProgramModalImageX(clampedPercent)
-// }
-
-// const handleProgramModalImagePointerDown = (event) => {
-//   event.currentTarget.setPointerCapture?.(event.pointerId)
-//   setIsProgramModalImageDragging(true)
-//   updateProgramModalImagePosition(event)
-// }
-
-// const handleProgramModalImagePointerMove = (event) => {
-//   if (!isProgramModalImageDragging) return
-//   updateProgramModalImagePosition(event)
-// }
-
-// const handleProgramModalImagePointerUp = (event) => {
-//   event.currentTarget.releasePointerCapture?.(event.pointerId)
-//   setIsProgramModalImageDragging(false)
-// }
-
 const handleProgramModalImagePointerDown = (event) => {
   event.preventDefault()
 
@@ -1671,29 +1689,6 @@ const handleProgramModalImagePointerUp = (event) => {
               <button type="button" className="landing-modal-close" onClick={() => setProgramModal(null)} aria-label="Close modal">
                 <X size={18} />
               </button>
-              {/* <div
-                  className={`landing-program-modal__image-wrap ${
-                    isProgramModalImageDragging ? 'is-dragging' : ''
-                  }`}
-                  role="presentation"
-                  onPointerDown={handleProgramModalImagePointerDown}
-                  onPointerMove={handleProgramModalImagePointerMove}
-                  onPointerUp={handleProgramModalImagePointerUp}
-                  onPointerCancel={handleProgramModalImagePointerUp}
-                >
-                  <ThemeImage
-                    image={programModal.image}
-                    alt={programModal.title}
-                    className="landing-program-modal__image"
-                    style={{
-                        '--program-modal-image-x': `${programModalImageX}%`,
-                      }}
-                  />
-
-                  <div className="landing-program-modal__drag-hint">
-                    Drag left or right to explore image
-                  </div>
-              </div> */}
               <div
                 className={`landing-program-modal__image-wrap ${
                   isProgramModalImageDragging ? 'is-dragging' : ''
@@ -1867,7 +1862,7 @@ const handleProgramModalImagePointerUp = (event) => {
             <div className="landing-section__eyebrow">Ecosystem Architecture</div>
             <h2 className="fly-in">One Network. Multiple Systems. Infinite Possibilities.</h2>
             <p>
-              Fin Freedom Network is composed of interconnected program layers — each designed
+              Fin Freedom Network is composed of interconnected programs — each designed
               to deliver structured participation, real utility, and long-term ecosystem growth.
             </p>
           </div>
@@ -1923,7 +1918,7 @@ const handleProgramModalImagePointerUp = (event) => {
 
         <section id="programs" className="landing-section landing-program-showcase" data-aos="fade-up" data-aos-duration="1000">
           <div className="landing-section__header landing-section__header--center glass-section" data-aos="fade-up" data-aos-duration="1000">
-            <div className="landing-section__eyebrow">Program Layers</div>
+            <div className="landing-section__eyebrow">Key Components</div>
             <h2 className="highlight-green-yellow fly-in">Explore the Fin Freedom ecosystem.</h2>
             <p className="center-text">
               Six connected layers designed for participation, access, education, marketplace utility,
@@ -1994,14 +1989,14 @@ const handleProgramModalImagePointerUp = (event) => {
             <div className="live-layer-content">
               <span className="landing-section__eyebrow">
                 <Sparkles size={14} />
-                Start With The Live Layer
+                Join OUr Global Network
               </span>
 
-              <h2>Enter through the F-Freedom Program.</h2>
+              <h2>Begin Your Journey Through The F-Freedom Program</h2>
 
               <p>
-                Connect your wallet, review the notice, and continue into the live participation flow
-                when ready.
+                Review The Program Presentation, Connect your Web3 wallet on the Polygon network,
+                Activate your orbit levels, and progress through the structured ecosystem.
               </p>
 
               <div className="live-layer-actions">

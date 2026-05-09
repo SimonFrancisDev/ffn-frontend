@@ -2881,3 +2881,216 @@ body.light-theme .activation-overlay {
     margin: 0 auto;
   }
 }
+
+
+
+
+
+
+/* =========================================================
+   SECURE REFERRAL LOCK UI
+========================================================= */
+
+.referrer-input.is-locked,
+.referrer-input[readonly] {
+  cursor: not-allowed;
+  color: var(--text-secondary);
+  border-color: rgba(29, 233, 182, 0.28);
+  background:
+    linear-gradient(135deg, rgba(29, 233, 182, 0.08), rgba(77, 163, 255, 0.05)),
+    rgba(255, 255, 255, 0.035);
+  box-shadow:
+    0 0 0 1px rgba(29, 233, 182, 0.08),
+    inset 0 1px 0 rgba(255, 255, 255, 0.04);
+}
+
+.referrer-hint--important {
+  padding: 10px 12px;
+  border-radius: 14px;
+  border: 1px solid rgba(29, 233, 182, 0.18);
+  background: rgba(29, 233, 182, 0.07);
+  color: var(--text-secondary);
+}
+
+/* =========================================================
+   HERO REFERRAL CARD — RIGHT PANEL
+========================================================= */
+
+.activation-referral-card {
+  position: relative;
+  overflow: hidden;
+  display: grid;
+  gap: 14px;
+  padding: clamp(16px, 2vw, 22px);
+  border-radius: 24px;
+  border: 1px solid rgba(77, 163, 255, 0.22);
+  background:
+    radial-gradient(circle at 12% 0%, rgba(29, 233, 182, 0.16), transparent 36%),
+    radial-gradient(circle at 90% 18%, rgba(77, 163, 255, 0.16), transparent 34%),
+    linear-gradient(135deg, rgba(2, 8, 23, 0.72), rgba(10, 42, 108, 0.42));
+  box-shadow:
+    0 20px 48px rgba(2, 6, 23, 0.28),
+    inset 0 1px 0 rgba(255, 255, 255, 0.08);
+  transform: translateZ(0);
+}
+
+.activation-referral-card::before {
+  content: '';
+  position: absolute;
+  inset: -1px;
+  pointer-events: none;
+  background:
+    linear-gradient(90deg, transparent, rgba(94, 234, 212, 0.16), transparent);
+  opacity: 0.58;
+}
+
+.activation-referral-card__header {
+  position: relative;
+  z-index: 1;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  min-width: 0;
+}
+
+.activation-referral-card__icon {
+  width: 48px;
+  height: 48px;
+  flex: 0 0 auto;
+  border-radius: 18px;
+  display: grid;
+  place-items: center;
+  color: #06111f;
+  background: linear-gradient(135deg, var(--glow-teal), var(--glow-blue));
+  box-shadow: 0 14px 30px rgba(77, 163, 255, 0.22);
+}
+
+.activation-referral-card__eyebrow {
+  display: block;
+  margin-bottom: 4px;
+  color: var(--glow-teal);
+  font-size: 11px;
+  font-weight: 900;
+  letter-spacing: 0.11em;
+  text-transform: uppercase;
+}
+
+.activation-referral-card h3 {
+  margin: 0;
+  color: var(--text-primary);
+  font-size: 1.08rem;
+  line-height: 1.15;
+}
+
+.activation-referral-card__text {
+  position: relative;
+  z-index: 1;
+  margin: 0;
+  color: var(--text-secondary);
+  font-size: 13px;
+  line-height: 1.65;
+}
+
+.activation-referral-card__code,
+.activation-referral-card__link {
+  position: relative;
+  z-index: 1;
+  min-width: 0;
+  border-radius: 16px;
+  border: 1px solid rgba(147, 197, 253, 0.16);
+  background: rgba(255, 255, 255, 0.055);
+}
+
+.activation-referral-card__code {
+  padding: 12px 14px;
+}
+
+.activation-referral-card__code span {
+  color: #facc15;
+  font-size: 1.05rem;
+  font-weight: 950;
+  letter-spacing: 0.08em;
+}
+
+.activation-referral-card__link {
+  padding: 11px 12px;
+}
+
+.activation-referral-card__link code {
+  display: block;
+  max-width: 100%;
+  color: var(--text-secondary);
+  font-size: 12px;
+  line-height: 1.45;
+  word-break: break-all;
+  white-space: normal;
+}
+
+.activation-referral-card__button {
+  position: relative;
+  z-index: 1;
+  min-height: 48px;
+  border-radius: 16px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 9px;
+  color: #06111f;
+  background: linear-gradient(135deg, var(--glow-teal), var(--glow-blue));
+  border: 0;
+  font-size: 13px;
+  font-weight: 900;
+  box-shadow: 0 12px 28px rgba(77, 163, 255, 0.22);
+  cursor: pointer;
+  transition:
+    transform 180ms ease,
+    filter 180ms ease,
+    box-shadow 180ms ease;
+}
+
+.activation-referral-card__button:hover {
+  transform: translateY(-1px);
+  filter: brightness(1.04);
+  box-shadow: 0 16px 34px rgba(77, 163, 255, 0.28);
+}
+
+[data-theme='light'] .activation-referral-card {
+  border-color: rgba(37, 99, 235, 0.18);
+  background:
+    radial-gradient(circle at 12% 0%, rgba(20, 184, 166, 0.13), transparent 36%),
+    radial-gradient(circle at 90% 18%, rgba(37, 99, 235, 0.12), transparent 34%),
+    linear-gradient(135deg, rgba(255, 255, 255, 0.98), rgba(239, 246, 255, 0.9));
+  box-shadow:
+    0 18px 42px rgba(15, 23, 42, 0.1),
+    inset 0 1px 0 rgba(255, 255, 255, 0.95);
+}
+
+[data-theme='light'] .activation-referral-card__code,
+[data-theme='light'] .activation-referral-card__link {
+  background: rgba(255, 255, 255, 0.74);
+  border-color: rgba(37, 99, 235, 0.14);
+}
+
+[data-theme='light'] .activation-referral-card__code span {
+  color: #b45309;
+}
+
+[data-theme='light'] .referrer-input.is-locked,
+[data-theme='light'] .referrer-input[readonly] {
+  background:
+    linear-gradient(135deg, rgba(20, 184, 166, 0.09), rgba(37, 99, 235, 0.06)),
+    rgba(255, 255, 255, 0.84);
+}
+
+@media (max-width: 767px) {
+  .activation-referral-card {
+    border-radius: 22px;
+    padding: 16px;
+  }
+
+  .activation-referral-card__icon {
+    width: 44px;
+    height: 44px;
+    border-radius: 16px;
+  }
+}

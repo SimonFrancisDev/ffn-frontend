@@ -102,6 +102,7 @@ const routeMap = {
   '/f-freedom-program': 'fFreedomProgram',
   '/my-tokens': 'myTokens',
   '/activation': 'activation',
+  '/ref': 'activation',
   '/orbits': 'orbits',
   '/community': 'community',
   '/support': 'support',
@@ -131,7 +132,6 @@ const pageToPathMap = {
 
 const ROUTE_ACCESS_REASON = {
   dashboard: 'Dashboard opens from your wallet/account space.',
-  activation: 'Activation Center opens from the F-Freedom Program or wallet flow.',
   orbits: 'Orbit details open from a selected level or activation flow.',
   myTokens: 'My Tokens opens from your account or dashboard space.',
   account: 'Account opens from the account menu.',
@@ -143,7 +143,6 @@ const ROUTE_ACCESS_REASON = {
 
 const FLOW_ONLY_PAGES = new Set([
   'dashboard',
-  'activation',
   'orbits',
   'myTokens',
   'account',
@@ -969,6 +968,7 @@ function App() {
               <Route path="/about" element={<AboutPage onNavigate={handleNavigate} />} />
               <Route path="/community" element={<CommunityPage />} />
               <Route path="/support" element={<SupportPage />} />
+              <Route path="/ref/:refCode" element={<ActivationCenterPage />} />
 
               <Route
                 path="/dashboard"
@@ -979,6 +979,7 @@ function App() {
                 path="/activation"
                 element={renderFlowOnlyPage('activation', <ActivationCenterPage />)}
               />
+              
 
               <Route
                 path="/orbits"

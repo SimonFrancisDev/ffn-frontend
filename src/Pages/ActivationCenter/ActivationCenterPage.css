@@ -3094,3 +3094,88 @@ body.light-theme .activation-overlay {
     border-radius: 16px;
   }
 }
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+/* =========================================================
+   REFERRAL LOCK STATES — WALLET LOCK VS PENDING VISITOR REF
+========================================================= */
+
+.referrer-input.is-locked,
+.referrer-input[readonly] {
+  cursor: not-allowed;
+  color: var(--text-secondary);
+  border-color: rgba(29, 233, 182, 0.34);
+  background:
+    linear-gradient(135deg, rgba(29, 233, 182, 0.1), rgba(77, 163, 255, 0.06)),
+    rgba(255, 255, 255, 0.035);
+  box-shadow:
+    0 0 0 1px rgba(29, 233, 182, 0.1),
+    inset 0 1px 0 rgba(255, 255, 255, 0.04);
+}
+
+.referrer-input.is-pending {
+  cursor: text;
+  border-color: rgba(245, 158, 11, 0.36);
+  background:
+    linear-gradient(135deg, rgba(245, 158, 11, 0.1), rgba(77, 163, 255, 0.05)),
+    rgba(255, 255, 255, 0.035);
+  box-shadow:
+    0 0 0 1px rgba(245, 158, 11, 0.08),
+    inset 0 1px 0 rgba(255, 255, 255, 0.04);
+}
+
+.referrer-hint--important {
+  padding: 10px 12px;
+  border-radius: 14px;
+  border: 1px solid rgba(77, 163, 255, 0.16);
+  background: rgba(77, 163, 255, 0.06);
+  color: var(--text-secondary);
+}
+
+.referrer-hint--important.is-wallet-locked {
+  border-color: rgba(29, 233, 182, 0.24);
+  background: rgba(29, 233, 182, 0.08);
+}
+
+.referrer-hint--important.is-pending {
+  border-color: rgba(245, 158, 11, 0.26);
+  background: rgba(245, 158, 11, 0.08);
+}
+
+[data-theme='light'] .referrer-input.is-locked,
+[data-theme='light'] .referrer-input[readonly] {
+  background:
+    linear-gradient(135deg, rgba(20, 184, 166, 0.1), rgba(37, 99, 235, 0.06)),
+    rgba(255, 255, 255, 0.84);
+}
+
+[data-theme='light'] .referrer-input.is-pending {
+  background:
+    linear-gradient(135deg, rgba(245, 158, 11, 0.11), rgba(37, 99, 235, 0.05)),
+    rgba(255, 255, 255, 0.84);
+}
+
+[data-theme='light'] .referrer-hint--important {
+  background: rgba(239, 246, 255, 0.84);
+}
+
+[data-theme='light'] .referrer-hint--important.is-wallet-locked {
+  background: rgba(240, 253, 250, 0.82);
+}
+
+[data-theme='light'] .referrer-hint--important.is-pending {
+  background: rgba(255, 251, 235, 0.88);
+}

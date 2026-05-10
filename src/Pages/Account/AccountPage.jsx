@@ -38,6 +38,11 @@ const AccountPage = () => {
     }).format(num)
   }, [])
 
+
+  const getMoney = useCallback((value) => {
+  return formatDisplay(value || 0)
+}, [formatDisplay])
+
   const shortAddress = (addr) => {
     if (!addr || addr === ethers.ZeroAddress) return '—'
     return `${addr.slice(0, 8)}...${addr.slice(-6)}`
@@ -48,9 +53,14 @@ const AccountPage = () => {
   // }, [resolvedAddress])
 
 
+//   const referralLink = useMemo(() => {
+//   const code = referralShortCode || resolvedAddress
+//   return `https://finfreedomnetwork.io/activation?ref=${code}`
+// }, [resolvedAddress, referralShortCode])
+
   const referralLink = useMemo(() => {
   const code = referralShortCode || resolvedAddress
-  return `https://finfreedomnetwork.io/activation?ref=${code}`
+  return `https://finfreedomnetwork.io/ref/${code}`
 }, [resolvedAddress, referralShortCode])
 
   // --- DATA FETCHING ---
@@ -122,6 +132,20 @@ const AccountPage = () => {
     )
   }
 
+
+const earnings = summary?.earnings || {}
+const highestActiveLock = earnings?.highestActiveLock || null
+const currentLocksByLevel = Array.isArray(earnings?.currentLocksByLevel)
+  ? earnings.currentLocksByLevel
+  : []
+const financialByLevel = Array.isArray(earnings?.byLevel) ? earnings.byLevel : []
+
+const totalGenerated = earnings.totalGenerated || earnings.totalGross || 0
+const walletCredited = earnings.totalLiquid || 0
+const escrowUsed = earnings.totalEscrowUsed || earnings.totalEscrow || 0
+const currentEscrowLocked = earnings.currentEscrowLocked || 0
+const remainingToNextUpgrade = earnings.remainingToNextUpgrade || 0
+
   return (
     <section className="account-page">
       
@@ -137,9 +161,14 @@ const AccountPage = () => {
         </div>
         <h1 className="hero-display-address">{shortAddress(resolvedAddress)}</h1>
         <p className="hero-member-type">F-Freedom Program Participant</p>
-        <div className="hero-stats-row">
+        {/* <div className="hero-stats-row">
           <span className="hero-stat-chip">Level {summary?.earnings?.highestLevel || 0}</span>
           <span className="hero-stat-chip">{summary?.earnings?.count || 0} Referrals</span>
+          <span className="hero-stat-chip">Amoy Network</span>
+        </div> */}
+        <div className="hero-stats-row">
+          <span className="hero-stat-chip">Level {earnings?.highestLevel || 0}</span>
+          <span className="hero-stat-chip">{earnings?.receiptCount || earnings?.count || 0} Receipts</span>
           <span className="hero-stat-chip">Amoy Network</span>
         </div>
       </header>
@@ -212,7 +241,7 @@ const AccountPage = () => {
         <div className="account-main-grid__right">
           
           {/* 5. CUMULATIVE EARNINGS */}
-          <section className="account-surface earnings-highlight">
+          {/* <section className="account-surface earnings-highlight">
             <div className="section-title-group">
               <FaShieldAlt />
               <h2>System Earnings</h2>
@@ -224,18 +253,144 @@ const AccountPage = () => {
             <button className="nav-action-btn" onClick={() => navigate('/activation')}>
               Inspect Orbits YOu earned From <FaArrowRight />
             </button>
-          </section>
+          </section> */}
 
+          <section className="account-surface earnings-highlight">
+            <div className="section-title-group">
+              <FaShieldAlt />
+              <h2>Financial Truth</h2>
+            </div>
+
+            <div className="earnings-hero">
+              <span className="hero-label">Total Generated</span>
+              <h2 className="hero-value">${getMoney(totalGenerated)}</h2>
+              <p className="earnings-truth-note">
+                Full value generated for this account before wallet/escrow split.
+              </p>
+            </div>
+
+            <div className="financial-truth-grid">
+              <div className="truth-tile inner-surface">
+                <span>Wallet Credited</span>
+                <strong className="truth-value wallet">${getMoney(walletCredited)}</strong>
+                <small>Liquid USDT paid directly to wallet.</small>
+              </div>
+
+              <div className="truth-tile inner-surface">
+                <span>Escrow / Auto-upgrade Used</span>
+                <strong className="truth-value escrow">${getMoney(escrowUsed)}</strong>
+                <small>Lifetime amount routed into upgrade escrow.</small>
+              </div>
+
+              <div className="truth-tile inner-surface">
+                <span>Currently Locked</span>
+                <strong className="truth-value locked">${getMoney(currentEscrowLocked)}</strong>
+                <small>Still locked toward the next activation.</small>
+              </div>
+
+              <div className="truth-tile inner-surface">
+                <span>Remaining to Next Upgrade</span>
+                <strong className="truth-value remaining">${getMoney(remainingToNextUpgrade)}</strong>
+                <small>
+                  {highestActiveLock?.nextLevel
+                    ? `Needed for Level ${highestActiveLock.nextLevel}.`
+                    : 'No pending auto-upgrade requirement.'}
+                </small>
+              </div>
+            </div>
+
+            {highestActiveLock && Number(highestActiveLock.upgradeRequired || 0) > 0 && (
+              <div className="auto-upgrade-progress inner-surface">
+                <div className="auto-upgrade-progress__top">
+                  <span>Auto-upgrade Progress</span>
+                  <strong>
+                    ${getMoney(highestActiveLock.currentLocked)} / ${getMoney(highestActiveLock.upgradeRequired)}
+                  </strong>
+                </div>
+
+                <div className="progress-track">
+                  <div
+                    className="progress-fill"
+                    style={{
+                      width: `${Math.min(
+                        100,
+                        (Number(highestActiveLock.currentLocked || 0) /
+                          Number(highestActiveLock.upgradeRequired || 1)) *
+                          100
+                      )}%`,
+                    }}
+                  />
+                </div>
+
+                <p>
+                  {Number(highestActiveLock.remainingToNextUpgrade || 0) <= 0
+                    ? 'Ready for the next auto-upgrade when protocol conditions are met.'
+                    : `$${getMoney(highestActiveLock.remainingToNextUpgrade)} remaining for Level ${highestActiveLock.nextLevel}.`}
+                </p>
+              </div>
+            )}
+
+            <button className="nav-action-btn" onClick={() => navigate('/orbits')}>
+              Inspect Orbit Earnings <FaArrowRight />
+            </button>
+          </section>
           {/* 6. WALLET SNAPSHOT */}
           <section className="account-surface wallet-snapshot">
             <div className="section-title-group">
               <FaWallet />
               <h2>Wallet Snapshot</h2>
             </div>
-            <div className="snapshot-list">
+            {/* <div className="snapshot-list">
               <div className="snapshot-row"><span>POL Balance</span> <strong>{Number(polBalance).toFixed(4)}</strong></div>
               <div className="snapshot-row"><span>Program USDT</span> <strong>{formatDisplay(summary?.earnings?.totalLiquid)}</strong></div>
+            </div> */}
+            <div className="snapshot-list">
+              <div className="snapshot-row">
+                <span>POL Balance</span>
+                <strong>{Number(polBalance).toFixed(4)}</strong>
+              </div>
+              <div className="snapshot-row">
+                <span>Wallet Credited USDT</span>
+                <strong>{getMoney(walletCredited)}</strong>
+              </div>
+              <div className="snapshot-row">
+                <span>Currently Locked USDT</span>
+                <strong>{getMoney(currentEscrowLocked)}</strong>
+              </div>
+              <div className="snapshot-row">
+                <span>Total Generated USDT</span>
+                <strong>{getMoney(totalGenerated)}</strong>
+              </div>
             </div>
+          </section>
+          <section className="account-surface level-financial-breakdown">
+              <div className="section-title-group">
+                <FaExternalLinkAlt />
+                <h2>Level Breakdown</h2>
+              </div>
+
+              {financialByLevel.length > 0 ? (
+                <div className="level-finance-list">
+                  {financialByLevel.map((item) => (
+                    <div className="level-finance-row inner-surface" key={item.level}>
+                      <div>
+                        <strong>Level {item.level}</strong>
+                        <span>{item.orbitType} • {item.receiptCount} receipts</span>
+                      </div>
+
+                      <div className="level-finance-values">
+                        <span>Generated: ${getMoney(item.generated)}</span>
+                        <span>Wallet: ${getMoney(item.liquid)}</span>
+                        <span>Escrow: ${getMoney(item.escrowUsed)}</span>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              ) : (
+                <p className="empty-finance-note">
+                  No indexed earnings yet for this account.
+                </p>
+              )}
           </section>
         </div>
       </div>

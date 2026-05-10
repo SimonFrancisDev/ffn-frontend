@@ -3112,3 +3112,1476 @@
     transition-duration: 0.001ms !important;
   }
 }
+
+
+
+
+
+
+
+
+/* =========================================================
+   FFN FOCUSED ORBIT COCKPIT
+   New isolated class names. Does not touch planet/modal logic.
+========================================================= */
+
+.orbits-page.orbits-page--focused,
+.orbits-page:has(.ffn-orbit-focus) {
+  position: relative;
+}
+
+.ffn-orbit-focus__header {
+  position: relative;
+  z-index: 5;
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto auto;
+  gap: clamp(12px, 2vw, 20px);
+  align-items: center;
+  padding: clamp(16px, 2vw, 22px);
+  border-radius: 28px;
+  background:
+    radial-gradient(circle at 12% 0%, rgba(29, 233, 182, 0.14), transparent 36%),
+    radial-gradient(circle at 88% 8%, rgba(77, 163, 255, 0.14), transparent 38%),
+    rgba(5, 12, 28, 0.92);
+  border: 1px solid rgba(148, 163, 184, 0.18);
+  box-shadow: 0 22px 60px rgba(0, 0, 0, 0.24);
+}
+
+.ffn-orbit-focus__title {
+  min-width: 0;
+}
+
+.ffn-orbit-focus__title span {
+  display: inline-flex;
+  width: fit-content;
+  margin-bottom: 8px;
+  padding: 6px 10px;
+  border-radius: 999px;
+  color: #07111f;
+  background: linear-gradient(135deg, var(--glow-teal), var(--glow-blue));
+  font-size: 11px;
+  font-weight: 950;
+  letter-spacing: 0.09em;
+  text-transform: uppercase;
+}
+
+.ffn-orbit-focus__title h1 {
+  margin: 0;
+  color: var(--text-primary);
+  font-size: clamp(1.45rem, 3vw, 2.45rem);
+  line-height: 1.04;
+  letter-spacing: -0.04em;
+}
+
+.ffn-orbit-focus__title p {
+  max-width: 780px;
+  margin: 8px 0 0;
+  color: var(--text-secondary);
+  font-size: 14px;
+  line-height: 1.65;
+}
+
+.ffn-orbit-focus__status {
+  min-width: 250px;
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 10px;
+}
+
+.ffn-orbit-focus__status > div {
+  min-width: 0;
+  padding: 11px 12px;
+  border-radius: 16px;
+  background: rgba(255, 255, 255, 0.075);
+  border: 1px solid rgba(148, 163, 184, 0.14);
+}
+
+.ffn-orbit-focus__status span {
+  display: block;
+  margin-bottom: 4px;
+  color: var(--text-muted);
+  font-size: 10px;
+  font-weight: 850;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.ffn-orbit-focus__status strong {
+  display: block;
+  color: var(--text-primary);
+  font-size: 12px;
+  font-weight: 950;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.ffn-orbit-focus__open,
+.ffn-orbit-cockpit-toggle,
+.ffn-orbit-cockpit__close,
+.ffn-orbit-cockpit__tabs button,
+.ffn-orbit-cockpit__action,
+.ffn-orbit-cockpit__chip {
+  border: 0;
+  cursor: pointer;
+  font-family: inherit;
+}
+
+.ffn-orbit-focus__open {
+  min-height: 48px;
+  padding: 0 18px;
+  border-radius: 16px;
+  color: #07111f;
+  background: linear-gradient(135deg, var(--glow-teal), var(--glow-blue));
+  font-size: 13px;
+  font-weight: 950;
+  box-shadow: 0 16px 34px rgba(77, 163, 255, 0.2);
+}
+
+.ffn-orbit-focus {
+  grid-template-columns: minmax(0, 1fr) !important;
+  margin-top: 0;
+}
+
+.ffn-orbit-focus .orbits-main-grid__left {
+  width: 100%;
+  max-width: min(100%, 1180px);
+  margin-inline: auto;
+}
+
+.ffn-orbit-focus .galaxy-container {
+  margin-top: 0;
+  border-radius: clamp(22px, 2.5vw, 36px);
+}
+
+.ffn-orbit-cockpit-toggle {
+  position: fixed;
+  right: clamp(14px, 2vw, 26px);
+  bottom: clamp(16px, 2vw, 28px);
+  z-index: 12000;
+  min-height: 56px;
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+  padding: 0 16px 0 18px;
+  border-radius: 999px;
+  color: #07111f;
+  background: linear-gradient(135deg, var(--glow-teal), var(--glow-blue));
+  box-shadow:
+    0 18px 46px rgba(77, 163, 255, 0.28),
+    inset 0 1px 0 rgba(255, 255, 255, 0.26);
+  font-size: 13px;
+  font-weight: 950;
+}
+
+.ffn-orbit-cockpit-toggle strong {
+  min-width: 38px;
+  height: 34px;
+  display: grid;
+  place-items: center;
+  padding: 0 9px;
+  border-radius: 999px;
+  color: #eaffff;
+  background: rgba(3, 8, 20, 0.82);
+  font-size: 12px;
+}
+
+.ffn-orbit-cockpit-backdrop {
+  position: fixed;
+  inset: 0;
+  z-index: 11980;
+  border: 0;
+  background: rgba(2, 6, 23, 0.48);
+}
+
+.ffn-orbit-cockpit {
+  position: fixed;
+  top: clamp(82px, 10vh, 118px);
+  right: clamp(12px, 2vw, 28px);
+  bottom: clamp(86px, 9vh, 108px);
+  z-index: 12010;
+  width: min(430px, calc(100vw - 24px));
+  display: flex;
+  flex-direction: column;
+  border-radius: 30px;
+  background:
+    radial-gradient(circle at 12% 0%, rgba(29, 233, 182, 0.16), transparent 34%),
+    radial-gradient(circle at 90% 12%, rgba(77, 163, 255, 0.16), transparent 36%),
+    rgba(5, 12, 28, 0.96);
+  border: 1px solid rgba(148, 163, 184, 0.2);
+  box-shadow:
+    0 28px 80px rgba(0, 0, 0, 0.42),
+    inset 0 1px 0 rgba(255, 255, 255, 0.08);
+  overflow: hidden;
+  transform: translateX(calc(100% + 48px));
+  opacity: 0;
+  pointer-events: none;
+  transition:
+    transform 240ms ease,
+    opacity 220ms ease;
+}
+
+.ffn-orbit-cockpit.is-open {
+  transform: translateX(0);
+  opacity: 1;
+  pointer-events: auto;
+}
+
+.ffn-orbit-cockpit__top {
+  flex: 0 0 auto;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 14px;
+  padding: 18px 18px 14px;
+  border-bottom: 1px solid rgba(148, 163, 184, 0.16);
+}
+
+.ffn-orbit-cockpit__top span {
+  display: block;
+  margin-bottom: 4px;
+  color: var(--glow-teal);
+  font-size: 11px;
+  font-weight: 950;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+}
+
+.ffn-orbit-cockpit__top strong {
+  color: var(--text-primary);
+  font-size: 17px;
+  line-height: 1.2;
+}
+
+.ffn-orbit-cockpit__close {
+  width: 42px;
+  height: 42px;
+  flex: 0 0 auto;
+  display: grid;
+  place-items: center;
+  border-radius: 16px;
+  color: var(--text-primary);
+  background: rgba(255, 255, 255, 0.09);
+  border: 1px solid rgba(148, 163, 184, 0.16);
+  font-size: 28px;
+  line-height: 1;
+}
+
+.ffn-orbit-cockpit__tabs {
+  flex: 0 0 auto;
+  display: flex;
+  gap: 8px;
+  padding: 12px 14px;
+  overflow-x: auto;
+  border-bottom: 1px solid rgba(148, 163, 184, 0.12);
+}
+
+.ffn-orbit-cockpit__tabs button {
+  flex: 0 0 auto;
+  min-height: 36px;
+  padding: 0 12px;
+  border-radius: 999px;
+  color: var(--text-secondary);
+  background: rgba(255, 255, 255, 0.075);
+  border: 1px solid rgba(148, 163, 184, 0.12);
+  font-size: 12px;
+  font-weight: 850;
+}
+
+.ffn-orbit-cockpit__tabs button.is-active {
+  color: #07111f;
+  background: linear-gradient(135deg, var(--glow-teal), var(--glow-blue));
+  border-color: transparent;
+}
+
+.ffn-orbit-cockpit__body {
+  flex: 1 1 auto;
+  min-height: 0;
+  overflow-y: auto;
+  padding: 16px;
+  scrollbar-width: thin;
+  scrollbar-color: rgba(94, 234, 212, 0.7) rgba(148, 163, 184, 0.12);
+}
+
+.ffn-orbit-cockpit__body::-webkit-scrollbar {
+  width: 7px;
+}
+
+.ffn-orbit-cockpit__body::-webkit-scrollbar-track {
+  background: rgba(148, 163, 184, 0.12);
+  border-radius: 999px;
+}
+
+.ffn-orbit-cockpit__body::-webkit-scrollbar-thumb {
+  background: linear-gradient(180deg, var(--glow-teal), var(--glow-blue));
+  border-radius: 999px;
+}
+
+.ffn-orbit-cockpit__section {
+  display: grid;
+  gap: 14px;
+}
+
+.ffn-orbit-cockpit__metric-grid,
+.ffn-orbit-cockpit__split {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 10px;
+}
+
+.ffn-orbit-cockpit__metric-grid > div,
+.ffn-orbit-cockpit__split > div,
+.ffn-orbit-cockpit__status-row,
+.ffn-orbit-cockpit__list-item,
+.ffn-orbit-cockpit__note,
+.ffn-orbit-cockpit__empty,
+.ffn-orbit-cockpit__guide p {
+  padding: 12px;
+  border-radius: 16px;
+  background: rgba(255, 255, 255, 0.075);
+  border: 1px solid rgba(148, 163, 184, 0.12);
+}
+
+.ffn-orbit-cockpit__metric-grid span,
+.ffn-orbit-cockpit__split span,
+.ffn-orbit-cockpit__status-row span {
+  display: block;
+  margin-bottom: 5px;
+  color: var(--text-muted);
+  font-size: 10px;
+  font-weight: 850;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.ffn-orbit-cockpit__metric-grid strong,
+.ffn-orbit-cockpit__split strong,
+.ffn-orbit-cockpit__status-row strong {
+  color: var(--text-primary);
+  font-size: 14px;
+  font-weight: 950;
+}
+
+.ffn-orbit-cockpit__note,
+.ffn-orbit-cockpit__empty,
+.ffn-orbit-cockpit__guide p {
+  color: var(--text-secondary);
+  font-size: 13px;
+  line-height: 1.6;
+}
+
+.ffn-orbit-cockpit__action {
+  min-height: 46px;
+  border-radius: 16px;
+  color: var(--text-primary);
+  background: rgba(255, 255, 255, 0.085);
+  border: 1px solid rgba(148, 163, 184, 0.14);
+  font-size: 13px;
+  font-weight: 900;
+}
+
+.ffn-orbit-cockpit__action.is-primary {
+  color: #07111f;
+  background: linear-gradient(135deg, var(--glow-teal), var(--glow-blue));
+  border-color: transparent;
+}
+
+.ffn-orbit-cockpit__cycle-grid {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.ffn-orbit-cockpit__chip {
+  min-height: 36px;
+  padding: 0 12px;
+  border-radius: 999px;
+  color: var(--text-secondary);
+  background: rgba(255, 255, 255, 0.075);
+  border: 1px solid rgba(148, 163, 184, 0.14);
+  font-size: 12px;
+  font-weight: 850;
+}
+
+.ffn-orbit-cockpit__chip.is-active {
+  color: #07111f;
+  background: linear-gradient(135deg, var(--glow-teal), var(--glow-blue));
+  border-color: transparent;
+}
+
+.ffn-orbit-cockpit__list {
+  display: grid;
+  gap: 10px;
+}
+
+.ffn-orbit-cockpit__list-item {
+  display: flex;
+  justify-content: space-between;
+  gap: 12px;
+  color: var(--text-secondary);
+  font-size: 12px;
+}
+
+.ffn-orbit-cockpit__list-item strong {
+  color: var(--text-primary);
+  font-weight: 900;
+}
+
+.ffn-orbit-cockpit__list-item span {
+  text-align: right;
+}
+
+/* Solid but transparent theme-aware panels */
+[data-theme='light'] .ffn-orbit-focus__header,
+[data-theme='light'] .ffn-orbit-cockpit {
+  background:
+    radial-gradient(circle at 12% 0%, rgba(20, 184, 166, 0.12), transparent 34%),
+    radial-gradient(circle at 90% 12%, rgba(37, 99, 235, 0.1), transparent 36%),
+    rgba(255, 255, 255, 0.96);
+  border-color: rgba(120, 144, 176, 0.24);
+  box-shadow: 0 22px 60px rgba(15, 23, 42, 0.14);
+}
+
+[data-theme='light'] .ffn-orbit-cockpit-backdrop {
+  background: rgba(15, 23, 42, 0.24);
+}
+
+[data-theme='light'] .ffn-orbit-focus__status > div,
+[data-theme='light'] .ffn-orbit-cockpit__close,
+[data-theme='light'] .ffn-orbit-cockpit__tabs button,
+[data-theme='light'] .ffn-orbit-cockpit__metric-grid > div,
+[data-theme='light'] .ffn-orbit-cockpit__split > div,
+[data-theme='light'] .ffn-orbit-cockpit__status-row,
+[data-theme='light'] .ffn-orbit-cockpit__list-item,
+[data-theme='light'] .ffn-orbit-cockpit__note,
+[data-theme='light'] .ffn-orbit-cockpit__empty,
+[data-theme='light'] .ffn-orbit-cockpit__guide p,
+[data-theme='light'] .ffn-orbit-cockpit__action,
+[data-theme='light'] .ffn-orbit-cockpit__chip {
+  background: rgba(248, 251, 255, 0.86);
+  border-color: rgba(120, 144, 176, 0.18);
+}
+
+/* Keep position modal solid and readable */
+.modal-overlay {
+  background: rgba(3, 8, 20, 0.76) !important;
+}
+
+.position-modal {
+  background:
+    radial-gradient(circle at 12% 0%, rgba(29, 233, 182, 0.08), transparent 34%),
+    rgba(5, 12, 28, 0.98) !important;
+  border: 1px solid rgba(148, 163, 184, 0.18) !important;
+  box-shadow: 0 28px 80px rgba(0, 0, 0, 0.44) !important;
+}
+
+[data-theme='light'] .position-modal {
+  background:
+    radial-gradient(circle at 12% 0%, rgba(20, 184, 166, 0.08), transparent 34%),
+    rgba(255, 255, 255, 0.98) !important;
+  border-color: rgba(120, 144, 176, 0.22) !important;
+  box-shadow: 0 28px 70px rgba(15, 23, 42, 0.18) !important;
+}
+
+@media (max-width: 960px) {
+  .ffn-orbit-focus__header {
+    grid-template-columns: 1fr;
+  }
+
+  .ffn-orbit-focus__status {
+    min-width: 0;
+  }
+
+  .ffn-orbit-focus__open {
+    width: 100%;
+  }
+}
+
+@media (max-width: 767px) {
+  .ffn-orbit-focus__header {
+    padding: 15px;
+    border-radius: 22px;
+  }
+
+  .ffn-orbit-focus__status,
+  .ffn-orbit-cockpit__metric-grid,
+  .ffn-orbit-cockpit__split {
+    grid-template-columns: 1fr;
+  }
+
+  .ffn-orbit-cockpit-toggle {
+    left: 14px;
+    right: 14px;
+    bottom: 14px;
+    width: auto;
+    justify-content: center;
+  }
+
+  .ffn-orbit-cockpit {
+    top: auto;
+    left: 10px;
+    right: 10px;
+    bottom: 82px;
+    width: auto;
+    max-height: min(72vh, 620px);
+    border-radius: 26px;
+    transform: translateY(calc(100% + 100px));
+  }
+
+  .ffn-orbit-cockpit.is-open {
+    transform: translateY(0);
+  }
+
+  .ffn-orbit-cockpit__tabs {
+    padding: 10px 12px;
+  }
+
+  .ffn-orbit-cockpit__body {
+    padding: 14px;
+  }
+
+  .ffn-orbit-cockpit__list-item {
+    flex-direction: column;
+  }
+
+  .ffn-orbit-cockpit__list-item span {
+    text-align: left;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .ffn-orbit-cockpit,
+  .ffn-orbit-cockpit-toggle {
+    transition: none !important;
+  }
+}
+
+
+
+
+
+
+
+
+
+
+
+
+
+/* =========================================================
+   FFN ORBIT COMMAND LAYOUT — FINAL FOCUSED MODE POLISH
+   Orbit screen + cockpit side-by-side on laptop, bottom drawer on mobile.
+========================================================= */
+
+.ffn-orbit-command-layout {
+  position: relative;
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  gap: clamp(16px, 2vw, 24px);
+  align-items: start;
+}
+
+.orbits-page--focused .ffn-orbit-focus {
+  grid-template-columns: 1fr !important;
+  margin-top: 0;
+}
+
+.orbits-page--focused .ffn-orbit-focus .orbits-main-grid__left {
+  min-width: 0;
+}
+
+.orbits-page--focused .orbit-content {
+  position: relative;
+}
+
+.orbits-page--focused .orbit-content::before {
+  content: '';
+  position: absolute;
+  inset: -1px;
+  z-index: -1;
+  border-radius: 34px;
+  background:
+    radial-gradient(circle at 12% 0%, rgba(29, 233, 182, 0.08), transparent 34%),
+    radial-gradient(circle at 88% 10%, rgba(77, 163, 255, 0.08), transparent 38%);
+  pointer-events: none;
+}
+
+.orbits-page--focused .orbit-summary-strip {
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  margin-bottom: 14px;
+}
+
+.orbits-page--focused .orbit-summary-item {
+  min-height: 76px;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+}
+
+.orbits-page--focused .galaxy-container {
+  max-width: 100%;
+  margin-inline: auto;
+  margin-top: 0;
+  border-radius: clamp(24px, 2.5vw, 36px);
+}
+
+/* Desktop command layout: cockpit sits beside orbit */
+@media (min-width: 1120px) {
+  .orbits-page--focused .ffn-orbit-command-layout.is-cockpit-open {
+    grid-template-columns: minmax(0, 1fr) minmax(340px, 400px);
+  }
+
+  .orbits-page--focused .ffn-orbit-command-layout.is-cockpit-open .galaxy-container {
+    max-width: min(100%, 760px);
+  }
+
+  .orbits-page--focused .ffn-orbit-cockpit {
+    position: sticky;
+    top: 96px;
+    right: auto;
+    bottom: auto;
+    width: 100%;
+    height: calc(100vh - 126px);
+    max-height: 780px;
+    transform: none;
+    opacity: 1;
+    pointer-events: auto;
+    border-radius: 44px;
+  }
+
+  .orbits-page--focused .ffn-orbit-cockpit:not(.is-open) {
+    display: none;
+  }
+
+  .orbits-page--focused .ffn-orbit-cockpit-backdrop {
+    display: none;
+  }
+
+  .orbits-page--focused .ffn-orbit-cockpit-toggle {
+    right: clamp(18px, 2vw, 28px);
+    bottom: clamp(18px, 2vw, 28px);
+  }
+}
+
+/* Floating capsule feel */
+.orbits-page--focused .ffn-orbit-cockpit {
+  background:
+    radial-gradient(circle at 18% 0%, rgba(29, 233, 182, 0.18), transparent 34%),
+    radial-gradient(circle at 84% 18%, rgba(77, 163, 255, 0.16), transparent 38%),
+    rgba(5, 12, 28, 0.97);
+  border: 1px solid rgba(148, 163, 184, 0.24);
+  box-shadow:
+    0 28px 80px rgba(0, 0, 0, 0.44),
+    0 0 0 1px rgba(255, 255, 255, 0.045) inset,
+    inset 0 1px 0 rgba(255, 255, 255, 0.08);
+}
+
+.orbits-page--focused .ffn-orbit-cockpit__top {
+  padding: 20px 20px 14px;
+}
+
+.orbits-page--focused .ffn-orbit-cockpit__tabs {
+  padding-inline: 16px;
+}
+
+.orbits-page--focused .ffn-orbit-cockpit__body {
+  padding: 16px;
+}
+
+.ffn-orbit-cockpit__switch-list {
+  display: grid;
+  gap: 10px;
+}
+
+.ffn-orbit-cockpit__switch {
+  min-height: 48px;
+  width: 100%;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 12px;
+  padding: 10px 12px;
+  border-radius: 16px;
+  color: var(--text-secondary);
+  background: rgba(255, 255, 255, 0.075);
+  border: 1px solid rgba(148, 163, 184, 0.14);
+  cursor: pointer;
+  font-family: inherit;
+  font-weight: 850;
+}
+
+.ffn-orbit-cockpit__switch span {
+  text-align: left;
+}
+
+.ffn-orbit-cockpit__switch strong {
+  flex: 0 0 auto;
+  min-width: 42px;
+  padding: 5px 9px;
+  border-radius: 999px;
+  text-align: center;
+  color: var(--text-muted);
+  background: rgba(148, 163, 184, 0.12);
+  font-size: 11px;
+}
+
+.ffn-orbit-cockpit__switch.is-on {
+  color: var(--text-primary);
+  border-color: rgba(29, 233, 182, 0.24);
+  background:
+    linear-gradient(135deg, rgba(29, 233, 182, 0.1), rgba(77, 163, 255, 0.06)),
+    rgba(255, 255, 255, 0.075);
+}
+
+.ffn-orbit-cockpit__switch.is-on strong {
+  color: #07111f;
+  background: linear-gradient(135deg, var(--glow-teal), var(--glow-blue));
+}
+
+/* Focus header improvement */
+.orbits-page--focused .ffn-orbit-focus__status {
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  min-width: min(100%, 420px);
+}
+
+/* Light theme cockpit and command surfaces */
+[data-theme='light'] .orbits-page--focused .ffn-orbit-cockpit {
+  background:
+    radial-gradient(circle at 18% 0%, rgba(20, 184, 166, 0.13), transparent 34%),
+    radial-gradient(circle at 84% 18%, rgba(37, 99, 235, 0.1), transparent 38%),
+    rgba(255, 255, 255, 0.97);
+  border-color: rgba(120, 144, 176, 0.26);
+  box-shadow:
+    0 24px 68px rgba(15, 23, 42, 0.16),
+    inset 0 1px 0 rgba(255, 255, 255, 0.82);
+}
+
+[data-theme='light'] .ffn-orbit-cockpit__switch {
+  background: rgba(248, 251, 255, 0.88);
+  border-color: rgba(120, 144, 176, 0.18);
+}
+
+[data-theme='light'] .ffn-orbit-cockpit__switch.is-on {
+  background:
+    linear-gradient(135deg, rgba(20, 184, 166, 0.1), rgba(37, 99, 235, 0.06)),
+    rgba(255, 255, 255, 0.92);
+  border-color: rgba(20, 184, 166, 0.28);
+}
+
+/* Mobile: cockpit remains a clean bottom drawer */
+@media (max-width: 1119px) {
+  .orbits-page--focused .ffn-orbit-command-layout {
+    grid-template-columns: 1fr;
+  }
+
+  .orbits-page--focused .ffn-orbit-cockpit {
+    position: fixed;
+  }
+}
+
+@media (max-width: 767px) {
+  .orbits-page--focused .ffn-orbit-focus__status {
+    grid-template-columns: 1fr;
+    min-width: 0;
+  }
+
+  .orbits-page--focused .orbit-summary-strip {
+    grid-template-columns: 1fr;
+  }
+
+  .orbits-page--focused .orbit-summary-item {
+    min-height: 64px;
+  }
+
+  .orbits-page--focused .galaxy-container {
+    aspect-ratio: 1 / 1.08;
+  }
+
+  .ffn-orbit-cockpit__switch {
+    min-height: 46px;
+  }
+}
+
+
+
+
+
+/* =========================================================
+   FOCUSED ORBIT CLEAN DEFAULT
+   Keep current cockpit modal behavior. Only clean page content.
+========================================================= */
+
+.orbits-page--focused .ffn-orbit-focus {
+  grid-template-columns: 1fr !important;
+  margin-top: 0 !important;
+}
+
+.orbits-page--focused .ffn-orbit-focus .orbits-main-grid__left {
+  width: 100%;
+  max-width: min(100%, 1080px);
+  margin-inline: auto;
+}
+
+.orbits-page--focused .galaxy-container {
+  width: 100%;
+  max-width: min(100%, 880px);
+  margin: 0 auto;
+  border-radius: clamp(24px, 3vw, 38px);
+  box-shadow:
+    0 28px 90px rgba(0, 0, 0, 0.34),
+    inset 0 1px 0 rgba(255, 255, 255, 0.08);
+}
+
+.orbits-page--focused .orbit-summary-strip {
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  margin-bottom: 14px;
+}
+
+.orbits-page--focused .orbit-summary-item {
+  min-height: 76px;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+}
+
+.ffn-orbit-cockpit__switch-list {
+  display: grid;
+  gap: 10px;
+}
+
+.ffn-orbit-cockpit__switch {
+  min-height: 48px;
+  width: 100%;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 12px;
+  padding: 10px 12px;
+  border-radius: 16px;
+  color: var(--text-secondary);
+  background: rgba(255, 255, 255, 0.075);
+  border: 1px solid rgba(148, 163, 184, 0.14);
+  cursor: pointer;
+  font-family: inherit;
+  font-weight: 850;
+}
+
+.ffn-orbit-cockpit__switch span {
+  text-align: left;
+}
+
+.ffn-orbit-cockpit__switch strong {
+  flex: 0 0 auto;
+  min-width: 42px;
+  padding: 5px 9px;
+  border-radius: 999px;
+  text-align: center;
+  color: var(--text-muted);
+  background: rgba(148, 163, 184, 0.12);
+  font-size: 11px;
+}
+
+.ffn-orbit-cockpit__switch.is-on {
+  color: var(--text-primary);
+  border-color: rgba(29, 233, 182, 0.24);
+  background:
+    linear-gradient(135deg, rgba(29, 233, 182, 0.1), rgba(77, 163, 255, 0.06)),
+    rgba(255, 255, 255, 0.075);
+}
+
+.ffn-orbit-cockpit__switch.is-on strong {
+  color: #07111f;
+  background: linear-gradient(135deg, var(--glow-teal), var(--glow-blue));
+}
+
+[data-theme='light'] .ffn-orbit-cockpit__switch {
+  background: rgba(248, 251, 255, 0.88);
+  border-color: rgba(120, 144, 176, 0.18);
+}
+
+[data-theme='light'] .ffn-orbit-cockpit__switch.is-on {
+  background:
+    linear-gradient(135deg, rgba(20, 184, 166, 0.1), rgba(37, 99, 235, 0.06)),
+    rgba(255, 255, 255, 0.92);
+  border-color: rgba(20, 184, 166, 0.28);
+}
+
+@media (max-width: 767px) {
+  .orbits-page--focused .orbit-summary-strip {
+    grid-template-columns: 1fr;
+  }
+
+  .orbits-page--focused .orbit-summary-item {
+    min-height: 64px;
+  }
+
+  .orbits-page--focused .galaxy-container {
+    max-width: 100%;
+    aspect-ratio: 1 / 1.08;
+  }
+}
+
+
+
+
+
+
+
+/* =========================================================
+   FINAL ORBITS POLISH
+   Mobile duplicate button, footer gap, spacious orbit, modal close.
+========================================================= */
+
+/* 1. Hide top cockpit button on mobile; keep bottom cockpit toggle */
+@media (max-width: 767px) {
+  .ffn-orbit-focus__open--desktop {
+    display: none !important;
+  }
+}
+
+/* 2. Remove excessive footer gap when cockpit is closed */
+.orbits-page--focused {
+  padding-bottom: clamp(28px, 5vw, 56px) !important;
+}
+
+.orbits-page--focused:has(.ffn-orbit-cockpit.is-open) {
+  padding-bottom: clamp(96px, 14vh, 150px) !important;
+}
+
+@supports not selector(:has(*)) {
+  .orbits-page--focused {
+    padding-bottom: clamp(44px, 7vw, 76px) !important;
+  }
+}
+
+/* 3. Let mobile page remain scrollable while cockpit is open */
+@media (max-width: 767px) {
+  .orbits-page--focused .ffn-orbit-cockpit-backdrop {
+    display: none !important;
+    pointer-events: none !important;
+  }
+
+  .orbits-page--focused .ffn-orbit-cockpit {
+    pointer-events: auto !important;
+  }
+
+  html,
+  body {
+    overflow-y: auto;
+  }
+}
+
+/* 4. Make mobile orbit more spacious, especially P39 */
+@media (max-width: 767px) {
+  .orbits-page--focused .ffn-orbit-focus .orbits-main-grid__left {
+    max-width: 100%;
+    width: 100%;
+  }
+
+  .orbits-page--focused .orbit-content {
+    overflow-x: auto;
+    overflow-y: visible;
+    padding-bottom: 8px;
+    -webkit-overflow-scrolling: touch;
+    overscroll-behavior-x: contain;
+  }
+
+  .orbits-page--focused .galaxy-container {
+    width: max(100%, 620px) !important;
+    max-width: none !important;
+    min-width: 620px !important;
+    aspect-ratio: 1 / 1 !important;
+    margin: 0 auto !important;
+  }
+
+  .orbits-page--focused .galaxy-inner {
+    min-width: 620px;
+  }
+
+  .orbits-page--focused .planet-node {
+    width: 34px !important;
+    height: 34px !important;
+  }
+
+  .orbits-page--focused .planet-node.p39 {
+    width: 30px !important;
+    height: 30px !important;
+  }
+
+  .orbits-page--focused .orbit-core {
+    width: 66px !important;
+    height: 66px !important;
+  }
+
+  .orbits-page--focused .node-number {
+    font-size: 10px !important;
+  }
+}
+
+@media (max-width: 420px) {
+  .orbits-page--focused .galaxy-container {
+    width: 680px !important;
+    min-width: 680px !important;
+  }
+
+  .orbits-page--focused .galaxy-inner {
+    min-width: 680px;
+  }
+}
+
+/* 5. Keep the cockpit usable, but do not block page scroll on mobile */
+@media (max-width: 767px) {
+  .orbits-page--focused .ffn-orbit-cockpit {
+    max-height: min(68vh, 560px) !important;
+    overflow: hidden !important;
+  }
+
+  .orbits-page--focused .ffn-orbit-cockpit__body {
+    overflow-y: auto !important;
+    -webkit-overflow-scrolling: touch;
+  }
+}
+
+/* 6. Fix position modal: not fullscreen on laptop, visible close button */
+.modal-overlay {
+  padding: clamp(14px, 3vw, 28px) !important;
+  align-items: center !important;
+  justify-content: center !important;
+}
+
+.position-modal {
+  position: relative !important;
+  width: min(92vw, 640px) !important;
+  max-width: 640px !important;
+  max-height: min(86vh, 760px) !important;
+  overflow-y: auto !important;
+  border-radius: 28px !important;
+  padding: clamp(20px, 2.4vw, 28px) !important;
+}
+
+.modal-close {
+  position: sticky !important;
+  top: 0 !important;
+  margin-left: auto !important;
+  width: 42px !important;
+  height: 42px !important;
+  display: grid !important;
+  place-items: center !important;
+  z-index: 5 !important;
+  border-radius: 14px !important;
+  border: 1px solid rgba(148, 163, 184, 0.2) !important;
+  background: rgba(15, 23, 42, 0.92) !important;
+  color: #ffffff !important;
+  font-size: 28px !important;
+  line-height: 1 !important;
+  box-shadow: 0 12px 28px rgba(0, 0, 0, 0.28) !important;
+}
+
+.modal-close:hover {
+  transform: translateY(-1px);
+  filter: brightness(1.08);
+}
+
+[data-theme='light'] .modal-close {
+  background: rgba(255, 255, 255, 0.96) !important;
+  color: #0f172a !important;
+  border-color: rgba(120, 144, 176, 0.28) !important;
+  box-shadow: 0 12px 26px rgba(15, 23, 42, 0.12) !important;
+}
+
+@media (min-width: 768px) {
+  .position-modal {
+    min-height: auto !important;
+    height: auto !important;
+  }
+}
+
+@media (max-width: 767px) {
+  .modal-overlay {
+    align-items: flex-end !important;
+    padding: 10px !important;
+  }
+
+  .position-modal {
+    width: 100% !important;
+    max-width: 100% !important;
+    max-height: 82vh !important;
+    border-radius: 26px 26px 18px 18px !important;
+  }
+}
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+/* =========================================================
+   FINAL ORBITS POLISH — keep current cockpit style
+   Fixes: mobile gap, manual page style, orbit size, modal size,
+   mobile P39 readability, and financial cards.
+========================================================= */
+
+/* Page rhythm: reduce footer gap */
+.orbits-page {
+  padding-bottom: clamp(24px, 4vw, 48px) !important;
+}
+
+.orbits-page--focused {
+  padding-bottom: clamp(32px, 5vw, 64px) !important;
+}
+
+.orbits-page--focused:has(.ffn-orbit-cockpit.is-open) {
+  padding-bottom: clamp(44px, 7vw, 84px) !important;
+}
+
+/* Manual /orbits page should feel intentional, not dumped */
+.orbits-page:not(.orbits-page--focused) {
+  max-width: 1440px !important;
+  margin-inline: auto !important;
+}
+
+.orbits-page:not(.orbits-page--focused) .address-input-bar,
+.orbits-page:not(.orbits-page--focused) .view-toggle-bar,
+.orbits-page:not(.orbits-page--focused) .level-tabs {
+  max-width: 1180px;
+  width: 100%;
+  margin-inline: auto;
+}
+
+.orbits-page:not(.orbits-page--focused) .level-tabs {
+  display: grid !important;
+  grid-template-columns: repeat(10, minmax(74px, 1fr)) !important;
+  gap: 10px !important;
+  padding: 12px !important;
+  border-radius: 28px !important;
+}
+
+.orbits-page:not(.orbits-page--focused) .level-tab {
+  min-height: 46px !important;
+  border-radius: 16px !important;
+  font-weight: 850 !important;
+}
+
+.orbits-page:not(.orbits-page--focused) .orbits-main-grid {
+  max-width: 1180px;
+  margin-inline: auto;
+  width: 100%;
+  grid-template-columns: minmax(0, 1fr) minmax(280px, 340px);
+  align-items: start;
+}
+
+@media (max-width: 1023px) {
+  .orbits-page:not(.orbits-page--focused) .level-tabs {
+    grid-template-columns: repeat(5, minmax(70px, 1fr)) !important;
+  }
+
+  .orbits-page:not(.orbits-page--focused) .orbits-main-grid {
+    grid-template-columns: 1fr;
+  }
+}
+
+@media (max-width: 640px) {
+  .orbits-page:not(.orbits-page--focused) .level-tabs {
+    grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
+  }
+}
+
+/* Focused laptop orbit: reduce massive visual */
+@media (min-width: 900px) {
+  .orbits-page--focused .galaxy-container {
+    width: min(100%, 700px) !important;
+    max-width: 700px !important;
+    margin: 0 auto !important;
+  }
+
+  .orbits-page--focused .ffn-orbit-focus .orbits-main-grid__left {
+    max-width: 820px !important;
+    margin-inline: auto !important;
+  }
+}
+
+@media (min-width: 1280px) {
+  .orbits-page--focused .galaxy-container {
+    width: min(100%, 680px) !important;
+    max-width: 680px !important;
+  }
+}
+
+/* Mobile: remove duplicate top cockpit button */
+@media (max-width: 767px) {
+  .ffn-orbit-focus__open--desktop {
+    display: none !important;
+  }
+}
+
+/* Mobile: allow page scroll while cockpit is open */
+@media (max-width: 767px) {
+  .orbits-page--focused .ffn-orbit-cockpit-backdrop {
+    display: none !important;
+    pointer-events: none !important;
+  }
+
+  html,
+  body {
+    overflow-y: auto !important;
+  }
+
+  .orbits-page--focused .ffn-orbit-cockpit {
+    pointer-events: auto !important;
+    max-height: min(68vh, 560px) !important;
+  }
+
+  .orbits-page--focused .ffn-orbit-cockpit__body {
+    overflow-y: auto !important;
+    -webkit-overflow-scrolling: touch;
+  }
+}
+
+/* Mobile orbit: spacious but not oversized */
+@media (max-width: 767px) {
+  .orbits-page--focused .orbit-content {
+    overflow-x: auto !important;
+    overflow-y: visible !important;
+    padding-bottom: 8px !important;
+    -webkit-overflow-scrolling: touch;
+    overscroll-behavior-x: contain;
+  }
+
+  .orbits-page--focused .galaxy-container {
+    width: 540px !important;
+    min-width: 540px !important;
+    max-width: none !important;
+    aspect-ratio: 1 / 1 !important;
+    margin: 0 auto !important;
+  }
+
+  .orbits-page--focused .galaxy-inner {
+    min-width: 540px !important;
+  }
+
+  .orbits-page--focused .planet-node {
+    width: 38px !important;
+    height: 38px !important;
+  }
+
+  .orbits-page--focused .planet-node.p39 {
+    width: 34px !important;
+    height: 34px !important;
+  }
+
+  .orbits-page--focused .orbit-core {
+    width: 78px !important;
+    height: 78px !important;
+  }
+
+  .orbits-page--focused .node-number {
+    font-size: 11px !important;
+  }
+
+  .orbits-page--focused .core-value {
+    font-size: 12px !important;
+  }
+
+  .orbits-page--focused .planet-earn-badge {
+    display: none !important;
+  }
+}
+
+@media (max-width: 420px) {
+  .orbits-page--focused .galaxy-container {
+    width: 560px !important;
+    min-width: 560px !important;
+  }
+
+  .orbits-page--focused .galaxy-inner {
+    min-width: 560px !important;
+  }
+}
+
+/* Financial cards in cockpit */
+.ffn-orbit-cockpit__money-card {
+  position: relative;
+  overflow: hidden;
+}
+
+.ffn-orbit-cockpit__money-card::after {
+  content: '';
+  position: absolute;
+  inset: auto 10px 10px 10px;
+  height: 3px;
+  border-radius: 999px;
+  opacity: 0.9;
+}
+
+.ffn-orbit-cockpit__money-card.is-total::after {
+  background: linear-gradient(90deg, var(--glow-blue), var(--glow-teal));
+}
+
+.ffn-orbit-cockpit__money-card.is-escrow::after {
+  background: linear-gradient(90deg, #f59e0b, #f97316);
+}
+
+.ffn-orbit-cockpit__money-card.is-wallet::after {
+  background: linear-gradient(90deg, #22c55e, var(--glow-teal));
+}
+
+.ffn-orbit-cockpit__money-card.is-source::after {
+  background: linear-gradient(90deg, #8b5cf6, var(--glow-blue));
+}
+
+/* Modal: fixed desktop width, never full-page length */
+.modal-overlay {
+  padding: clamp(16px, 3vw, 30px) !important;
+  align-items: center !important;
+  justify-content: center !important;
+  background: rgba(3, 8, 20, 0.78) !important;
+}
+
+.position-modal {
+  position: relative !important;
+  width: min(92vw, 620px) !important;
+  max-width: 620px !important;
+  min-width: 0 !important;
+  height: auto !important;
+  max-height: min(82vh, 720px) !important;
+  overflow-y: auto !important;
+  border-radius: 28px !important;
+  padding: 24px !important;
+}
+
+.position-modal h3 {
+  padding-right: 52px !important;
+}
+
+.modal-close {
+  position: sticky !important;
+  top: 0 !important;
+  margin-left: auto !important;
+  width: 42px !important;
+  height: 42px !important;
+  display: grid !important;
+  place-items: center !important;
+  z-index: 10 !important;
+  border-radius: 14px !important;
+  border: 1px solid rgba(148, 163, 184, 0.22) !important;
+  background: rgba(15, 23, 42, 0.94) !important;
+  color: #ffffff !important;
+  font-size: 28px !important;
+  line-height: 1 !important;
+  box-shadow: 0 14px 32px rgba(0, 0, 0, 0.3) !important;
+}
+
+[data-theme='light'] .modal-close {
+  background: rgba(255, 255, 255, 0.96) !important;
+  color: #0f172a !important;
+  border-color: rgba(120, 144, 176, 0.3) !important;
+}
+
+@media (max-width: 767px) {
+  .modal-overlay {
+    align-items: flex-end !important;
+    padding: 10px !important;
+  }
+
+  .position-modal {
+    width: 100% !important;
+    max-width: 100% !important;
+    max-height: 84vh !important;
+    border-radius: 26px 26px 18px 18px !important;
+    padding: 20px 16px !important;
+  }
+}
+
+
+
+
+
+
+
+/* =========================================================
+   ORBIT CURRENT ESCROW / AUTO-UPGRADE LOCK CARD
+========================================================= */
+
+.ffn-orbit-cockpit__upgrade-card {
+  padding: 14px;
+  border-radius: 18px;
+  background:
+    linear-gradient(135deg, rgba(245, 158, 11, 0.11), rgba(77, 163, 255, 0.06)),
+    rgba(255, 255, 255, 0.075);
+  border: 1px solid rgba(245, 158, 11, 0.22);
+}
+
+.ffn-orbit-cockpit__upgrade-top {
+  display: flex;
+  justify-content: space-between;
+  gap: 14px;
+  align-items: flex-start;
+}
+
+.ffn-orbit-cockpit__upgrade-top span {
+  display: block;
+  color: var(--text-muted);
+  font-size: 10px;
+  font-weight: 850;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  margin-bottom: 5px;
+}
+
+.ffn-orbit-cockpit__upgrade-top strong {
+  color: var(--text-primary);
+}
+
+.ffn-orbit-cockpit__upgrade-amount {
+  font-family: 'JetBrains Mono', monospace;
+  color: #f59e0b !important;
+  text-align: right;
+  white-space: nowrap;
+}
+
+.ffn-orbit-cockpit__upgrade-track {
+  height: 10px;
+  margin-top: 14px;
+  border-radius: 999px;
+  overflow: hidden;
+  background: rgba(148, 163, 184, 0.16);
+}
+
+.ffn-orbit-cockpit__upgrade-fill {
+  height: 100%;
+  border-radius: inherit;
+  background: linear-gradient(90deg, #f59e0b, var(--glow-teal));
+  box-shadow: 0 0 18px rgba(245, 158, 11, 0.25);
+}
+
+.ffn-orbit-cockpit__upgrade-card p {
+  margin: 10px 0 0;
+  color: var(--text-secondary);
+  font-size: 12px;
+  line-height: 1.55;
+}
+
+[data-theme='light'] .ffn-orbit-cockpit__upgrade-card {
+  background:
+    linear-gradient(135deg, rgba(245, 158, 11, 0.1), rgba(37, 99, 235, 0.06)),
+    rgba(255, 255, 255, 0.9);
+  border-color: rgba(180, 83, 9, 0.2);
+}
+
+@media (max-width: 520px) {
+  .ffn-orbit-cockpit__upgrade-top {
+    flex-direction: column;
+  }
+
+  .ffn-orbit-cockpit__upgrade-amount {
+    text-align: left;
+  }
+}

@@ -131,24 +131,24 @@ const pageToPathMap = {
 }
 
 const ROUTE_ACCESS_REASON = {
-  dashboard: 'Dashboard opens from your wallet/account space.',
-  orbits: 'Orbit details open from a selected level or activation flow.',
-  myTokens: 'My Tokens opens from your account or dashboard space.',
-  account: 'Account opens from the account menu.',
-  preferences: 'Preferences opens from the account menu.',
-  security: 'Security opens from the account menu.',
-  activity: 'Activity opens from notifications, account, or dashboard.',
-  admin: 'Admin opens only from the verified admin menu.',
+  // dashboard: 'Dashboard opens from your wallet/account space.',
+  // // orbits: 'Orbit details open from a selected level or activation flow.',
+  // myTokens: 'My Tokens opens from your account or dashboard space.',
+  // account: 'Account opens from the account menu.',
+  // preferences: 'Preferences opens from the account menu.',
+  // security: 'Security opens from the account menu.',
+  // activity: 'Activity opens from notifications, account, or dashboard.',
+  // admin: 'Admin opens only from the verified admin menu.',
 }
 
 const FLOW_ONLY_PAGES = new Set([
-  'dashboard',
-  'orbits',
-  'myTokens',
-  'account',
-  'preferences',
-  'security',
-  'activity',
+  // 'dashboard',
+  // 'orbits',
+  // 'myTokens',
+  // 'account',
+  // 'preferences',
+  // 'security',
+  // 'activity',
 ])
 
 const isInternalNavigationState = (state) => {

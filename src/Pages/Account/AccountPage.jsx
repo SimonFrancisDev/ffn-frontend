@@ -258,7 +258,7 @@ const remainingToNextUpgrade = earnings.remainingToNextUpgrade || 0
           <section className="account-surface earnings-highlight">
             <div className="section-title-group">
               <FaShieldAlt />
-              <h2>Financial Truth</h2>
+              <h2>Financial Position</h2>
             </div>
 
             <div className="earnings-hero">

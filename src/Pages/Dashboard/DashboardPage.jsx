@@ -856,12 +856,12 @@ const DashboardPage = () => {
             <span className="dashboard-stats__icon">
               <Coins size={20} className="text-glow-teal" />
             </span>
-            <span className="dashboard-stats__label soft-text">Liquid Paid</span>
+            <span className="dashboard-stats__label soft-text">Total PAYOUT FROM F-FREEDOM</span>
             <strong className="dashboard-stats__value dashboard-stats__value--animated">
               <AnimatedNumber value={communityStats.totalLiquid} prefix="$" decimals={2} />
             </strong>
             <small className="dashboard-stats__note soft-text">
-              Indexed liquid distributions.
+              Indexed total distributions.
             </small>
           </div>
 
@@ -874,12 +874,12 @@ const DashboardPage = () => {
             <span className="dashboard-stats__icon">
               <PiggyBank size={20} className="text-glow-purple" />
             </span>
-            <span className="dashboard-stats__label soft-text">Indexed Escrow</span>
+            <span className="dashboard-stats__label soft-text">ESCROW FOR AUTO UPGRADE</span>
             <strong className="dashboard-stats__value dashboard-stats__value--animated">
               <AnimatedNumber value={communityStats.totalEscrow} prefix="$" decimals={2} />
             </strong>
             <small className="dashboard-stats__note soft-text">
-              Indexed escrow allocation from the read layer.
+              Indexed escrow allocation
             </small>
           </div>
 
@@ -897,7 +897,7 @@ const DashboardPage = () => {
               <AnimatedNumber value={indexedTreasury.nftPool} prefix="$" decimals={2} />
             </strong>
             <small className="dashboard-stats__note soft-text">
-              Indexed NFT pool allocation from the F-Freedom read layer.
+              Indexed NFT pool allocation from the F-Freedom.
             </small>
           </div>
 
@@ -910,12 +910,12 @@ const DashboardPage = () => {
             <span className="dashboard-stats__icon">
               <Activity size={20} className="text-glow-purple" />
             </span>
-            <span className="dashboard-stats__label soft-text">Operations</span>
+            <span className="dashboard-stats__label soft-text">Ecosystem Dev & Operations</span>
             <strong className="dashboard-stats__value dashboard-stats__value--animated">
               <AnimatedNumber value={indexedTreasury.operations} prefix="$" decimals={2} />
             </strong>
             <small className="dashboard-stats__note soft-text">
-              Indexed operations allocation from the F-Freedom read layer.
+              Indexed operations allocation from the F-Freedom.
             </small>
           </div>
         </div>

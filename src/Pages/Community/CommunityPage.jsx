@@ -1122,7 +1122,7 @@ const CommunityPage = ({ onNavigate }) => {
                 <div className="community-metrics__icon">
                   <FaCoins size={18} />
                 </div>
-                <span className="community-metrics__label muted-text">Indexed F-Freedom Volume</span>
+                <span className="community-metrics__label muted-text">Indexed F-Freedom Payouts</span>
                 <strong className="community-metrics__value gradient-text-blue">
                   ${formatToken(communityGlobalStats.totalGross || communityGlobalStats.totalLiquid || 0)}
                 </strong>

@@ -2015,7 +2015,7 @@ const handleProgramModalImagePointerUp = (event) => {
 
             <div className="live-layer-metrics">
               <div className="metric-card">
-                <h3>Total F-Freedom Participants</h3>
+                <h3>Current F-Freedom Participants</h3>
                 <span className="metric-number">
                   {statsLoading ? '...' : formatNumber(publicStats.totalParticipants)}
                 </span>

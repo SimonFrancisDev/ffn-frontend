@@ -1512,18 +1512,48 @@ const OrbitsPage = () => {
 
 
 
-  const activeUpgradeRequired = levelConfig[activeLevelNumber]?.upgradeReq || 0
-  const activeNextLevel = levelConfig[activeLevelNumber]?.nextLevel || null
-  const activeCurrentLocked = Number(userLocks[activeLevelNumber] || 0)
-  const activeRemainingToUpgrade =
-    activeLevelNumber >= 10 || !activeUpgradeRequired
-      ? 0
-      : Math.max(0, activeUpgradeRequired - activeCurrentLocked)
+  // const activeUpgradeRequired = levelConfig[activeLevelNumber]?.upgradeReq || 0
+  // const activeNextLevel = levelConfig[activeLevelNumber]?.nextLevel || null
+  // const activeCurrentLocked = Number(userLocks[activeLevelNumber] || 0)
+  // const activeRemainingToUpgrade =
+  //   activeLevelNumber >= 10 || !activeUpgradeRequired
+  //     ? 0
+  //     : Math.max(0, activeUpgradeRequired - activeCurrentLocked)
 
-  const activeUpgradeProgress =
-    activeUpgradeRequired > 0
-      ? Math.min(100, (activeCurrentLocked / activeUpgradeRequired) * 100)
-      : 100
+  // const activeUpgradeProgress =
+  //   activeUpgradeRequired > 0
+  //     ? Math.min(100, (activeCurrentLocked / activeUpgradeRequired) * 100)
+  //     : 100
+
+
+    const activeUpgradeRequired = levelConfig[activeLevelNumber]?.upgradeReq || 0
+    const activeNextLevel = levelConfig[activeLevelNumber]?.nextLevel || null
+    const activeCurrentLocked = Number(userLocks[activeLevelNumber] || 0)
+
+    const isActiveLevelActivated = viewedLevelsReady
+      ? !!viewedLevels[activeLevelNumber]
+      : true
+
+    const isNextLevelActivated =
+      activeNextLevel && viewedLevelsReady
+        ? !!viewedLevels[activeNextLevel]
+        : false
+
+    const shouldShowCurrentUpgradeLock =
+      isActiveLevelActivated &&
+      activeLevelNumber < 10 &&
+      !!activeNextLevel &&
+      !isNextLevelActivated &&
+      activeUpgradeRequired > 0
+
+    const activeRemainingToUpgrade = shouldShowCurrentUpgradeLock
+      ? Math.max(0, activeUpgradeRequired - activeCurrentLocked)
+      : 0
+
+    const activeUpgradeProgress =
+    shouldShowCurrentUpgradeLock && activeUpgradeRequired > 0
+    ? Math.min(100, (activeCurrentLocked / activeUpgradeRequired) * 100)
+    : 0
 
   const focusedMemberLabel =
     routedDisplayId ||
@@ -1624,7 +1654,7 @@ const OrbitsPage = () => {
             This focused view is showing only the level requested from Activation Center.
           </div>
 
-          {activeLevelNumber < 10 && (
+          {shouldShowCurrentUpgradeLock && (
             <div className="ffn-orbit-cockpit__upgrade-card">
               <div className="ffn-orbit-cockpit__upgrade-top">
                 <div>
@@ -1651,6 +1681,12 @@ const OrbitsPage = () => {
                   ? 'Ready for auto-upgrade when protocol conditions are met.'
                   : `${formatUsdtDisplay(activeRemainingToUpgrade)} USDT remaining before Level ${activeNextLevel}.`}
               </p>
+            </div>
+          )}
+
+          {isActiveLevelActivated && activeNextLevel && isNextLevelActivated && (
+            <div className="ffn-orbit-cockpit__note">
+              Level {activeNextLevel} is already activated, so there is no pending auto-upgrade lock for Level {activeLevelNumber}.
             </div>
           )}
         </div>

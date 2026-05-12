@@ -322,17 +322,30 @@ export async function fetchActivationReceiptsApi(activationId, options = {}) {
 
 
 
+// export async function fetchUserSummaryApi(address, options = {}) {
+//   return apiGet(
+//     `/api/orbits/${encodeURIComponent(address)}/summary`,
+//     null,
+//     {
+//       ttlMs: 15000,
+//       forceRefresh: !!options.forceRefresh,
+//     }
+//   );
+// }
+
+
+
 export async function fetchUserSummaryApi(address, options = {}) {
   return apiGet(
     `/api/orbits/${encodeURIComponent(address)}/summary`,
     null,
     {
       ttlMs: 15000,
+      timeoutMs: DEFAULT_REQUEST_TIMEOUT_MS,
       forceRefresh: !!options.forceRefresh,
     }
-  );
+  )
 }
-
 
 
 export async function fetchAddressActivationEventsApi(address, options = {}) {

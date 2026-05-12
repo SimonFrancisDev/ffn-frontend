@@ -594,3 +594,14 @@
     align-items: flex-start;
   }
 }
+
+
+
+.truth-value.used {
+  color: #fb7185;
+  text-shadow: 0 0 18px rgba(251, 113, 133, 0.22);
+}
+
+[data-theme="light"] .truth-value.used {
+  color: #be123c;
+}

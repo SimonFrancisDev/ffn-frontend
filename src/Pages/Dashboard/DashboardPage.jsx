@@ -520,32 +520,61 @@ const DashboardPage = () => {
     }))
   }, [])
 
+  // const fetchCommunitySummary = useCallback(async () => {
+  //   const payload = await fetchJson('/api/community/summary')
+  //   const data = payload?.data || {}
+  //   const publicData = data.public || {}
+
+  //   setPublicSummary({
+  //     totalParticipants: Number(publicData.totalParticipants || 0),
+  //     visibleCoreBalanceUsdt: publicData.visibleCoreBalanceUsdt || '0.00',
+  //     readLayerStatus: publicData.readLayerStatus || 'Syncing',
+  //   })
+
+  //   setTotalParticipants(Number(publicData.totalParticipants || 0))
+
+  //   const metrics = buildGlobalMetrics(publicData, communityStats)
+
+  //   setCommunityStats((prev) => ({
+  //     ...prev,
+  //     ...metrics,
+  //   }))
+
+  //   setIndexedTreasury((prev) => ({
+  //     ...prev,
+  //     ...metrics,
+  //     visibleCoreBalanceUsdt: publicData.visibleCoreBalanceUsdt ?? '0.00',
+  //   }))
+  // }, [communityStats])
+
+
+
   const fetchCommunitySummary = useCallback(async () => {
-    const payload = await fetchJson('/api/community/summary')
-    const data = payload?.data || {}
-    const publicData = data.public || {}
+  const payload = await fetchJson('/api/community/summary')
+  const data = payload?.data || {}
+  const publicData = data.public || {}
 
-    setPublicSummary({
-      totalParticipants: Number(publicData.totalParticipants || 0),
-      visibleCoreBalanceUsdt: publicData.visibleCoreBalanceUsdt || '0.00',
-      readLayerStatus: publicData.readLayerStatus || 'Syncing',
-    })
+  setPublicSummary({
+    totalParticipants: Number(publicData.totalParticipants || 0),
+    visibleCoreBalanceUsdt: publicData.visibleCoreBalanceUsdt || '0.00',
+    readLayerStatus: publicData.readLayerStatus || 'Syncing',
+  })
 
-    setTotalParticipants(Number(publicData.totalParticipants || 0))
+  setTotalParticipants(Number(publicData.totalParticipants || 0))
 
-    const metrics = buildGlobalMetrics(publicData, communityStats)
+  const metrics = buildGlobalMetrics(publicData, {})
 
-    setCommunityStats((prev) => ({
-      ...prev,
-      ...metrics,
-    }))
+  setCommunityStats((prev) => ({
+    ...prev,
+    ...metrics,
+  }))
 
-    setIndexedTreasury((prev) => ({
-      ...prev,
-      ...metrics,
-      visibleCoreBalanceUsdt: publicData.visibleCoreBalanceUsdt ?? '0.00',
-    }))
-  }, [communityStats])
+  setIndexedTreasury((prev) => ({
+    ...prev,
+    ...metrics,
+    visibleCoreBalanceUsdt: publicData.visibleCoreBalanceUsdt ?? '0.00',
+  }))
+}, [])
 
   const fetchGrowthData = useCallback(async () => {
     const payload = await fetchJson('/api/community/growth?days=7')

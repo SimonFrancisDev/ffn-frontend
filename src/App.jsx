@@ -113,6 +113,14 @@ const routeMap = {
   '/admin': 'admin',
 }
 
+
+
+const resolveCurrentPage = (pathname) => {
+  if (pathname === '/' || pathname === '/home') return 'home'
+  if (pathname.startsWith('/ref/')) return 'activation'
+  return routeMap[pathname] || 'home'
+}
+
 const pageToPathMap = {
   home: '/home',
   about: '/about',
@@ -510,7 +518,8 @@ function App() {
   }, [])
 
   const resolvedNavItems = useMemo(() => {
-    const current = routeMap[location.pathname] || 'home'
+    // const current = routeMap[location.pathname] || 'home'
+    const current = resolveCurrentPage(location.pathname)
 
     return navItems.map((item) => ({
       ...item,
@@ -540,7 +549,8 @@ function App() {
       const navigationState = {
         ffnInternalNavigation: true,
         fromPath: location.pathname,
-        fromPage: routeMap[location.pathname] || 'home',
+        // fromPage: routeMap[location.pathname] || 'home',
+        fromPage: resolveCurrentPage(location.pathname),
         openedAt: Date.now(),
         ...options,
       }

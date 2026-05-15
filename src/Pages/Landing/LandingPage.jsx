@@ -192,7 +192,7 @@ const TIER_ICONS = {
 
 const ECOSYSTEM_IMAGE = {
   dark: '/images/landing/ecosystem-section-dark.png',
-  light: '/images/landing/image.png',
+  light: '/images/landing/ecosystem-section-light.png',
   mobileDark: '/images/landing/ecosystem-section-mobile-dark.png',
   mobileLight: '/images/landing/ecosystem-section-mobile-light.png',
 }
@@ -254,8 +254,8 @@ const HERO_SLIDES = [
     image: {
       dark: '/images/landing/hero-01-dark.png',
       light: '/images/landing/hero-01-light.png',
-        mobileDark: '/images/landing/cards/f-freedom-card-mobile-dark.png',
-        mobileLight: '/images/landing/cards/f-freedom-card-mobile-light.png',
+      mobileDark: '/images/landing/cards/f-freedom-card-mobile-dark.png',
+      mobileLight: '/images/landing/cards/f-freedom-card-mobile-light.png',
     },
   },
   {
@@ -294,26 +294,9 @@ const HERO_SLIDES = [
       mobileLight: '/images/landing/cards/nft-card-mobile-light.png',
     },
   },
-  {
-  id: 'hero-04-marketplace',
-  programId: 'fin-freedom-marketplace',
-  title: 'Fin Freedom Marketplace',
-  eyebrow: 'Utility Marketplace',
-  headline: 'Shop. Connect. Grow.',
-  description: 'A blockchain-powered marketplace for digital assets, services, and real ecosystem value exchange.',
-  highlights: ['Secure Transactions', 'Community Driven', 'Token Powered', 'Real Utility'],
-  ctaLabel: 'Preview Marketplace',
-  secondaryLabel: 'Explore Programs',
-  contentPosition: 'bottom-left',
-  image: {
-    dark: '/images/landing/hero-05-dark.png',
-    light: '/images/landing/hero-05-light.png',
-    mobileDark: '/images/landing/cards/marketplace-card-mobile-dark.png',
-    mobileLight: '/images/landing/cards/marketplace-card-mobile-light.png',
-  },
-},
+  
 {
-  id: 'hero-05-fin-freedom-coin',
+  id: 'hero-04-fin-freedom-coin',
   programId: 'fin-freedom-coin',
   title: 'Fin Freedom Coin',
   eyebrow: 'Ecosystem Asset',
@@ -330,6 +313,47 @@ const HERO_SLIDES = [
     mobileLight: '/images/landing/cards/coin-card-mobile-light.png',
   },
 },
+
+{
+  id: 'hero-05a-fgt',
+  title: 'FGT',
+  image: {
+    dark: '/images/landing/hero-05a-dark.png',
+    light: '/images/landing/hero-05a-light.png',
+    mobileDark: '/images/landing/hero-05a-mobile-dark.png',
+    mobileLight: '/images/landing/hero-05a-mobile-light.png',
+  },
+},
+{
+  id: 'hero-05b-fgtr',
+  title: 'FGTr',
+  image: {
+    dark: '/images/landing/hero-05b-dark.png',
+    light: '/images/landing/hero-05b-light.png',
+    mobileDark: '/images/landing/hero-05b-mobile-dark.png',
+    mobileLight: '/images/landing/hero-05b-mobile-light.png',
+  },
+},
+
+{
+  id: 'hero-05-marketplace',
+  programId: 'fin-freedom-marketplace',
+  title: 'Fin Freedom Marketplace',
+  eyebrow: 'Utility Marketplace',
+  headline: 'Shop. Connect. Grow.',
+  description: 'A blockchain-powered marketplace for digital assets, services, and real ecosystem value exchange.',
+  highlights: ['Secure Transactions', 'Community Driven', 'Token Powered', 'Real Utility'],
+  ctaLabel: 'Preview Marketplace',
+  secondaryLabel: 'Explore Programs',
+  contentPosition: 'bottom-left',
+  image: {
+    dark: '/images/landing/hero-05-dark.png',
+    light: '/images/landing/hero-05-light.png',
+    mobileDark: '/images/landing/cards/marketplace-card-mobile-dark.png',
+    mobileLight: '/images/landing/cards/marketplace-card-mobile-light.png',
+  },
+},
+
   {
     id: 'hero-06-institute',
     programId: 'fin-freedom-institute',
@@ -1730,7 +1754,7 @@ const handleProgramModalImagePointerUp = (event) => {
       </ModalPortal>
 
       <div className="landing-page">
-        <section className="landing-hero" data-aos="fade-up">
+        <section className="landing-hero">
           <div className="landing-hero__stage">
             <div className="landing-hero__slider" aria-label="Fin Freedom Network visual showcase">
               {HERO_SLIDES.map((slide, index) => (
@@ -1741,76 +1765,14 @@ const handleProgramModalImagePointerUp = (event) => {
                 >
                   <ThemeImage
                     image={slide.image}
-                    alt={slide.title}
+                    alt={slide.title || 'Fin Freedom Network hero visual'}
                     className="landing-hero__image"
                     priority={index === activeHeroSlide || index === 0}
                   />
-
-                  <div className={`landing-hero__content landing-hero__content--${slide.contentPosition}`}>
-                    {slide.contentPosition === 'bottom-center-simple' ? (
-                      <button
-                        type="button"
-                        className="landing-btn landing-btn--primary landing-hero__single-cta"
-                        onClick={() => handleHeroPrimary(slide)}
-                      >
-                        {slide.ctaLabel}
-                        <ArrowRight size={17} />
-                      </button>
-                    ) : (
-                      <div className="landing-hero__copy">
-                        <div className="landing-hero__eyebrow">
-                          <Sparkles size={16} />
-                          <span>{slide.eyebrow}</span>
-                        </div>
-
-                        <div className="landing-hero__program-name">{slide.title}</div>
-
-                        <h1 className="landing-hero__title">{slide.headline}</h1>
-
-                        <p className="landing-hero__description">{slide.description}</p>
-
-                        {slide.highlights?.length > 0 && (
-                          <div className="landing-hero__chips">
-                            {slide.highlights.map((item) => {
-                              const HighlightIcon = HIGHLIGHT_ICONS[item] || Sparkles
-
-                              return (
-                                <span key={item} className="landing-hero__chip">
-                                  <HighlightIcon className="landing-hero__chip-icon" />
-                                  {item}
-                                </span>
-                              )
-                            })}
-                          </div>
-                        )}
-
-                        <div className="landing-hero__actions">
-                          <button
-                            type="button"
-                            className="landing-btn landing-btn--primary"
-                            onClick={() => handleHeroPrimary(slide)}
-                          >
-                            {slide.ctaLabel}
-                            <ArrowRight size={17} />
-                          </button>
-
-                          {slide.secondaryLabel && (
-                            <button
-                              type="button"
-                              className="landing-btn landing-btn--ghost"
-                              onClick={() => handleHeroSecondary(slide)}
-                            >
-                              {slide.secondaryLabel}
-                            </button>
-                          )}
-                        </div>
-                      </div>
-                    )}
-                  </div>
                 </div>
               ))}
 
-              <div className="landing-hero__control-deck" aria-label="Hero slideshow controls">
+              <div className="landing-hero__control-deck" aria-label="Hero slider controls">
                 <button
                   type="button"
                   className="landing-hero__control-btn"
@@ -1822,27 +1784,12 @@ const handleProgramModalImagePointerUp = (event) => {
 
                 <button
                   type="button"
-                  className={`landing-hero__control-btn landing-hero__control-btn--pause ${
-                    isHeroPaused ? 'is-paused' : ''
-                  }`}
+                  className="landing-hero__control-btn landing-hero__control-btn--play"
                   onClick={() => setIsHeroPaused((current) => !current)}
-                  aria-label={isHeroPaused ? 'Resume hero slideshow' : 'Pause hero slideshow'}
+                  aria-label={isHeroPaused ? 'Play hero slideshow' : 'Pause hero slideshow'}
                 >
-                  {isHeroPaused ? <Play size={16} /> : <Pause size={16} />}
-                  <span>{isHeroPaused ? 'Play' : 'Pause'}</span>
+                  {isHeroPaused ? <Play size={18} /> : <Pause size={18} />}
                 </button>
-
-                <div className="landing-hero__dots" aria-label="Hero slides">
-                  {HERO_SLIDES.map((slide, index) => (
-                    <button
-                      key={slide.id}
-                      type="button"
-                      className={`landing-hero__dot ${index === activeHeroSlide ? 'is-active' : ''}`}
-                      onClick={() => goToHeroSlide(index)}
-                      aria-label={`Show ${slide.title}`}
-                    />
-                  ))}
-                </div>
 
                 <button
                   type="button"

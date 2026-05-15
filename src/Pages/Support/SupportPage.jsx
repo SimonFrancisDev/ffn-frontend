@@ -1,5 +1,4 @@
 import './SupportPage.css'
-import 'flag-icons/css/flag-icons.min.css'
 import { useEffect, useState, useCallback, useMemo, useRef } from 'react'
 import { useWallet } from '../../hooks/useWallet'
 import { useContracts } from '../../hooks/useContracts'
@@ -21,19 +20,55 @@ const SUPPORT_HERO_IMAGES = {
   mobileLight: '/images/support/support-mobile-light.png',
 }
 
+const SUPPORT_SLIDE_DOCS = [
+  {
+    id: 'ffn-overview',
+    title: 'Fin Freedom Network at a Glance',
+    eyebrow: 'Ecosystem Overview',
+    description: 'Get a clear overview of the full Fin Freedom Network ecosystem, structure, programs, token economy, marketplace, institute, and long-term vision.',
+    buttonLabel: 'Open FFN Overview',
+    icon: BookOpen,
+    src: '/docs/fin-freedom-overview.pdf',
+  },
+  {
+    id: 'f-freedom-program',
+    title: 'First & Current Program Overview',
+    eyebrow: 'F-Freedom Program',
+    description: 'Understand the first live program, registration flow, level structure, Triple-P Engine, payouts, token rewards, transparency, and sustainability.',
+    buttonLabel: 'Open F-Freedom Slides',
+    icon: Orbit,
+    src: '/docs/f-freedom-program.pdf',
+  },
+  {
+    id: 'mobile-registration-help',
+    title: 'Having Difficulty Registering on Mobile?',
+    eyebrow: 'Mobile Help Guide',
+    description: 'Follow the mobile guide for connecting wallet, opening the activation page, activating Level 1, confirming transactions, and fixing gas fee errors.',
+    buttonLabel: 'Open Mobile Guide',
+    icon: Wallet,
+    src: '/docs/mobile-registration-guide.pdf',
+  },
+]
 
-const COMMUNITY_LANGUAGES = [
-  { code: 'us', label: 'English', link: 'https://t.me/your_en_group' },
-  { code: 'it', label: 'Italian', link: 'https://t.me/your_it_group' },
-  { code: 'cn', label: 'Chinese', link: 'https://t.me/your_zh_group' },
-  { code: 'in', label: 'Hindi', link: 'https://t.me/your_hi_group' },
-  { code: 'ir', label: 'Persian', link: 'https://t.me/your_fa_group' },
-  { code: 'id', label: 'Indonesian', link: 'https://t.me/your_id_group' },
-  { code: 'kr', label: 'Korean', link: 'https://t.me/your_ko_group' },
-  { code: 'fr', label: 'French', link: 'https://t.me/your_fr_group' },
-  { code: 'vn', label: 'Vietnamese', link: 'https://t.me/your_vi_group' },
-  { code: 'ru', label: 'Russian', link: 'https://t.me/your_ru_group' },
-  { code: 'es', label: 'Spanish', link: 'https://t.me/your_es_group' },
+const TELEGRAM_COMMUNITY_LINKS = [
+  {
+    id: 'telegram-channel',
+    title: 'Telegram Channel',
+    label: 'Official updates',
+    description: 'Follow announcements, release notes, and important platform updates.',
+    href: 'https://t.me/Fin_Freedom_Network',
+    darkImage: '/images/support/telegram-channel-dark.png',
+    lightImage: '/images/support/telegram-channel-light.png',
+  },
+  {
+    id: 'telegram-group',
+    title: 'Telegram Group',
+    label: 'Community support',
+    description: 'Join the community group for conversations, help, and participant updates.',
+    href: 'https://t.me/FinFreedomNetwork',
+    darkImage: '/images/support/telegram-group-dark.png',
+    lightImage: '/images/support/telegram-group-light.png',
+  },
 ]
 
 const QUICK_HELP_GUIDES = {
@@ -87,6 +122,163 @@ const QUICK_HELP_GUIDES = {
   },
 }
 
+const REGISTRATION_LEVEL_ONE_GUIDE = {
+  title: 'How to Register and Activate Level 1',
+  brand: 'FIN FREEDOM NETWORK',
+  date: 'May 13, 2026',
+  intro:
+    'This guide is for participants who have already set up and funded their wallet with the required assets.',
+  summary:
+    'This article provides a step-by-step guide on how to register and activate Level 1 of the Fin Freedom Network program using both mobile and desktop devices. Key steps include connecting your wallet, accessing the activation page, activating Level 1, confirming the transaction, and adjusting gas fees if necessary. It also includes important reminders about security and ensuring sufficient funds.',
+  mobile: [
+    {
+      title: 'Connect Your Wallet',
+      steps: [
+        'Open the official Fin Freedom Network website on your mobile browser.',
+        'Tap the Account Icon at the top-right corner of the screen.',
+        'Select Connect and follow the prompt to connect your wallet.',
+      ],
+    },
+    {
+      title: 'Open the Activation Page',
+      steps: [
+        'After your wallet is connected, tap the Menu Icon at the top-right corner.',
+        'Go to Services.',
+        'Then tap Activation & Level Manager.',
+        'This will take you to the activation page.',
+      ],
+    },
+    {
+      title: 'Activate Level 1',
+      steps: [
+        'On the activation page, click Activate Level 1.',
+        'If required, enter or paste your referrer ID or wallet address.',
+        'Then click Register & Activate Level 1.',
+        'Your wallet will open and ask you to approve the transaction.',
+      ],
+    },
+    {
+      title: 'Confirm the Transaction',
+      steps: [
+        'When your wallet opens, review the transaction details carefully.',
+        'If everything is correct, tap Confirm to sign and submit the transaction.',
+        'Do not close the page while the transaction is processing.',
+      ],
+    },
+    {
+      title: 'If You See a Gas Limit or Network Fee Error',
+      steps: [
+        'If you see an error such as "Transaction failed: Gas limit error", open the transaction fee settings in your wallet.',
+        'Tap the small pen/edit icon beside Network Fee.',
+        'Select Advanced.',
+        'Increase the Base Fee and Priority Fee to around 30 or above, then retry the transaction.',
+      ],
+    },
+    {
+      title: 'Confirm Your Activation',
+      steps: [
+        'After the transaction is successful, return to the Activation & Level Manager page.',
+        'Refresh the page if necessary.',
+      ],
+    },
+  ],
+  desktop: [
+    {
+      title: 'Connect Your Wallet',
+      steps: [
+        'Open the official Fin Freedom Network website on your laptop or desktop browser.',
+        'Click the Account Icon at the top-right corner of the screen.',
+        'From the menu, select Connect and follow the steps to connect your wallet.',
+      ],
+    },
+    {
+      title: 'Open the Activation Page',
+      steps: [
+        'After your wallet is connected, go to the top menu and click Services.',
+        'From the dropdown menu, select F-Freedom Program.',
+        'Then click Activation & Level Manager.',
+      ],
+    },
+    {
+      title: 'Activate Level 1',
+      steps: [
+        'If required, paste your referrer ID or wallet address.',
+        'Your wallet panel will open for you to approve the transaction.',
+      ],
+    },
+    {
+      title: 'Confirm the Transaction',
+      steps: [
+        'When the wallet panel opens, review the transaction details.',
+        'If everything is correct, click Confirm to sign and submit the transaction.',
+        'Wait for the transaction to complete successfully.',
+      ],
+    },
+    {
+      title: 'If You See a Gas Limit or Network Fee Error',
+      steps: [
+        'If you encounter an error such as "Transaction failed: Gas limit error", click the small pen/edit icon beside Network Fee in your wallet.',
+        'Select Advanced.',
+        'Increase the Base Fee and Priority Fee to around 30 or above.',
+        'Then retry the transaction.',
+      ],
+    },
+    {
+      title: 'Confirm Your Activation',
+      steps: [
+        'Return to the Activation & Level Manager page.',
+        'Refresh the page if needed.',
+        'Your account should now show that Level 1 has been successfully activated.',
+      ],
+    },
+  ],
+  reminders: [
+    'Make sure your wallet is connected to the correct network.',
+    'Make sure you have enough funds for activation and transaction fees.',
+    'Only confirm transactions you understand.',
+    'Never share your Secret Recovery Phrase with anyone.',
+    'Fin Freedom Network will never ask for your Secret Recovery Phrase.',
+  ],
+}
+
+const FINFREEDOM_GLOSSARY = [
+  ['Blockchain', 'A decentralized and distributed ledger that records transactions in a transparent, immutable, and verifiable way. It allows smart contracts and automated systems to operate without centralized control, and all transactions can be publicly verified on-chain.'],
+  ['Smart Contract', 'A program stored on the blockchain that automatically executes predefined actions when specific conditions are met. Smart contracts manage registrations, placements, payouts, upgrades, and recycling without human intervention, and all operations are transparent and verifiable on-chain.'],
+  ['Wallet', 'A digital wallet used to interact with the blockchain. It works like a digital identity in the crypto world and allows users to access their positions, sign transactions, and interact with smart contracts. The wallet gives the user full control over their assets and positions. The responsibility for the funds and access to the wallet belongs entirely to the owner. If the private key or seed phrase is lost, the wallet and its contents cannot be recovered.'],
+  ['Transaction', 'An operation recorded on the blockchain, such as a level activation, payout, upgrade, recycle, or token generation.'],
+  ['On-Chain', 'Operations that occur directly on the blockchain and can be publicly verified by anyone.'],
+  ['Immutable', 'Data recorded on the blockchain that cannot be modified or deleted once confirmed.'],
+  ['Decentralized', 'A system that operates without a single central authority and is managed through distributed infrastructure and smart contracts.'],
+  ['Level', 'A participation stage in the F-Freedom Program with a fixed price and defined structure. Participants progress level by level.'],
+  ['Activation', 'The process of purchasing and opening a level in the system.'],
+  ['Orbit (P4, P12, P39)', 'Structure models that define position placement, payouts, recycling, and auto-upgrades within the F-Freedom Program.'],
+  ['Structure', 'The network positions connected to a participant within the orbit system.'],
+  ['Cycle', 'The process from entering a level, completing the structure, receiving payouts, and recycling into a new cycle.'],
+  ['Auto-Upgrade', 'Automatic activation of the next level using part of the earnings generated in the current level.'],
+  ['Recycle', 'When a level structure completes, the participant automatically repurchases the same level from their upline, receives a new empty level, and starts a new cycle.'],
+  ['System Charge', 'A percentage deducted from payouts and allocated to ecosystem pools, NFT pools, and system development.'],
+  ['NFT Pool', 'A pool funded by system charges and connected to NFT-related ecosystem benefits and distributions.'],
+  ['NFT (Non-Fungible Token)', 'A unique digital asset stored on the blockchain that may provide access to ecosystem benefits, rewards, or participation mechanisms.'],
+  ['FGT (Freedom Game Token)', 'A functional ecosystem token generated when activating new levels. FGT cannot be bought or sold and can only be earned through participation and progression in the F-Freedom Program. FGT is connected to NFT qualification and ecosystem participation.'],
+  ['FGTr (Freedom Game Token Recycle)', 'A functional ecosystem token generated when a level recycles. FGTr cannot be bought or sold and can only be earned through participation and recycling activity. FGTr is connected to long-term participation within the ecosystem.'],
+  ['Participation-Based System', 'A system where rewards are generated from activity, structure completion, and network participation rather than from investments or fixed returns.'],
+  ['DAO (Decentralized Autonomous Organization)', 'A governance system where decisions related to the ecosystem may be made through community voting using tokens.'],
+  ['Upgrade', 'Moving from one level to the next level in the system.'],
+  ['Ecosystem', 'The broader Fin Freedom Network that include multiple programs, tokens, NFTs, education platforms, governance systems, and future products developed by the community.'],
+  ['Referral', 'The participant who directly introduces a new participant into the system.'],
+  ['Upline', 'The participant positioned above another participant in the structure who receives positions or benefits from the activity of their downline.'],
+  ['Downline', 'The participants positioned below a participant in the structure.'],
+  ['Placement', 'The position assigned within an orbit structure when a new participant enters or when a recycle occurs.'],
+  ['Position', 'A place inside an orbit structure that can generate payouts when filled according to the system rules.'],
+  ['Payout', 'A distribution automatically executed by the smart contract when a position or structure condition is completed.'],
+  ['Pool', 'A fund collected through system charges and allocated for specific ecosystem purposes such as NFT pools or development.'],
+  ['Qualification', 'The conditions required to access certain benefits such as NFTs, pools, or ecosystem features.'],
+  ['Utility Token', 'A token that has a functional use inside a platform or ecosystem and is not designed for trading or speculation.'],
+  ['Self Custody', 'A system where users have full control over their wallet and assets without relying on a centralized entity.'],
+  ['Seed Phrase / Private Key', 'The cryptographic keys that give full access to a wallet. Whoever controls the private key controls the wallet and its assets.'],
+  ['dApp (Decentralized Application)', 'An application that runs on the blockchain and interacts with smart contracts instead of centralized servers.'],
+]
+
 // Updated resources - removed Documentation and Whitepaper
 const fallbackResources = [
   { id: 'privacy', label: 'Privacy Policy', href: '#', icon: 'lock', isModal: true },
@@ -112,6 +304,117 @@ function getResourceIcon(key = '') {
   if (key.includes('transparency') || key.includes('eye')) return Eye
   if (key.includes('term') || key.includes('scale')) return Scale
   return FileText
+}
+
+// Helper component for guide groups
+const SupportGuideGroup = ({ title, items }) => (
+  <div className="support-article-guide__group">
+    <h3>{title}</h3>
+
+    <div className="support-article-guide__steps">
+      {items.map((item, index) => (
+        <article className="support-article-guide__step" key={`${title}-${item.title}`}>
+          <span className="support-article-guide__step-number">{index + 1}</span>
+
+          <div>
+            <h4>{item.title}</h4>
+            <ul>
+              {item.steps.map((step) => (
+                <li key={step}>{step}</li>
+              ))}
+            </ul>
+          </div>
+        </article>
+      ))}
+    </div>
+  </div>
+)
+
+// Collapsible Support Section Component
+const CollapsibleSupportSection = ({
+  id,
+  title,
+  eyebrow,
+  description,
+  icon: Icon,
+  openSection,
+  setOpenSection,
+  children,
+}) => {
+  const isOpen = openSection === id
+
+  return (
+    <section className={`support-collapsible glass-panel ${isOpen ? 'is-open' : ''}`}>
+      <button
+        type="button"
+        className="support-collapsible__trigger"
+        onClick={() => setOpenSection(isOpen ? '' : id)}
+      >
+        <span className="support-collapsible__icon">
+          <Icon size={20} />
+        </span>
+
+        <span className="support-collapsible__copy">
+          <small>{eyebrow}</small>
+          <strong>{title}</strong>
+          <em>{description}</em>
+        </span>
+
+        <span className="support-collapsible__action">
+          {isOpen ? 'Hide' : 'Open'}
+          <ChevronRight size={16} />
+        </span>
+      </button>
+
+      {isOpen && (
+        <div className="support-collapsible__body">
+          {children}
+        </div>
+      )}
+    </section>
+  )
+}
+
+// Slide Doc Modal Component
+const SlideDocModal = ({ doc, onClose }) => {
+  useEffect(() => {
+    if (!doc) return undefined
+    document.body.style.overflow = 'hidden'
+    return () => {
+      document.body.style.overflow = ''
+    }
+  }, [doc])
+
+  if (!doc) return null
+
+  return (
+    <div className="slide-doc-modal-overlay" onClick={onClose}>
+      <div className="slide-doc-modal glass-panel" onClick={(e) => e.stopPropagation()}>
+        <div className="slide-doc-modal__header">
+          <div>
+            <span>{doc.eyebrow}</span>
+            <h3>{doc.title}</h3>
+          </div>
+
+          <div className="slide-doc-modal__actions">
+            <a href={doc.src} target="_blank" rel="noopener noreferrer">
+              Open full screen <ExternalLink size={15} />
+            </a>
+
+            <button type="button" onClick={onClose}>
+              <X size={18} />
+            </button>
+          </div>
+        </div>
+
+        <iframe
+          className="slide-doc-modal__frame"
+          src={`${doc.src}#toolbar=1&navpanes=0&view=FitH`}
+          title={doc.title}
+        />
+      </div>
+    </div>
+  )
 }
 
 // Animated Counter Component
@@ -289,6 +592,12 @@ const SupportPage = ({ onNavigate }) => {
   const [showTransparencyModal, setShowTransparencyModal] = useState(false)
   const [showTermsModal, setShowTermsModal] = useState(false)
   const [showTutorialModal, setShowTutorialModal] = useState(false)
+  const [showRegistrationGuideModal, setShowRegistrationGuideModal] = useState(false)
+  const [showGlossaryModal, setShowGlossaryModal] = useState(false)
+  const [activeSlideDoc, setActiveSlideDoc] = useState(null)
+
+  // Collapsible section state
+  const [openSupportSection, setOpenSupportSection] = useState('quick-help')
 
   const categoryIcons = {
     'Getting Started': Rocket,
@@ -581,7 +890,14 @@ const SupportPage = ({ onNavigate }) => {
   }
 
   const scrollToContact = () => {
-    document.getElementById('contact-section')?.scrollIntoView({ behavior: 'smooth' })
+    setOpenSupportSection('contact')
+
+    setTimeout(() => {
+      document.getElementById('contact-section')?.scrollIntoView({
+        behavior: 'smooth',
+        block: 'start',
+      })
+    }, 80)
   }
 
   // Early return AFTER all hooks
@@ -688,6 +1004,68 @@ const SupportPage = ({ onNavigate }) => {
 
       <ComingSoonModal isOpen={showTutorialModal} onClose={() => setShowTutorialModal(false)} title="Tutorial Videos" />
 
+      {/* Registration Guide Modal */}
+      <LegalModal
+        isOpen={showRegistrationGuideModal}
+        onClose={() => setShowRegistrationGuideModal(false)}
+        title={REGISTRATION_LEVEL_ONE_GUIDE.title}
+      >
+        <div className="support-doc-modal-content">
+          <div className="support-doc-modal-content__meta">
+            <span>{REGISTRATION_LEVEL_ONE_GUIDE.brand}</span>
+            <span>{REGISTRATION_LEVEL_ONE_GUIDE.date}</span>
+          </div>
+
+          <div className="support-doc-modal-content__summary">
+            <strong>Cocoon AI Summary</strong>
+            <p>{REGISTRATION_LEVEL_ONE_GUIDE.summary}</p>
+          </div>
+
+          <div className="support-doc-modal-content__intro">
+            <h4>HOW TO REGISTER AND ACTIVATE LEVEL 1 IN THE F-FREEDOM PROGRAM</h4>
+            <p>{REGISTRATION_LEVEL_ONE_GUIDE.intro}</p>
+          </div>
+
+          <SupportGuideGroup title="Mobile Guide" items={REGISTRATION_LEVEL_ONE_GUIDE.mobile} />
+
+          <SupportGuideGroup title="Laptop/Desktop Guide" items={REGISTRATION_LEVEL_ONE_GUIDE.desktop} />
+
+          <div className="support-doc-modal-content__reminders">
+            <h4>Important Reminders</h4>
+            <ul>
+              {REGISTRATION_LEVEL_ONE_GUIDE.reminders.map((item) => (
+                <li key={item}>
+                  <CheckCircle size={15} />
+                  <span>{item}</span>
+                </li>
+              ))}
+            </ul>
+          </div>
+        </div>
+      </LegalModal>
+
+      {/* Glossary Modal */}
+      <LegalModal
+        isOpen={showGlossaryModal}
+        onClose={() => setShowGlossaryModal(false)}
+        title="FinFreedom Glossary — Official Terminology (Version 1)"
+      >
+        <div className="support-glossary-modal-content">
+          <p className="support-glossary-modal-content__intro">
+            This glossary defines the main terms used within the Fin Freedom ecosystem and the F-Freedom Program. These definitions are intended to create a common language for participants, leaders, developers, and community members.
+          </p>
+
+          <div className="support-glossary-modal-content__grid">
+            {FINFREEDOM_GLOSSARY.map(([term, definition]) => (
+              <article className="support-glossary-modal-content__item" key={term}>
+                <h4>{term}</h4>
+                <p>{definition}</p>
+              </article>
+            ))}
+          </div>
+        </div>
+      </LegalModal>
+
       <div className="support-hero glass-panel">
         <picture className="support-hero__bg support-hero__bg--dark" aria-hidden="true">
           <source media="(max-width: 640px)" srcSet={SUPPORT_HERO_IMAGES.mobileDark} />
@@ -745,10 +1123,13 @@ const SupportPage = ({ onNavigate }) => {
                         setSearchQuery(suggestion.question)
                         setFaqOpenIndex(suggestion._id || suggestion.id)
                         setSearchSuggestions([])
-                        document.getElementById('faq-section')?.scrollIntoView({
-                          behavior: 'smooth',
-                          block: 'start',
-                        })
+                        setOpenSupportSection('faq')
+                        setTimeout(() => {
+                          document.getElementById('faq-section')?.scrollIntoView({
+                            behavior: 'smooth',
+                            block: 'start',
+                          })
+                        }, 80)
                       }}
                     >
                       <Search size={12} />
@@ -770,12 +1151,15 @@ const SupportPage = ({ onNavigate }) => {
                 <button
                   type="button"
                   className="support-search-results__link"
-                  onClick={() =>
-                    document.getElementById('faq-section')?.scrollIntoView({
-                      behavior: 'smooth',
-                      block: 'start',
-                    })
-                  }
+                  onClick={() => {
+                    setOpenSupportSection('faq')
+                    setTimeout(() => {
+                      document.getElementById('faq-section')?.scrollIntoView({
+                        behavior: 'smooth',
+                        block: 'start',
+                      })
+                    }, 80)
+                  }}
                 >
                   View full results <ChevronRight size={12} />
                 </button>
@@ -790,10 +1174,13 @@ const SupportPage = ({ onNavigate }) => {
                       className="support-search-results__item"
                       onClick={() => {
                         setFaqOpenIndex(faq._id || faq.id)
-                        document.getElementById('faq-section')?.scrollIntoView({
-                          behavior: 'smooth',
-                          block: 'start',
-                        })
+                        setOpenSupportSection('faq')
+                        setTimeout(() => {
+                          document.getElementById('faq-section')?.scrollIntoView({
+                            behavior: 'smooth',
+                            block: 'start',
+                          })
+                        }, 80)
                       }}
                     >
                       <strong>{faq.question}</strong>
@@ -811,20 +1198,31 @@ const SupportPage = ({ onNavigate }) => {
 
           <div className="support-hero__community">
             <p className="support-hero__community-title">
-              Get Help With The Social Community For the supported coutries and Regions via telegram
+              Gain Support Through the Verified Community Platforms
             </p>
 
-            <div className="support-hero__flags">
-              {COMMUNITY_LANGUAGES.map((lang) => (
+            <div className="support-telegram-mini-row">
+              {TELEGRAM_COMMUNITY_LINKS.map((item) => (
                 <a
-                  key={lang.code}
-                  href={lang.link}
+                  key={item.id}
+                  href={item.href}
                   target="_blank"
                   rel="noopener noreferrer"
-                  className="support-hero__flag"
-                  title={lang.label}
+                  className="support-telegram-mini-card"
+                  aria-label={item.title}
+                  title={item.title}
                 >
-                  <span className={`fi fi-${lang.code}`}></span>
+                  <img
+                    src={item.darkImage}
+                    alt={item.title}
+                    className="support-telegram-mini-card__image support-telegram-mini-card__image--dark"
+                  />
+
+                  <img
+                    src={item.lightImage}
+                    alt={item.title}
+                    className="support-telegram-mini-card__image support-telegram-mini-card__image--light"
+                  />
                 </a>
               ))}
             </div>
@@ -832,11 +1230,57 @@ const SupportPage = ({ onNavigate }) => {
         </div>
       </div>
 
-      <section className="support-quick-help glass-panel">
+      {/* Learning Center Section */}
+      <section className="support-slide-library glass-panel">
         <div className="support-section-heading">
-          <span className="support-section-heading__eyebrow muted-text">Quick Help</span>
-          <h2 className="support-section-heading__title">Jump directly to what you need</h2>
+          <span className="support-section-heading__eyebrow">Learning Center</span>
+          <h2 className="support-section-heading__title">Guides, slides, and quick onboarding help</h2>
+          <p className="soft-text">
+            Explore the ecosystem, understand the current F-Freedom Program, or get step-by-step mobile registration help.
+          </p>
         </div>
+
+        <div className="support-slide-library__grid">
+          {SUPPORT_SLIDE_DOCS.map((doc) => {
+            const Icon = doc.icon
+
+            return (
+              <article className="support-slide-card" key={doc.id}>
+                <span className="support-slide-card__glow" />
+
+                <div className="support-slide-card__icon">
+                  <Icon size={22} />
+                </div>
+
+                <div className="support-slide-card__copy">
+                  <span>{doc.eyebrow}</span>
+                  <h3>{doc.title}</h3>
+                  <p>{doc.description}</p>
+                </div>
+
+                <button
+                  type="button"
+                  className="support-slide-card__button"
+                  onClick={() => setActiveSlideDoc(doc)}
+                >
+                  {doc.buttonLabel}
+                  <ExternalLink size={15} />
+                </button>
+              </article>
+            )
+          })}
+        </div>
+      </section>
+
+      <CollapsibleSupportSection
+        id="quick-help"
+        title="Quick Help"
+        eyebrow="Start here"
+        description="Choose the issue you need help with."
+        icon={LifeBuoy}
+        openSection={openSupportSection}
+        setOpenSection={setOpenSupportSection}
+      >
         <div className="support-quick-help__grid">
           <button type="button" className="support-quick-help__card glass-panel" onClick={() => setActiveGuideKey('registration')}>
             <span className="support-quick-help__icon"><Rocket size={24} style={{ color: 'var(--glow-teal)' }} /></span>
@@ -863,139 +1307,192 @@ const SupportPage = ({ onNavigate }) => {
             <ChevronRight size={16} className="card-arrow" />
           </button>
         </div>
-      </section>
+      </CollapsibleSupportSection>
 
-      <section id="contact-section" className="support-contact glass-panel">
-        <div className="support-section-heading">
-          <span className="support-section-heading__eyebrow muted-text">Contact Support</span>
-          <h2 className="support-section-heading__title">Send a support request</h2>
+      <CollapsibleSupportSection
+        id="guides"
+        title="Guides and Official Terms"
+        eyebrow="Helpful resources"
+        description="Open the registration guide or glossary."
+        icon={BookOpen}
+        openSection={openSupportSection}
+        setOpenSection={setOpenSupportSection}
+      >
+        <div className="support-doc-cta__grid">
+          <button
+            type="button"
+            className="support-doc-cta__card"
+            onClick={() => setShowRegistrationGuideModal(true)}
+          >
+            <BookOpen size={22} />
+            <span>Step-by-step guide</span>
+            <strong>How to Register and Activate Level 1</strong>
+            <p>Mobile and desktop instructions for new participants.</p>
+          </button>
+
+          <button
+            type="button"
+            className="support-doc-cta__card"
+            onClick={() => setShowGlossaryModal(true)}
+          >
+            <FileText size={22} />
+            <span>Official terminology</span>
+            <strong>FinFreedom Glossary</strong>
+            <p>Understand the key terms used across the ecosystem.</p>
+          </button>
         </div>
-        <div className="support-contact__grid">
-          <div className="support-contact__form">
-            <div className="support-contact__field-group">
-              <label className="support-contact__label muted-text">Support Category *</label>
-              <select className="support-contact__select glass-panel" value={ticketForm.category} onChange={(e) => handleFormChange('category', e.target.value)}>
-                <option value="">Choose the support area</option>
-                <option value="registration">Registration Issues</option>
-                <option value="levels">Level Activation</option>
-                <option value="orbits">Orbit Problems</option>
-                <option value="referrals">Referral Issues</option>
-                <option value="wallet">Wallet Connection</option>
-                <option value="transaction">Transaction Errors</option>
-                <option value="other">Other</option>
-              </select>
-            </div>
-            <div className="support-contact__field-group">
-              <label className="support-contact__label muted-text">Your Wallet</label>
-              <div className="support-contact__wallet-display glass-panel">
-                <span>{account ? `${account.slice(0, 8)}...${account.slice(-6)}` : 'Not connected'}</span>
-                {account ? <button className="copy-wallet-btn" onClick={copyWallet} type="button">{copiedWallet ? <Check size={14} /> : <Copy size={14} />}</button> : null}
+      </CollapsibleSupportSection>
+
+      <CollapsibleSupportSection
+        id="contact"
+        title="Contact Support"
+        eyebrow="Send a request"
+        description="Submit a clear support message with wallet and transaction details."
+        icon={Mail}
+        openSection={openSupportSection}
+        setOpenSection={setOpenSupportSection}
+      >
+        <div id="contact-section" className="support-contact">
+          <div className="support-contact__grid">
+            <div className="support-contact__form">
+              <div className="support-contact__field-group">
+                <label className="support-contact__label muted-text">Support Category *</label>
+                <select className="support-contact__select glass-panel" value={ticketForm.category} onChange={(e) => handleFormChange('category', e.target.value)}>
+                  <option value="">Choose the support area</option>
+                  <option value="registration">Registration Issues</option>
+                  <option value="levels">Level Activation</option>
+                  <option value="orbits">Orbit Problems</option>
+                  <option value="referrals">Referral Issues</option>
+                  <option value="wallet">Wallet Connection</option>
+                  <option value="transaction">Transaction Errors</option>
+                  <option value="other">Other</option>
+                </select>
+              </div>
+              <div className="support-contact__field-group">
+                <label className="support-contact__label muted-text">Your Wallet</label>
+                <div className="support-contact__wallet-display glass-panel">
+                  <span>{account ? `${account.slice(0, 8)}...${account.slice(-6)}` : 'Not connected'}</span>
+                  {account ? <button className="copy-wallet-btn" onClick={copyWallet} type="button">{copiedWallet ? <Check size={14} /> : <Copy size={14} />}</button> : null}
+                </div>
+              </div>
+              <div className="support-contact__field-group">
+                <label className="support-contact__label muted-text">Subject *</label>
+                <input type="text" className="support-contact__input glass-panel" placeholder="Summarize the issue clearly" value={ticketForm.subject} onChange={(e) => handleFormChange('subject', e.target.value)} />
+              </div>
+              <div className="support-contact__field-group">
+                <label className="support-contact__label muted-text">Transaction Hash (Optional)</label>
+                <input type="text" className="support-contact__input glass-panel" placeholder="0x... (include for faster resolution)" value={ticketForm.txHash} onChange={(e) => handleFormChange('txHash', e.target.value)} />
+              </div>
+              <div className="support-contact__field-group">
+                <label className="support-contact__label muted-text">Message *</label>
+                <textarea className="support-contact__textarea glass-panel" placeholder="Describe what happened, what you expected, and the steps you already tried. Include level, cycle, and any error messages." value={ticketForm.message} onChange={(e) => handleFormChange('message', e.target.value)} rows={6} />
+              </div>
+              <div className="support-info-note glass-panel">
+                <Info size={14} />
+                <span className="soft-text">Blockchain transactions are irreversible. Always verify details before signing.</span>
+              </div>
+              {submitStatus.success ? <div className="support-success-message"><CheckCircle size={16} /> Support request submitted successfully. Our team will review it and respond as soon as possible.</div> : null}
+              {submitStatus.error ? <div className="support-error-message"><AlertCircle size={16} /> {submitStatus.error}</div> : null}
+              <div className="support-contact__actions">
+                <button type="button" className="support-contact__primary-btn" onClick={handleSubmitTicket} disabled={submitStatus.loading}>
+                  {submitStatus.loading ? <><RefreshCw size={16} className="spin" /> Submitting...</> : <><Send size={16} /> Submit Request</>}
+                </button>
+                <button type="button" className="support-contact__secondary-btn" onClick={() => setTicketForm({ category: '', subject: '', message: '', txHash: '' })}>Clear Form</button>
               </div>
             </div>
-            <div className="support-contact__field-group">
-              <label className="support-contact__label muted-text">Subject *</label>
-              <input type="text" className="support-contact__input glass-panel" placeholder="Summarize the issue clearly" value={ticketForm.subject} onChange={(e) => handleFormChange('subject', e.target.value)} />
-            </div>
-            <div className="support-contact__field-group">
-              <label className="support-contact__label muted-text">Transaction Hash (Optional)</label>
-              <input type="text" className="support-contact__input glass-panel" placeholder="0x... (include for faster resolution)" value={ticketForm.txHash} onChange={(e) => handleFormChange('txHash', e.target.value)} />
-            </div>
-            <div className="support-contact__field-group">
-              <label className="support-contact__label muted-text">Message *</label>
-              <textarea className="support-contact__textarea glass-panel" placeholder="Describe what happened, what you expected, and the steps you already tried. Include level, cycle, and any error messages." value={ticketForm.message} onChange={(e) => handleFormChange('message', e.target.value)} rows={6} />
-            </div>
-            <div className="support-info-note glass-panel">
-              <Info size={14} />
-              <span className="soft-text">Blockchain transactions are irreversible. Always verify details before signing.</span>
-            </div>
-            {submitStatus.success ? <div className="support-success-message"><CheckCircle size={16} /> Support request submitted successfully. Our team will review it and respond as soon as possible.</div> : null}
-            {submitStatus.error ? <div className="support-error-message"><AlertCircle size={16} /> {submitStatus.error}</div> : null}
-            <div className="support-contact__actions">
-              <button type="button" className="support-contact__primary-btn" onClick={handleSubmitTicket} disabled={submitStatus.loading}>
-                {submitStatus.loading ? <><RefreshCw size={16} className="spin" /> Submitting...</> : <><Send size={16} /> Submit Request</>}
-              </button>
-              <button type="button" className="support-contact__secondary-btn" onClick={() => setTicketForm({ category: '', subject: '', message: '', txHash: '' })}>Clear Form</button>
+
+            <div className="support-contact__side">
+              <div className="support-contact__assist-card">
+                <LifeBuoy size={20} />
+                <div>
+                  <strong>Before you submit</strong>
+                  <p className="soft-text">Include your wallet address, level, cycle, and transaction hash whenever applicable. This gives support the best chance of resolving your issue quickly.</p>
+                </div>
+              </div>
+              <div className="support-contact__assist-card">
+                <Shield size={20} style={{ color: 'var(--glow-teal)' }} />
+                <div>
+                  <strong>Wallet responsibility</strong>
+                  <p className="soft-text">You are solely responsible for securing your wallet. Fin Freedom Network will never request your private key or recovery phrase.</p>
+                </div>
+              </div>
+              {recentTickets.length ? 
+                <div className="support-recent-tickets">
+                  <h4>Your Recent Tickets</h4>
+                  <div className="recent-tickets-list">
+                    {recentTickets.map((ticket) => 
+                      <div key={ticket._id} className={`recent-ticket-item status-${ticket.status}`}>
+                        <span className="ticket-subject">{ticket.subject}</span>
+                        <span className="ticket-status">{ticket.status}</span>
+                        <span className="ticket-date">{new Date(ticket.createdAt).toLocaleDateString()}</span>
+                      </div>
+                    )}
+                  </div>
+                </div> : 
+                <div className="support-contact__assist-card support-contact__assist-card--muted">
+                  <Info size={20} />
+                  <div>
+                    <strong>No recent tickets yet</strong>
+                    <p className="soft-text">Once you submit a request, your recent support activity will appear here.</p>
+                  </div>
+                </div>
+              }
             </div>
           </div>
+        </div>
+      </CollapsibleSupportSection>
 
-          <div className="support-contact__side">
-            <div className="support-contact__assist-card">
-              <LifeBuoy size={20} />
-              <div>
-                <strong>Before you submit</strong>
-                <p className="soft-text">Include your wallet address, level, cycle, and transaction hash whenever applicable. This gives support the best chance of resolving your issue quickly.</p>
-              </div>
-            </div>
-            <div className="support-contact__assist-card">
-              <Shield size={20} style={{ color: 'var(--glow-teal)' }} />
-              <div>
-                <strong>Wallet responsibility</strong>
-                <p className="soft-text">You are solely responsible for securing your wallet. Fin Freedom Network will never request your private key or recovery phrase.</p>
-              </div>
-            </div>
-            {recentTickets.length ? 
-              <div className="support-recent-tickets">
-                <h4>Your Recent Tickets</h4>
-                <div className="recent-tickets-list">
-                  {recentTickets.map((ticket) => 
-                    <div key={ticket._id} className={`recent-ticket-item status-${ticket.status}`}>
-                      <span className="ticket-subject">{ticket.subject}</span>
-                      <span className="ticket-status">{ticket.status}</span>
-                      <span className="ticket-date">{new Date(ticket.createdAt).toLocaleDateString()}</span>
+      <CollapsibleSupportSection
+        id="faq"
+        title="Frequently Asked Questions"
+        eyebrow="Knowledge base"
+        description="Search and read answers about registration, levels, wallets, and orbits."
+        icon={HelpCircle}
+        openSection={openSupportSection}
+        setOpenSection={setOpenSupportSection}
+      >
+        <div id="faq-section" className="support-faq">
+          <div className="support-section-heading">
+            <span className="support-section-heading__eyebrow muted-text">Knowledge Base</span>
+            <h2 className="support-section-heading__title">Frequently Asked Questions</h2>
+            <p className="soft-text">Clear answers about participation, progression, and platform rules</p>
+          </div>
+          {searchQuery ? <div className="search-results-info"><Search size={14} /> Found {filteredFaqs.length} result{filteredFaqs.length === 1 ? '' : 's'} for "{searchQuery}"</div> : null}
+          {loading ? 
+            <div className="faq-loading"><RefreshCw size={24} className="spin" /><span>Loading FAQs...</span></div> : 
+            <div className="support-faq__categories">
+              {Object.entries(groupedFaqs).map(([category, items]) => 
+                <div key={category} className="support-faq__category">
+                  <h3 className="faq-category-title">
+                    {getCategoryIcon(category)}
+                    <span>{category}</span>
+                    <span className="category-count">{items.length}</span>
+                  </h3>
+                  {items.map((faq) => 
+                    <div key={faq._id || faq.id} className="support-faq__item">
+                      <div className="support-faq__question-row" onClick={() => setFaqOpenIndex(faqOpenIndex === (faq._id || faq.id) ? null : (faq._id || faq.id))}>
+                        <h3 className="support-faq__question">{faq.question}</h3>
+                        <span className="support-faq__icon">{faqOpenIndex === (faq._id || faq.id) ? <X size={16} /> : <ChevronRight size={16} />}</span>
+                      </div>
+                      {faqOpenIndex === (faq._id || faq.id) ? <p className="support-faq__answer soft-text">{faq.answer}</p> : null}
                     </div>
                   )}
                 </div>
-              </div> : 
-              <div className="support-contact__assist-card support-contact__assist-card--muted">
-                <Info size={20} />
-                <div>
-                  <strong>No recent tickets yet</strong>
-                  <p className="soft-text">Once you submit a request, your recent support activity will appear here.</p>
-                </div>
-              </div>
-            }
-          </div>
+              )}
+            </div>
+          }
         </div>
-      </section>
+      </CollapsibleSupportSection>
 
-      <section id="faq-section" className="support-faq glass-panel">
-        <div className="support-section-heading">
-          <span className="support-section-heading__eyebrow muted-text">Knowledge Base</span>
-          <h2 className="support-section-heading__title">Frequently Asked Questions</h2>
-          <p className="soft-text">Clear answers about participation, progression, and platform rules</p>
-        </div>
-        {searchQuery ? <div className="search-results-info"><Search size={14} /> Found {filteredFaqs.length} result{filteredFaqs.length === 1 ? '' : 's'} for "{searchQuery}"</div> : null}
-        {loading ? 
-          <div className="faq-loading"><RefreshCw size={24} className="spin" /><span>Loading FAQs...</span></div> : 
-          <div className="support-faq__categories">
-            {Object.entries(groupedFaqs).map(([category, items]) => 
-              <div key={category} className="support-faq__category">
-                <h3 className="faq-category-title">
-                  {getCategoryIcon(category)}
-                  <span>{category}</span>
-                  <span className="category-count">{items.length}</span>
-                </h3>
-                {items.map((faq) => 
-                  <div key={faq._id || faq.id} className="support-faq__item">
-                    <div className="support-faq__question-row" onClick={() => setFaqOpenIndex(faqOpenIndex === (faq._id || faq.id) ? null : (faq._id || faq.id))}>
-                      <h3 className="support-faq__question">{faq.question}</h3>
-                      <span className="support-faq__icon">{faqOpenIndex === (faq._id || faq.id) ? <X size={16} /> : <ChevronRight size={16} />}</span>
-                    </div>
-                    {faqOpenIndex === (faq._id || faq.id) ? <p className="support-faq__answer soft-text">{faq.answer}</p> : null}
-                  </div>
-                )}
-              </div>
-            )}
-          </div>
-        }
-
-      </section>
-
-      <section className="support-safety glass-panel">
-        <div className="support-section-heading">
-          <span className="support-section-heading__eyebrow muted-text">Security & Transparency</span>
-          <h2 className="support-section-heading__title">Safety Guidance</h2>
-        </div>
+      <CollapsibleSupportSection
+        id="safety"
+        title="Safety Guidance"
+        eyebrow="Security first"
+        description="Important wallet, transaction, and platform safety reminders."
+        icon={Shield}
+        openSection={openSupportSection}
+        setOpenSection={setOpenSupportSection}
+      >
         <div className="support-safety__grid">
           <div className="support-safety__item">
             <span className="support-safety__icon"><Shield size={20} style={{ color: 'var(--glow-teal)' }} /></span>
@@ -1040,9 +1537,11 @@ const SupportPage = ({ onNavigate }) => {
             </div>
           </div>
         </div>
-      </section>
+      </CollapsibleSupportSection>
 
-  
+      {/* Slide Doc Modal */}
+      <SlideDocModal doc={activeSlideDoc} onClose={() => setActiveSlideDoc(null)} />
+
       {activeGuide ? 
         <div className="support-guide-modal__backdrop" onClick={() => setActiveGuideKey(null)}>
           <div className="support-guide-modal glass-panel" onClick={(e) => e.stopPropagation()}>

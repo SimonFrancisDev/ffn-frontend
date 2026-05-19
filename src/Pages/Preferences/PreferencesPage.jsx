@@ -75,6 +75,7 @@ const PreferencesPage = () => {
   const [notifications, setNotifications] = useState(DEFAULT_NOTIFICATIONS)
   const [telegramStatus, setTelegramStatus] = useState({ configured: false, status: 'unlinked' })
   const [telegramCode, setTelegramCode] = useState('')
+  const [telegramBot, setTelegramBot] = useState({ username: '', link: '' })
   const [saveStatus, setSaveStatus] = useState({ show: false, message: '', type: '' })
 
   useEffect(() => {
@@ -125,6 +126,10 @@ const PreferencesPage = () => {
     try {
       const result = await startTelegramLink({ walletAddress: account, language })
       setTelegramCode(result.verificationCode || '')
+      setTelegramBot({
+        username: result.botUsername || '',
+        link: result.botDeepLink || '',
+      })
       setTelegramStatus((current) => ({ ...current, status: 'pending', configured: result.configured }))
       toast.info(preferencesT('notifications.telegramCodeStarted', 'Telegram verification code created.'), { dedupeKey: 'preferences-telegram-link-started' })
     } catch (error) {
@@ -139,6 +144,7 @@ const PreferencesPage = () => {
       await unsubscribeTelegram(account)
       setTelegramStatus((current) => ({ ...current, status: 'unsubscribed' }))
       setTelegramCode('')
+      setTelegramBot({ username: '', link: '' })
       toast.success(preferencesT('notifications.telegramUnsubscribed', 'Telegram alerts unsubscribed.'), { dedupeKey: 'preferences-telegram-unsubscribed' })
     } catch (error) {
       setSaveStatus({ show: true, message: error.message, type: 'error' })
@@ -394,9 +400,21 @@ const PreferencesPage = () => {
                 })}
               </p>
               {telegramCode ? (
-                <p className="preferences-card__text">
-                  {preferencesT('notifications.telegramCode', 'Verification code: {{code}}', { code: telegramCode })}
-                </p>
+                <div className="preferences-card__text">
+                  <p>
+                    {preferencesT('notifications.telegramCode', 'Verification code: {{code}}', { code: telegramCode })}
+                  </p>
+                  {telegramBot.link ? (
+                    <a className="btn btn-secondary" href={telegramBot.link} target="_blank" rel="noreferrer">
+                      {preferencesT('notifications.openTelegramBot', 'Open Telegram Bot')}
+                    </a>
+                  ) : null}
+                  <p className="soft-text">
+                    {telegramBot.username
+                      ? preferencesT('notifications.telegramSendCodeToBot', 'Send this code to @{{botUsername}} in Telegram.', { botUsername: telegramBot.username })
+                      : preferencesT('notifications.telegramBotMissing', 'Telegram bot username is not configured. Ask support for the official bot.')}
+                  </p>
+                </div>
               ) : null}
               <div className="preferences-actions">
                 <button type="button" className="btn btn-secondary" onClick={handleStartTelegramLink} disabled={!isConnected}>

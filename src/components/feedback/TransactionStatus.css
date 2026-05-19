@@ -1,0 +1,36 @@
+.ffn-transaction-status {
+  width: 100%;
+}
+
+.ffn-transaction-status__body {
+  display: grid;
+  gap: 6px;
+  min-width: 0;
+}
+
+.ffn-transaction-status__body p {
+  margin: 0;
+}
+
+.ffn-transaction-status__actions {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 8px;
+  min-width: 0;
+}
+
+.ffn-transaction-status__actions code {
+  max-width: min(100%, 340px);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  color: var(--ffn-text-soft);
+  font-size: var(--ffn-text-xs);
+}
+
+.ffn-transaction-status__actions a {
+  color: #67c9ff;
+  font-size: var(--ffn-text-sm);
+  font-weight: 750;
+  text-decoration: none;
+}

@@ -1,18 +1,120 @@
 [
   {
     "inputs": [
-      { "internalType": "address", "name": "_usdt", "type": "address" },
-      { "internalType": "address", "name": "_levelManager", "type": "address" }
+      {
+        "internalType": "address",
+        "name": "target",
+        "type": "address"
+      }
     ],
-    "stateMutability": "nonpayable",
-    "type": "constructor"
+    "name": "AddressEmptyCode",
+    "type": "error"
+  },
+  {
+    "inputs": [
+      {
+        "internalType": "address",
+        "name": "implementation",
+        "type": "address"
+      }
+    ],
+    "name": "ERC1967InvalidImplementation",
+    "type": "error"
+  },
+  {
+    "inputs": [],
+    "name": "ERC1967NonPayable",
+    "type": "error"
+  },
+  {
+    "inputs": [],
+    "name": "EnforcedPause",
+    "type": "error"
+  },
+  {
+    "inputs": [],
+    "name": "ExpectedPause",
+    "type": "error"
+  },
+  {
+    "inputs": [],
+    "name": "FailedInnerCall",
+    "type": "error"
+  },
+  {
+    "inputs": [],
+    "name": "InvalidInitialization",
+    "type": "error"
+  },
+  {
+    "inputs": [],
+    "name": "NotInitializing",
+    "type": "error"
+  },
+  {
+    "inputs": [
+      {
+        "internalType": "address",
+        "name": "owner",
+        "type": "address"
+      }
+    ],
+    "name": "OwnableInvalidOwner",
+    "type": "error"
+  },
+  {
+    "inputs": [
+      {
+        "internalType": "address",
+        "name": "account",
+        "type": "address"
+      }
+    ],
+    "name": "OwnableUnauthorizedAccount",
+    "type": "error"
+  },
+  {
+    "inputs": [],
+    "name": "ReentrancyGuardReentrantCall",
+    "type": "error"
+  },
+  {
+    "inputs": [],
+    "name": "UUPSUnauthorizedCallContext",
+    "type": "error"
+  },
+  {
+    "inputs": [
+      {
+        "internalType": "bytes32",
+        "name": "slot",
+        "type": "bytes32"
+      }
+    ],
+    "name": "UUPSUnsupportedProxiableUUID",
+    "type": "error"
   },
   {
     "anonymous": false,
     "inputs": [
-      { "indexed": true, "internalType": "address", "name": "user", "type": "address" },
-      { "indexed": false, "internalType": "uint8", "name": "fromLevel", "type": "uint8" },
-      { "indexed": false, "internalType": "uint8", "name": "toLevel", "type": "uint8" }
+      {
+        "indexed": true,
+        "internalType": "address",
+        "name": "user",
+        "type": "address"
+      },
+      {
+        "indexed": false,
+        "internalType": "uint8",
+        "name": "fromLevel",
+        "type": "uint8"
+      },
+      {
+        "indexed": false,
+        "internalType": "uint8",
+        "name": "toLevel",
+        "type": "uint8"
+      }
     ],
     "name": "AutoUpgradeTriggered",
     "type": "event"
@@ -20,7 +122,31 @@
   {
     "anonymous": false,
     "inputs": [
-      { "indexed": true, "internalType": "address", "name": "id1Wallet", "type": "address" }
+      {
+        "indexed": true,
+        "internalType": "address",
+        "name": "oldGuardian",
+        "type": "address"
+      },
+      {
+        "indexed": true,
+        "internalType": "address",
+        "name": "newGuardian",
+        "type": "address"
+      }
+    ],
+    "name": "GuardianUpdated",
+    "type": "event"
+  },
+  {
+    "anonymous": false,
+    "inputs": [
+      {
+        "indexed": true,
+        "internalType": "address",
+        "name": "id1Wallet",
+        "type": "address"
+      }
     ],
     "name": "ID1WalletSet",
     "type": "event"
@@ -28,17 +154,37 @@
   {
     "anonymous": false,
     "inputs": [
-      { "indexed": true, "internalType": "address", "name": "levelManager", "type": "address" }
+      {
+        "indexed": false,
+        "internalType": "uint64",
+        "name": "version",
+        "type": "uint64"
+      }
     ],
-    "name": "LevelManagerSet",
+    "name": "Initialized",
     "type": "event"
   },
   {
     "anonymous": false,
     "inputs": [
-      { "indexed": true, "internalType": "address", "name": "user", "type": "address" },
-      { "indexed": false, "internalType": "uint8", "name": "level", "type": "uint8" },
-      { "indexed": false, "internalType": "uint256", "name": "price", "type": "uint256" }
+      {
+        "indexed": true,
+        "internalType": "address",
+        "name": "user",
+        "type": "address"
+      },
+      {
+        "indexed": false,
+        "internalType": "uint8",
+        "name": "level",
+        "type": "uint8"
+      },
+      {
+        "indexed": false,
+        "internalType": "uint256",
+        "name": "price",
+        "type": "uint256"
+      }
     ],
     "name": "LevelActivated",
     "type": "event"
@@ -46,8 +192,31 @@
   {
     "anonymous": false,
     "inputs": [
-      { "indexed": true, "internalType": "address", "name": "previousOwner", "type": "address" },
-      { "indexed": true, "internalType": "address", "name": "newOwner", "type": "address" }
+      {
+        "indexed": true,
+        "internalType": "address",
+        "name": "levelManager",
+        "type": "address"
+      }
+    ],
+    "name": "LevelManagerSet",
+    "type": "event"
+  },
+  {
+    "anonymous": false,
+    "inputs": [
+      {
+        "indexed": true,
+        "internalType": "address",
+        "name": "previousOwner",
+        "type": "address"
+      },
+      {
+        "indexed": true,
+        "internalType": "address",
+        "name": "newOwner",
+        "type": "address"
+      }
     ],
     "name": "OwnershipTransferred",
     "type": "event"
@@ -55,15 +224,81 @@
   {
     "anonymous": false,
     "inputs": [
-      { "indexed": true, "internalType": "address", "name": "user", "type": "address" },
-      { "indexed": true, "internalType": "address", "name": "referrer", "type": "address" }
+      {
+        "indexed": false,
+        "internalType": "address",
+        "name": "account",
+        "type": "address"
+      }
+    ],
+    "name": "Paused",
+    "type": "event"
+  },
+  {
+    "anonymous": false,
+    "inputs": [
+      {
+        "indexed": true,
+        "internalType": "address",
+        "name": "user",
+        "type": "address"
+      },
+      {
+        "indexed": true,
+        "internalType": "address",
+        "name": "referrer",
+        "type": "address"
+      }
     ],
     "name": "Registered",
     "type": "event"
   },
   {
+    "anonymous": false,
     "inputs": [
-      { "internalType": "uint8", "name": "level", "type": "uint8" }
+      {
+        "indexed": false,
+        "internalType": "address",
+        "name": "account",
+        "type": "address"
+      }
+    ],
+    "name": "Unpaused",
+    "type": "event"
+  },
+  {
+    "anonymous": false,
+    "inputs": [
+      {
+        "indexed": true,
+        "internalType": "address",
+        "name": "implementation",
+        "type": "address"
+      }
+    ],
+    "name": "Upgraded",
+    "type": "event"
+  },
+  {
+    "inputs": [],
+    "name": "UPGRADE_INTERFACE_VERSION",
+    "outputs": [
+      {
+        "internalType": "string",
+        "name": "",
+        "type": "string"
+      }
+    ],
+    "stateMutability": "view",
+    "type": "function"
+  },
+  {
+    "inputs": [
+      {
+        "internalType": "uint8",
+        "name": "level",
+        "type": "uint8"
+      }
     ],
     "name": "activateLevel",
     "outputs": [],
@@ -72,80 +307,89 @@
   },
   {
     "inputs": [
-      { "internalType": "uint8", "name": "level", "type": "uint8" },
-      { "internalType": "uint256", "name": "newPrice", "type": "uint256" }
-    ],
-    "name": "updateLevelPrice",
-    "outputs": [],
-    "stateMutability": "nonpayable",
-    "type": "function"
-  },
-  {
-    "inputs": [
-      { "internalType": "address", "name": "_referrer", "type": "address" }
-    ],
-    "name": "register",
-    "outputs": [],
-    "stateMutability": "nonpayable",
-    "type": "function"
-  },
-  {
-    "inputs": [
-      { "internalType": "address", "name": "_id1Wallet", "type": "address" }
-    ],
-    "name": "setID1Wallet",
-    "outputs": [],
-    "stateMutability": "nonpayable",
-    "type": "function"
-  },
-  {
-    "inputs": [
-      { "internalType": "address", "name": "_levelManager", "type": "address" }
-    ],
-    "name": "setLevelManager",
-    "outputs": [],
-    "stateMutability": "nonpayable",
-    "type": "function"
-  },
-  {
-    "inputs": [
-      { "internalType": "address", "name": "user", "type": "address" },
-      { "internalType": "uint8", "name": "fromLevel", "type": "uint8" }
-    ],
-    "name": "triggerAutoUpgrade",
-    "outputs": [],
-    "stateMutability": "nonpayable",
-    "type": "function"
-  },
-  {
-    "inputs": [
-      { "internalType": "uint8", "name": "level", "type": "uint8" }
+      {
+        "internalType": "uint8",
+        "name": "level",
+        "type": "uint8"
+      }
     ],
     "name": "getLevelPrice",
     "outputs": [
-      { "internalType": "uint256", "name": "", "type": "uint256" }
+      {
+        "internalType": "uint256",
+        "name": "",
+        "type": "uint256"
+      }
     ],
     "stateMutability": "view",
     "type": "function"
   },
   {
     "inputs": [
-      { "internalType": "address", "name": "user", "type": "address" }
+      {
+        "internalType": "address",
+        "name": "user",
+        "type": "address"
+      }
     ],
     "name": "getReferrer",
     "outputs": [
-      { "internalType": "address", "name": "", "type": "address" }
+      {
+        "internalType": "address",
+        "name": "",
+        "type": "address"
+      }
+    ],
+    "stateMutability": "view",
+    "type": "function"
+  },
+  {
+    "inputs": [],
+    "name": "guardian",
+    "outputs": [
+      {
+        "internalType": "address",
+        "name": "",
+        "type": "address"
+      }
     ],
     "stateMutability": "view",
     "type": "function"
   },
   {
     "inputs": [
-      { "internalType": "address", "name": "user", "type": "address" }
+      {
+        "internalType": "address",
+        "name": "user",
+        "type": "address"
+      }
     ],
     "name": "hadNoReferrer",
     "outputs": [
-      { "internalType": "bool", "name": "", "type": "bool" }
+      {
+        "internalType": "bool",
+        "name": "",
+        "type": "bool"
+      }
+    ],
+    "stateMutability": "view",
+    "type": "function"
+  },
+  {
+    "inputs": [
+      {
+        "internalType": "address",
+        "name": "user",
+        "type": "address"
+      }
+    ],
+    "name": "highestActiveLevel",
+    "outputs": [
+      {
+        "internalType": "uint8",
+        "name": "",
+        "type": "uint8"
+      }
     ],
     "stateMutability": "view",
     "type": "function"
@@ -154,53 +398,125 @@
     "inputs": [],
     "name": "id1Wallet",
     "outputs": [
-      { "internalType": "address", "name": "", "type": "address" }
+      {
+        "internalType": "address",
+        "name": "",
+        "type": "address"
+      }
     ],
     "stateMutability": "view",
     "type": "function"
   },
   {
     "inputs": [
-      { "internalType": "address", "name": "user", "type": "address" },
-      { "internalType": "uint8", "name": "level", "type": "uint8" }
+      {
+        "internalType": "address",
+        "name": "_usdt",
+        "type": "address"
+      },
+      {
+        "internalType": "address",
+        "name": "_levelManager",
+        "type": "address"
+      },
+      {
+        "internalType": "address",
+        "name": "initialOwner",
+        "type": "address"
+      },
+      {
+        "internalType": "address",
+        "name": "_guardian",
+        "type": "address"
+      }
+    ],
+    "name": "initialize",
+    "outputs": [],
+    "stateMutability": "nonpayable",
+    "type": "function"
+  },
+  {
+    "inputs": [
+      {
+        "internalType": "address",
+        "name": "user",
+        "type": "address"
+      },
+      {
+        "internalType": "uint8",
+        "name": "level",
+        "type": "uint8"
+      }
     ],
     "name": "isLevelActivated",
     "outputs": [
-      { "internalType": "bool", "name": "", "type": "bool" }
+      {
+        "internalType": "bool",
+        "name": "",
+        "type": "bool"
+      }
     ],
     "stateMutability": "view",
     "type": "function"
   },
   {
     "inputs": [
-      { "internalType": "address", "name": "_user", "type": "address" }
+      {
+        "internalType": "address",
+        "name": "user",
+        "type": "address"
+      }
     ],
     "name": "isParticipant",
     "outputs": [
-      { "internalType": "bool", "name": "", "type": "bool" }
+      {
+        "internalType": "bool",
+        "name": "",
+        "type": "bool"
+      }
     ],
     "stateMutability": "view",
     "type": "function"
   },
   {
     "inputs": [
-      { "internalType": "address", "name": "", "type": "address" }
+      {
+        "internalType": "address",
+        "name": "",
+        "type": "address"
+      }
     ],
     "name": "isRegistered",
     "outputs": [
-      { "internalType": "bool", "name": "", "type": "bool" }
+      {
+        "internalType": "bool",
+        "name": "",
+        "type": "bool"
+      }
     ],
     "stateMutability": "view",
     "type": "function"
   },
   {
     "inputs": [
-      { "internalType": "address", "name": "", "type": "address" },
-      { "internalType": "uint8", "name": "", "type": "uint8" }
+      {
+        "internalType": "address",
+        "name": "",
+        "type": "address"
+      },
+      {
+        "internalType": "uint8",
+        "name": "",
+        "type": "uint8"
+      }
     ],
     "name": "levelActivated",
     "outputs": [
-      { "internalType": "bool", "name": "", "type": "bool" }
+      {
+        "internalType": "bool",
+        "name": "",
+        "type": "bool"
+      }
     ],
     "stateMutability": "view",
     "type": "function"
@@ -209,18 +525,30 @@
     "inputs": [],
     "name": "levelManager",
     "outputs": [
-      { "internalType": "contract ILevelManager", "name": "", "type": "address" }
+      {
+        "internalType": "contract ILevelManager",
+        "name": "",
+        "type": "address"
+      }
     ],
     "stateMutability": "view",
     "type": "function"
   },
   {
     "inputs": [
-      { "internalType": "uint256", "name": "", "type": "uint256" }
+      {
+        "internalType": "uint256",
+        "name": "",
+        "type": "uint256"
+      }
     ],
     "name": "levelPrices",
     "outputs": [
-      { "internalType": "uint256", "name": "", "type": "uint256" }
+      {
+        "internalType": "uint256",
+        "name": "",
+        "type": "uint256"
+      }
     ],
     "stateMutability": "view",
     "type": "function"
@@ -229,27 +557,89 @@
     "inputs": [],
     "name": "owner",
     "outputs": [
-      { "internalType": "address", "name": "", "type": "address" }
-    ],
-    "stateMutability": "view",
-    "type": "function"
-  },
-  {
-    "inputs": [
-      { "internalType": "address", "name": "", "type": "address" }
-    ],
-    "name": "referrerOf",
-    "outputs": [
-      { "internalType": "address", "name": "", "type": "address" }
+      {
+        "internalType": "address",
+        "name": "",
+        "type": "address"
+      }
     ],
     "stateMutability": "view",
     "type": "function"
   },
   {
     "inputs": [],
-    "name": "usdt",
+    "name": "pause",
+    "outputs": [],
+    "stateMutability": "nonpayable",
+    "type": "function"
+  },
+  {
+    "inputs": [],
+    "name": "paused",
     "outputs": [
-      { "internalType": "contract IERC20", "name": "", "type": "address" }
+      {
+        "internalType": "bool",
+        "name": "",
+        "type": "bool"
+      }
+    ],
+    "stateMutability": "view",
+    "type": "function"
+  },
+  {
+    "inputs": [],
+    "name": "proxiableUUID",
+    "outputs": [
+      {
+        "internalType": "bytes32",
+        "name": "",
+        "type": "bytes32"
+      }
+    ],
+    "stateMutability": "view",
+    "type": "function"
+  },
+  {
+    "inputs": [
+      {
+        "internalType": "address",
+        "name": "",
+        "type": "address"
+      }
+    ],
+    "name": "referrerOf",
+    "outputs": [
+      {
+        "internalType": "address",
+        "name": "",
+        "type": "address"
+      }
+    ],
+    "stateMutability": "view",
+    "type": "function"
+  },
+  {
+    "inputs": [
+      {
+        "internalType": "address",
+        "name": "_referrer",
+        "type": "address"
+      }
+    ],
+    "name": "register",
+    "outputs": [],
+    "stateMutability": "nonpayable",
+    "type": "function"
+  },
+  {
+    "inputs": [],
+    "name": "registeredCount",
+    "outputs": [
+      {
+        "internalType": "uint256",
+        "name": "",
+        "type": "uint256"
+      }
     ],
     "stateMutability": "view",
     "type": "function"
@@ -263,7 +653,63 @@
   },
   {
     "inputs": [
-      { "internalType": "address", "name": "newOwner", "type": "address" }
+      {
+        "internalType": "address",
+        "name": "_guardian",
+        "type": "address"
+      }
+    ],
+    "name": "setGuardian",
+    "outputs": [],
+    "stateMutability": "nonpayable",
+    "type": "function"
+  },
+  {
+    "inputs": [
+      {
+        "internalType": "address",
+        "name": "_id1Wallet",
+        "type": "address"
+      }
+    ],
+    "name": "setID1Wallet",
+    "outputs": [],
+    "stateMutability": "nonpayable",
+    "type": "function"
+  },
+  {
+    "inputs": [
+      {
+        "internalType": "address",
+        "name": "_levelManager",
+        "type": "address"
+      }
+    ],
+    "name": "setLevelManager",
+    "outputs": [],
+    "stateMutability": "nonpayable",
+    "type": "function"
+  },
+  {
+    "inputs": [],
+    "name": "totalParticipants",
+    "outputs": [
+      {
+        "internalType": "uint256",
+        "name": "",
+        "type": "uint256"
+      }
+    ],
+    "stateMutability": "view",
+    "type": "function"
+  },
+  {
+    "inputs": [
+      {
+        "internalType": "address",
+        "name": "newOwner",
+        "type": "address"
+      }
     ],
     "name": "transferOwnership",
     "outputs": [],
@@ -271,21 +717,77 @@
     "type": "function"
   },
   {
-  "inputs": [],
-  "name": "registeredCount",
-  "outputs": [
-    { "internalType": "uint256", "name": "", "type": "uint256" }
-  ],
-  "stateMutability": "view",
-  "type": "function"
-},
-{
-  "inputs": [],
-  "name": "totalParticipants",
-  "outputs": [
-    { "internalType": "uint256", "name": "", "type": "uint256" }
-  ],
-  "stateMutability": "view",
-  "type": "function"
-}
+    "inputs": [
+      {
+        "internalType": "address",
+        "name": "user",
+        "type": "address"
+      },
+      {
+        "internalType": "uint8",
+        "name": "fromLevel",
+        "type": "uint8"
+      }
+    ],
+    "name": "triggerAutoUpgrade",
+    "outputs": [],
+    "stateMutability": "nonpayable",
+    "type": "function"
+  },
+  {
+    "inputs": [],
+    "name": "unpause",
+    "outputs": [],
+    "stateMutability": "nonpayable",
+    "type": "function"
+  },
+  {
+    "inputs": [
+      {
+        "internalType": "uint8",
+        "name": "level",
+        "type": "uint8"
+      },
+      {
+        "internalType": "uint256",
+        "name": "newPrice",
+        "type": "uint256"
+      }
+    ],
+    "name": "updateLevelPrice",
+    "outputs": [],
+    "stateMutability": "nonpayable",
+    "type": "function"
+  },
+  {
+    "inputs": [
+      {
+        "internalType": "address",
+        "name": "newImplementation",
+        "type": "address"
+      },
+      {
+        "internalType": "bytes",
+        "name": "data",
+        "type": "bytes"
+      }
+    ],
+    "name": "upgradeToAndCall",
+    "outputs": [],
+    "stateMutability": "payable",
+    "type": "function"
+  },
+  {
+    "inputs": [],
+    "name": "usdt",
+    "outputs": [
+      {
+        "internalType": "contract IERC20",
+        "name": "",
+        "type": "address"
+      }
+    ],
+    "stateMutability": "view",
+    "type": "function"
+  }
 ]

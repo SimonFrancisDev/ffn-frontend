@@ -337,6 +337,18 @@
   line-height: 1.7;
 }
 
+.dashboard-stats__breakdown {
+  display: grid;
+  gap: 4px;
+  font-size: 12px;
+  line-height: 1.45;
+  color: var(--text-secondary);
+}
+
+[data-theme='light'] .dashboard-stats__breakdown {
+  color: var(--text-muted-strong, #334155);
+}
+
 .dashboard-section-heading {
   display: flex;
   flex-direction: column;
@@ -1326,35 +1338,6 @@
     grid-template-columns: repeat(3, minmax(0, 1fr));
   }
 }
-
-
-
-/* =========================================================
-   AOS SAFETY FIX FOR DASHBOARD
-   Prevents dashboard content from staying invisible
-========================================================= */
-
-.dashboard-page [data-aos] {
-  visibility: visible;
-}
-
-.dashboard-page [data-aos].aos-init:not(.aos-animate) {
-  pointer-events: none;
-}
-
-.dashboard-page [data-aos].aos-animate {
-  pointer-events: auto;
-}
-
-/* Emergency fallback - ensures content never stays hidden */
-.dashboard-page [data-aos]:not(.aos-init) {
-  opacity: 1 !important;
-  transform: none !important;
-}
-
-
-
-
 /* =========================================================
    DASHBOARD ACCESS ROUTE ACTIONS
 ========================================================= */

@@ -1,0 +1,104 @@
+.ffn-notification-center {
+  display: grid;
+  gap: var(--ffn-space-4);
+  min-width: 0;
+  color: var(--ffn-text);
+}
+
+.ffn-notification-center__header {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: var(--ffn-space-4);
+}
+
+.ffn-notification-center__header h2 {
+  margin: 0;
+  font-size: var(--ffn-text-xl);
+  line-height: var(--ffn-line-tight);
+  font-weight: 850;
+}
+
+.ffn-notification-center__header p {
+  margin: 4px 0 0;
+  color: var(--ffn-text-muted);
+  font-size: var(--ffn-text-sm);
+}
+
+.ffn-notification-center__actions,
+.ffn-notification-item__controls,
+.ffn-notification-item__meta {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.ffn-notification-center__list {
+  display: grid;
+  gap: 10px;
+}
+
+.ffn-notification-item {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr);
+  gap: 12px;
+  padding: 12px;
+  border: 1px solid var(--ffn-border);
+  border-radius: var(--ffn-radius-sm);
+  background: var(--ffn-surface);
+}
+
+.ffn-notification-item--unread {
+  border-color: var(--ffn-border-strong);
+  box-shadow: var(--ffn-outline-glow);
+}
+
+.ffn-notification-item__icon {
+  width: 34px;
+  height: 34px;
+  border-radius: var(--ffn-radius-sm);
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--ffn-text);
+  background: var(--ffn-surface-muted);
+  border: 1px solid var(--ffn-border);
+}
+
+.ffn-notification-item__body {
+  display: grid;
+  gap: 8px;
+  min-width: 0;
+}
+
+.ffn-notification-item__meta {
+  justify-content: space-between;
+}
+
+.ffn-notification-item__meta time {
+  color: var(--ffn-text-muted);
+  font-size: var(--ffn-text-xs);
+}
+
+.ffn-notification-item h3 {
+  margin: 0;
+  font-size: var(--ffn-text-md);
+  line-height: var(--ffn-line-tight);
+  font-weight: 800;
+}
+
+.ffn-notification-item p {
+  margin: 0;
+  color: var(--ffn-text-soft);
+  font-size: var(--ffn-text-sm);
+  line-height: var(--ffn-line-base);
+}
+
+@media (max-width: 520px) {
+  .ffn-notification-center__header,
+  .ffn-notification-item__meta {
+    align-items: stretch;
+    flex-direction: column;
+  }
+}

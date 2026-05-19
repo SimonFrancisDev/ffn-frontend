@@ -7,6 +7,18 @@
   animation: spin 1s linear infinite;
 }
 
+.admin-metric-stack {
+  display: grid;
+  gap: 4px;
+  color: var(--text-secondary);
+  font-size: 12px;
+  line-height: 1.45;
+}
+
+[data-theme="light"] .admin-metric-stack {
+  color: #334155;
+}
+
 /* =========================================================
    BASE VARIABLES - Theme Aware
    ========================================================= */

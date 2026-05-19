@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useRef, useState } from 'react'
+import { useTranslation } from 'react-i18next'
 import {
   dedupeNotices,
   dismissNoticeById,
@@ -23,6 +24,7 @@ const NOTICE_COLORS = {
 }
 
 const TopNoticeBar = ({ notices = [] }) => {
+  const { t } = useTranslation()
   const normalizedNotices = useMemo(() => dedupeNotices(notices), [notices])
   const [visibleNotices, setVisibleNotices] = useState(normalizedNotices)
   const [rotationIndex, setRotationIndex] = useState(0)
@@ -106,7 +108,7 @@ const TopNoticeBar = ({ notices = [] }) => {
                 type="button"
                 className="top-notice__dismiss"
                 onClick={() => handleDismiss(activeNotice.id)}
-                aria-label="Dismiss notice"
+                aria-label={t('topNotice.dismissAriaLabel', 'Dismiss notice')}
               >
                 <X size={14} />
               </button>

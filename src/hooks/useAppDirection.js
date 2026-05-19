@@ -12,6 +12,8 @@ const useAppDirection = () => {
 
     document.documentElement.lang = baseLanguage
     document.documentElement.dir = isRTL ? 'rtl' : 'ltr'
+    document.documentElement.dataset.dir = isRTL ? 'rtl' : 'ltr'
+    document.documentElement.dataset.language = baseLanguage
     document.body.setAttribute('dir', isRTL ? 'rtl' : 'ltr')
   }, [i18n.language, i18n.resolvedLanguage])
 }

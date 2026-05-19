@@ -1,59 +1,72 @@
 import './MobileDrawer.css'
 import { useEffect, useState } from 'react'
+import { useTranslation } from 'react-i18next'
 import { Sun, Moon, Globe, Bell, Wallet, User, X, ChevronDown } from 'lucide-react'
 
 const ABOUT_MENU_ITEMS = [
-  { label: 'Who we are', href: 'about', section: 'who-we-are' },
-  { label: 'Our purpose', href: 'about', section: 'our-purpose' },
-  { label: 'Our foundation', href: 'about', section: 'our-foundation' },
-  { label: 'Our core values', href: 'about', section: 'our-core-values' },
-  { label: 'Our commitment', href: 'about', section: 'our-commitment' },
+  { label: 'Who we are', labelKey: 'navbar.menus.about.whoWeAre', href: 'about', section: 'who-we-are' },
+  { label: 'Our purpose', labelKey: 'navbar.menus.about.ourPurpose', href: 'about', section: 'our-purpose' },
+  { label: 'Our foundation', labelKey: 'navbar.menus.about.ourFoundation', href: 'about', section: 'our-foundation' },
+  { label: 'Our core values', labelKey: 'navbar.menus.about.ourCoreValues', href: 'about', section: 'our-core-values' },
+  { label: 'Our commitment', labelKey: 'navbar.menus.about.ourCommitment', href: 'about', section: 'our-commitment' },
 ]
 
 const SERVICES = [
   {
     label: 'F-Freedom Program',
+    labelKey: 'navbar.menus.services.fFreedomProgram.label',
     description: 'Wallet-first participation flow, orbit progression, and live program entry.',
+    descriptionKey: 'navbar.menus.services.fFreedomProgram.description',
     links: [
       {
         label: 'F-Freedom Overview',
+        labelKey: 'navbar.menus.services.fFreedomProgram.links.overview',
         target: 'fFreedomProgram',
       },
       {
         label: 'Activations & Level Manager',
+        labelKey: 'navbar.menus.services.fFreedomProgram.links.activation',
         target: 'activation',
       },
       {
         label: 'My F-Freedom Tokens',
+        labelKey: 'navbar.menus.services.fFreedomProgram.links.tokens',
         target: 'myTokens',
       },
       {
         label: 'F-Freedom Program Dashboard',
+        labelKey: 'navbar.menus.services.fFreedomProgram.links.dashboard',
         target: 'dashboard',
       },
     ],
   },
   {
     label: 'Freedom-Plus Program',
+    labelKey: 'navbar.menus.services.freedomPlusProgram.label',
     description: 'Advanced expansion layer for future premium participation utilities.',
+    descriptionKey: 'navbar.menus.services.freedomPlusProgram.description',
     links: [
       {
         label: 'Freedom-Plus Overview',
+        labelKey: 'navbar.menus.services.freedomPlusProgram.links.overview',
         target: 'home',
         section: 'programs',
       },
       {
         label: 'Freedom-Plus Activations & Level Manager',
+        labelKey: 'navbar.menus.services.freedomPlusProgram.links.activation',
         target: 'home',
         section: 'programs',
       },
       {
         label: 'My Freedom-Plus Tokens',
+        labelKey: 'navbar.menus.services.freedomPlusProgram.links.tokens',
         target: 'home',
         section: 'programs',
       },
       {
         label: 'Freedom-Plus Program Dashboard',
+        labelKey: 'navbar.menus.services.freedomPlusProgram.links.dashboard',
         target: 'home',
         section: 'programs',
       },
@@ -61,35 +74,43 @@ const SERVICES = [
   },
   {
     label: 'Freedom NFT Program',
+    labelKey: 'navbar.menus.services.freedomNftProgram.label',
     description: 'NFT identity, access visuals, and future collectible utility layer.',
+    descriptionKey: 'navbar.menus.services.freedomNftProgram.description',
     links: [
       {
         label: 'NFT Overview',
+        labelKey: 'navbar.menus.services.freedomNftProgram.links.overview',
         target: 'home',
         section: 'programs',
       },
       {
         label: 'NFT Foundation',
+        labelKey: 'navbar.menus.services.freedomNftProgram.links.foundation',
         target: 'home',
         section: 'programs',
       },
       {
         label: 'NFT Intermediate',
+        labelKey: 'navbar.menus.services.freedomNftProgram.links.intermediate',
         target: 'home',
         section: 'programs',
       },
       {
         label: 'NFT Advanced',
+        labelKey: 'navbar.menus.services.freedomNftProgram.links.advanced',
         target: 'home',
         section: 'programs',
       },
       {
         label: 'Utility Role',
+        labelKey: 'navbar.menus.services.freedomNftProgram.links.utilityRole',
         target: 'home',
         section: 'programs',
       },
       {
         label: 'NFT Program Dashboard',
+        labelKey: 'navbar.menus.services.freedomNftProgram.links.dashboard',
         target: 'home',
         section: 'programs',
       },
@@ -97,25 +118,31 @@ const SERVICES = [
   },
   {
     label: 'Fin Freedom Coin',
+    labelKey: 'navbar.menus.services.finFreedomCoin.label',
     description: 'Coin visual layer for future network identity and ecosystem awareness.',
+    descriptionKey: 'navbar.menus.services.finFreedomCoin.description',
     links: [
       {
         label: 'FFC Overview',
+        labelKey: 'navbar.menus.services.finFreedomCoin.links.overview',
         target: 'home',
         section: 'programs',
       },
       {
         label: 'Utility Tokens',
+        labelKey: 'navbar.menus.services.finFreedomCoin.links.utilityTokens',
         target: 'home',
         section: 'programs',
       },
       {
         label: 'Future Utility',
+        labelKey: 'navbar.menus.services.finFreedomCoin.links.futureUtility',
         target: 'home',
         section: 'programs',
       },
       {
         label: 'FFC Program Dashboard',
+        labelKey: 'navbar.menus.services.finFreedomCoin.links.dashboard',
         target: 'home',
         section: 'programs',
       },
@@ -123,35 +150,43 @@ const SERVICES = [
   },
   {
     label: 'Fin Freedom Marketplace',
+    labelKey: 'navbar.menus.services.finFreedomMarketplace.label',
     description: 'Future ecosystem marketplace for digital and program-related utilities.',
+    descriptionKey: 'navbar.menus.services.finFreedomMarketplace.description',
     links: [
       {
         label: 'Marketplace Overview',
+        labelKey: 'navbar.menus.services.finFreedomMarketplace.links.overview',
         target: 'home',
         section: 'programs',
       },
       {
         label: 'Vendor Layer',
+        labelKey: 'navbar.menus.services.finFreedomMarketplace.links.vendorLayer',
         target: 'home',
         section: 'programs',
       },
       {
         label: 'Ecosystem Use',
+        labelKey: 'navbar.menus.services.finFreedomMarketplace.links.ecosystemUse',
         target: 'home',
         section: 'programs',
       },
       {
         label: 'Fin Freedom Store',
+        labelKey: 'navbar.menus.services.finFreedomMarketplace.links.store',
         target: 'home',
         section: 'programs',
       },
       {
         label: 'Checkout',
+        labelKey: 'navbar.menus.services.finFreedomMarketplace.links.checkout',
         target: 'home',
         section: 'programs',
       },
       {
         label: 'My Orders',
+        labelKey: 'navbar.menus.services.finFreedomMarketplace.links.orders',
         target: 'home',
         section: 'programs',
       },
@@ -159,35 +194,43 @@ const SERVICES = [
   },
   {
     label: 'Fin Freedom Institute',
+    labelKey: 'navbar.menus.services.finFreedomInstitute.label',
     description: 'Learning, onboarding, training, and community education layer.',
+    descriptionKey: 'navbar.menus.services.finFreedomInstitute.description',
     links: [
       {
         label: 'Freedom Institute Overview',
+        labelKey: 'navbar.menus.services.finFreedomInstitute.links.overview',
         target: 'home',
         section: 'programs',
       },
       {
         label: 'FFN Digital Academy',
+        labelKey: 'navbar.menus.services.finFreedomInstitute.links.digitalAcademy',
         target: 'home',
         section: 'programs',
       },
       {
         label: 'FFN Leadership Academy',
+        labelKey: 'navbar.menus.services.finFreedomInstitute.links.leadershipAcademy',
         target: 'home',
         section: 'programs',
       },
       {
         label: 'Training Path',
+        labelKey: 'navbar.menus.services.finFreedomInstitute.links.trainingPath',
         target: 'home',
         section: 'programs',
       },
       {
         label: 'Community Learning',
+        labelKey: 'navbar.menus.services.finFreedomInstitute.links.communityLearning',
         target: 'home',
         section: 'programs',
       },
       {
         label: 'FFI Dashboard',
+        labelKey: 'navbar.menus.services.finFreedomInstitute.links.dashboard',
         target: 'home',
         section: 'programs',
       },
@@ -212,17 +255,18 @@ const MobileDrawer = ({
   isAdmin = false,
   onOpenAdminPanel,
 }) => {
+  const { t } = useTranslation()
   const isDark = theme === 'dark'
   const [isAboutOpen, setIsAboutOpen] = useState(false)
   const [isServicesOpen, setIsServicesOpen] = useState(false)
   const [activeService, setActiveService] = useState(SERVICES[0])
-  const profileName = account?.name || 'Your Account'
+  const profileName = account?.name || t('mobileDrawer.yourAccount', 'Your Account')
   const profileStatus =
     wallet?.status === 'Connected'
-      ? `Wallet connected • ${wallet?.address || ''}`
+      ? t('mobileDrawer.walletConnected', 'Wallet connected • {{address}}', { address: wallet?.address || '' })
       : wallet?.status === 'Connecting'
-        ? 'Wallet connecting...'
-        : 'Wallet disconnected'
+        ? t('mobileDrawer.walletConnecting', 'Wallet connecting...')
+        : t('mobileDrawer.walletDisconnected', 'Wallet disconnected')
 
   useEffect(() => {
     if (!isOpen) {
@@ -289,7 +333,7 @@ const MobileDrawer = ({
             <div className="mobile-drawer__brand-text">
               <span className="mobile-drawer__brand-name">{brand}</span>
               <span className="mobile-drawer__brand-tag soft-text">
-                Live platform
+                {t('mobileDrawer.livePlatform', 'Live platform')}
               </span>
             </div>
           </button>
@@ -298,7 +342,7 @@ const MobileDrawer = ({
             type="button"
             className="mobile-drawer__close"
             onClick={onClose}
-            aria-label="Close navigation menu"
+            aria-label={t('mobileDrawer.closeAriaLabel', 'Close navigation menu')}
           >
             <X size={18} />
           </button>
@@ -314,7 +358,7 @@ const MobileDrawer = ({
           </div>
         </div>
 
-        <nav className="mobile-drawer__nav" aria-label="Mobile navigation">
+        <nav className="mobile-drawer__nav" aria-label={t('mobileDrawer.mobileNavAriaLabel', 'Mobile navigation')}>
           {navItems
             .filter((item) => item.href === 'home' || item.href === 'about')
             .map((item) => {
@@ -323,7 +367,7 @@ const MobileDrawer = ({
               if (isAbout) {
                 return (
                   <div
-                    key={item.label}
+                    key={item.href}
                     className={`mobile-drawer__nav-group ${item.active ? 'is-active' : ''} ${
                       isAboutOpen ? 'is-open' : ''
                     }`}
@@ -335,7 +379,9 @@ const MobileDrawer = ({
                       aria-expanded={isAboutOpen}
                       aria-controls="mobile-about-submenu"
                     >
-                      <span className="mobile-drawer__link-text">About</span>
+                      <span className="mobile-drawer__link-text">
+                        {t('navbar.menus.about.label', 'About')}
+                      </span>
                       <ChevronDown size={16} />
                     </button>
 
@@ -351,7 +397,7 @@ const MobileDrawer = ({
                           className="mobile-drawer__submenu-link"
                           onClick={() => handleNavigate(aboutItem.href, aboutItem.section)}
                         >
-                          {aboutItem.label}
+                          {t(aboutItem.labelKey, aboutItem.label)}
                         </button>
                       ))}
                     </div>
@@ -361,7 +407,7 @@ const MobileDrawer = ({
 
               return (
                 <button
-                  key={item.label}
+                  key={item.href}
                   type="button"
                   className={`mobile-drawer__link ${item.active ? 'is-active' : ''}`}
                   onClick={() => handleNavigate(item.href)}
@@ -387,7 +433,9 @@ const MobileDrawer = ({
               aria-expanded={isServicesOpen}
               aria-controls="mobile-services-submenu"
             >
-              <span className="mobile-drawer__link-text">Services</span>
+              <span className="mobile-drawer__link-text">
+                {t('navbar.menus.services.label', 'Services')}
+              </span>
               <ChevronDown size={16} />
             </button>
 
@@ -398,7 +446,7 @@ const MobileDrawer = ({
             >
               {SERVICES.map((service) => (
                 <div
-                  key={service.label}
+                  key={service.labelKey}
                   className={`mobile-drawer__service-group ${
                     activeService?.label === service.label ? 'is-open' : ''
                   }`}
@@ -412,27 +460,27 @@ const MobileDrawer = ({
                       )
                     }
                   >
-                    <span>{service.label}</span>
+                    <span>{t(service.labelKey, service.label)}</span>
                     <ChevronDown size={14} />
                   </button>
 
                   <div className="mobile-drawer__service-submenu">
                     <p className="mobile-drawer__service-description">
-                      {service.description}
+                      {t(service.descriptionKey, service.description)}
                     </p>
 
                     {service.links.map((link) => (
                       <button
-                        key={link.label}
+                        key={`${link.labelKey}-${link.target}`}
                         type="button"
                         className="mobile-drawer__service-subitem"
                         onClick={() => handleServiceLinkClick(link)}
                       >
-                        <span>{link.label}</span>
+                        <span>{t(link.labelKey, link.label)}</span>
 
                         {link.target === 'home' && (
                           <small className="mobile-drawer__service-coming-soon">
-                            Coming soon
+                            {t('navbar.menus.services.comingSoon', 'Coming soon')}
                           </small>
                         )}
                       </button>
@@ -447,7 +495,7 @@ const MobileDrawer = ({
             .filter((item) => item.href === 'community' || item.href === 'support')
             .map((item) => (
               <button
-                key={item.label}
+                key={item.href}
                 type="button"
                 className={`mobile-drawer__link ${item.active ? 'is-active' : ''}`}
                 onClick={() => handleNavigate(item.href)}
@@ -463,7 +511,9 @@ const MobileDrawer = ({
               className="mobile-drawer__link"
               onClick={() => handleNavigate('admin')}
             >
-              <span className="mobile-drawer__link-text">Admin Panel</span>
+              <span className="mobile-drawer__link-text">
+                {t('mobileDrawer.adminPanel', 'Admin Panel')}
+              </span>
               <span className="mobile-drawer__link-arrow">›</span>
             </button>
           )}
@@ -474,37 +524,45 @@ const MobileDrawer = ({
             type="button"
             className="mobile-drawer__utility glass-panel"
             onClick={handleLanguageClick}
-            aria-label="Open language menu"
+            aria-label={t('mobileDrawer.openLanguageAriaLabel', 'Open language menu')}
           >
             <span className="mobile-drawer__utility-icon">
               <Globe size={18} />
             </span>
-            <span className="mobile-drawer__utility-text">Language</span>
+            <span className="mobile-drawer__utility-text">
+              {t('mobileDrawer.language', 'Language')}
+            </span>
           </button>
 
           <button
             type="button"
             className="mobile-drawer__utility glass-panel"
             onClick={handleNotificationsClick}
-            aria-label="Open notifications"
+            aria-label={t('mobileDrawer.openNotificationsAriaLabel', 'Open notifications')}
           >
             <span className="mobile-drawer__utility-icon">
               <Bell size={18} />
             </span>
-            <span className="mobile-drawer__utility-text">Notifications</span>
+            <span className="mobile-drawer__utility-text">
+              {t('mobileDrawer.notifications', 'Notifications')}
+            </span>
           </button>
 
           <button
             type="button"
             className="mobile-drawer__utility glass-panel"
             onClick={onToggleTheme}
-            aria-label={isDark ? 'Switch to light theme' : 'Switch to dark theme'}
+            aria-label={
+              isDark
+                ? t('mobileDrawer.switchToLightThemeAriaLabel', 'Switch to light theme')
+                : t('mobileDrawer.switchToDarkThemeAriaLabel', 'Switch to dark theme')
+            }
           >
             <span className="mobile-drawer__utility-icon">
               {isDark ? <Sun size={18} /> : <Moon size={18} />}
             </span>
             <span className="mobile-drawer__utility-text">
-              {isDark ? 'Light Mode' : 'Dark Mode'}
+              {isDark ? t('mobileDrawer.lightMode', 'Light Mode') : t('mobileDrawer.darkMode', 'Dark Mode')}
             </span>
           </button>
 
@@ -512,13 +570,15 @@ const MobileDrawer = ({
             type="button"
             className="mobile-drawer__utility glass-panel"
             onClick={handleWalletClick}
-            aria-label="Open wallet panel"
+            aria-label={t('mobileDrawer.openWalletAriaLabel', 'Open wallet panel')}
           >
             <span className="mobile-drawer__utility-icon">
               <Wallet size={18} />
             </span>
             <span className="mobile-drawer__utility-text">
-              {wallet?.status === 'Connected' ? 'Wallet' : 'Connect Wallet'}
+              {wallet?.status === 'Connected'
+                ? t('mobileDrawer.wallet', 'Wallet')
+                : t('mobileDrawer.connectWallet', 'Connect Wallet')}
             </span>
           </button>
 
@@ -526,12 +586,14 @@ const MobileDrawer = ({
             type="button"
             className="mobile-drawer__utility glass-panel"
             onClick={handleAccountClick}
-            aria-label="Open account menu"
+            aria-label={t('mobileDrawer.openAccountAriaLabel', 'Open account menu')}
           >
             <span className="mobile-drawer__utility-icon">
               <User size={18} />
             </span>
-            <span className="mobile-drawer__utility-text">Account</span>
+            <span className="mobile-drawer__utility-text">
+              {t('mobileDrawer.account', 'Account')}
+            </span>
           </button>
         </div>
       </aside>

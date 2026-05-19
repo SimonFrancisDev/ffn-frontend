@@ -1,0 +1,91 @@
+#ffn-toast-root {
+  position: relative;
+  z-index: var(--ffn-z-toast);
+}
+
+.ffn-toast-viewport {
+  position: fixed;
+  inset-block-start: calc(var(--nav-height, 64px) + 18px);
+  inset-inline-end: 18px;
+  z-index: var(--ffn-z-toast);
+  width: min(380px, calc(100vw - 28px));
+  display: grid;
+  gap: 10px;
+  pointer-events: none;
+}
+
+.ffn-toast {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr) auto;
+  align-items: flex-start;
+  gap: 10px;
+  padding: 12px;
+  border-radius: var(--ffn-radius-sm);
+  border: 1px solid var(--ffn-border);
+  background: var(--ffn-surface-raised);
+  color: var(--ffn-text);
+  box-shadow: var(--ffn-elevation-2);
+  pointer-events: auto;
+  animation: ffnToastEnter var(--ffn-motion-base) var(--ffn-ease-emphasized) both;
+}
+
+.ffn-toast--success { border-color: rgba(34, 197, 94, 0.32); }
+.ffn-toast--warning { border-color: rgba(245, 158, 11, 0.34); }
+.ffn-toast--danger { border-color: rgba(239, 68, 68, 0.34); }
+.ffn-toast--info { border-color: rgba(56, 189, 248, 0.3); }
+
+.ffn-toast__body {
+  display: grid;
+  gap: 4px;
+  min-width: 0;
+}
+
+.ffn-toast__body strong {
+  font-size: var(--ffn-text-sm);
+  line-height: var(--ffn-line-tight);
+}
+
+.ffn-toast__body p {
+  margin: 0;
+  color: var(--ffn-text-soft);
+  font-size: var(--ffn-text-sm);
+  line-height: var(--ffn-line-base);
+}
+
+.ffn-toast__close {
+  width: 26px;
+  height: 26px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: var(--ffn-radius-xs);
+  border: 0;
+  background: transparent;
+  color: var(--ffn-text-muted);
+  cursor: pointer;
+}
+
+.ffn-toast__close:hover {
+  background: var(--ffn-surface-muted);
+  color: var(--ffn-text);
+}
+
+@keyframes ffnToastEnter {
+  from { opacity: 0; transform: translateY(-8px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+@media (max-width: 640px) {
+  .ffn-toast-viewport {
+    inset-inline: 12px;
+    inset-block-start: auto;
+    inset-block-end: max(12px, env(safe-area-inset-bottom));
+    width: auto;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .ffn-toast {
+    animation-duration: 1ms;
+  }
+}

@@ -1,8 +1,10 @@
 import { Modal } from 'react-bootstrap'
 import { X, ExternalLink, Calendar, Megaphone, Bell } from 'lucide-react'
+import { useTranslation } from 'react-i18next'
 import './NotificationModal.css'
 
 const NotificationModal = ({ notification, onClose }) => {
+  const { t } = useTranslation()
   if (!notification) return null
   
   const getIcon = () => {
@@ -37,13 +39,19 @@ const NotificationModal = ({ notification, onClose }) => {
           <span className="notification-modal__icon">
             <IconComponent size={20} style={{ color: iconColor }} />
           </span>
-          {notification.title}
+          {notification.titleKey ? t(notification.titleKey, notification.title) : notification.title}
         </Modal.Title>
       </Modal.Header>
       <Modal.Body>
-        <p className="notification-modal__time">{notification.time}</p>
+        <p className="notification-modal__time">
+          {notification.timeKey ? t(notification.timeKey, notification.time) : notification.time}
+        </p>
         <div className="notification-modal__content">
-          {notification.fullContent || notification.message}
+          {notification.fullContentKey
+            ? t(notification.fullContentKey, notification.fullContent || notification.message)
+            : notification.messageKey
+              ? t(notification.messageKey, notification.fullContent || notification.message)
+              : notification.fullContent || notification.message}
         </div>
         {notification.ctaUrl && (
           <div className="notification-modal__cta">
@@ -52,14 +60,15 @@ const NotificationModal = ({ notification, onClose }) => {
               target="_blank" 
               rel="noopener noreferrer"
             >
-              {notification.ctaLabel || 'Learn More'} <ExternalLink size={14} />
+              {notification.ctaLabel || t('notificationModal.actions.learnMore', 'Learn More')}{' '}
+              <ExternalLink size={14} />
             </a>
           </div>
         )}
       </Modal.Body>
       <Modal.Footer>
         <button className="notification-modal__close-btn" onClick={onClose}>
-          Close
+          {t('notificationModal.actions.close', 'Close')}
         </button>
       </Modal.Footer>
     </Modal>

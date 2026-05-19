@@ -1,6 +1,7 @@
 import './WalletPanel.css'
 import { useEffect, useRef, useState } from 'react'
 import { createPortal } from 'react-dom'
+import { useTranslation } from 'react-i18next'
 
 function ModalPortal({ children }) {
   if (typeof document === 'undefined') return null
@@ -17,6 +18,7 @@ const WalletPanel = ({
   onOpenWalletSettings,
   anchorRef = null, // NEW: Accept anchor ref for positioning
 }) => {
+  const { t } = useTranslation()
   const dialogRef = useRef(null)
   const [desktopPosition, setDesktopPosition] = useState({
     top: 76,
@@ -216,7 +218,7 @@ const WalletPanel = ({
             isDesktop ? 'wallet-modal__dialog--desktop' : 'wallet-modal__dialog--mobile'
           } glass-panel theme-transition`}
           role="dialog"
-          aria-label="Wallet panel"
+          aria-label={t('walletPanel.ariaLabel', 'Wallet panel')}
           onClick={(event) => event.stopPropagation()}
           style={
             isDesktop
@@ -240,9 +242,11 @@ const WalletPanel = ({
         >
           <div className="wallet-panel__header">
             <div className="wallet-panel__title-group">
-              <h3 className="wallet-panel__title">Wallet</h3>
+              <h3 className="wallet-panel__title">
+                {t('walletPanel.title', 'Wallet')}
+              </h3>
               <p className="wallet-panel__subtitle soft-text">
-                Connection and network details
+                {t('walletPanel.subtitle', 'Connection and network details')}
               </p>
             </div>
 
@@ -250,7 +254,7 @@ const WalletPanel = ({
               type="button"
               className="wallet-panel__close"
               onClick={onClose}
-              aria-label="Close wallet panel"
+              aria-label={t('walletPanel.closeAriaLabel', 'Close wallet panel')}
             >
               ✕
             </button>
@@ -260,30 +264,42 @@ const WalletPanel = ({
             <div className="wallet-panel__status-row">
               <span className={statusDotClassName} />
               <span className="wallet-panel__status-text">
-                {wallet.status || 'Disconnected'}
+                {wallet.status || t('walletPanel.status.disconnected', 'Disconnected')}
               </span>
             </div>
 
             <div className="wallet-panel__address-block">
-              <span className="wallet-panel__label soft-text">Wallet Address</span>
+              <span className="wallet-panel__label soft-text">
+                {t('walletPanel.labels.walletAddress', 'Wallet Address')}
+              </span>
               <p className="wallet-panel__value">
-                {rawAddress || wallet.address || 'No wallet connected'}
+                {rawAddress || wallet.address || t('walletPanel.emptyAddress', 'No wallet connected')}
               </p>
             </div>
 
             <div className="wallet-panel__meta-grid">
               <div className="wallet-panel__meta-card">
-                <span className="wallet-panel__meta-label soft-text">Network</span>
-                <span className="wallet-panel__meta-value">{wallet.network || 'Unknown'}</span>
+                <span className="wallet-panel__meta-label soft-text">
+                  {t('walletPanel.labels.network', 'Network')}
+                </span>
+                <span className="wallet-panel__meta-value">
+                  {wallet.network || t('walletPanel.unknown', 'Unknown')}
+                </span>
               </div>
 
               <div className="wallet-panel__meta-card">
-                <span className="wallet-panel__meta-label soft-text">Provider</span>
-                <span className="wallet-panel__meta-value">{wallet.provider || 'Unknown'}</span>
+                <span className="wallet-panel__meta-label soft-text">
+                  {t('walletPanel.labels.provider', 'Provider')}
+                </span>
+                <span className="wallet-panel__meta-value">
+                  {wallet.provider || t('walletPanel.unknown', 'Unknown')}
+                </span>
               </div>
 
               <div className="wallet-panel__meta-card wallet-panel__meta-card--full">
-                <span className="wallet-panel__meta-label soft-text">Balance</span>
+                <span className="wallet-panel__meta-label soft-text">
+                  {t('walletPanel.labels.balance', 'Balance')}
+                </span>
                 <span className="wallet-panel__meta-value">
                   {wallet.balance ? `${wallet.balance} POL` : '—'}
                 </span>
@@ -299,7 +315,9 @@ const WalletPanel = ({
                 onClick={handleConnect}
                 disabled={isLoading}
               >
-                {isLoading ? 'Connecting...' : 'Connect Wallet'}
+                {isLoading
+                  ? t('walletPanel.actions.connecting', 'Connecting...')
+                  : t('walletPanel.actions.connectWallet', 'Connect Wallet')}
               </button>
             ) : (
               <>
@@ -309,7 +327,7 @@ const WalletPanel = ({
                   onClick={handleCopyAddress}
                   disabled={!canCopy}
                 >
-                  Copy Address
+                  {t('walletPanel.actions.copyAddress', 'Copy Address')}
                 </button>
 
                 <button
@@ -318,7 +336,7 @@ const WalletPanel = ({
                   onClick={handleViewOnExplorer}
                   disabled={!canOpenExplorer}
                 >
-                  View on Explorer
+                  {t('walletPanel.actions.viewOnExplorer', 'View on Explorer')}
                 </button>
 
                 <button
@@ -327,7 +345,7 @@ const WalletPanel = ({
                   onClick={handleSwitchNetwork}
                   disabled={!canSwitchNetwork}
                 >
-                  Switch Network
+                  {t('walletPanel.actions.switchNetwork', 'Switch Network')}
                 </button>
 
                 <button
@@ -336,7 +354,7 @@ const WalletPanel = ({
                   onClick={handleOpenWalletSettings}
                   disabled={!canOpenSettings}
                 >
-                  Wallet Settings
+                  {t('walletPanel.actions.walletSettings', 'Wallet Settings')}
                 </button>
 
                 <button
@@ -345,7 +363,7 @@ const WalletPanel = ({
                   onClick={handleDisconnect}
                   disabled={!canDisconnect}
                 >
-                  Disconnect
+                  {t('walletPanel.actions.disconnect', 'Disconnect')}
                 </button>
               </>
             )}

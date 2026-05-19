@@ -1,8 +1,4 @@
-const API_BASE = import.meta.env.VITE_API_BASE_URL?.replace(/\/$/, '') || ''
-
-if (!API_BASE) {
-  console.error('[API] Missing VITE_API_BASE_URL environment variable')
-}
+import { buildApiUrl } from './apiConfig'
 
 const DEFAULT_REQUEST_TIMEOUT_MS = Number(import.meta.env.VITE_API_REQUEST_TIMEOUT_MS) || 15000
 const FAST_REQUEST_TIMEOUT_MS = Number(import.meta.env.VITE_API_FAST_REQUEST_TIMEOUT_MS) || 8000
@@ -25,17 +21,7 @@ const inflightGetRequests = new Map()
 const responseCache = new Map()
 
 function buildUrl(path, query = null) {
-  const url = new URL(`${API_BASE}${path}`)
-
-  if (query && typeof query === 'object') {
-    Object.entries(query).forEach(([key, value]) => {
-      if (value !== undefined && value !== null && value !== '') {
-        url.searchParams.set(key, String(value))
-      }
-    })
-  }
-
-  return url.toString()
+  return buildApiUrl(path, query)
 }
 
 function buildCacheKey(path, query = null) {
@@ -350,7 +336,7 @@ export async function fetchUserSummaryApi(address, options = {}) {
 
 export async function fetchAddressActivationEventsApi(address, options = {}) {
   return apiGet(
-    `/api/orbits/events/${encodeURIComponent(address)}`,   // We'll use this route
+    `/api/orbit-events/address/${encodeURIComponent(address)}`,
     null,
     {
       ttlMs: 1800,                    // 30 minutes cache

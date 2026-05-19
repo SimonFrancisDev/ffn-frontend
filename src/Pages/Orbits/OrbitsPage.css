@@ -4585,3 +4585,359 @@
     text-align: left;
   }
 }
+
+/* =========================================================
+   GROUP 4 PREMIUM ORBITS FOUNDATION PASS
+   Shared-token layer for stable geometry, semantic states,
+   overlay modal, RTL composition, and mobile-safe performance.
+========================================================= */
+
+.orbits-page {
+  color: var(--ffn-text);
+}
+
+.orbits-page .glass-panel,
+.orbits-control-shell .glass-panel,
+.orbit-summary-strip,
+.orbit-hover-card,
+.info-card,
+.orbit-legend {
+  background: var(--ffn-surface);
+  border: 1px solid var(--ffn-border);
+  box-shadow: var(--ffn-elevation-1);
+  backdrop-filter: blur(14px);
+  -webkit-backdrop-filter: blur(14px);
+}
+
+.orbit-identity-alert {
+  max-width: 1180px;
+  margin: -8px auto 16px;
+}
+
+.address-input {
+  color: var(--ffn-text);
+  background: var(--ffn-surface-muted);
+  border: 1px solid var(--ffn-border);
+}
+
+.address-input::placeholder {
+  color: var(--ffn-text-muted);
+}
+
+.last-sync,
+.cycle-label,
+.orbit-summary-label,
+.escrow-label,
+.modal-label {
+  color: var(--ffn-text-muted);
+}
+
+.galaxy-container {
+  contain: layout paint style;
+  isolation: isolate;
+  background:
+    radial-gradient(circle at 50% 50%, rgba(77, 163, 255, 0.16), transparent 34%),
+    radial-gradient(circle at 24% 18%, rgba(29, 233, 182, 0.12), transparent 30%),
+    linear-gradient(180deg, rgba(6, 16, 31, 0.96), rgba(3, 8, 18, 0.98));
+  border: 1px solid var(--ffn-border-strong);
+  box-shadow:
+    var(--ffn-elevation-2),
+    inset 0 1px 0 rgba(255, 255, 255, 0.08);
+}
+
+.galaxy-stage {
+  width: var(--orbit-stage-size, auto);
+  height: var(--orbit-stage-size, auto);
+  will-change: auto;
+}
+
+.star-field {
+  opacity: 0.62;
+  transform: translateZ(0);
+}
+
+.star {
+  animation: none !important;
+  background: rgba(226, 238, 255, 0.72);
+}
+
+.orbit-ring {
+  animation: none !important;
+  border-width: 1px;
+}
+
+.orbit-ring.line1 {
+  border-color: rgba(77, 163, 255, 0.36);
+}
+
+.orbit-ring.line2 {
+  border-color: rgba(29, 233, 182, 0.26);
+}
+
+.orbit-ring.line3 {
+  border-color: rgba(139, 92, 246, 0.22);
+}
+
+.ring-label,
+.ring-stats {
+  color: var(--ffn-text-soft);
+  background: color-mix(in srgb, var(--ffn-surface-raised) 82%, transparent);
+  border: 1px solid var(--ffn-border);
+}
+
+.orbit-core {
+  border-color: rgba(255, 255, 255, 0.72);
+  box-shadow:
+    0 0 0 6px rgba(77, 163, 255, 0.08),
+    0 18px 40px rgba(0, 0, 0, 0.28),
+    inset 0 1px 8px rgba(255, 255, 255, 0.16);
+}
+
+.planet-node {
+  contain: layout paint;
+  border-color: rgba(255, 255, 255, 0.72);
+  box-shadow:
+    0 8px 18px rgba(0, 0, 0, 0.26),
+    inset 0 1px 0 rgba(255, 255, 255, 0.16);
+  transition:
+    transform var(--ffn-motion-fast) var(--ffn-ease-standard),
+    box-shadow var(--ffn-motion-fast) var(--ffn-ease-standard),
+    border-color var(--ffn-motion-fast) var(--ffn-ease-standard),
+    filter var(--ffn-motion-fast) var(--ffn-ease-standard);
+}
+
+.planet-node:hover,
+.planet-node:focus-visible {
+  outline: none;
+  transform: translate(-50%, -50%) scale(1.08) !important;
+  border-color: rgba(255, 255, 255, 0.94);
+  box-shadow:
+    0 0 0 5px rgba(77, 163, 255, 0.12),
+    0 14px 28px rgba(0, 0, 0, 0.32);
+}
+
+.planet-content {
+  animation: none !important;
+  transition: none;
+}
+
+.planet-node:hover .planet-content {
+  transform: none;
+}
+
+.planet-node.orbit-state-owner,
+.planet-node.mine {
+  background: linear-gradient(135deg, #22c55e, #1de9b6);
+}
+
+.planet-node.orbit-state-target {
+  background: rgba(77, 163, 255, 0.12);
+  border: 2px solid rgba(77, 163, 255, 0.72);
+  box-shadow:
+    0 0 0 5px rgba(77, 163, 255, 0.12),
+    0 0 24px rgba(77, 163, 255, 0.18);
+}
+
+.planet-node.orbit-state-newly-filled {
+  background: linear-gradient(135deg, #f8d66d, #22c55e);
+  box-shadow:
+    0 0 0 6px rgba(248, 214, 109, 0.12),
+    0 0 26px rgba(34, 197, 94, 0.22);
+}
+
+.planet-node.orbit-state-spillover1 {
+  background: linear-gradient(135deg, #f97316, #facc15);
+}
+
+.planet-node.orbit-state-spillover2 {
+  background: linear-gradient(135deg, #8b5cf6, #4da3ff);
+}
+
+.planet-node.orbit-state-escrow {
+  background: linear-gradient(135deg, #f59e0b, #ef4444);
+}
+
+.planet-node.orbit-state-auto-upgrade {
+  background: linear-gradient(135deg, #14b8a6, #2563eb);
+  box-shadow:
+    0 0 0 5px rgba(20, 184, 166, 0.12),
+    0 0 24px rgba(37, 99, 235, 0.2);
+}
+
+.planet-node.orbit-state-recycle {
+  background: linear-gradient(135deg, #ec4899, #8b5cf6);
+}
+
+.planet-node.orbit-state-empty,
+.planet-node.empty {
+  background: var(--ffn-surface-muted);
+  border: 1.5px dashed var(--ffn-border-strong);
+}
+
+.structural-connection,
+.structural-connection-grey {
+  transform: translateZ(0);
+  opacity: 0.64;
+}
+
+.structural-connection {
+  background: linear-gradient(90deg, rgba(250, 204, 21, 0.16), rgba(250, 204, 21, 0.6), rgba(250, 204, 21, 0.16));
+}
+
+.orbit-legend {
+  border-radius: var(--ffn-radius-sm);
+}
+
+.legend-dot.mine { background: linear-gradient(135deg, #22c55e, #1de9b6); }
+.legend-dot.downline { background: linear-gradient(135deg, #f97316, #facc15); }
+.legend-dot.other { background: linear-gradient(135deg, #2563eb, #4da3ff); }
+.legend-dot.gold { background: linear-gradient(135deg, #f59e0b, #ef4444); }
+
+.orbit-position-overlay {
+  width: min(94vw, 720px);
+  max-height: min(86dvh, 780px);
+}
+
+.orbit-position-overlay .ffn-overlay__body {
+  padding: 0;
+}
+
+.position-modal--shared {
+  width: 100% !important;
+  max-width: none !important;
+  max-height: none !important;
+  padding: var(--ffn-space-4) !important;
+  overflow: visible !important;
+  background: transparent !important;
+  border: 0 !important;
+  box-shadow: none !important;
+}
+
+.position-modal--shared .modal-close {
+  display: none !important;
+}
+
+.orbit-narration-panel {
+  margin-bottom: var(--ffn-space-4);
+}
+
+.orbit-narration-panel p {
+  margin: 0;
+}
+
+.orbit-modal-skeleton {
+  display: grid;
+  gap: 12px;
+  padding: var(--ffn-space-2) 0;
+}
+
+.position-modal--shared .modal-detail {
+  border-color: var(--ffn-border);
+}
+
+.position-modal--shared .modal-detail span:last-child {
+  color: var(--ffn-text);
+}
+
+.position-modal--shared .modal-record-item {
+  color: var(--ffn-text-soft);
+  background: var(--ffn-surface-muted);
+  border-color: var(--ffn-border);
+}
+
+[dir="rtl"] .orbits-page {
+  direction: rtl;
+}
+
+[dir="rtl"] .galaxy-container,
+[dir="rtl"] .galaxy-stage,
+[dir="rtl"] .orbit-core,
+[dir="rtl"] .planet-node,
+[dir="rtl"] .structural-connection,
+[dir="rtl"] .structural-connection-grey {
+  direction: ltr;
+}
+
+[dir="rtl"] .modal-detail span:last-child {
+  text-align: left;
+}
+
+[dir="rtl"] .ffn-orbit-cockpit__switch span,
+[dir="rtl"] .ffn-orbit-cockpit__upgrade-amount {
+  text-align: right;
+}
+
+[data-theme="light"] .galaxy-container {
+  background:
+    radial-gradient(circle at 50% 50%, rgba(37, 99, 235, 0.13), transparent 34%),
+    radial-gradient(circle at 24% 18%, rgba(20, 184, 166, 0.12), transparent 30%),
+    linear-gradient(180deg, rgba(255, 255, 255, 0.96), rgba(239, 246, 255, 0.94));
+}
+
+[data-theme="light"] .star {
+  background: rgba(37, 99, 235, 0.28);
+}
+
+[data-theme="light"] .orbit-core {
+  border-color: rgba(255, 255, 255, 0.95);
+}
+
+[data-theme="light"] .planet-node {
+  border-color: rgba(255, 255, 255, 0.92);
+  box-shadow:
+    0 8px 18px rgba(25, 54, 92, 0.14),
+    inset 0 1px 0 rgba(255, 255, 255, 0.35);
+}
+
+@media (min-width: 1440px) {
+  .orbits-page:not(.orbits-page--focused) .galaxy-container {
+    max-width: 760px;
+  }
+}
+
+@media (max-width: 767px) {
+  .galaxy-container {
+    box-shadow: var(--ffn-elevation-1);
+  }
+
+  .orbit-position-overlay {
+    width: 100%;
+    max-height: 84dvh;
+  }
+
+  .position-modal--shared {
+    padding: var(--ffn-space-3) !important;
+  }
+
+  .planet-node:hover,
+  .planet-node:focus-visible {
+    transform: translate(-50%, -50%) scale(1.04) !important;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .planet-node,
+  .planet-content,
+  .structural-connection,
+  .structural-connection-grey {
+    transition: none !important;
+    animation: none !important;
+  }
+}
+/* Compact production position modal: show who earned what, not raw receipt internals. */
+.position-modal--earnings > .modal-detail,
+.position-modal--earnings > hr,
+.position-modal--earnings > .modal-subtitle,
+.position-modal--earnings > .modal-record-list,
+.position-modal--earnings > .orbit-narration-panel {
+  display: none;
+}
+
+.position-modal--earnings .orbit-earnings-summary {
+  display: grid;
+  gap: 10px;
+}
+
+.position-modal--earnings .orbit-earnings-summary .modal-detail {
+  display: flex;
+}

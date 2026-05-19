@@ -1,10 +1,12 @@
 import './ActivationCenterPage.css'
 import { useEffect, useState, useCallback, useMemo } from 'react'
+import { useTranslation } from 'react-i18next'
 import { useNavigate, useLocation, useParams } from 'react-router-dom'
 import { useWallet } from '../../hooks/useWallet'
 import { useContracts } from '../../hooks/useContracts'
 import { useSpace } from '../../context/SpaceContext'
 import { web3Service } from '../../Services/web3'
+import { useToast } from '../../components/feedback'
 import { ethers } from 'ethers'
 // import { fetchAddressReceiptsApi } from '../../Services/orbitsApi'
 // import {
@@ -213,8 +215,11 @@ const getActivationOrbitNodeType = (position, viewer) => {
 }
 
 const ActivationCenterPage = () => {
+  const { t } = useTranslation()
+  const activationT = useCallback((key, fallback, options) => t(`activationCenterPage.${key}`, fallback, options), [t])
   const { isConnected, account, connect } = useWallet()
   const { subjectAddress, isOwnSpace, canTransact, switchToSelf } = useSpace()
+  const toast = useToast()
   const {
     contracts,
     isLoading: contractsLoading,
@@ -402,11 +407,11 @@ const ActivationCenterPage = () => {
         if (!level) return
 
         mapped[level] = {
-          generated: Number(item.generated || 0),
-          walletCredited: Number(item.liquid || 0),
+          generated: Number(item.generatedGenerated || item.generated || 0),
+          walletCredited: Number(item.walletCreditedLiquid || item.liquid || 0),
           escrowLockedLifetime: Number(item.escrowLockedLifetime || item.receiptEscrowLocked || 0),
           autoUpgradeUsed: Number(item.autoUpgradeUsed || item.escrowUsed || 0),
-          currentLocked: Number(item.currentLocked || 0),
+          currentLocked: Number(item.currentEscrowLocked || item.currentLocked || 0),
           remainingToNextUpgrade: Number(item.remainingToNextUpgrade || 0),
           receiptCount: Number(item.receiptCount || 0),
         }
@@ -539,7 +544,7 @@ const ActivationCenterPage = () => {
   }
 
   const getSigner = async () => {
-    if (!window.ethereum) throw new Error('MetaMask not installed')
+    if (!window.ethereum) throw new Error(activationT('errors.metamaskNotInstalled', 'MetaMask not installed'))
     const provider = new ethers.BrowserProvider(window.ethereum)
     return await provider.getSigner()
   }
@@ -637,7 +642,7 @@ const ActivationCenterPage = () => {
       setTxStatus({
         loading: false,
         hash: null,
-        error: "You are viewing another member's space. Return to your own space to perform wallet actions.",
+        error: activationT('errors.readOnlySpace', "You are viewing another account. Return to My Account View to perform wallet actions."),
       })
       return false
     }
@@ -681,10 +686,10 @@ const ActivationCenterPage = () => {
 
         let viewerRole = 'NONE'
         if (snapshot.viewerReceiptBreakdown) {
-          if (snapshot.viewerReceiptBreakdown.founderPathGross > 0) viewerRole = 'FOUNDER_PATH'
-          else if (snapshot.viewerReceiptBreakdown.directOwnerGross > 0) viewerRole = 'DIRECT_OWNER'
-          else if (snapshot.viewerReceiptBreakdown.routedSpilloverGross > 0) viewerRole = 'ROUTED_SPILLOVER'
-          else if (snapshot.viewerReceiptBreakdown.recycleGross > 0) viewerRole = 'RECYCLE'
+          if (snapshot.viewerReceiptBreakdown.founderPathGenerated > 0) viewerRole = 'FOUNDER_PATH'
+          else if (snapshot.viewerReceiptBreakdown.directOwnerGenerated > 0) viewerRole = 'DIRECT_OWNER'
+          else if (snapshot.viewerReceiptBreakdown.routedSpilloverGenerated > 0) viewerRole = 'ROUTED_SPILLOVER'
+          else if (snapshot.viewerReceiptBreakdown.recycleGenerated > 0) viewerRole = 'RECYCLE'
         }
 
         return {
@@ -722,8 +727,8 @@ const ActivationCenterPage = () => {
 
       receipts.forEach((receipt) => {
         const level = Number(receipt.level || 0)
-        const liquid = Number(receipt.liquidPaid || 0)
-        const escrow = Number(receipt.escrowLocked || 0)
+        const liquid = Number(receipt.walletCreditedLiquid ?? receipt.liquidPaid ?? 0)
+        const escrow = Number(receipt.receiptEscrowLocked ?? receipt.escrowLocked ?? 0)
 
         total += liquid
         earningsByLevel[level] = (earningsByLevel[level] || 0) + liquid
@@ -1094,14 +1099,16 @@ const ActivationCenterPage = () => {
 
       const approveTx = await contracts.usdt.connect(signer).approve(spender, requiredAmountWei)
       setTxStatus({ loading: true, hash: approveTx.hash, error: null })
+      toast.info(activationT('toast.approvalSubmitted', 'USDT approval submitted.'), { dedupeKey: 'activation-approval-submitted' })
       await approveTx.wait()
+      toast.success(activationT('toast.approvalConfirmed', 'USDT approval confirmed.'), { dedupeKey: 'activation-approval-confirmed' })
 
       const newAllowance = await contracts.usdt.allowance(account, spender)
       setAllowance(formatUsdt(newAllowance).toString())
 
       return approveTx
     },
-    [contracts, account, formatUsdt]
+    [contracts, account, formatUsdt, activationT, toast]
   )
 
   const refreshAllAfterWrite = useCallback(async () => {
@@ -1117,15 +1124,18 @@ const ActivationCenterPage = () => {
     if (!ensureWritableSpace()) return
 
     if (networkWarning) {
+      const message = activationT('errors.switchNetworkFirst', 'Please switch to Polygon Amoy Testnet first.')
       setTxStatus({
         loading: false,
         hash: null,
-        error: 'Please switch to Polygon Amoy Testnet first.',
+        error: message,
       })
+      toast.warning(message, { dedupeKey: 'activation-switch-network' })
       return
     }
 
     setTxStatus({ loading: true, hash: null, error: null })
+    toast.info(activationT('toast.registrationPreparing', 'Preparing registration transaction.'), { dedupeKey: 'activation-registration-preparing' })
 
     try {
       const totalRequiredUsdt = 10
@@ -1134,7 +1144,10 @@ const ActivationCenterPage = () => {
 
       if (balance < totalRequiredWei) {
         throw new Error(
-          `Insufficient USDT balance. You need ${totalRequiredUsdt} USDT for registration and Level 1 activation. Current balance: ${ethers.formatUnits(balance, 6)} USDT`
+          activationT('errors.insufficientRegistrationBalance', 'Insufficient USDT balance. You need {{amount}} USDT for registration and Level 1 activation. Current balance: {{balance}} USDT', {
+            amount: totalRequiredUsdt,
+            balance: ethers.formatUnits(balance, 6),
+          })
         )
       }
 
@@ -1146,6 +1159,7 @@ const ActivationCenterPage = () => {
         finalRegistrationReferrer || ethers.ZeroAddress
       )
       setTxStatus({ loading: true, hash: registerTx.hash, error: null })
+      toast.info(activationT('toast.registrationSubmitted', 'Registration transaction submitted.'), { dedupeKey: 'activation-registration-submitted' })
       await registerTx.wait()
 
       try {
@@ -1156,10 +1170,13 @@ const ActivationCenterPage = () => {
         if (!level1AlreadyActive) {
           const activateTx = await registrationWithSigner.activateLevel(1)
           setTxStatus({ loading: true, hash: activateTx.hash, error: null })
+          toast.info(activationT('toast.activationSubmitted', 'Level activation transaction submitted.'), { dedupeKey: 'activation-level-submitted' })
           await activateTx.wait()
           setTxStatus({ loading: false, hash: activateTx.hash, error: null })
+          toast.success(activationT('toast.levelOneConfirmed', 'Registration and Level 1 activation confirmed.'), { dedupeKey: 'activation-level-one-confirmed' })
         } else {
           setTxStatus({ loading: false, hash: registerTx.hash, error: null })
+          toast.success(activationT('toast.registrationConfirmed', 'Registration confirmed.'), { dedupeKey: 'activation-registration-confirmed' })
         }
       } catch (activationError) {
         const latestActive = await contracts.registration
@@ -1168,6 +1185,7 @@ const ActivationCenterPage = () => {
 
         if (latestActive) {
           setTxStatus({ loading: false, hash: registerTx.hash, error: null })
+          toast.success(activationT('toast.levelOneConfirmed', 'Registration and Level 1 activation confirmed.'), { dedupeKey: 'activation-level-one-confirmed' })
         } else {
           throw activationError
         }
@@ -1179,24 +1197,26 @@ const ActivationCenterPage = () => {
     } catch (err) {
       console.error('Registration + Level 1 activation error:', err)
 
-      let errorMessage = err.message || 'Transaction failed'
+      let errorMessage = err.message || activationT('errors.transactionFailed', 'Transaction failed')
 
       if (err.message?.includes('Already registered')) {
-        errorMessage = 'This wallet is already registered.'
+        errorMessage = activationT('errors.walletAlreadyRegistered', 'This wallet is already registered.')
       } else if (err.message?.includes('Self-referral')) {
-        errorMessage = 'You cannot refer yourself.'
+        errorMessage = activationT('errors.selfReferral', 'You cannot refer yourself.')
       } else if (err.message?.includes('Referrer not registered')) {
-        errorMessage = 'The referrer address is not registered.'
+        errorMessage = activationT('errors.referrerNotRegistered', 'The referrer address is not registered.')
       } else if (err.message?.includes('USDT transfer failed')) {
-        errorMessage = 'USDT transfer failed. Check your balance and allowance.'
+        errorMessage = activationT('errors.usdtTransferFailed', 'USDT transfer failed. Check your balance and allowance.')
       } else if (err.message?.includes('insufficient funds')) {
-        errorMessage = 'You do not have enough POL for gas.'
+        errorMessage = activationT('errors.notEnoughPol', 'You do not have enough POL for gas.')
       }
 
       setTxStatus({ loading: false, hash: null, error: errorMessage })
+      toast.danger(errorMessage, { dedupeKey: 'activation-registration-failed' })
     }
   }, [
     ensureWritableSpace,
+    activationT,
     networkWarning,
     contracts,
     account,
@@ -1204,6 +1224,7 @@ const ActivationCenterPage = () => {
     getWriteContracts,
     registrationReferrer,
     refreshAllAfterWrite,
+    toast,
   ])
 
   const handleTransferToSelf = async () => {
@@ -1211,18 +1232,19 @@ const ActivationCenterPage = () => {
     setTxStatus({ loading: true, hash: null, error: null })
 
     try {
-      if (!isDeployer) throw new Error('Only deployer can transfer USDT')
+      if (!isDeployer) throw new Error(activationT('errors.onlyDeployerCanTransfer', 'Only deployer can transfer USDT'))
 
       const amount = ethers.parseUnits(transferAmount, 6)
       const balance = await contracts.usdt.balanceOf(account)
 
       if (balance < amount) {
-        throw new Error(`Insufficient USDT balance. You have ${ethers.formatUnits(balance, 6)} USDT`)
+        throw new Error(activationT('errors.insufficientTransferBalance', 'Insufficient USDT balance. You have {{balance}} USDT', { balance: ethers.formatUnits(balance, 6) }))
       }
 
       const writeContracts = await getWriteContracts()
       const tx = await writeContracts.usdt.transfer(account, amount)
       setTxStatus({ loading: true, hash: tx.hash, error: null })
+      toast.info(activationT('toast.transferSubmitted', 'Transfer transaction submitted.'), { dedupeKey: 'activation-transfer-submitted' })
       await tx.wait()
 
       const newBalance = await contracts.usdt.balanceOf(account)
@@ -1231,9 +1253,11 @@ const ActivationCenterPage = () => {
       setDeployerUsdtBalance(newBalanceFormatted)
 
       setTxStatus({ loading: false, hash: tx.hash, error: null })
+      toast.success(activationT('toast.transferConfirmed', 'Transfer confirmed.'), { dedupeKey: 'activation-transfer-confirmed' })
     } catch (err) {
       console.error('Transfer error:', err)
       setTxStatus({ loading: false, hash: null, error: err.message })
+      toast.danger(err.message || activationT('errors.transactionFailed', 'Transaction failed'), { dedupeKey: 'activation-transfer-failed' })
     }
   }
 
@@ -1242,19 +1266,20 @@ const ActivationCenterPage = () => {
     setTxStatus({ loading: true, hash: null, error: null })
 
     try {
-      if (!isDeployer) throw new Error('Only deployer can transfer USDT')
-      if (!ethers.isAddress(transferAddress)) throw new Error('Invalid recipient address')
+      if (!isDeployer) throw new Error(activationT('errors.onlyDeployerCanTransfer', 'Only deployer can transfer USDT'))
+      if (!ethers.isAddress(transferAddress)) throw new Error(activationT('errors.invalidRecipientAddress', 'Invalid recipient address'))
 
       const amount = ethers.parseUnits(transferAmount, 6)
       const balance = await contracts.usdt.balanceOf(account)
 
       if (balance < amount) {
-        throw new Error(`Insufficient USDT balance. You have ${ethers.formatUnits(balance, 6)} USDT`)
+        throw new Error(activationT('errors.insufficientTransferBalance', 'Insufficient USDT balance. You have {{balance}} USDT', { balance: ethers.formatUnits(balance, 6) }))
       }
 
       const writeContracts = await getWriteContracts()
       const tx = await writeContracts.usdt.transfer(transferAddress, amount)
       setTxStatus({ loading: true, hash: tx.hash, error: null })
+      toast.info(activationT('toast.transferSubmitted', 'Transfer transaction submitted.'), { dedupeKey: 'activation-transfer-submitted' })
       await tx.wait()
 
       const newDeployerBalance = await contracts.usdt.balanceOf(account)
@@ -1266,9 +1291,11 @@ const ActivationCenterPage = () => {
       }
 
       setTxStatus({ loading: false, hash: tx.hash, error: null })
+      toast.success(activationT('toast.transferConfirmed', 'Transfer confirmed.'), { dedupeKey: 'activation-transfer-confirmed' })
     } catch (err) {
       console.error('Transfer error:', err)
       setTxStatus({ loading: false, hash: null, error: err.message })
+      toast.danger(err.message || activationT('errors.transactionFailed', 'Transaction failed'), { dedupeKey: 'activation-transfer-failed' })
     }
   }
 
@@ -1280,62 +1307,70 @@ const ActivationCenterPage = () => {
       return [
         {
           key: 'wallet',
-          label: 'Wallet connected',
+          label: activationT('eligibility.wallet.label', 'Wallet connected'),
           passed: Boolean(isConnected),
-          hint: isConnected ? 'Wallet session is active.' : 'Connect your wallet first.',
+          hint: isConnected
+            ? activationT('eligibility.wallet.active', 'Wallet session is active.')
+            : activationT('eligibility.wallet.connectFirst', 'Connect your wallet first.'),
         },
         {
           key: 'network',
-          label: 'Correct network (Polygon Amoy)',
+          label: activationT('eligibility.network.label', 'Correct network (Polygon Amoy)'),
           passed: !networkWarning,
-          hint: !networkWarning ? 'Correct network detected.' : 'Switch to Polygon Amoy before continuing.',
+          hint: !networkWarning
+            ? activationT('eligibility.network.correct', 'Correct network detected.')
+            : activationT('eligibility.network.switch', 'Switch to Polygon Amoy before continuing.'),
         },
         {
           key: 'registration',
-          label: level === 1 && !isRegistered ? 'Ready to register' : 'Registration complete',
+          label: level === 1 && !isRegistered
+            ? activationT('eligibility.registration.ready', 'Ready to register')
+            : activationT('eligibility.registration.complete', 'Registration complete'),
           passed: level === 1 ? true : Boolean(isRegistered),
           hint:
             level === 1 && !isRegistered
-              ? 'This action will register the wallet and activate Level 1.'
+              ? activationT('eligibility.registration.action', 'This action will register the wallet and activate Level 1.')
               : isRegistered
-                ? 'Registration is already confirmed.'
-                : 'Complete registration first.',
+                ? activationT('eligibility.registration.confirmed', 'Registration is already confirmed.')
+                : activationT('eligibility.registration.completeFirst', 'Complete registration first.'),
         },
         {
           key: 'levelReady',
-          label: `Level ${level} ready`,
+          label: activationT('eligibility.levelReady.label', 'Level {{level}} ready', { level }),
           passed: Boolean(canActivateLevel(level)),
           hint:
             level === 1 && !isRegistered
-              ? 'Level 1 is available as part of onboarding.'
+              ? activationT('eligibility.levelReady.onboarding', 'Level 1 is available as part of onboarding.')
               : canActivateLevel(level)
-                ? `Level ${level} is available for activation.`
-                : `Activate Level ${level - 1} first.`,
+                ? activationT('eligibility.levelReady.available', 'Level {{level}} is available for activation.', { level })
+                : activationT('eligibility.levelReady.activatePrevious', 'Activate Level {{level}} first.', { level: level - 1 }),
         },
         {
           key: 'balance',
-          label: `${totalRequired} USDT available`,
+          label: activationT('eligibility.balance.label', '{{amount}} USDT available', { amount: totalRequired }),
           passed: parseFloat(usdtBalance) >= totalRequired,
           hint:
             parseFloat(usdtBalance) >= totalRequired
-              ? 'Wallet balance is sufficient.'
+              ? activationT('eligibility.balance.sufficient', 'Wallet balance is sufficient.')
               : level === 1 && !isRegistered
-                ? `You need ${totalRequired} USDT for registration and Level 1 activation.`
-                : `You need ${levelPrices[level]} USDT for this level.`,
+                ? activationT('eligibility.balance.needRegistration', 'You need {{amount}} USDT for registration and Level 1 activation.', { amount: totalRequired })
+                : activationT('eligibility.balance.needLevel', 'You need {{amount}} USDT for this level.', { amount: levelPrices[level] }),
         },
       ]
     },
-    [isConnected, networkWarning, isRegistered, canActivateLevel, usdtBalance]
+    [activationT, isConnected, networkWarning, isRegistered, canActivateLevel, usdtBalance]
   )
 
   const executeLevelActivation = async (level) => {
     if (!ensureWritableSpace()) return
     if (networkWarning) {
+      const message = activationT('errors.switchNetworkFirst', 'Please switch to Polygon Amoy Testnet first.')
       setTxStatus({
         loading: false,
         hash: null,
-        error: 'Please switch to Polygon Amoy Testnet first.',
+        error: message,
       })
+      toast.warning(message, { dedupeKey: 'activation-switch-network' })
       return
     }
 
@@ -1345,22 +1380,25 @@ const ActivationCenterPage = () => {
     }
 
     if (!canActivateLevel(level)) {
+      const message = activationT('errors.cannotActivateLevel', 'Cannot activate Level {{level}}. Please activate previous levels first.', { level })
       setTxStatus({
         loading: false,
         hash: null,
-        error: `Cannot activate Level ${level}. Please activate previous levels first.`,
+        error: message,
       })
+      toast.warning(message, { dedupeKey: `activation-level-${level}-not-ready` })
       return
     }
 
     setTxStatus({ loading: true, hash: null, error: null })
+    toast.info(activationT('toast.activationPreparing', 'Preparing level activation.'), { dedupeKey: `activation-level-${level}-preparing` })
 
     try {
       const price = parseFloat(levelPrices[level])
       const balanceNum = parseFloat(usdtBalance)
 
       if (balanceNum < price) {
-        throw new Error(`Insufficient USDT balance. You have ${usdtBalance} USDT but need ${price} USDT.`)
+        throw new Error(activationT('errors.insufficientActivationBalance', 'Insufficient USDT balance. You have {{balance}} USDT but need {{amount}} USDT.', { balance: usdtBalance, amount: price }))
       }
 
       await ensureSufficientAllowance(price)
@@ -1369,25 +1407,28 @@ const ActivationCenterPage = () => {
       const registrationWithSigner = contracts.registration.connect(signer)
       const tx = await registrationWithSigner.activateLevel(level)
       setTxStatus({ loading: true, hash: tx.hash, error: null })
+      toast.info(activationT('toast.activationSubmitted', 'Level activation transaction submitted.'), { dedupeKey: `activation-level-${level}-submitted` })
       await tx.wait()
 
       await refreshAllAfterWrite()
       setTxStatus({ loading: false, hash: tx.hash, error: null })
+      toast.success(activationT('toast.levelConfirmed', 'Level {{level}} activation confirmed.', { level }), { dedupeKey: `activation-level-${level}-confirmed` })
     } catch (err) {
       console.error('Activation error:', err)
 
-      let errorMessage = err.message || 'Transaction failed'
+      let errorMessage = err.message || activationT('errors.transactionFailed', 'Transaction failed')
       if (err.message?.includes('Previous level not activated')) {
-        errorMessage = `You need to activate Level ${level - 1} first.`
+        errorMessage = activationT('errors.activatePreviousLevelFirst', 'You need to activate Level {{level}} first.', { level: level - 1 })
       } else if (err.message?.includes('Level already activated')) {
-        errorMessage = `Level ${level} is already activated.`
+        errorMessage = activationT('errors.levelAlreadyActivated', 'Level {{level}} is already activated.', { level })
       } else if (err.message?.includes('insufficient funds')) {
-        errorMessage = 'You do not have enough POL for gas.'
+        errorMessage = activationT('errors.notEnoughPol', 'You do not have enough POL for gas.')
       } else if (err.message?.includes('transfer amount exceeds balance')) {
-        errorMessage = 'You do not have enough USDT.'
+        errorMessage = activationT('errors.notEnoughUsdt', 'You do not have enough USDT.')
       }
 
       setTxStatus({ loading: false, hash: null, error: errorMessage })
+      toast.danger(errorMessage, { dedupeKey: `activation-level-${level}-failed` })
     }
   }
 
@@ -1436,14 +1477,14 @@ const ActivationCenterPage = () => {
 
             <div>
               <span className="activation-referral-card__eyebrow">
-                Referral Access Locked
+                {activationT('referral.locked.eyebrow', 'Referral Access Locked')}
               </span>
-              <h3>Register to unlock your referral ID</h3>
+              <h3>{activationT('referral.locked.title', 'Register to unlock your referral ID')}</h3>
             </div>
           </div>
 
           <p className="activation-referral-card__text">
-            Your personal referral ID and referral link become available only after successful registration.
+            {activationT('referral.locked.text', 'Your personal referral ID and referral link become available only after successful registration.')}
           </p>
         </section>
       )
@@ -1458,30 +1499,30 @@ const ActivationCenterPage = () => {
 
           <div>
             <span className="activation-referral-card__eyebrow">
-              Referral Access
+              {activationT('referral.active.eyebrow', 'Referral Access')}
             </span>
-            <h3>Your referral ID and link</h3>
+            <h3>{activationT('referral.active.title', 'Your referral ID and link')}</h3>
           </div>
         </div>
 
         {referralAccessLoading ? (
           <p className="activation-referral-card__text">
-            Loading your referral details...
+            {activationT('referral.loading', 'Loading your referral details...')}
           </p>
         ) : myShortCode && myReferralLink ? (
           <>
             <p className="activation-referral-card__text">
-              Share your clean route. New users land directly in the Activation Center with your referral ID.
+              {activationT('referral.shareText', 'Share your clean route. New users land directly in the Activation Center with your referral ID.')}
             </p>
 
             <div className="activation-referral-card__meta-grid">
               <div className="activation-referral-card__mini">
-                <span>Your Referral ID</span>
+                <span>{activationT('referral.yourReferralId', 'Your Referral ID')}</span>
                 <strong>{myShortCode}</strong>
               </div>
 
               <div className="activation-referral-card__mini">
-                <span>Referred By</span>
+                <span>{activationT('referral.referredBy', 'Invited By')}</span>
                 <strong>{referredByCode || 'FIN-FREEDOM'}</strong>
               </div>
             </div>
@@ -1496,14 +1537,14 @@ const ActivationCenterPage = () => {
               className="activation-referral-card__button"
             >
               <FaCopy />
-              Copy Referral Link
+              {activationT('referral.copyLink', 'Copy Referral Link')}
             </button>
           </>
         ) : (
           <div className="activation-referral-card__pending">
             <p className="activation-referral-card__text">
               {referralAccessMessage ||
-                'Your registration is confirmed. Refresh shortly to load your referral ID and invitation link.'}
+                activationT('referral.pendingText', 'Your registration is confirmed. Refresh shortly to load your referral ID and invitation link.')}
             </p>
 
             <button
@@ -1512,7 +1553,7 @@ const ActivationCenterPage = () => {
               onClick={fetchMyReferralCode}
             >
               <FaSyncAlt />
-              Refresh Referral Details
+              {activationT('referral.refreshDetails', 'Refresh Referral Details')}
             </button>
           </div>
         )}
@@ -1535,17 +1576,17 @@ const ActivationCenterPage = () => {
 
           <div>
             <span className="activation-referral-card__eyebrow">
-              Referral Invitation
+              {activationT('referral.invitation.eyebrow', 'Referral Invitation')}
             </span>
             <h3>
-              {hasReferrer ? 'Invitation ready' : 'No invitation detected'}
+              {hasReferrer ? activationT('referral.invitation.ready', 'Invitation ready') : activationT('referral.invitation.none', 'No invitation detected')}
             </h3>
           </div>
         </div>
 
         <p className="activation-referral-card__text">
           {resolvedReferrerStatus ||
-            'No referral added. You can enter a referral ID, paste a referral link, or leave it empty to use the system ID.'}
+            activationT('referral.noneAddedLong', 'No referral added. You can enter a referral ID, paste a referral link, or leave it empty to use the system ID.')}
         </p>
 
         {hasReferrer && (
@@ -1600,13 +1641,13 @@ const ActivationCenterPage = () => {
   const getRoleBadge = (role) => {
     switch (role) {
       case 'FOUNDER_PATH':
-        return <span className="role-badge founder">Founder Path</span>
+        return <span className="role-badge founder">{activationT('roles.founderPath', 'Founder Path')}</span>
       case 'DIRECT_OWNER':
-        return <span className="role-badge direct">Direct Owner</span>
+        return <span className="role-badge direct">{activationT('roles.directOwner', 'Direct Owner')}</span>
       case 'ROUTED_SPILLOVER':
-        return <span className="role-badge routed">Routed Spillover</span>
+        return <span className="role-badge routed">{activationT('roles.routedSpillover', 'Routed Spillover')}</span>
       case 'RECYCLE':
-        return <span className="role-badge recycle">Recycle</span>
+        return <span className="role-badge recycle">{activationT('roles.recycle', 'Recycle')}</span>
       default:
         return null
     }
@@ -1621,26 +1662,25 @@ const ActivationCenterPage = () => {
           <div className="activation-hero__content">
             <div className="activation-hero__eyebrow glass-panel">
               <span className="activation-hero__eyebrow-dot" />
-              <span className="activation-hero__eyebrow-text">Wallet-first protocol access</span>
+              <span className="activation-hero__eyebrow-text">{activationT('connect.eyebrow', 'Wallet-first protocol access')}</span>
             </div>
 
             <div className="activation-hero__text-block">
-              <h1 className="activation-hero__title">Activation Center</h1>
+              <h1 className="activation-hero__title">{activationT('connect.title', 'Activation Center')}</h1>
               <p className="activation-hero__description soft-text">
-                Connect your wallet to review registration status, level progression, orbit visibility,
-                and activation readiness.
+                {activationT('connect.description', 'Connect your wallet to review registration status, level progression, orbit visibility, and activation readiness.')}
               </p>
             </div>
 
             <button onClick={connect} className="activation-next__button activation-next__button--fit">
-              Connect Wallet
+              {activationT('actions.connectWallet', 'Connect Wallet')}
             </button>
           </div>
 
           <div className="activation-hero__visual glass-panel">
             <div className="activation-hero__visual-header">
-              <span className="activation-hero__visual-title">Status</span>
-              <span className="activation-hero__visual-status">Disconnected</span>
+              <span className="activation-hero__visual-title">{activationT('status.title', 'Status')}</span>
+              <span className="activation-hero__visual-status">{activationT('status.disconnected', 'Disconnected')}</span>
             </div>
 
             <div className="activation-hero__visual-box">
@@ -1648,7 +1688,7 @@ const ActivationCenterPage = () => {
                 <div className="activation-center-icon">
                   <FaLock />
                 </div>
-                <div>Wallet not connected</div>
+                <div>{activationT('status.walletNotConnected', 'Wallet not connected')}</div>
               </div>
             </div>
           </div>
@@ -1662,7 +1702,7 @@ const ActivationCenterPage = () => {
       <section className="activation-page">
         <div className="activation-hero__text-block activation-hero__text-block--loading">
           <div className="spinner"></div>
-          <p>Loading contracts...</p>
+          <p>{activationT('states.loadingContracts', 'Loading contracts...')}</p>
         </div>
       </section>
     )
@@ -1676,16 +1716,16 @@ const ActivationCenterPage = () => {
         >
           <span className="activation-notices__dot" />
           <div>
-            <h3 className="activation-notices__title">Viewing another member's space</h3>
+            <h3 className="activation-notices__title">{activationT('notices.readOnly.title', "Viewing another member's space")}</h3>
             <p className="activation-notices__text">
-              You are viewing {formatViewerAddress(viewer)} in read-only mode. Wallet actions are disabled until you return to your own space.
+              {activationT('notices.readOnly.text', 'You are viewing {{address}} in read-only mode. Wallet actions are disabled until you return to My Account View.', { address: formatViewerAddress(viewer) })}
             </p>
             <button
               type="button"
               className="activation-next__button activation-next__button--compact"
               onClick={switchToSelf}
             >
-              Return to My Space
+              {activationT('actions.returnToMySpace', 'Return to My Space')}
             </button>
           </div>
         </div>
@@ -1698,10 +1738,10 @@ const ActivationCenterPage = () => {
           <span className="activation-notices__dot activation-notices__dot--error" />
           <div>
             <h3 className="activation-notices__title activation-notices__title--inline">
-              <FaExclamationTriangle /> Network Error
+              <FaExclamationTriangle /> {activationT('notices.networkError.title', 'Network Error')}
             </h3>
             <p className="activation-notices__text">
-              Please switch to Polygon Amoy Testnet to continue. Actions are blocked until the network is correct.
+              {activationT('notices.networkError.text', 'Please switch to Polygon Amoy Testnet to continue. Actions are blocked until the network is correct.')}
             </p>
           </div>
         </div>
@@ -1711,7 +1751,7 @@ const ActivationCenterPage = () => {
         <div className="activation-notices__item activation-notices__item--banner is-error">
           <span className="activation-notices__dot activation-notices__dot--error" />
           <div>
-            <h3 className="activation-notices__title">Contract Error</h3>
+            <h3 className="activation-notices__title">{activationT('notices.contractError', 'Contract Error')}</h3>
             <p className="activation-notices__text">{contractsError}</p>
           </div>
         </div>
@@ -1721,7 +1761,7 @@ const ActivationCenterPage = () => {
         <div className="activation-notices__item activation-notices__item--banner is-error">
           <span className="activation-notices__dot activation-notices__dot--error" />
           <div>
-            <h3 className="activation-notices__title">Transaction Error</h3>
+            <h3 className="activation-notices__title">{activationT('notices.transactionError', 'Transaction Error')}</h3>
             <p className="activation-notices__text">{txStatus.error}</p>
           </div>
         </div>
@@ -1731,7 +1771,7 @@ const ActivationCenterPage = () => {
         <div className="activation-notices__item activation-notices__item--banner is-info">
           <span className="activation-notices__dot" />
           <div>
-            <h3 className="activation-notices__title">Transaction Submitted</h3>
+            <h3 className="activation-notices__title">{activationT('notices.transactionSubmitted', 'Transaction Submitted')}</h3>
             <p className="activation-notices__text">
               <a
                 href={`https://amoy.polygonscan.com/tx/${txStatus.hash}`}
@@ -1751,45 +1791,45 @@ const ActivationCenterPage = () => {
           <div className="activation-hero__eyebrow glass-panel">
             <span className="activation-hero__eyebrow-dot" />
             <span className="activation-hero__eyebrow-text">
-              Registration, readiness, and level progression
+              {activationT('hero.eyebrow', 'Registration, readiness, and level progression')}
             </span>
           </div>
 
           <div className="activation-hero__text-block">
-            <h1 className="activation-hero__title">Manage Your Level</h1>
+            <h1 className="activation-hero__title">{activationT('hero.title', 'Manage Your Level')}</h1>
             <p className="activation-hero__description soft-text">
-              Track your level earnings, inspect orbit readiness, review token signals, and activate the next eligible level from one guided flow.
+              {activationT('hero.description', 'Track your level earnings, inspect orbit readiness, review token signals, and activate the next eligible level from one guided flow.')}
             </p>
-            <div className="small muted-text">Last updated: {lastUpdated}</div>
+            <div className="small muted-text">{activationT('hero.lastUpdated', 'Last updated: {{time}}', { time: lastUpdated })}</div>
           </div>
 
           <div className="activation-hero__chips">
-            <span className="activation-hero__chip glass-panel">✓ Wallet Connected</span>
+            <span className="activation-hero__chip glass-panel">{activationT('hero.chips.walletConnected', 'Wallet Connected')}</span>
             <span className="activation-hero__chip glass-panel">
-              {isOwnSpace ? 'Own Space' : 'Read-Only Visitor Mode'}
+              {isOwnSpace ? activationT('hero.chips.ownSpace', 'My Account View') : activationT('hero.chips.readOnlyVisitor', 'Viewing Another Account')}
             </span>
             <span className={`activation-hero__chip glass-panel ${isRegistered ? '' : 'inactive'}`}>
-              {isRegistered ? '✓ Registered' : '⚠ Not Registered'}
+              {isRegistered ? activationT('hero.chips.registered', 'Registered') : activationT('hero.chips.notRegistered', 'Not Registered')}
             </span>
-            <span className="activation-hero__chip glass-panel">Highest Level: {highestLevel || 0}</span>
+            <span className="activation-hero__chip glass-panel">{activationT('hero.chips.highestLevel', 'Highest Level: {{level}}', { level: highestLevel || 0 })}</span>
             {parseFloat(totalEarnings) > 0 && (
               <span className="activation-hero__chip glass-panel earnings-chip">
-                Earned: {totalEarnings} USDT
+                {activationT('hero.chips.earned', 'Earned: {{amount}} USDT', { amount: totalEarnings })}
               </span>
             )}
             {isDeployer && canWriteHere && (
-              <span className="activation-hero__chip glass-panel deployer-chip">Deployer Mode</span>
+              <span className="activation-hero__chip glass-panel deployer-chip">{activationT('hero.chips.deployerMode', 'Deployer Mode')}</span>
             )}
             {isId1Wallet && (
-              <span className="activation-hero__chip glass-panel id1-chip">⭐ ID1 Wallet</span>
+              <span className="activation-hero__chip glass-panel id1-chip">{activationT('hero.chips.id1Wallet', 'ID1 Wallet')}</span>
             )}
           </div>
         </div>
 
         <div className="activation-hero__visual glass-panel">
           <div className="activation-hero__visual-header">
-            <span className="activation-hero__visual-title">Level Progression</span>
-            <span className="activation-hero__visual-status">{activatedCount}/10 Activated</span>
+            <span className="activation-hero__visual-title">{activationT('progress.title', 'Level Progression')}</span>
+            <span className="activation-hero__visual-status">{activationT('progress.activated', '{{count}}/10 Activated', { count: activatedCount })}</span>
           </div>
 
           <div className="line-chart-container">
@@ -1830,7 +1870,7 @@ const ActivationCenterPage = () => {
           </div>
 
           <p className="activation-hero__visual-note muted-text">
-            Cumulative progression. {activatedCount} of 10 levels activated.
+            {activationT('progress.note', 'Cumulative progression. {{count}} of 10 levels activated.', { count: activatedCount })}
           </p>
 
           {isRegistered ? <ReferralCard /> : <ReferralInvitationCard />}
@@ -1839,7 +1879,7 @@ const ActivationCenterPage = () => {
 
       <section className="activation-levels glass-panel activation-levels--fullwidth">
         <div className="activation-section-heading">
-          <span className="activation-section-heading__eyebrow muted-text">Levels 1-10</span>
+          <span className="activation-section-heading__eyebrow muted-text">{activationT('levels.eyebrow', 'Levels 1-10')}</span>
         </div>
 
         <div className="activation-levels__grid">
@@ -1882,28 +1922,28 @@ const ActivationCenterPage = () => {
                 <div className="compact-level-card__header">
                   <div className="compact-level-card__header-left">
                     <span className={`status-dot ${isActive ? 'green' : isNext ? 'orange' : 'gray'}`}></span>
-                    <span className="compact-level-card__level">Level {level}</span>
+                    <span className="compact-level-card__level">{activationT('levels.levelNumber', 'Level {{level}}', { level })}</span>
                   </div>
                   <span className="level-orbit">{orbitTypeForLevel}</span>
                 </div>
 
                 <div className={`compact-level-card__status ${isActive ? 'is-active' : isNext ? 'is-ready' : 'is-locked'}`}>
-                  {isActive ? 'Activated' : isNext ? 'Ready to Activate' : 'Locked'}
+                  {isActive ? activationT('levels.status.activated', 'Activated') : isNext ? activationT('levels.status.ready', 'Ready to Activate') : activationT('levels.status.locked', 'Locked')}
                 </div>
 
                 <div className={`compact-level-card__price ${hasEnoughBalance ? 'is-sufficient' : 'is-insufficient'}`}>
-                  {level === 1 && !isRegistered ? '10 USDT Onboarding' : `${price} USDT`}
+                  {level === 1 && !isRegistered ? activationT('levels.onboardingPrice', '10 USDT Onboarding') : activationT('levels.price', '{{price}} USDT', { price })}
                 </div>
 
                 <div className="compact-level-card__actions">
                   {isActive ? (
                     <button type="button" className="view-orbit-btn compact-action-btn compact-action-btn--single" onClick={() => handleViewLevelOrbit(level)}>
-                      View Orbit <GoArrow />
+                      {activationT('actions.viewOrbit', 'View Orbit')} <GoArrow />
                     </button>
                   ) : (
                     <>
                       <button type="button" className="view-orbit-btn compact-action-btn" onClick={() => handleViewLevelOrbit(level)}>
-                        View Orbit <GoArrow />
+                        {activationT('actions.viewOrbit', 'View Orbit')} <GoArrow />
                       </button>
 
                       {isNext && canActivate && canWriteHere ? (
@@ -1913,14 +1953,14 @@ const ActivationCenterPage = () => {
                           disabled={!canWriteHere || txStatus.loading || !hasEnoughBalance || networkWarning}
                         >
                           {txStatus.loading
-                            ? 'Processing...'
+                            ? activationT('states.processing', 'Processing...')
                             : level === 1 && !isRegistered
-                              ? 'Register & Activate'
-                              : 'Activate Orbit'}
+                              ? activationT('actions.registerAndActivate', 'Register & Activate')
+                              : activationT('actions.activateOrbit', 'Activate Orbit')}
                         </button>
                       ) : (
                         <button className="locked-btn compact-action-btn" disabled>
-                          {canWriteHere ? 'Locked' : 'Read-Only'}
+                          {canWriteHere ? activationT('levels.status.locked', 'Locked') : activationT('levels.status.readOnly', 'Read-Only')}
                         </button>
                       )}
                     </>
@@ -1933,7 +1973,7 @@ const ActivationCenterPage = () => {
                   onClick={() => toggleLevelDetails(level)}
                   aria-expanded={isOpen}
                 >
-                  <span>{isOpen ? 'Hide Details' : 'Show Details'}</span>
+                  <span>{isOpen ? activationT('actions.hideDetails', 'Hide Details') : activationT('actions.showDetails', 'Show Details')}</span>
                   {isOpen ? <FaChevronUp /> : <FaChevronDown />}
                 </button>
 
@@ -1949,23 +1989,23 @@ const ActivationCenterPage = () => {
                             </span>
                           </div> */}
                           <div className="metric-item">
-                            <span className="metric-label">Total Generated</span>
+                            <span className="metric-label">{activationT('metrics.totalGenerated', 'Total Generated')}</span>
                             <span className="metric-value">{`${Number(earned || 0).toFixed(2)} USDT`}</span>
                           </div>
 
                           <div className="metric-item">
-                            <span className="metric-label">Wallet Credited</span>
+                            <span className="metric-label">{activationT('metrics.walletCredited', 'Wallet Credited')}</span>
                             <span className="metric-value">{`${Number(walletCredited || 0).toFixed(2)} USDT`}</span>
                           </div>
 
                           {cycleInfo && (
                             <>
                               <div className="metric-item">
-                                <span className="metric-label">Total Cycles</span>
+                                <span className="metric-label">{activationT('metrics.totalCycles', 'Total Cycles')}</span>
                                 <span className="metric-value">{cycleInfo.total}</span>
                               </div>
                               <div className="metric-item">
-                                <span className="metric-label">Current Cycle</span>
+                                <span className="metric-label">{activationT('metrics.currentCycle', 'Current Cycle')}</span>
                                 <span className="metric-value">{cycleInfo.current}</span>
                               </div>
                             </>
@@ -1990,7 +2030,7 @@ const ActivationCenterPage = () => {
                               <span className="token-event-card__time">
                                 {latestTokenEvent.timestamp
                                   ? new Date(latestTokenEvent.timestamp * 1000).toLocaleString()
-                                  : 'Recent event'}
+                                  : activationT('tokens.recentEvent', 'Recent event')}
                               </span>
                             </div>
                             <div className="token-event-card__body">
@@ -2003,15 +2043,15 @@ const ActivationCenterPage = () => {
                         {orbitData && (
                           <div className="orbit-stats-compact">
                             <div className="compact-stat">
-                              <span><FaLayerGroup /> Positions</span>
+                              <span><FaLayerGroup /> {activationT('metrics.positions', 'Positions')}</span>
                               <strong>{orbitData.positionsFilled}/{orbitData.totalPositions}</strong>
                             </div>
                             <div className="compact-stat">
-                              <span><FaUsers /> Downline</span>
+                              <span><FaUsers /> {activationT('metrics.downline', 'Downline')}</span>
                               <strong>{downlineCount}</strong>
                             </div>
                             <div className="compact-stat">
-                              <span><FaSyncAlt /> Spillover</span>
+                              <span><FaSyncAlt /> {activationT('metrics.spillover', 'Spillover')}</span>
                               <strong>{spilloverCount}</strong>
                             </div>
                             {/* {orbitData && (
@@ -2021,7 +2061,7 @@ const ActivationCenterPage = () => {
                               </div>
                             )} */}
                             <div className="compact-stat earned">
-                              <span><FaCoins /> Generated</span>
+                              <span><FaCoins /> {activationT('metrics.generated', 'Generated')}</span>
                               <strong>{Number(earned || 0).toFixed(2)} USDT</strong>
                             </div>
                           </div>
@@ -2030,13 +2070,13 @@ const ActivationCenterPage = () => {
                         {level === highestLevel && level < 10 && (
                           <div className="escrow-progress">
                             <div className="escrow-header">
-                              <span><FaLock /> Escrow Locked for Level {level + 1}</span>
+                              <span><FaLock /> {activationT('metrics.escrowLockedForLevel', 'Escrow Locked for Level {{level}}', { level: level + 1 })}</span>
                               <span>{lockedForUpgrade.toFixed(2)} / {upgradeRequired} USDT</span>
                             </div>
                             <div className="escrow-track">
                               <div className="escrow-fill" style={{ width: `${Math.min(upgradeProgress, 100)}%` }} />
                             </div>
-                            {upgradeProgress >= 100 && <div className="escrow-ready">✓ Auto-upgrade ready!</div>}
+                            {upgradeProgress >= 100 && <div className="escrow-ready">{activationT('metrics.autoUpgradeReady', 'Auto-upgrade ready!')}</div>}
                           </div>
                         )}
 
@@ -2048,25 +2088,25 @@ const ActivationCenterPage = () => {
                       <>
                         <div className="level-details">
                           <div className="detail-row">
-                            <span>Balance:</span>
+                            <span>{activationT('metrics.balance', 'Balance:')}</span>
                             <strong className={hasEnoughBalance ? 'sufficient' : 'insufficient'}>
                               {usdtBalance} USDT
                             </strong>
                           </div>
                           <div className="detail-row">
-                            <span>Requirement:</span>
+                            <span>{activationT('metrics.requirement', 'Requirement:')}</span>
                             <strong>
-                              {level === 1 && !isRegistered ? '10 USDT total' : `${price} USDT`}
+                              {level === 1 && !isRegistered ? activationT('levels.onboardingTotal', '10 USDT total') : activationT('levels.price', '{{price}} USDT', { price })}
                             </strong>
                           </div>
                         </div>
 
                         <p className="level-description">
                           {level === 1 && !isRegistered
-                            ? 'This step registers your wallet and activates Level 1 in one flow.'
+                            ? activationT('levels.descriptions.levelOne', 'This step registers your wallet and activates Level 1 in one flow.')
                             : isNext
-                              ? `Activate for ${price} USDT to unlock ${orbitTypeForLevel} Orbit.`
-                              : `Requires Level ${level - 1} activation first.`}
+                              ? activationT('levels.descriptions.next', 'Activate for {{price}} USDT to unlock {{orbit}} Orbit.', { price, orbit: orbitTypeForLevel })
+                              : activationT('levels.descriptions.locked', 'Requires Level {{level}} activation first.', { level: level - 1 })}
                         </p>
                       </>
                     )}
@@ -2083,20 +2123,20 @@ const ActivationCenterPage = () => {
           {!isRegistered && !isId1Wallet && !canWriteHere && (
             <section className="activation-registration-form glass-panel">
               <div className="activation-section-heading">
-                <span className="activation-section-heading__eyebrow muted-text">Read-Only Viewing</span>
-                <h2 className="activation-section-heading__title">Registration actions are disabled here</h2>
+                <span className="activation-section-heading__eyebrow muted-text">{activationT('readOnly.eyebrow', 'Read-Only Viewing')}</span>
+                <h2 className="activation-section-heading__title">{activationT('readOnly.title', 'Registration actions are disabled here')}</h2>
               </div>
 
               <div className="registration-warning">
-                <div className="warning-header">This space is being viewed in read-only mode</div>
+                <div className="warning-header">{activationT('readOnly.warningTitle', 'This space is being viewed in read-only mode')}</div>
                 <div className="warning-details">
-                  <div>Viewed wallet: <strong>{formatViewerAddress(viewer)}</strong></div>
-                  <div>Action state: <strong>Disabled</strong></div>
+                  <div>{activationT('readOnly.viewedWallet', 'Viewed wallet:')} <strong>{formatViewerAddress(viewer)}</strong></div>
+                  <div>{activationT('readOnly.actionState', 'Action state:')} <strong>{activationT('readOnly.disabled', 'Disabled')}</strong></div>
                 </div>
               </div>
 
               <p className="soft-text">
-                To enter a referrer, register, or activate levels, return to your own space.
+                {activationT('readOnly.text', 'To enter a referrer, register, or activate levels, return to My Account View.')}
               </p>
             </section>
           )}
@@ -2104,8 +2144,8 @@ const ActivationCenterPage = () => {
           {isDeployer && canWriteHere && (
             <section className="deployer-faucet glass-panel">
               <div className="activation-section-heading">
-                <span className="activation-section-heading__eyebrow muted-text">Deployer Tools</span>
-                <h2 className="activation-section-heading__title">USDT faucet for testing</h2>
+                <span className="activation-section-heading__eyebrow muted-text">{activationT('deployer.eyebrow', 'Deployer Tools')}</span>
+                <h2 className="activation-section-heading__title">{activationT('deployer.title', 'USDT faucet for testing')}</h2>
               </div>
 
               <div className="faucet-controls">
@@ -2116,7 +2156,7 @@ const ActivationCenterPage = () => {
                       checked={!showTransferToSelf}
                       onChange={() => setShowTransferToSelf(!showTransferToSelf)}
                     />
-                    <span>Transfer to specific address</span>
+                    <span>{activationT('deployer.transferSpecific', 'Transfer to specific address')}</span>
                   </label>
                 </div>
 
@@ -2128,13 +2168,13 @@ const ActivationCenterPage = () => {
                         className="faucet-amount"
                         value={transferAmount}
                         onChange={(e) => setTransferAmount(e.target.value)}
-                        placeholder="Amount"
+                        placeholder={activationT('deployer.amountPlaceholder', 'Amount')}
                       />
                       <button className="faucet-btn" onClick={handleTransferToSelf} disabled={txStatus.loading}>
-                        {txStatus.loading ? 'Sending...' : 'Send to Self'}
+                        {txStatus.loading ? activationT('states.sending', 'Sending...') : activationT('deployer.sendToSelf', 'Send to Self')}
                       </button>
                     </div>
-                    <p className="faucet-hint">Transfer USDT to your own wallet for testing.</p>
+                    <p className="faucet-hint">{activationT('deployer.selfHint', 'Transfer USDT to your own wallet for testing.')}</p>
                   </>
                 ) : (
                   <>
@@ -2143,7 +2183,7 @@ const ActivationCenterPage = () => {
                       className="faucet-address"
                       value={transferAddress}
                       onChange={(e) => setTransferAddress(e.target.value)}
-                      placeholder="Recipient Address (0x...)"
+                      placeholder={activationT('deployer.recipientPlaceholder', 'Recipient Address (0x...)')}
                     />
                     <div className="faucet-amount-group">
                       <input
@@ -2151,18 +2191,18 @@ const ActivationCenterPage = () => {
                         className="faucet-amount"
                         value={transferAmount}
                         onChange={(e) => setTransferAmount(e.target.value)}
-                        placeholder="Amount"
+                        placeholder={activationT('deployer.amountPlaceholder', 'Amount')}
                       />
                       <button className="faucet-btn" onClick={handleTransferToAddress} disabled={txStatus.loading}>
-                        {txStatus.loading ? 'Sending...' : 'Transfer'}
+                        {txStatus.loading ? activationT('states.sending', 'Sending...') : activationT('deployer.transfer', 'Transfer')}
                       </button>
                     </div>
-                    <p className="faucet-hint">Send USDT to any address for testing.</p>
+                    <p className="faucet-hint">{activationT('deployer.anyAddressHint', 'Send USDT to any address for testing.')}</p>
                   </>
                 )}
 
                 <div className="deployer-balance">
-                  Deployer USDT Balance: <strong>{deployerUsdtBalance} USDT</strong>
+                  {activationT('deployer.balance', 'Deployer USDT Balance:')} <strong>{deployerUsdtBalance} USDT</strong>
                 </div>
               </div>
             </section>
@@ -2174,8 +2214,8 @@ const ActivationCenterPage = () => {
             <div className="activation-side-panel__grid">
               <div className="activation-side-panel__column">
                 <div className="activation-section-heading">
-                  <span className="activation-section-heading__eyebrow muted-text">Notices</span>
-                  <h2 className="activation-section-heading__title">Important warnings and platform guidance</h2>
+                  <span className="activation-section-heading__eyebrow muted-text">{activationT('guidance.eyebrow', 'Notices')}</span>
+                  <h2 className="activation-section-heading__title">{activationT('guidance.title', 'Important warnings and platform guidance')}</h2>
                 </div>
 
                 <div className="activation-notices__list">
@@ -2185,24 +2225,24 @@ const ActivationCenterPage = () => {
                       <h3 className="activation-notices__title">
                         {nextLevel
                           ? !isRegistered && nextLevel === 1
-                            ? 'Onboarding requires 10 USDT'
-                            : `Level ${nextLevel}: ${levelPrices[nextLevel]} USDT required`
-                          : 'Maximum level achieved'}
+                            ? activationT('guidance.onboardingRequired', 'Onboarding requires 10 USDT')
+                            : activationT('guidance.levelRequired', 'Level {{level}}: {{amount}} USDT required', { level: nextLevel, amount: levelPrices[nextLevel] })
+                          : activationT('guidance.maxLevel', 'Maximum level achieved')}
                       </h3>
                       <p className="activation-notices__text soft-text">
                         {nextLevel
                           ? !isRegistered && nextLevel === 1
                             ? `Balance: ${usdtBalance} USDT. ${
                                 parseFloat(usdtBalance) >= 10
-                                  ? 'Sufficient funds available for registration and Level 1.'
-                                  : `Need ${(10 - parseFloat(usdtBalance)).toFixed(2)} more USDT.`
+                                  ? activationT('guidance.sufficientOnboarding', 'Sufficient funds available for registration and Level 1.')
+                                  : activationT('guidance.needMore', 'Need {{amount}} more USDT.', { amount: (10 - parseFloat(usdtBalance)).toFixed(2) })
                               }`
                             : `Balance: ${usdtBalance} USDT. ${
                                 parseFloat(usdtBalance) >= parseFloat(levelPrices[nextLevel])
-                                  ? 'Sufficient funds available.'
-                                  : `Need ${(parseFloat(levelPrices[nextLevel]) - parseFloat(usdtBalance)).toFixed(2)} more USDT.`
+                                  ? activationT('guidance.sufficientFunds', 'Sufficient funds available.')
+                                  : activationT('guidance.needMore', 'Need {{amount}} more USDT.', { amount: (parseFloat(levelPrices[nextLevel]) - parseFloat(usdtBalance)).toFixed(2) })
                               }`
-                          : 'All 10 levels are active. Open the Orbits page for deeper visibility into structure, receipts, and earnings flow.'}
+                          : activationT('guidance.allLevelsActive', 'All 10 levels are active. Open the Orbits page for deeper visibility into structure, receipts, and earnings flow.')}
                       </p>
                     </div>
                   </div>
@@ -2211,14 +2251,14 @@ const ActivationCenterPage = () => {
                     <span className="activation-notices__dot" />
                     <div>
                       <h3 className="activation-notices__title">
-                        {isId1Wallet ? 'ID1 Wallet Status' : referrer ? 'Sponsor confirmed' : 'No Referrer'}
+                        {isId1Wallet ? activationT('guidance.id1Status', 'ID1 Wallet Status') : referrer ? activationT('guidance.sponsorConfirmed', 'Sponsor confirmed') : activationT('guidance.noReferrer', 'No Referrer')}
                       </h3>
                       <p className="activation-notices__text soft-text">
                         {isId1Wallet
-                          ? 'You are the ID1 wallet. All levels remain active by protocol design.'
+                          ? activationT('guidance.id1Text', 'You are the ID1 wallet. All levels remain active by protocol design.')
                           : referrer
-                            ? `Sponsored by ${referrer.slice(0, 8)}...${referrer.slice(-6)}`
-                            : 'No referrer provided. You are connected directly to the protocol.'}
+                            ? activationT('guidance.sponsoredBy', 'Sponsored by {{address}}', { address: `${referrer.slice(0, 8)}...${referrer.slice(-6)}` })
+                            : activationT('guidance.noReferrerText', 'No referrer provided. You are connected directly to the protocol.')}
                       </p>
                     </div>
                   </div>
@@ -2228,7 +2268,7 @@ const ActivationCenterPage = () => {
                       <span className="activation-notices__dot" />
                       <div>
                         <h3 className="activation-notices__title">
-                          Total earnings: {parseFloat(totalEarnings || '0').toFixed(2)} USDT
+                          {activationT('guidance.totalEarnings', 'Total earnings: {{amount}} USDT', { amount: parseFloat(totalEarnings || '0').toFixed(2) })}
                         </h3>
                         <p className="activation-notices__text soft-text">
                           Receipt-derived earnings are synced for this wallet. Current active level: {highestLevel || '—'}.
@@ -2241,8 +2281,8 @@ const ActivationCenterPage = () => {
 
               <div className="activation-side-panel__column">
                 <div className="activation-section-heading">
-                  <span className="activation-section-heading__eyebrow muted-text">FFN Space Portal</span>
-                  <h2 className="activation-section-heading__title">Explore your orbit network</h2>
+                  <span className="activation-section-heading__eyebrow muted-text">{activationT('space.eyebrow', 'FFN Space Portal')}</span>
+                  <h2 className="activation-section-heading__title">{activationT('space.title', 'Explore your orbit network')}</h2>
                 </div>
 
                 <div className="activation-visual__box orbit-preview" onClick={() => navigate('/orbits', {
@@ -2255,7 +2295,7 @@ const ActivationCenterPage = () => {
                   },
                 })}>
                   {orbitDataLoading ? (
-                    <div className="orbit-loading">Loading orbit data...</div>
+                    <div className="orbit-loading">{activationT('states.loadingOrbitData', 'Loading orbit data...')}</div>
                   ) : highestLevel > 0 && orbitLevelData[highestLevel] ? (
                     <div className="mini-orbit">
                       <div className="mini-orbit-core">
@@ -2268,7 +2308,7 @@ const ActivationCenterPage = () => {
                         <div className="mini-stat"><FaSyncAlt /> {spilloverData[highestLevel] || 0}</div>
                       </div>
                       <div className="mini-orbit-earn">
-                        {parseFloat(totalEarnings || '0').toFixed(2)} USDT total earned
+                        {activationT('space.totalEarned', '{{amount}} USDT total earned', { amount: parseFloat(totalEarnings || '0').toFixed(2) })}
                       </div>
                       <div className="mini-orbit-subearn">
                         Level {highestLevel}: {parseFloat(levelEarnings[highestLevel] || 0).toFixed(2)} USDT • Cycles {cycleData[highestLevel]?.total || 0}
@@ -2277,14 +2317,14 @@ const ActivationCenterPage = () => {
                   ) : (
                     <div className="activation-center-stack">
                       <div className="activation-space-icon">🌌</div>
-                      <div className="activation-space-title">FFN Space</div>
-                      <div className="activation-space-note">Click to explore your orbit ecosystem</div>
+                      <div className="activation-space-title">{activationT('space.cardTitle', 'FFN Space')}</div>
+                      <div className="activation-space-note">{activationT('space.cardNote', 'Click to explore your orbit ecosystem')}</div>
                     </div>
                   )}
                 </div>
 
                 <p className="activation-visual__note muted-text">
-                  Open FFN Space to inspect orbit structure, downline positions, spillover visibility, and earnings flow.
+                  {activationT('space.note', 'Open FFN Space to inspect orbit structure, downline positions, spillover visibility, and earnings flow.')}
                 </p>
               </div>
             </div>
@@ -2293,7 +2333,7 @@ const ActivationCenterPage = () => {
           <button
             type="button"
             className="activation-next-float"
-            aria-label="Open next action"
+            aria-label={activationT('nextAction.openAriaLabel', 'Open next action')}
             onClick={() => setIsNextActionModalOpen(true)}
           >
             <FaInfoCircle />
@@ -2303,12 +2343,12 @@ const ActivationCenterPage = () => {
             <div className="activation-overlay" role="dialog" aria-modal="true">
               <div className="activation-modal">
                 <div className="activation-modal__top">
-                  <h3 className="activation-modal__title">Next Action</h3>
+                  <h3 className="activation-modal__title">{activationT('nextAction.title', 'Next Action')}</h3>
                   <button
                     type="button"
                     className="activation-modal__close"
                     onClick={() => setIsNextActionModalOpen(false)}
-                    aria-label="Close next action modal"
+                    aria-label={activationT('nextAction.closeAriaLabel', 'Close next action modal')}
                   >
                     <FaTimesCircle />
                   </button>
@@ -2316,12 +2356,12 @@ const ActivationCenterPage = () => {
 
                 <p className="activation-modal__text">
                   {!canWriteHere
-                    ? "You are currently viewing another member's space. Progress and orbit state are visible, but wallet actions are disabled."
+                    ? activationT('nextAction.readOnlyText', "You are currently viewing another member's space. Progress and orbit state are visible, but wallet actions are disabled.")
                     : nextLevel
                       ? !isRegistered && nextLevel === 1
-                        ? 'Complete onboarding to register this wallet and activate Level 1 in a single action.'
-                        : `Level ${nextLevel} requires ${levelPrices[nextLevel]} USDT and unlocks ${levelToOrbitType[nextLevel]} Orbit with new visibility and earning potential.`
-                      : 'You have activated all 10 levels. Explore the Orbits page to inspect your full network and earnings.'}
+                        ? activationT('nextAction.onboardingText', 'Complete onboarding to register this wallet and activate Level 1 in a single action.')
+                        : activationT('nextAction.levelText', 'Level {{level}} requires {{amount}} USDT and unlocks {{orbit}} Orbit with new visibility and earning potential.', { level: nextLevel, amount: levelPrices[nextLevel], orbit: levelToOrbitType[nextLevel] })
+                      : activationT('nextAction.completeText', 'You have activated all 10 levels. Explore the Orbits page to inspect your full network and earnings.')}
                 </p>
 
                 <div className="activation-modal__actions">
@@ -2342,10 +2382,10 @@ const ActivationCenterPage = () => {
                       }
                     >
                       {txStatus.loading
-                        ? 'Processing...'
+                        ? activationT('states.processing', 'Processing...')
                         : nextLevel === 1 && !isRegistered
-                          ? 'Register & Activate Level 1'
-                          : `Activate Level ${nextLevel} (${levelPrices[nextLevel]} USDT)`}
+                          ? activationT('actions.registerAndActivateLevelOne', 'Register & Activate Level 1')
+                          : activationT('actions.activateLevelPrice', 'Activate Level {{level}} ({{amount}} USDT)', { level: nextLevel, amount: levelPrices[nextLevel] })}
                     </button>
                   ) : null}
 
@@ -2366,7 +2406,7 @@ const ActivationCenterPage = () => {
                         })
                       }}
                     >
-                      Go to FFN Space
+                      {activationT('actions.goToFfnSpace', 'Go to FFN Space')}
                     </button>
                   ) : null}
                 </div>
@@ -2379,13 +2419,13 @@ const ActivationCenterPage = () => {
               <div className="activation-modal">
                 <div className="activation-modal__top">
                   <h3 className="activation-modal__title">
-                    Eligibility Check
+                    {activationT('eligibility.title', 'Eligibility Check')}
                     {pendingActivationLevel ? ` · Level ${pendingActivationLevel}` : ''}
                   </h3>
                 </div>
 
                 <p className="activation-modal__text">
-                  Required conditions before activation begins.
+                  {activationT('eligibility.text', 'Required conditions before activation begins.')}
                 </p>
 
                 <div className="activation-check-modal__list">
@@ -2419,7 +2459,7 @@ const ActivationCenterPage = () => {
                       className="activation-modal__button activation-modal__button--ghost"
                       onClick={() => setIsEligibilityModalOpen(false)}
                     >
-                      Close
+                      {activationT('actions.close', 'Close')}
                     </button>
                   </div>
                 ) : null}
@@ -2434,48 +2474,48 @@ const ActivationCenterPage = () => {
                 <div className="activation-modal__top">
                   <div className="security-notice-badge">
                     <FaExclamationTriangle size={18} />
-                    <span>Security & Legal Notice</span>
+                    <span>{activationT('security.eyebrow', 'Security & Legal Notice')}</span>
                   </div>
                   <button
                     type="button"
                     className="activation-modal__close"
                     onClick={() => setShowSecurityNotice(false)}
-                    aria-label="Close security notice"
+                    aria-label={activationT('security.closeAriaLabel', 'Close security notice')}
                   >
                     <FaTimesCircle />
                   </button>
                 </div>
 
-                <h3 className="activation-modal__title security-notice-title">Important Notice — Please Read Carefully</h3>
+                <h3 className="activation-modal__title security-notice-title">{activationT('security.title', 'Important Notice - Please Read Carefully')}</h3>
 
                 <div className="security-notice-sections">
                   <div className="security-notice-section">
                     <div className="security-notice-section__icon">🔐</div>
                     <div className="security-notice-section__content">
-                      <h4>Wallet Security</h4>
-                      <p>You are solely responsible for securing your wallet. Never share your private key or secret recovery phrase with anyone — including sponsors, support staff, or administrators. Fin Freedom Network will never request your private key.</p>
+                      <h4>{activationT('security.wallet.title', 'Wallet Security')}</h4>
+                      <p>{activationT('security.wallet.text', 'You are solely responsible for securing your wallet. Never share your private key or secret recovery phrase with anyone - including sponsors, support staff, or administrators. Fin Freedom Network will never request your private key.')}</p>
                     </div>
                   </div>
 
                   <div className="security-notice-section">
                     <div className="security-notice-section__icon">🔒</div>
                     <div className="security-notice-section__content">
-                      <h4>Irreversible Registration</h4>
-                      <p>Wallet addresses cannot be changed after registration. If your wallet has been compromised, you must create a new wallet before registering.</p>
+                      <h4>{activationT('security.irreversible.title', 'Irreversible Registration')}</h4>
+                      <p>{activationT('security.irreversible.text', 'Wallet addresses cannot be changed after registration. If your wallet has been compromised, you must create a new wallet before registering.')}</p>
                     </div>
                   </div>
 
                   <div className="security-notice-section">
                     <div className="security-notice-section__icon">⛓️</div>
                     <div className="security-notice-section__content">
-                      <h4>Decentralized Participation</h4>
-                      <p>Transactions are irreversible once confirmed on the blockchain. Always verify transaction details before signing.</p>
+                      <h4>{activationT('security.decentralized.title', 'Decentralized Participation')}</h4>
+                      <p>{activationT('security.decentralized.text', 'Transactions are irreversible once confirmed on the blockchain. Always verify transaction details before signing.')}</p>
                     </div>
                   </div>
                 </div>
 
                 <div className="security-notice-acknowledgment">
-                  <p>By clicking "I Understand & Proceed", you confirm that you understand the above and accept full responsibility for your wallet security.</p>
+                  <p>{activationT('security.acknowledgment', 'By clicking "I Understand & Proceed", you confirm that you understand the above and accept full responsibility for your wallet security.')}</p>
                 </div>
 
                 <div className="activation-modal__actions activation-modal__actions--double">
@@ -2484,14 +2524,14 @@ const ActivationCenterPage = () => {
                     className="activation-modal__button activation-modal__button--ghost"
                     onClick={() => setShowSecurityNotice(false)}
                   >
-                    Cancel
+                    {activationT('actions.cancel', 'Cancel')}
                   </button>
                   <button
                     type="button"
                     className="activation-modal__button activation-modal__button--primary"
                     onClick={handleProceedToRegistration}
                   >
-                    I Understand & Proceed
+                    {activationT('security.proceed', 'I Understand & Proceed')}
                   </button>
                 </div>
               </div>
@@ -2503,40 +2543,40 @@ const ActivationCenterPage = () => {
             <div className="activation-overlay" role="dialog" aria-modal="true">
               <div className="activation-modal">
                 <div className="activation-modal__top">
-                  <h3 className="activation-modal__title">Complete Registration</h3>
+                  <h3 className="activation-modal__title">{activationT('registration.title', 'Complete Registration')}</h3>
                   <button
                     type="button"
                     className="activation-modal__close"
                     onClick={() => setIsRegistrationModalOpen(false)}
-                    aria-label="Close registration modal"
+                    aria-label={activationT('registration.closeAriaLabel', 'Close registration modal')}
                   >
                     <FaTimesCircle />
                   </button>
                 </div>
 
                 <p className="activation-modal__text">
-                  You are not registered yet. Complete registration to activate Level 1 and start your journey.
+                  {activationT('registration.text', 'You are not registered yet. Complete registration to activate Level 1 and start your journey.')}
                 </p>
 
                 <div className="registration-warning registration-warning--spaced">
-                  <div className="warning-header">Onboarding Details</div>
+                  <div className="warning-header">{activationT('registration.onboardingDetails', 'Onboarding Details')}</div>
                   <div className="warning-details">
-                    <div>Registration + Level 1: <strong>10 USDT total</strong></div>
-                    <div>Your USDT Balance: <strong>{usdtBalance} USDT</strong></div>
-                    <div>Current Allowance: <strong>{allowance} USDT</strong></div>
+                    <div>{activationT('registration.levelOneCost', 'Registration + Level 1:')} <strong>{activationT('levels.onboardingTotal', '10 USDT total')}</strong></div>
+                    <div>{activationT('registration.balance', 'Your USDT Balance:')} <strong>{usdtBalance} USDT</strong></div>
+                    <div>{activationT('registration.allowance', 'Current Allowance:')} <strong>{allowance} USDT</strong></div>
                   </div>
                 </div>
 
                 <div className="referrer-input-group">
                   <label className="referrer-label">
                     {incomingReferrer || referrerInputDisplay
-                      ? `Referrer detected: ${referrerInputDisplay || incomingReferrer}`
-                      : 'Do you have a referrer? Paste your referral ID, link, or wallet address below.'}
+                      ? activationT('registration.referrerDetected', 'Referrer detected: {{referrer}}', { referrer: referrerInputDisplay || incomingReferrer })
+                      : activationT('registration.referrerPrompt', 'If you have a referrer, paste your referral ID, link, or wallet address below.')}
                   </label>
                   <input
                     type="text"
                     className={`referrer-input ${referrerInputDisplay ? 'has-referrer' : ''}`}
-                    placeholder="Paste referral ID, referral link, or wallet address"
+                    placeholder={activationT('registration.referrerPlaceholder', 'Paste referral ID, referral link, or wallet address')}
                     value={referrerInputDisplay}
                     onChange={(e) => {
                       const value = normalizeReferralInput(e.target.value)
@@ -2547,7 +2587,7 @@ const ActivationCenterPage = () => {
                       if (!value) {
                         setRegistrationReferrer('')
                         setResolvedReferrerStatus(
-                          'No referral added. The system ID will be used.'
+                          activationT('registration.systemIdUsed', 'No referral added. The system ID will be used.')
                         )
                         return
                       }
@@ -2555,26 +2595,26 @@ const ActivationCenterPage = () => {
                       if (ethers.isAddress(value)) {
                         setRegistrationReferrer(value)
                         setResolvedReferrerStatus(
-                          'Wallet address added. You can still change it before registration.'
+                          activationT('registration.walletAdded', 'Wallet address added. You can still change it before registration.')
                         )
                         return
                       }
 
                       setRegistrationReferrer('')
                       setResolvedReferrerStatus(
-                        'Referral ID added. We will check it when you register.'
+                        activationT('registration.referralIdAdded', 'Referral ID added. We will check it when you register.')
                       )
                     }}
                   />
                   <p className="referrer-hint">
                     {resolvedReferrerStatus ||
-                      'You can enter a referral ID, paste a referral link, or leave it empty to use the system ID.'}
+                      activationT('registration.referrerHint', 'You can enter a referral ID, paste a referral link, or leave it empty to use the system ID.')}
                   </p>
                 </div>
 
                 {parseFloat(usdtBalance) < 10 && (
                   <div className="insufficient-funds-warning">
-                    ⚠ Insufficient USDT balance. Need 10 USDT for onboarding.
+                    {activationT('registration.insufficientBalance', 'Insufficient USDT balance. Need 10 USDT for onboarding.')}
                   </div>
                 )}
 
@@ -2584,7 +2624,7 @@ const ActivationCenterPage = () => {
                     className="activation-modal__button activation-modal__button--ghost"
                     onClick={() => setIsRegistrationModalOpen(false)}
                   >
-                    Close
+                    {activationT('actions.close', 'Close')}
                   </button>
                   <button
                     type="button"
@@ -2593,8 +2633,8 @@ const ActivationCenterPage = () => {
                     disabled={txStatus.loading || referrerResolveLoading || parseFloat(usdtBalance) < 10 || networkWarning}
                   >
                     {txStatus.loading || referrerResolveLoading
-                      ? 'Preparing registration...'
-                      : 'Register & Activate Level 1'}
+                      ? activationT('registration.preparing', 'Preparing registration...')
+                      : activationT('actions.registerAndActivateLevelOne', 'Register & Activate Level 1')}
                   </button>
                 </div>
               </div>

@@ -844,7 +844,7 @@
 .security-hero__visual-note {
   position: relative;
   z-index: 1;
-  background: transparent
+  background: transparent;
 }
 
 /* Adjust for different screen sizes */

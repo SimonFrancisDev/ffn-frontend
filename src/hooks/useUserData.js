@@ -1,12 +1,9 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { ethers } from 'ethers'
-
-const API_BASE_URL =
-  import.meta.env.VITE_API_BASE_URL?.replace(/\/$/, '') ||
-  'https://fin-freedom-backend-3.onrender.com'
+import { getApiUrl } from '../Services/apiConfig'
 
 async function fetchJson(path, options = {}) {
-  const response = await fetch(`${API_BASE_URL}${path}`, {
+  const response = await fetch(getApiUrl(path), {
     headers: {
       'Content-Type': 'application/json',
       ...(options.headers || {}),
@@ -42,6 +39,9 @@ const EMPTY_SUMMARY = {
   totalReceiptEarnings: '0.00',
   totalReceiptEscrowLocked: '0.00',
   totalReceiptGross: '0.00',
+  generatedGross: '0.00',
+  walletCreditedLiquid: '0.00',
+  receiptEscrowLocked: '0.00',
   totalReceiptCount: 0,
   fgtTotal: '0.00',
   fgtLocked: '0.00',
@@ -57,6 +57,9 @@ const EMPTY_REFERRALS = {
   commissionEarnedLiquid: '0.00',
   commissionEarnedGross: '0.00',
   commissionEscrowLocked: '0.00',
+  generatedGross: '0.00',
+  walletCreditedLiquid: '0.00',
+  receiptEscrowLocked: '0.00',
   referralReceiptCount: 0,
   directReferrals: [],
 }
@@ -137,7 +140,10 @@ export function useUserSummary(address, autoFetch = true) {
       refetch: () => fetchSummary(normalizedAddress),
       level: data?.highestActiveLevel || 0,
       isRegistered: Boolean(data?.isRegistered),
-      totalEarnings: data?.totalReceiptEarnings || '0.00',
+      totalEarnings:
+        data?.walletCreditedLiquid ||
+        data?.totalReceiptEarnings ||
+        '0.00',
       fgtBalance: data?.fgtTotal || '0.00',
       fgtrBalance: data?.fgtrTotal || '0.00',
     }),
@@ -205,7 +211,10 @@ export function useReferralStats(address, autoFetch = true) {
       error,
       refetch: () => fetchStats(normalizedAddress),
       totalReferrals: data?.totalReferrals || 0,
-      commissionEarned: data?.commissionEarnedLiquid || '0.00',
+      commissionEarned:
+        data?.walletCreditedLiquid ||
+        data?.commissionEarnedLiquid ||
+        '0.00',
     }),
     [data, loading, error, fetchStats, normalizedAddress]
   )
@@ -402,10 +411,8 @@ export function useCompleteUserData(address, autoFetch = true) {
 // import { useWallet } from './useWallet'
 // import { useSpace } from '../context/SpaceContext'
 
-// const API_BASE_URL = 'https://fin-freedom-backend-3.onrender.com'
-
 // async function fetchJson(path, options = {}) {
-//   const response = await fetch(`${API_BASE_URL}${path}`, {
+//   const response = await fetch(path, {
 //     headers: { 'Content-Type': 'application/json', ...options.headers },
 //     ...options,
 //   })

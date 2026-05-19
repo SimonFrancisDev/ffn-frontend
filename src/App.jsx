@@ -27,13 +27,14 @@ import { useContracts } from './hooks/useContracts'
 import useAppDirection from './hooks/useAppDirection'
 import { SpaceProvider } from './context/SpaceContext'
 import { SessionProvider } from './context/SessionContext'
+import { OverlayProvider } from './components/overlay'
+import { ToastProvider } from './components/feedback'
+import { NotificationProvider } from './components/notifications'
 import { useCompleteUserData } from './hooks/useUserData'
 import { LANGUAGES } from './constants/languages'
+import { getApiUrl } from './Services/apiConfig'
+import { fetchNotifications, markAllNotificationsRead, markNotificationRead } from './Services/notificationsApi'
 import { DollarSign, TrendingUp, Wrench, Bell, Calendar, Megaphone } from 'lucide-react'
-
-const API_BASE_URL =
-  import.meta.env.VITE_API_BASE_URL?.replace(/\/$/, '') ||
-  'https://fin-freedom-backend-3.onrender.com'
 
 // const navItems = [
 //   { label: 'Home', href: 'home', active: false },
@@ -55,8 +56,11 @@ const navItems = [
 const baseNotifications = [
   {
     id: '1',
+    titleKey: 'appNotifications.base.payout.title',
     title: 'New payout received',
+    messageKey: 'appNotifications.base.payout.message',
     message: 'A payout has been recorded in your account activity.',
+    timeKey: 'appNotifications.base.payout.time',
     time: '2m ago',
     icon: DollarSign,
     iconColor: '#22c55e',
@@ -66,8 +70,11 @@ const baseNotifications = [
   },
   {
     id: '2',
+    titleKey: 'appNotifications.base.levelActivation.title',
     title: 'Level activation available',
+    messageKey: 'appNotifications.base.levelActivation.message',
     message: 'You now meet the requirements to activate the next level.',
+    timeKey: 'appNotifications.base.levelActivation.time',
     time: '15m ago',
     icon: TrendingUp,
     iconColor: '#3b82f6',
@@ -77,8 +84,11 @@ const baseNotifications = [
   },
   {
     id: '3',
+    titleKey: 'appNotifications.base.systemNotice.title',
     title: 'System notice',
+    messageKey: 'appNotifications.base.systemNotice.message',
     message: 'Routine maintenance has been scheduled for this weekend.',
+    timeKey: 'appNotifications.base.systemNotice.time',
     time: '1h ago',
     icon: Wrench,
     iconColor: '#f59e0b',
@@ -87,6 +97,24 @@ const baseNotifications = [
     noticeType: 'warning',
   },
 ]
+
+const BASE_NOTIFICATION_TRANSLATION_KEYS = {
+  1: {
+    titleKey: 'appNotifications.base.payout.title',
+    messageKey: 'appNotifications.base.payout.message',
+    timeKey: 'appNotifications.base.payout.time',
+  },
+  2: {
+    titleKey: 'appNotifications.base.levelActivation.title',
+    messageKey: 'appNotifications.base.levelActivation.message',
+    timeKey: 'appNotifications.base.levelActivation.time',
+  },
+  3: {
+    titleKey: 'appNotifications.base.systemNotice.title',
+    messageKey: 'appNotifications.base.systemNotice.message',
+    timeKey: 'appNotifications.base.systemNotice.time',
+  },
+}
 
 const NOTIFICATIONS_STORAGE_KEY = 'finfreedom_notifications_v1'
 const NOTIFICATION_READ_STATUS_KEY = 'finfreedom_notification_read_status_v1'
@@ -175,6 +203,7 @@ const getInitialNotifications = () => {
 
     return parsed.map((n) => ({
       ...n,
+      ...(BASE_NOTIFICATION_TRANSLATION_KEYS[n.id] || {}),
       icon:
         n.iconName === 'DollarSign'
           ? DollarSign
@@ -202,7 +231,11 @@ const getInitialLanguage = () => {
   try {
     const stored = window.localStorage.getItem(LANGUAGE_STORAGE_KEY)
     const matched = LANGUAGES.find((language) => language.code === stored)
-    return matched ? matched.code : 'en'
+    if (matched) return matched.code
+
+    const detectedLanguage = (i18n.resolvedLanguage || i18n.language || 'en').split('-')[0]
+    const detectedMatch = LANGUAGES.find((language) => language.code === detectedLanguage)
+    return detectedMatch ? detectedMatch.code : 'en'
   } catch (error) {
     console.error('Failed to read stored language:', error)
     return 'en'
@@ -366,8 +399,8 @@ function App() {
   const fetchCommunityNotifications = useCallback(async () => {
     try {
       const [announcementsRes, eventsRes] = await Promise.all([
-        fetch(`${API_BASE_URL}/api/community/announcements`),
-        fetch(`${API_BASE_URL}/api/community/events`),
+        fetch(getApiUrl('/api/community/announcements')),
+        fetch(getApiUrl('/api/community/events')),
       ])
 
       const announcementsData = await announcementsRes
@@ -425,8 +458,46 @@ function App() {
     }
   }, [])
 
+  const fetchBackendNotifications = useCallback(async () => {
+    if (!isConnected || !walletAccount) return []
+
+    try {
+      const response = await fetchNotifications({ wallet: walletAccount, limit: 50 })
+      return (response.items || []).map((item) => ({
+        id: item._id || item.id,
+        titleKey: item.titleKey,
+        title: item.notificationType?.replace(/_/g, ' ') || 'Notification',
+        messageKey: item.messageKey,
+        message: item.notificationType?.replace(/_/g, ' ') || '',
+        time: item.createdAt ? new Date(item.createdAt).toLocaleString() : '',
+        icon: Bell,
+        iconColor:
+          item.severity === 'success'
+            ? '#22c55e'
+            : item.severity === 'warning'
+              ? '#f59e0b'
+              : item.severity === 'danger' || item.severity === 'critical'
+                ? '#ef4444'
+                : '#3b82f6',
+        type: item.notificationType,
+        noticeType: item.severity || 'info',
+        read: item.status === 'read',
+        route: item.route || 'activity',
+        createdAt: item.createdAt,
+        i18nParams: item.i18nParams || {},
+        source: 'backend',
+      }))
+    } catch (err) {
+      console.error('Failed to fetch backend notifications:', err)
+      return []
+    }
+  }, [isConnected, walletAccount])
+
   const refreshNotifications = useCallback(async () => {
-    const communityNotifs = await fetchCommunityNotifications()
+    const [communityNotifs, backendNotifs] = await Promise.all([
+      fetchCommunityNotifications(),
+      fetchBackendNotifications(),
+    ])
 
     const storedNotifications = getInitialNotifications()
     const storedReadStatus =
@@ -436,7 +507,7 @@ function App() {
           )
         : {}
 
-    const allNotifications = [...storedNotifications, ...communityNotifs].map(
+    const allNotifications = [...storedNotifications, ...communityNotifs, ...backendNotifs].map(
       (n) => ({
         ...n,
         read:
@@ -456,7 +527,7 @@ function App() {
 
     const cleaned = cleanOldNotifications(uniqueNotifications)
     setNotifications(cleaned.slice(0, 50))
-  }, [fetchCommunityNotifications])
+  }, [fetchBackendNotifications, fetchCommunityNotifications])
 
   useEffect(() => {
     refreshNotifications()
@@ -671,6 +742,12 @@ function App() {
         JSON.stringify(nextReadStatus)
       )
     }
+
+    if (walletAccount) {
+      markAllNotificationsRead(walletAccount).catch((error) => {
+        console.error('Failed to sync notification read state:', error)
+      })
+    }
   }
 
   const handleClearNotifications = useCallback(() => {
@@ -701,12 +778,18 @@ function App() {
         )
       }
 
+      if (notification.source === 'backend' && walletAccount) {
+        markNotificationRead(notification.id, walletAccount).catch((error) => {
+          console.error('Failed to sync notification read state:', error)
+        })
+      }
+
       if (notification.route) {
         handleNavigate(notification.route)
         setIsNotificationsOpen(false)
       }
     },
-    [handleNavigate]
+    [handleNavigate, walletAccount]
   )
 
   const wallet = useMemo(() => {
@@ -773,9 +856,11 @@ function App() {
       nextNotices.push({
         id: 'wallet-missing',
         type: 'danger',
-        label: 'Wallet Required',
-        message:
-          'No compatible browser wallet was detected. Install MetaMask or another EVM-compatible wallet to connect and use live platform data.',
+        label: t('topNotice.walletRequired.label', 'Wallet Required'),
+        message: t(
+          'topNotice.walletRequired.message',
+          'No compatible browser wallet was detected. Install MetaMask or another EVM-compatible wallet to connect and use live platform data.'
+        ),
         source: 'wallet',
         sticky: true,
         dismissible: false,
@@ -794,12 +879,16 @@ function App() {
       nextNotices.push({
         id: 'wallet-error',
         type: needsNetworkSwitch ? 'warning' : 'danger',
-        label: needsNetworkSwitch ? 'Network Required' : 'Wallet Error',
+        label: needsNetworkSwitch
+          ? t('topNotice.walletError.networkRequired', 'Network Required')
+          : t('topNotice.walletError.walletError', 'Wallet Error'),
         message: walletError,
         source: 'wallet',
         sticky: true,
         dismissible: true,
-        actionLabel: needsNetworkSwitch ? 'Switch Network' : 'Retry',
+        actionLabel: needsNetworkSwitch
+          ? t('topNotice.walletError.switchNetwork', 'Switch Network')
+          : t('topNotice.walletError.retry', 'Retry'),
         onAction: needsNetworkSwitch ? switchToAmoy : connect,
         dedupeKey: `wallet-error:${walletError}`,
       })
@@ -807,9 +896,11 @@ function App() {
       nextNotices.push({
         id: 'wallet-connecting',
         type: 'info',
-        label: 'Connecting',
-        message:
-          'Connecting your wallet and preparing live platform access.',
+        label: t('topNotice.connecting.label', 'Connecting'),
+        message: t(
+          'topNotice.connecting.message',
+          'Connecting your wallet and preparing live platform access.'
+        ),
         source: 'wallet',
         sticky: true,
         dismissible: false,
@@ -819,13 +910,15 @@ function App() {
       nextNotices.push({
         id: 'wallet-disconnected',
         type: 'info',
-        label: 'Connect Wallet',
-        message:
-          'Connect your wallet to access live balances, orbit state, and account-linked data.',
+        label: t('topNotice.connectWallet.label', 'Connect Wallet'),
+        message: t(
+          'topNotice.connectWallet.message',
+          'Connect your wallet to access live balances, orbit state, and account-linked data.'
+        ),
         source: 'wallet',
         sticky: true,
         dismissible: true,
-        actionLabel: 'Connect',
+        actionLabel: t('topNotice.connectWallet.action', 'Connect'),
         onAction: connect,
         dedupeKey: 'wallet-disconnected',
       })
@@ -833,8 +926,12 @@ function App() {
       nextNotices.push({
         id: 'wallet-connected',
         type: 'success',
-        label: 'Wallet Connected',
-        message: `Connected: ${shortenAddress(walletAccount)}. Live platform data is ready.`,
+        label: t('topNotice.walletConnected.label', 'Wallet Connected'),
+        message: t(
+          'topNotice.walletConnected.message',
+          'Connected: {{address}}. Live platform data is ready.',
+          { address: shortenAddress(walletAccount) }
+        ),
         source: 'wallet',
         sticky: false,
         dismissible: true,
@@ -845,9 +942,11 @@ function App() {
       nextNotices.push({
         id: 'testnet-reminder',
         type: 'warning',
-        label: 'Testnet Notice',
-        message:
-          'You are connected to Polygon Amoy Testnet. Verify transactions and values before confirming.',
+        label: t('topNotice.testnetNotice.label', 'Testnet Notice'),
+        message: t(
+          'topNotice.testnetNotice.message',
+          'You are connected to Polygon Amoy Testnet. Verify transactions and values before confirming.'
+        ),
         source: 'network',
         sticky: false,
         dismissible: true,
@@ -860,13 +959,19 @@ function App() {
       nextNotices.push({
         id: `notification-${latestUnreadNotification.id}`,
         type: latestUnreadNotification.noticeType || 'info',
-        label: latestUnreadNotification.title,
-        message: latestUnreadNotification.message,
+        label: latestUnreadNotification.titleKey
+          ? t(latestUnreadNotification.titleKey, latestUnreadNotification.title)
+          : latestUnreadNotification.title,
+        message: latestUnreadNotification.messageKey
+          ? t(latestUnreadNotification.messageKey, latestUnreadNotification.message)
+          : latestUnreadNotification.message,
         source: 'notifications',
         sticky: false,
         dismissible: true,
         autoHideMs: 7000,
-        actionLabel: latestUnreadNotification.route ? 'Open' : '',
+        actionLabel: latestUnreadNotification.route
+          ? t('topNotice.notification.open', 'Open')
+          : '',
         onAction: latestUnreadNotification.route
           ? () => handleNotificationClick(latestUnreadNotification)
           : null,
@@ -882,6 +987,7 @@ function App() {
     isWalletLoading,
     latestUnreadNotification,
     switchToAmoy,
+    t,
     walletAccount,
     walletError,
   ])
@@ -926,7 +1032,10 @@ function App() {
   return (
     <SessionProvider>
       <SpaceProvider walletAddress={walletAccount}>
-        <>
+        <NotificationProvider walletAddress={walletAccount}>
+          <OverlayProvider>
+            <ToastProvider>
+              <>
           <AppShell
             fullWidth={location.pathname === '/' || location.pathname === '/home'}
             topbar={<TopNoticeBar notices={notices} />}
@@ -1057,7 +1166,10 @@ function App() {
               onClose={() => setModalNotification(null)}
             />
           ) : null}
-        </>
+              </>
+            </ToastProvider>
+          </OverlayProvider>
+        </NotificationProvider>
       </SpaceProvider>
     </SessionProvider>
   )

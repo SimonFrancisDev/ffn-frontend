@@ -2,6 +2,7 @@ import './NotificationDropdown.css'
 import { Bell, BellOff, X, Trash2 } from 'lucide-react'
 import { useEffect, useMemo, useRef, useState } from 'react'
 import { createPortal } from 'react-dom'
+import { useTranslation } from 'react-i18next'
 
 function ModalPortal({ children }) {
   if (typeof document === 'undefined') return null
@@ -19,6 +20,7 @@ const NotificationDropdown = ({
   onNotificationClick,
   anchorRef = null,
 }) => {
+  const { t } = useTranslation()
   const dialogRef = useRef(null)
   const [selectedNotification, setSelectedNotification] = useState(null)
   const [localNotifications, setLocalNotifications] = useState([])
@@ -301,7 +303,7 @@ const NotificationDropdown = ({
             } glass-panel`}
             role="dialog"
             aria-modal="true"
-            aria-label="Notifications"
+            aria-label={t('notificationDropdown.ariaLabel', 'Notifications')}
             onClick={(event) => event.stopPropagation()}
             style={
               isDesktop
@@ -325,9 +327,13 @@ const NotificationDropdown = ({
           >
             <div className="notification-dropdown__header">
               <div className="notification-dropdown__title-group">
-                <h3 className="notification-dropdown__title">Notifications</h3>
+                <h3 className="notification-dropdown__title">
+                  {t('notificationDropdown.title', 'Notifications')}
+                </h3>
                 <span className="notification-dropdown__count">
-                  {unreadCount} unread
+                  {t('notificationDropdown.unreadCount', '{{count}} unread', {
+                    count: unreadCount,
+                  })}
                 </span>
               </div>
 
@@ -338,7 +344,7 @@ const NotificationDropdown = ({
                   onClick={handleMarkAllRead}
                   disabled={unreadCount === 0}
                 >
-                  Mark all read
+                  {t('notificationDropdown.actions.markAllRead', 'Mark all read')}
                 </button>
 
                 <button
@@ -347,7 +353,7 @@ const NotificationDropdown = ({
                   onClick={handleRemoveRead}
                   disabled={!localNotifications.some((item) => item.read)}
                 >
-                  Clear read
+                  {t('notificationDropdown.actions.clearRead', 'Clear read')}
                 </button>
 
                 <button
@@ -357,14 +363,14 @@ const NotificationDropdown = ({
                   disabled={!localNotifications.length}
                 >
                   <Trash2 size={14} />
-                  <span>Clear all</span>
+                  <span>{t('notificationDropdown.actions.clearAll', 'Clear all')}</span>
                 </button>
 
                 <button
                   type="button"
                   className="notification-dropdown__close"
                   onClick={onClose}
-                  aria-label="Close notifications"
+                  aria-label={t('notificationDropdown.closeAriaLabel', 'Close notifications')}
                 >
                   <X size={16} />
                 </button>
@@ -391,15 +397,15 @@ const NotificationDropdown = ({
                       <div className="notification-dropdown__content">
                         <div className="notification-dropdown__item-top">
                           <p className="notification-dropdown__item-title">
-                            {item.title}
+                            {item.titleKey ? t(item.titleKey, { ...(item.i18nParams || {}), defaultValue: item.title }) : item.title}
                           </p>
                           <span className="notification-dropdown__time">
-                            {item.time}
+                            {item.timeKey ? t(item.timeKey, item.time) : item.time}
                           </span>
                         </div>
 
                         <p className="notification-dropdown__message soft-text">
-                          {item.message}
+                          {item.messageKey ? t(item.messageKey, { ...(item.i18nParams || {}), defaultValue: item.message }) : item.message}
                         </p>
                       </div>
                     </button>
@@ -410,10 +416,13 @@ const NotificationDropdown = ({
                       <BellOff size={20} />
                     </div>
                     <p className="notification-dropdown__empty-title">
-                      No notifications yet
+                      {t('notificationDropdown.empty.title', 'No notifications yet')}
                     </p>
                     <p className="notification-dropdown__empty-text soft-text">
-                      New updates and activity alerts will appear here.
+                      {t(
+                        'notificationDropdown.empty.text',
+                        'New updates and activity alerts will appear here.'
+                      )}
                     </p>
                   </div>
                 )}
@@ -434,16 +443,23 @@ const NotificationDropdown = ({
             className="notification-details-modal glass-panel"
             role="dialog"
             aria-modal="true"
-            aria-label="Notification details"
+            aria-label={t('notificationDropdown.details.ariaLabel', 'Notification details')}
             onClick={(event) => event.stopPropagation()}
           >
             <div className="notification-details-modal__header">
               <div className="notification-details-modal__title-wrap">
                 <h3 className="notification-details-modal__title">
-                  {selectedNotification.title}
+                  {selectedNotification.titleKey
+                    ? t(selectedNotification.titleKey, {
+                        ...(selectedNotification.i18nParams || {}),
+                        defaultValue: selectedNotification.title,
+                      })
+                    : selectedNotification.title}
                 </h3>
                 <span className="notification-details-modal__time">
-                  {selectedNotification.time}
+                  {selectedNotification.timeKey
+                    ? t(selectedNotification.timeKey, selectedNotification.time)
+                    : selectedNotification.time}
                 </span>
               </div>
 
@@ -451,7 +467,10 @@ const NotificationDropdown = ({
                 type="button"
                 className="notification-details-modal__close"
                 onClick={handleCloseDetails}
-                aria-label="Close notification details"
+                aria-label={t(
+                  'notificationDropdown.details.closeAriaLabel',
+                  'Close notification details'
+                )}
               >
                 <X size={16} />
               </button>
@@ -463,7 +482,12 @@ const NotificationDropdown = ({
               </div>
 
               <p className="notification-details-modal__message">
-                {selectedNotification.message}
+                {selectedNotification.messageKey
+                  ? t(selectedNotification.messageKey, {
+                      ...(selectedNotification.i18nParams || {}),
+                      defaultValue: selectedNotification.message,
+                    })
+                  : selectedNotification.message}
               </p>
             </div>
 
@@ -473,7 +497,7 @@ const NotificationDropdown = ({
                 className="notification-details-modal__action"
                 onClick={handleCloseDetails}
               >
-                Close
+                {t('notificationDropdown.actions.close', 'Close')}
               </button>
 
               <button
@@ -481,7 +505,7 @@ const NotificationDropdown = ({
                 className="notification-details-modal__action notification-details-modal__action--danger"
                 onClick={handleRemoveSelected}
               >
-                Clear this message
+                {t('notificationDropdown.actions.clearThisMessage', 'Clear this message')}
               </button>
             </div>
           </div>

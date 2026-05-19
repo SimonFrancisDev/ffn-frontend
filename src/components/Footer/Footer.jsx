@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react'
 import { createPortal } from 'react-dom'
+import { useTranslation } from 'react-i18next'
 import {
   ArrowRight,
   ArrowRightLeft,
@@ -345,14 +346,14 @@ With higher levels, wider earnings, and the Infinity Bonus Pool, it delivers gre
       },
       {
         name: 'FPT',
-        title: 'Freedom Plus Token',
+        title: 'Freedom-Plus Token',
         source: 'Freedom-Plus Program',
         role: 'Activation Reward',
         description: 'Higher-value tokens earned from advanced participation.',
       },
       {
         name: 'FPTr',
-        title: 'Freedom Plus Reactivation Token',
+        title: 'Freedom-Plus Reactivation Token',
         source: 'Freedom-Plus Program',
         role: 'Recycling Reward',
         description: 'Generated during advanced reactivation cycles.',
@@ -594,16 +595,18 @@ const LEGAL_CONTENT = {
 }
 
 function FooterLogo() {
+  const { t } = useTranslation()
+
   return (
     <>
       <img
         src={FOOTER_LOGO.dark}
-        alt="Fin Freedom Network"
+        alt={t('footer.brand.logoAlt', 'Fin Freedom Network')}
         className="landing-footer__brand-logo landing-footer__brand-logo--dark"
       />
       <img
         src={FOOTER_LOGO.light}
-        alt="Fin Freedom Network"
+        alt={t('footer.brand.logoAlt', 'Fin Freedom Network')}
         className="landing-footer__brand-logo landing-footer__brand-logo--light"
       />
     </>
@@ -630,6 +633,7 @@ function FooterThemeImage({ image, alt, className = '' }) {
 }
 
 function LegalModal({ type, onClose }) {
+  const { t } = useTranslation()
   const content = LEGAL_CONTENT[type]
   if (!content) return null
 
@@ -654,7 +658,7 @@ function LegalModal({ type, onClose }) {
           type="button"
           className="landing-disclaimer__close"
           onClick={onClose}
-          aria-label="Close legal modal"
+          aria-label={t('footer.legalModal.closeAriaLabel', 'Close legal modal')}
         >
           <X size={18} />
         </button>
@@ -662,27 +666,37 @@ function LegalModal({ type, onClose }) {
         <div className="landing-disclaimer__header">
           <div className="landing-disclaimer__badge">
             <Icon size={16} />
-            <span>{content.badge}</span>
+            <span>{t(`footer.legal.${type}.badge`, content.badge)}</span>
           </div>
 
-          <h2 className="landing-disclaimer__title">{content.title}</h2>
-          <p className="landing-disclaimer__intro">{content.subtitle}</p>
+          <h2 className="landing-disclaimer__title">
+            {t(`footer.legal.${type}.title`, content.title)}
+          </h2>
+          <p className="landing-disclaimer__intro">
+            {t(`footer.legal.${type}.subtitle`, content.subtitle)}
+          </p>
         </div>
 
         <div className="landing-disclaimer__body legal-content">
           {content.warning ? (
-            <p className="legal-content__warning">{content.warning}</p>
+            <p className="legal-content__warning">
+              {t(`footer.legal.${type}.warning`, content.warning)}
+            </p>
           ) : null}
 
-          {content.sections.map(([heading, text]) => (
-            <section key={heading} className="landing-disclaimer__section legal-content__section">
+          {content.sections.map(([heading, text], index) => (
+            <section key={`${type}-section-${index}`} className="landing-disclaimer__section legal-content__section">
               <div className="landing-disclaimer__section-icon">
                 <Icon size={18} />
               </div>
 
               <div>
-                <h3 className="landing-disclaimer__section-title">{heading}</h3>
-                <p className="landing-disclaimer__section-text">{text}</p>
+                <h3 className="landing-disclaimer__section-title">
+                  {t(`footer.legal.${type}.sections.${index}.heading`, heading)}
+                </h3>
+                <p className="landing-disclaimer__section-text">
+                  {t(`footer.legal.${type}.sections.${index}.text`, text)}
+                </p>
               </div>
             </section>
           ))}
@@ -694,7 +708,7 @@ function LegalModal({ type, onClose }) {
             className="landing-btn landing-btn--primary"
             onClick={onClose}
           >
-            I agree
+            {t('footer.legalModal.agree', 'I agree')}
           </button>
         </div>
       </div>
@@ -712,11 +726,11 @@ function ProgramFeatureGrid({ features = [] }) {
 
   return (
     <div className="program-detail-grid">
-      {features.map((feature) => {
+      {features.map((feature, index) => {
         const Icon = PROGRAM_FEATURE_ICONS[feature.title] || FaCheckCircle
 
         return (
-          <article key={feature.title} className="program-detail-box">
+          <article key={`program-feature-${index}`} className="program-detail-box">
             <ProgramIcon icon={Icon} className="program-detail-icon" />
 
             <div>
@@ -725,8 +739,8 @@ function ProgramFeatureGrid({ features = [] }) {
 
               {feature.extra?.length ? (
                 <div className="program-price-list">
-                  {feature.extra.map((item) => (
-                    <span key={item}>{item}</span>
+                  {feature.extra.map((item, itemIndex) => (
+                    <span key={`program-feature-extra-${index}-${itemIndex}`}>{item}</span>
                   ))}
                 </div>
               ) : null}
@@ -743,11 +757,11 @@ function ProgramValueStrip({ values = [] }) {
 
   return (
     <div className="program-value-strip">
-      {values.map((value) => {
+      {values.map((value, index) => {
         const Icon = PROGRAM_VALUE_ICONS[value] || FaCheckCircle
 
         return (
-          <span key={value}>
+          <span key={`program-item-${index}`}>
             <ProgramIcon icon={Icon} />
             {value}
           </span>
@@ -775,8 +789,8 @@ function ProgramPhilosophy({ program }) {
 
       {program.proofPoints?.length ? (
         <div className="program-proof-list">
-          {program.proofPoints.map((point) => (
-            <span key={point}>
+          {program.proofPoints.map((point, index) => (
+            <span key={`program-proof-${index}`}>
               <FaCheckCircle />
               {point}
             </span>
@@ -788,7 +802,11 @@ function ProgramPhilosophy({ program }) {
 }
 
 function ProgramModal({ program, onClose }) {
+  const { t } = useTranslation()
   if (!program) return null
+
+  const programKey = `footer.programs.${program.id}`
+  const programTitle = t(`${programKey}.title`, program.title)
 
   return (
     <div className="landing-disclaimer landing-program-modal">
@@ -803,7 +821,7 @@ function ProgramModal({ program, onClose }) {
           type="button"
           className="landing-disclaimer__close"
           onClick={onClose}
-          aria-label="Close program modal"
+          aria-label={t('footer.programModal.closeAriaLabel', 'Close program modal')}
         >
           <X size={18} />
         </button>
@@ -811,7 +829,7 @@ function ProgramModal({ program, onClose }) {
         <div className="landing-program-modal__image-wrap">
           <FooterThemeImage
             image={program.image}
-            alt={program.title}
+            alt={programTitle}
             className="landing-program-modal__image"
           />
 
@@ -823,14 +841,14 @@ function ProgramModal({ program, onClose }) {
                 {!program.isLive ? (
                 <div className="landing-disclaimer__badge">
                     <Sparkles size={16} />
-                    <span>{program.status || 'Coming Soon'}</span>
+                    <span>{t(`${programKey}.status`, program.status || t('footer.programModal.comingSoon', 'Coming Soon'))}</span>
                 </div>
                 ) : null}
 
-                <h2 className="landing-disclaimer__title">{program.title}</h2>
+                <h2 className="landing-disclaimer__title">{programTitle}</h2>
 
                 <p className="landing-disclaimer__intro">
-                {program.headline || program.description || 'Program details coming soon.'}
+                {t(`${programKey}.headline`, program.headline || program.description || t('footer.programModal.detailsComingSoon', 'Program details coming soon.'))}
                 </p>
             </div>
 
@@ -840,7 +858,7 @@ function ProgramModal({ program, onClose }) {
                 className="landing-btn landing-btn--primary"
                 onClick={onClose}
                 >
-                Close Preview
+                {t('footer.programModal.closePreview', 'Close Preview')}
                 </button>
             </div>
          </div>
@@ -850,6 +868,8 @@ function ProgramModal({ program, onClose }) {
 }
 
 function SecurityNoticeModal({ onClose }) {
+  const { t } = useTranslation()
+
   return (
     <div className="landing-disclaimer">
       <div className="landing-disclaimer__backdrop" />
@@ -865,7 +885,7 @@ function SecurityNoticeModal({ onClose }) {
           type="button"
           className="landing-disclaimer__close"
           onClick={onClose}
-          aria-label="Close notice"
+          aria-label={t('footer.securityNotice.closeAriaLabel', 'Close notice')}
         >
           <X size={18} />
         </button>
@@ -873,11 +893,11 @@ function SecurityNoticeModal({ onClose }) {
         <div className="landing-disclaimer__header">
           <div className="landing-disclaimer__badge">
             <ShieldAlert size={16} />
-            <span>Security & Legal Notice</span>
+            <span>{t('footer.securityNotice.badge', 'Security & Legal Notice')}</span>
           </div>
 
           <h2 className="landing-disclaimer__title">
-            Important Notice — Please Read Carefully
+            {t('footer.securityNotice.title', 'Important Notice - Please Read Carefully')}
           </h2>
         </div>
 
@@ -887,10 +907,11 @@ function SecurityNoticeModal({ onClose }) {
               <Wallet size={18} />
             </div>
             <div>
-              <h3 className="landing-disclaimer__section-title">Wallet Security</h3>
+              <h3 className="landing-disclaimer__section-title">
+                {t('footer.securityNotice.sections.walletSecurity.heading', 'Wallet Security')}
+              </h3>
               <p className="landing-disclaimer__section-text">
-                You are solely responsible for securing your wallet. Never share your private key or recovery phrase.
-                Fin Freedom Network will never request your private key.
+                {t('footer.securityNotice.sections.walletSecurity.text', 'You are solely responsible for securing your wallet. Never share your private key or recovery phrase. Fin Freedom Network will never request your private key.')}
               </p>
             </div>
           </div>
@@ -900,9 +921,11 @@ function SecurityNoticeModal({ onClose }) {
               <Lock size={18} />
             </div>
             <div>
-              <h3 className="landing-disclaimer__section-title">Irreversible Registration</h3>
+              <h3 className="landing-disclaimer__section-title">
+                {t('footer.securityNotice.sections.irreversibleRegistration.heading', 'Irreversible Registration')}
+              </h3>
               <p className="landing-disclaimer__section-text">
-                Wallet addresses cannot be changed after registration. Blockchain transactions are final and cannot be reversed.
+                {t('footer.securityNotice.sections.irreversibleRegistration.text', 'Wallet addresses cannot be changed after registration. Blockchain transactions are final and cannot be reversed.')}
               </p>
             </div>
           </div>
@@ -912,9 +935,11 @@ function SecurityNoticeModal({ onClose }) {
               <ArrowRightLeft size={18} />
             </div>
             <div>
-              <h3 className="landing-disclaimer__section-title">Decentralized Participation</h3>
+              <h3 className="landing-disclaimer__section-title">
+                {t('footer.securityNotice.sections.decentralizedParticipation.heading', 'Decentralized Participation')}
+              </h3>
               <p className="landing-disclaimer__section-text">
-                Participation is controlled by smart contract rules, not manual admin decisions. Results depend on network activity.
+                {t('footer.securityNotice.sections.decentralizedParticipation.text', 'Participation is controlled by smart contract rules, not manual admin decisions. Results depend on network activity.')}
               </p>
             </div>
           </div>
@@ -926,7 +951,7 @@ function SecurityNoticeModal({ onClose }) {
             className="landing-btn landing-btn--secondary"
             onClick={onClose}
           >
-            Cancel
+            {t('footer.securityNotice.cancel', 'Cancel')}
           </button>
 
           <button
@@ -934,7 +959,7 @@ function SecurityNoticeModal({ onClose }) {
             className="landing-btn landing-btn--primary"
             onClick={onClose}
           >
-            I Understand & Proceed
+            {t('footer.securityNotice.proceed', 'I Understand & Proceed')}
             <ArrowRight size={16} />
           </button>
         </div>
@@ -944,6 +969,7 @@ function SecurityNoticeModal({ onClose }) {
 }
 
 export default function Footer({ onNavigate }) {
+  const { t } = useTranslation()
   const [programModal, setProgramModal] = useState(null)
   const [legalModal, setLegalModal] = useState(null)
   const [forceShowDisclaimer, setForceShowDisclaimer] = useState(false)
@@ -990,7 +1016,7 @@ export default function Footer({ onNavigate }) {
 
         <div className="landing-footer__columns">
           <div className="landing-footer__column">
-            <h3>Programs</h3>
+            <h3>{t('footer.columns.programs', 'Programs')}</h3>
 
             {PROGRAMS.map((program) => (
               <button
@@ -998,33 +1024,33 @@ export default function Footer({ onNavigate }) {
                 type="button"
                 onClick={() => handleProgramClick(program)}
               >
-                {program.title}
+                {t(`footer.programs.${program.id}.title`, program.title)}
               </button>
             ))}
           </div>
 
           <div className="landing-footer__column">
-            <h3>Legal</h3>
+            <h3>{t('footer.columns.legal', 'Legal')}</h3>
 
             <button type="button" onClick={() => setLegalModal('terms')}>
-              Terms & Conditions
+              {t('footer.legal.terms.title', 'Terms & Conditions')}
             </button>
 
             <button type="button" onClick={() => setLegalModal('privacy')}>
-              Privacy Policy
+              {t('footer.legal.privacy.title', 'Privacy Policy')}
             </button>
 
             <button type="button" onClick={() => setLegalModal('risk')}>
-              Risk Disclaimer
+              {t('footer.legal.risk.title', 'Risk Disclaimer')}
             </button>
 
             <button type="button" onClick={() => setLegalModal('transparency')}>
-              Smart Contract Transparency
+              {t('footer.legal.transparency.title', 'Smart Contract Transparency')}
             </button>
           </div>
 
           <div className="landing-footer__column">
-            <h3>Community</h3>
+            <h3>{t('footer.columns.community', 'Community')}</h3>
 
             <div className="landing-footer__socials">
               {SOCIAL_LINKS.map((item) => {
@@ -1036,7 +1062,7 @@ export default function Footer({ onNavigate }) {
                     href={item.href}
                     target="_blank"
                     rel="noreferrer"
-                    aria-label={item.label}
+                    aria-label={t(`footer.social.${item.id}`, item.label)}
                   >
                     <Icon />
                   </a>
@@ -1048,11 +1074,11 @@ export default function Footer({ onNavigate }) {
 
         <div className="landing-footer__bottom">
           <span>
-            © {new Date().getFullYear()} Fin Freedom Network. All rights reserved.
+            {t('footer.bottom.copyright', '\u00A9 {{year}} Fin Freedom Network. All rights reserved.', { year: new Date().getFullYear() })}
           </span>
 
           <button type="button" onClick={() => setForceShowDisclaimer(true)}>
-            View security notice
+            {t('footer.bottom.viewSecurityNotice', 'View security notice')}
           </button>
         </div>
       </div>
@@ -1448,14 +1474,14 @@ export default function Footer({ onNavigate }) {
 //       },
 //       {
 //         name: 'FPT',
-//         title: 'Freedom Plus Token',
+//         title: 'Freedom-Plus Token',
 //         source: 'Freedom-Plus Program',
 //         role: 'Activation Reward',
 //         description: 'Higher-value tokens earned from advanced participation.',
 //       },
 //       {
 //         name: 'FPTr',
-//         title: 'Freedom Plus Reactivation Token',
+//         title: 'Freedom-Plus Reactivation Token',
 //         source: 'Freedom-Plus Program',
 //         role: 'Recycling Reward',
 //         description: 'Generated during advanced reactivation cycles.',

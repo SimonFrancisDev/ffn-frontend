@@ -2,7 +2,9 @@ export const CONTRACT_ADDRESSES = {
   USDT: import.meta.env.VITE_USDT_ADDRESS,
   ESCROW: import.meta.env.VITE_ESCROW_ADDRESS,
   REGISTRATION: import.meta.env.VITE_REGISTRATION_ADDRESS,
-  LEVEL_MANAGER: import.meta.env.VITE_LEVELMANAGER_ADDRESS,
+  LEVEL_MANAGER:
+    import.meta.env.VITE_LEVEL_MANAGER_ADDRESS ||
+    import.meta.env.VITE_LEVELMANAGER_ADDRESS,
 
   // Reusable orbit contracts
   P4_ORBIT: import.meta.env.VITE_P4_ORBIT_ADDRESS, // Levels 1, 4, 7, 10

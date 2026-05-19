@@ -5,7 +5,9 @@ import USDT_ABI from '../abis/USDT.json'
 import ESCROW_ABI from '../abis/AutoUpgradeEscrow.json'
 import REGISTRATION_ABI from '../abis/RegistrationFixed.json'
 import LEVEL_MANAGER_ABI from '../abis/LevelManager.json'
-import ORBIT_ABI from '../abis/OrbitBase.json'
+import P4_ORBIT_ABI from '../abis/P4Orbit.json'
+import P12_ORBIT_ABI from '../abis/P12Orbit.json'
+import P39_ORBIT_ABI from '../abis/P39Orbit.json'
 import FGT_TOKEN_ABI from '../abis/FGTToken.json'
 import FGTR_TOKEN_ABI from '../abis/FGTrToken.json'
 import TOKEN_CONTROLLER_ABI from '../abis/FreedomTokenController.json'
@@ -57,9 +59,9 @@ export class Web3Service {
       escrow: new ethers.Contract(CONTRACT_ADDRESSES.ESCROW, ESCROW_ABI, provider),
       registration: new ethers.Contract(CONTRACT_ADDRESSES.REGISTRATION, REGISTRATION_ABI, provider),
       levelManager: new ethers.Contract(CONTRACT_ADDRESSES.LEVEL_MANAGER, LEVEL_MANAGER_ABI, provider),
-      p4Orbit: new ethers.Contract(CONTRACT_ADDRESSES.P4_ORBIT, ORBIT_ABI, provider),
-      p12Orbit: new ethers.Contract(CONTRACT_ADDRESSES.P12_ORBIT, ORBIT_ABI, provider),
-      p39Orbit: new ethers.Contract(CONTRACT_ADDRESSES.P39_ORBIT, ORBIT_ABI, provider),
+      p4Orbit: new ethers.Contract(CONTRACT_ADDRESSES.P4_ORBIT, P4_ORBIT_ABI, provider),
+      p12Orbit: new ethers.Contract(CONTRACT_ADDRESSES.P12_ORBIT, P12_ORBIT_ABI, provider),
+      p39Orbit: new ethers.Contract(CONTRACT_ADDRESSES.P39_ORBIT, P39_ORBIT_ABI, provider),
 
       // Token reward layer
       fgtToken: new ethers.Contract(CONTRACT_ADDRESSES.FGT_TOKEN, FGT_TOKEN_ABI, provider),
@@ -116,9 +118,9 @@ export class Web3Service {
       escrow: new ethers.Contract(CONTRACT_ADDRESSES.ESCROW, ESCROW_ABI, this.signer),
       registration: new ethers.Contract(CONTRACT_ADDRESSES.REGISTRATION, REGISTRATION_ABI, this.signer),
       levelManager: new ethers.Contract(CONTRACT_ADDRESSES.LEVEL_MANAGER, LEVEL_MANAGER_ABI, this.signer),
-      p4Orbit: new ethers.Contract(CONTRACT_ADDRESSES.P4_ORBIT, ORBIT_ABI, this.signer),
-      p12Orbit: new ethers.Contract(CONTRACT_ADDRESSES.P12_ORBIT, ORBIT_ABI, this.signer),
-      p39Orbit: new ethers.Contract(CONTRACT_ADDRESSES.P39_ORBIT, ORBIT_ABI, this.signer),
+      p4Orbit: new ethers.Contract(CONTRACT_ADDRESSES.P4_ORBIT, P4_ORBIT_ABI, this.signer),
+      p12Orbit: new ethers.Contract(CONTRACT_ADDRESSES.P12_ORBIT, P12_ORBIT_ABI, this.signer),
+      p39Orbit: new ethers.Contract(CONTRACT_ADDRESSES.P39_ORBIT, P39_ORBIT_ABI, this.signer),
 
       // Token reward layer
       fgtToken: new ethers.Contract(CONTRACT_ADDRESSES.FGT_TOKEN, FGT_TOKEN_ABI, this.signer),

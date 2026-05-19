@@ -1,14 +1,16 @@
 import React from 'react'
 import { Button, Spinner } from 'react-bootstrap'
+import { useTranslation } from 'react-i18next'
 import { useWallet } from '../../hooks/useWallet'
 
 export const ConnectButton = () => {
+  const { t } = useTranslation()
   const { account, isConnected, isLoading, error, connect, disconnect } = useWallet()
 
   if (error) {
     return (
       <Button variant="danger" onClick={connect}>
-        Retry Connection
+        {t('connectButton.retryConnection', 'Retry Connection')}
       </Button>
     )
   }
@@ -23,7 +25,7 @@ export const ConnectButton = () => {
           role="status"
           aria-hidden="true"
         />
-        {' '}Connecting...
+        {' '}{t('connectButton.connecting', 'Connecting...')}
       </Button>
     )
   }
@@ -35,7 +37,7 @@ export const ConnectButton = () => {
           {account?.slice(0, 6)}...{account?.slice(-4)}
         </span>
         <Button variant="outline-danger" size="sm" onClick={disconnect}>
-          Disconnect
+          {t('connectButton.disconnect', 'Disconnect')}
         </Button>
       </div>
     )
@@ -43,7 +45,7 @@ export const ConnectButton = () => {
 
   return (
     <Button variant="primary" onClick={connect}>
-      Connect Wallet
+      {t('connectButton.connectWallet', 'Connect Wallet')}
     </Button>
   )
 }

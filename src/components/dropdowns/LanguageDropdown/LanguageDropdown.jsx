@@ -1,6 +1,7 @@
 import './LanguageDropdown.css'
 import { useEffect, useRef, useState } from 'react'
 import { createPortal } from 'react-dom'
+import { useTranslation } from 'react-i18next'
 
 function ModalPortal({ children }) {
   if (typeof document === 'undefined') return null
@@ -15,6 +16,7 @@ const LanguageDropdown = ({
   onClose,
   anchorRef = null, // NEW: Accept anchor ref for positioning
 }) => {
+  const { t } = useTranslation()
   const dialogRef = useRef(null)
   const [desktopPosition, setDesktopPosition] = useState({
     top: 76,
@@ -171,7 +173,7 @@ const LanguageDropdown = ({
             isDesktop ? 'language-modal__dialog--desktop' : 'language-modal__dialog--mobile'
           } glass-panel theme-transition`}
           role="dialog"
-          aria-label="Language selector"
+          aria-label={t('languageDropdown.selectorAriaLabel', 'Language selector')}
           onClick={(event) => event.stopPropagation()}
           style={
             isDesktop
@@ -195,9 +197,11 @@ const LanguageDropdown = ({
         >
           <div className="language-dropdown__header">
             <div className="language-dropdown__title-group">
-              <h3 className="language-dropdown__title">Language</h3>
+              <h3 className="language-dropdown__title">
+                {t('languageDropdown.title', 'Language')}
+              </h3>
               <p className="language-dropdown__subtitle soft-text">
-                Choose your preferred language
+                {t('languageDropdown.subtitle', 'Choose your preferred language')}
               </p>
             </div>
 
@@ -205,7 +209,7 @@ const LanguageDropdown = ({
               type="button"
               className="language-dropdown__close"
               onClick={onClose}
-              aria-label="Close language menu"
+              aria-label={t('languageDropdown.closeAriaLabel', 'Close language menu')}
             >
               ✕
             </button>
@@ -213,7 +217,7 @@ const LanguageDropdown = ({
 
           <div className="language-dropdown__current">
             <span className="language-dropdown__current-label soft-text">
-              Current
+              {t('languageDropdown.current', 'Current')}
             </span>
             <div className="language-dropdown__current-value">
               <span className="language-dropdown__flag" aria-hidden="true">
@@ -230,7 +234,11 @@ const LanguageDropdown = ({
             </div>
           </div>
 
-          <div className="language-dropdown__list" role="listbox" aria-label="Available languages">
+          <div
+            className="language-dropdown__list"
+            role="listbox"
+            aria-label={t('languageDropdown.listAriaLabel', 'Available languages')}
+          >
             {languages.map((language) => {
               const isActive = language.code === currentLanguage
 

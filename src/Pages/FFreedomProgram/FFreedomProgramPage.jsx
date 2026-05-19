@@ -1,5 +1,7 @@
 import { useEffect, useMemo, useState } from 'react'
 import { createPortal } from 'react-dom'
+import { useTranslation } from 'react-i18next'
+import { useToast } from '../../components/feedback'
 import {
   ArrowRight,
   BarChart3,
@@ -37,8 +39,6 @@ import {
 import { FaFacebookF, FaInstagram } from 'react-icons/fa'
 import { FaXTwitter } from 'react-icons/fa6'
 import { PiTelegramLogoFill } from 'react-icons/pi'
-import AOS from 'aos'
-import 'aos/dist/aos.css'
 import './FFreedomProgramPage.css'
 
 const FOOTER_LOGO = {
@@ -121,11 +121,11 @@ const PROGRAM_LINKS = [
 ]
 
 const FEATURES = [
-  { title: '10 Progressive Levels', text: 'Level prices double from $10 to $5,120.', icon: BarChart3 },
-  { title: 'Triple-P Orbit Engine', text: 'Three orbit structures: P4, P12, and P39.', icon: Orbit },
-  { title: 'Smart Contract Powered', text: 'Transparent, secure, and automated on-chain execution.', icon: ShieldCheck },
-  { title: 'Automatic Recycling', text: 'Supports continuous participation and system sustainability.', icon: Recycle },
-  { title: 'Token Rewards', text: 'Earn FGT on activation and FGTr on recycling.', icon: Coins },
+  { id: 'levels', title: '10 Progressive Levels', text: 'Level prices double from $10 to $5,120.', icon: BarChart3 },
+  { id: 'orbitEngine', title: 'Triple-P Orbit Engine', text: 'Three orbit structures: P4, P12, and P39.', icon: Orbit },
+  { id: 'smartContract', title: 'Smart Contract Powered', text: 'Transparent, secure, and automated on-chain execution.', icon: ShieldCheck },
+  { id: 'recycling', title: 'Automatic Recycling', text: 'Supports continuous participation and system sustainability.', icon: Recycle },
+  { id: 'tokenRewards', title: 'Token Rewards', text: 'Earn FGT on activation and FGTr on recycling.', icon: Coins },
 ]
 
 const WHY_POINTS = [
@@ -147,16 +147,19 @@ const WHY_SECTION = {
     'F-Freedom is the gateway to the Fin Freedom ecosystem, designed to create real opportunities through clarity, fairness, and a system that works for everyone.',
   trustCards: [
     {
+      id: 'noAdminControl',
       title: 'No Admin Control',
       text: 'No hidden manipulation. Rules drive the system.',
       icon: Lock,
     },
     {
+      id: 'deterministicPayouts',
       title: 'Deterministic Payouts',
       text: 'Outcomes follow clear programmed logic.',
       icon: Zap,
     },
     {
+      id: 'transparentVerifiable',
       title: 'Transparent & Verifiable',
       text: 'Transactions and system actions can be checked on-chain.',
       icon: Eye,
@@ -164,14 +167,17 @@ const WHY_SECTION = {
   ],
   pillars: [
     {
+      id: 'fairParticipation',
       title: 'Fair Participation',
       icon: Users,
     },
     {
+      id: 'predictableLogic',
       title: 'Predictable System Logic',
       icon: Layers3,
     },
     {
+      id: 'sustainability',
       title: 'Long-Term Sustainability',
       icon: BarChart3,
     },
@@ -343,12 +349,12 @@ const INCOME_TABLE_SECTION = {
     },
     {
       key: 'grossIncome',
-      label: 'Gross Income',
+      label: 'Generated Income',
       icon: CircleDollarSign,
     },
     {
       key: 'grossPercent',
-      label: 'Gross %',
+      label: 'Generated %',
       icon: Percent,
     },
     {
@@ -489,28 +495,30 @@ function ModalPortal({ children }) {
 }
 
 function LegalModal({ type, onClose }) {
+  const { t } = useTranslation()
   const content = LEGAL_CONTENT[type]
   if (!content) return null
   const Icon = content.icon
+  const baseKey = `fFreedomProgramPage.legal.${type}`
   return (
     <ModalPortal>
       <div className="ffp-modal">
         <div className="ffp-modal__backdrop" onClick={onClose} />
         <div className="ffp-modal__dialog ffp-modal__dialog--legal" role="dialog" aria-modal="true">
-          <button type="button" className="ffp-modal__close" onClick={onClose} aria-label="Close modal"><X size={18} /></button>
-          <div className="ffp-modal__logo-wrap"><ThemeImage image={FOOTER_LOGO} alt="Fin Freedom Network" className="ffp-modal__logo" /></div>
+          <button type="button" className="ffp-modal__close" onClick={onClose} aria-label={t('fFreedomProgramPage.legal.modal.closeAriaLabel', 'Close modal')}><X size={18} /></button>
+          <div className="ffp-modal__logo-wrap"><ThemeImage image={FOOTER_LOGO} alt={t('fFreedomProgramPage.alt.logo', 'Fin Freedom Network')} className="ffp-modal__logo" /></div>
           <div className="ffp-modal__header">
-            <div className="ffp-modal__badge"><Icon size={16} /><span>{content.badge}</span></div>
-            <h2>{content.title}</h2>
-            <p>{content.subtitle}</p>
+            <div className="ffp-modal__badge"><Icon size={16} /><span>{t(`${baseKey}.badge`, content.badge)}</span></div>
+            <h2>{t(`${baseKey}.title`, content.title)}</h2>
+            <p>{t(`${baseKey}.subtitle`, content.subtitle)}</p>
           </div>
           <div className="ffp-modal__body legal-content">
-            {content.warning && <p className="legal-content__warning">{content.warning}</p>}
-            {content.sections.map(([heading, text]) => (
-              <section key={heading} className="legal-content__section"><h4>{heading}</h4><p>{text}</p></section>
+            {content.warning && <p className="legal-content__warning">{t(`${baseKey}.warning`, content.warning)}</p>}
+            {content.sections.map(([heading, text], index) => (
+              <section key={`${type}-section-${index}`} className="legal-content__section"><h4>{t(`${baseKey}.sections.${index}.heading`, heading)}</h4><p>{t(`${baseKey}.sections.${index}.text`, text)}</p></section>
             ))}
           </div>
-          <div className="ffp-modal__actions"><button type="button" className="ffp-btn ffp-btn--primary" onClick={onClose}>I agree</button></div>
+          <div className="ffp-modal__actions"><button type="button" className="ffp-btn ffp-btn--primary" onClick={onClose}>{t('fFreedomProgramPage.legal.modal.agree', 'I agree')}</button></div>
         </div>
       </div>
     </ModalPortal>
@@ -518,27 +526,29 @@ function LegalModal({ type, onClose }) {
 }
 
 function LaunchModal({ onClose, onNavigate }) {
+  const { t } = useTranslation()
+  const toast = useToast()
   return (
     <ModalPortal>
       <div className="ffp-modal">
         <div className="ffp-modal__backdrop" onClick={onClose} />
         <div className="ffp-modal__dialog ffp-modal__dialog--launch" role="dialog" aria-modal="true">
-          <button type="button" className="ffp-modal__close" onClick={onClose} aria-label="Close launch alert"><X size={18} /></button>
+          <button type="button" className="ffp-modal__close" onClick={onClose} aria-label={t('fFreedomProgramPage.launchModal.closeAriaLabel', 'Close launch alert')}><X size={18} /></button>
           <div className="ffp-launch-icon"><Sparkles size={26} /></div>
           <div className="ffp-modal__header">
-            <div className="ffp-modal__badge"><Wallet size={16} /><span>New Program Launch Alert</span></div>
-            <h2>F-Freedom Program is now live.</h2>
-            <p>Connect your wallet, review the notice, and continue only when you understand the structure.</p>
+            <div className="ffp-modal__badge"><Wallet size={16} /><span>{t('fFreedomProgramPage.launchModal.badge', 'New Program Launch Alert')}</span></div>
+            <h2>{t('fFreedomProgramPage.launchModal.title', 'F-Freedom Program is now live.')}</h2>
+            <p>{t('fFreedomProgramPage.launchModal.text', 'Connect your wallet, review the notice, and continue only when you understand the structure.')}</p>
           </div>
           <div className="ffp-launch-list">
-            <span><CheckCircle2 size={16} /> Wallet connection required</span>
-            <span><CheckCircle2 size={16} /> Deterministic smart contract logic</span>
-            <span><CheckCircle2 size={16} /> No admin-controlled payout manipulation</span>
-            <span><CheckCircle2 size={16} /> Review program notice before joining</span>
+            <span><CheckCircle2 size={16} /> {t('fFreedomProgramPage.launchModal.points.wallet', 'Wallet connection required')}</span>
+            <span><CheckCircle2 size={16} /> {t('fFreedomProgramPage.launchModal.points.logic', 'Deterministic smart contract logic')}</span>
+            <span><CheckCircle2 size={16} /> {t('fFreedomProgramPage.launchModal.points.noAdmin', 'No admin-controlled payout manipulation')}</span>
+            <span><CheckCircle2 size={16} /> {t('fFreedomProgramPage.launchModal.points.review', 'Review program notice before joining')}</span>
           </div>
           <div className="ffp-modal__actions ffp-modal__actions--split">
-            <button type="button" className="ffp-btn ffp-btn--ghost" onClick={onClose}>Review Page</button>
-            <button type="button" className="ffp-btn ffp-btn--primary" onClick={() => { onClose(); onNavigate?.('activation') }}>Continue to F-Freedom Program <ArrowRight size={16} /></button>
+            <button type="button" className="ffp-btn ffp-btn--ghost" onClick={onClose}>{t('fFreedomProgramPage.launchModal.actions.reviewPage', 'Review Page')}</button>
+            <button type="button" className="ffp-btn ffp-btn--primary" onClick={() => { onClose(); toast.info(t('fFreedomProgramPage.toast.openingActivation', 'Opening Activation Center.'), { dedupeKey: 'ffreedom-opening-activation' }); onNavigate?.('activation') }}>{t('fFreedomProgramPage.launchModal.actions.continue', 'Continue to F-Freedom Program')} <ArrowRight size={16} /></button>
           </div>
         </div>
       </div>
@@ -550,6 +560,7 @@ function LaunchModal({ onClose, onNavigate }) {
 
 
 function ProgramAdsModal({ slides = [], onClose, onShowLater }) {
+  const { t } = useTranslation()
   const [activeSlide, setActiveSlide] = useState(0)
 
   useEffect(() => {
@@ -574,7 +585,7 @@ function ProgramAdsModal({ slides = [], onClose, onShowLater }) {
             type="button"
             className="ffp-ad-modal__close"
             onClick={onShowLater}
-            aria-label="Close advert popup"
+            aria-label={t('fFreedomProgramPage.ads.closeAriaLabel', 'Close advert popup')}
           >
             <X size={18} />
           </button>
@@ -584,7 +595,7 @@ function ProgramAdsModal({ slides = [], onClose, onShowLater }) {
               <img
                 key={src}
                 src={src}
-                alt=""
+                alt={t('fFreedomProgramPage.ads.imageAlt', '')}
                 className={`ffp-ad-modal__image ${
                   index === activeSlide ? 'is-active' : ''
                 }`}
@@ -600,7 +611,7 @@ function ProgramAdsModal({ slides = [], onClose, onShowLater }) {
                 type="button"
                 className={index === activeSlide ? 'is-active' : ''}
                 onClick={() => setActiveSlide(index)}
-                aria-label={`Show advert slide ${index + 1}`}
+                aria-label={t('fFreedomProgramPage.ads.slideAriaLabel', 'Show advert slide {{number}}', { number: index + 1 })}
               />
             ))}
           </div>
@@ -611,23 +622,21 @@ function ProgramAdsModal({ slides = [], onClose, onShowLater }) {
               className="ffp-ad-modal__btn ffp-ad-modal__btn--ghost"
               onClick={onShowLater}
             >
-              Show me later
+              {t('fFreedomProgramPage.ads.actions.showLater', 'Show me later')}
             </button>
 
             <button
               type="button"
               className="ffp-ad-modal__btn ffp-ad-modal__btn--soft"
               onClick={onClose}
-            >
-              I am excited 😍
-            </button>
+            >{t('fFreedomProgramPage.ads.actions.excited', 'I am excited')}</button>
 
             <button
               type="button"
               className="ffp-ad-modal__btn ffp-ad-modal__btn--primary"
               onClick={onClose}
             >
-              Okay
+              {t('fFreedomProgramPage.ads.actions.okay', 'Okay')}
             </button>
           </div>
         </div>
@@ -722,32 +731,14 @@ function saveStoredAdState(nextState) {
 }
 
 function FFreedomProgramPage({ onNavigate }) {
+  const { t } = useTranslation()
+  const pageT = (key, fallback, options) => t(`fFreedomProgramPage.${key}`, fallback, options)
   // const [legalModal, setLegalModal] = useState(null)
   // const [showLaunchModal, setShowLaunchModal] = useState(false)
     const [legalModal, setLegalModal] = useState(null)
     const [showLaunchModal, setShowLaunchModal] = useState(false)
     const [showProgramAds, setShowProgramAds] = useState(false)
-
-
-    useEffect(() => {
-      AOS.init({
-        duration: 1100,
-        easing: 'ease-out-back',
-        once: false,
-        mirror: false,
-        offset: 120,
-        delay: 80,
-      })
-
-      const refreshTimer = window.setTimeout(() => {
-        AOS.refreshHard()
-      }, 300)
-
-      return () => window.clearTimeout(refreshTimer)
-    }, [])
-
-
-  useEffect(() => {
+useEffect(() => {
     const key = 'ffn_f_freedom_launch_alert_seen_v1'
     if (typeof window === 'undefined') return
     if (window.localStorage.getItem(key) !== 'yes') {
@@ -835,18 +826,18 @@ function FFreedomProgramPage({ onNavigate }) {
       )}
 
       <section className="ffp-hero">
-        <div className="ffp-hero__bg"><ThemeImage image={PAGE_IMAGES.hero} alt="F-Freedom Program visual" className="ffp-hero__image" /></div>
+        <div className="ffp-hero__bg"><ThemeImage image={PAGE_IMAGES.hero} alt={pageT('alt.hero', 'F-Freedom Program visual')} className="ffp-hero__image" /></div>
         <div className="ffp-hero__content">
-          <span className="ffp-eyebrow"><Sparkles size={15} /> Current Live Program</span>
-          <h1><span>F-Freedom</span> <span style={{color: "greenyellow"}}>Program</span></h1>
-          <p className="ffp-hero__subtitle">The Core Participation Engine of Fin Freedom Network</p>
-          <p className="ffp-hero__text">A structured, level-based earning system built on smart contracts to reward participation, completion, and long-term engagement. Powered by the Triple-P Orbit Engine, it supports predictable earnings, controlled recycling, and sustainable growth.</p>
+          <span className="ffp-eyebrow"><Sparkles size={15} /> {pageT('hero.eyebrow', 'Current Live Program')}</span>
+          <h1><span>{pageT('hero.titleMain', 'F-Freedom')}</span> <span style={{color: "greenyellow"}}>{pageT('hero.titleAccent', 'Program')}</span></h1>
+          <p className="ffp-hero__subtitle">{pageT('hero.subtitle', 'The Core Participation Engine of Fin Freedom Network')}</p>
+          <p className="ffp-hero__text">{pageT('hero.text', 'A structured, level-based earning system built on smart contracts to reward participation, completion, and long-term engagement. Powered by the Triple-P Orbit Engine, it supports predictable earnings, controlled recycling, and sustainable growth.')}</p>
           <div className="ffp-actions">
-            <button type="button" className="ffp-btn ffp-btn--primary" onClick={handleJoin}>Join the F-Freedom Program <ArrowRight size={17} /></button>
-            <button type="button" className="ffp-btn ffp-btn--ghost" onClick={() => setLegalModal('risk')}>View Program Notice</button>
+            <button type="button" className="ffp-btn ffp-btn--primary" onClick={handleJoin}>{pageT('actions.joinProgram', 'Join the F-Freedom Program')} <ArrowRight size={17} /></button>
+            <button type="button" className="ffp-btn ffp-btn--ghost" onClick={() => setLegalModal('risk')}>{pageT('actions.viewProgramNotice', 'View Program Notice')}</button>
           </div>
           <div className="ffp-feature-row">
-            {heroFeatureCards.map(({ title, text, icon: Icon }) => <article key={title} className="ffp-feature-mini"><Icon size={20} /><strong>{title}</strong><span>{text}</span></article>)}
+            {heroFeatureCards.map(({ id, title, text, icon: Icon }) => <article key={id} className="ffp-feature-mini"><Icon size={20} /><strong>{pageT(`features.${id}.title`, title)}</strong><span>{pageT(`features.${id}.text`, text)}</span></article>)}
           </div>
         </div>
       </section>
@@ -862,7 +853,7 @@ function FFreedomProgramPage({ onNavigate }) {
           <div className="ffp-split-card__content">
             <div className="ffp-statement"><strong>F-Freedom is not about speculation.</strong><span>It is about structure, participation, and freedom.</span></div>
             <p>F-Freedom is the gateway to the Fin Freedom ecosystem, designed to create real opportunities through clarity, fairness, and a system that works for everyone.</p>
-            <div className="ffp-why-grid">{WHY_POINTS.map(({ title, text, icon: Icon }) => <article key={title}><Icon size={18} /><strong>{title}</strong><span>{text}</span></article>)}</div>
+            <div className="ffp-why-grid">{WHY_POINTS.map(({ title, text, icon: Icon }, index) => <article key={`why-point-${index}`}><Icon size={18} /><strong>{title}</strong><span>{text}</span></article>)}</div>
           </div>
         </div>
       </section> */}
@@ -871,19 +862,19 @@ function FFreedomProgramPage({ onNavigate }) {
             <div className="ffp-why-section__bg">
               <ThemeImage
                 image={PAGE_IMAGES.why}
-                alt="Why F-Freedom matters"
+                alt={pageT('alt.why', 'Why F-Freedom matters')}
                 className="ffp-why-section__image"
               />
             </div>
 
             <div className="ffp-why-section__content">
               <header className="ffp-why-section__header">
-                <span className="ffp-why-section__brand">Fin Freedom Network</span>
+                <span className="ffp-why-section__brand">{pageT('why.brand', 'Fin Freedom Network')}</span>
                 <h2>
-                  <span>Why F-Freedom</span>
-                  <strong>Matters</strong>
+                  <span>{pageT('why.titleTop', 'Why F-Freedom')}</span>
+                  <strong>{pageT('why.titleBottom', 'Matters')}</strong>
                 </h2>
-                <p>{WHY_SECTION.subtitle}</p>
+                <p>{pageT('why.subtitle', WHY_SECTION.subtitle)}</p>
               </header>
 
               <div className="ffp-why-section__statement">
@@ -892,49 +883,49 @@ function FFreedomProgramPage({ onNavigate }) {
                 </div>
 
                 <div>
-                  <strong>{WHY_SECTION.statementTop}</strong>
-                  <span>{WHY_SECTION.statementBottom}</span>
+                  <strong>{pageT('why.statementTop', WHY_SECTION.statementTop)}</strong>
+                  <span>{pageT('why.statementBottom', WHY_SECTION.statementBottom)}</span>
                 </div>
               </div>
 
               <div className="ffp-why-section__middle">
                 <div className="ffp-why-section__description">
                   <Globe2 size={38} />
-                  <p>{WHY_SECTION.description}</p>
+                  <p>{pageT('why.description', WHY_SECTION.description)}</p>
                 </div>
 
                 <div className="ffp-why-section__trust-grid">
-                  {WHY_SECTION.trustCards.map(({ title, text, icon: Icon }) => (
-                    <article key={title} className="ffp-why-section__trust-card">
+                  {WHY_SECTION.trustCards.map(({ id, title, text, icon: Icon }) => (
+                    <article key={id} className="ffp-why-section__trust-card">
                       <Icon size={32} />
-                      <strong>{title}</strong>
-                      <span>{text}</span>
+                      <strong>{pageT(`why.trustCards.${id}.title`, title)}</strong>
+                      <span>{pageT(`why.trustCards.${id}.text`, text)}</span>
                     </article>
                   ))}
                 </div>
               </div>
 
               <div className="ffp-why-section__pillars">
-                {WHY_SECTION.pillars.map(({ title, icon: Icon }) => (
-                  <article key={title} className="ffp-why-section__pillar">
+                {WHY_SECTION.pillars.map(({ id, title, icon: Icon }) => (
+                  <article key={id} className="ffp-why-section__pillar">
                     <Icon size={34} />
-                    <strong>{title}</strong>
+                    <strong>{pageT(`why.pillars.${id}.title`, title)}</strong>
                   </article>
                 ))}
               </div>
 
               <div className="ffp-why-section__slogan">
-                {WHY_SECTION.slogan}
+                {pageT('why.slogan', WHY_SECTION.slogan)}
               </div>
             </div>
       </section>
 
       <section className="ffp-levels-section">
           <div className="ffp-levels-section__inner">
-            <header className="ffp-levels-section__header" data-aos="fade-up">
-              <span>Your</span>
-              <h2>F-Freedom</h2>
-              <strong>Progression Levels</strong>
+            <header className="ffp-levels-section__header">
+              <span>{pageT('levels.headerPrefix', 'Your')}</span>
+              <h2>{pageT('levels.title', 'F-Freedom')}</h2>
+              <strong>{pageT('levels.subtitle', 'Progression Levels')}</strong>
             </header>
 
             <div className="ffp-levels-board">
@@ -942,19 +933,16 @@ function FFreedomProgramPage({ onNavigate }) {
                 // <article
                 //   key={number}
                 //   className={`ffp-progression-card ffp-progression-card--${tone}`}
-                //   // data-aos={index < 5 ? 'fade-right' : 'fade-left'}
-                //   data-aos={index < 5 ? 'ffp-fly-right' : 'ffp-fly-left'}
-                //   data-aos-delay={(index % 5) * 90}
+                //   //
+                //
+                //
                 // >
                 <article
                     key={number}
                     className={`ffp-progression-card ffp-progression-card--${tone}`}
-                    data-aos={index < 5 ? 'ffp-fly-right' : 'ffp-fly-left'}
-                    data-aos-delay={(index % 5) * 120}
-                    data-aos-duration="1100"
                   >
                   <div className="ffp-progression-card__level">
-                    <span>Level</span>
+                    <span>{pageT('labels.level', 'Level')}</span>
                     <strong>{number}</strong>
                   </div>
 
@@ -963,8 +951,8 @@ function FFreedomProgramPage({ onNavigate }) {
                   </div>
 
                   <div className="ffp-progression-card__content">
-                    <h3>{title}</h3>
-                    <p>{text}</p>
+                    <h3>{pageT(`levels.items.${number}.title`, title)}</h3>
+                    <p>{pageT(`levels.items.${number}.text`, text)}</p>
                   </div>
                 </article>
               ))}
@@ -978,16 +966,16 @@ function FFreedomProgramPage({ onNavigate }) {
       
       <section className="ffp-orbit-engine-section">
             <div className="ffp-orbit-engine-section__inner">
-              <header className="ffp-orbit-engine-section__header" data-aos="fade-up">
-                <p className="ffp-orbit-engine-section__cta">{ORBIT_SECTION.ctaText}</p>
+              <header className="ffp-orbit-engine-section__header">
+                <p className="ffp-orbit-engine-section__cta">{pageT('orbit.ctaText', ORBIT_SECTION.ctaText)}</p>
 
                 <h2>
-                  <span>{ORBIT_SECTION.titleTop}</span>
-                  <strong>{ORBIT_SECTION.titleBottom}</strong>
+                  <span>{pageT('orbit.titleTop', ORBIT_SECTION.titleTop)}</span>
+                  <strong>{pageT('orbit.titleBottom', ORBIT_SECTION.titleBottom)}</strong>
                 </h2>
 
                 <div className="ffp-orbit-engine-section__eyebrow">
-                  {ORBIT_SECTION.eyebrow}
+                  {pageT('orbit.eyebrow', ORBIT_SECTION.eyebrow)}
                 </div>
               </header>
 
@@ -996,22 +984,20 @@ function FFreedomProgramPage({ onNavigate }) {
                   <article
                     key={orbit.key}
                     className={`ffp-orbit-engine-card ffp-orbit-engine-card--${orbit.tone}`}
-                    data-aos="zoom-in-up"
-                    data-aos-delay={index * 140}
                   >
                     <div className="ffp-orbit-engine-card__badge">
                       <strong>{orbit.name}</strong>
-                      <span>{orbit.label}</span>
+                      <span>{pageT(`orbit.cards.${orbit.key}.label`, orbit.label)}</span>
                     </div>
 
                     <p className="ffp-orbit-engine-card__positions">
-                      {orbit.positions}
+                      {pageT(`orbit.cards.${orbit.key}.positions`, orbit.positions)}
                     </p>
 
                     <OrbitVisual rings={orbit.rings} tone={orbit.tone} />
 
                     <p className="ffp-orbit-engine-card__description">
-                      {orbit.description}
+                      {pageT(`orbit.cards.${orbit.key}.description`, orbit.description)}
                     </p>
 
                     <span className="ffp-orbit-engine-card__dash" />
@@ -1026,19 +1012,19 @@ function FFreedomProgramPage({ onNavigate }) {
               <div className="ffp-money-section__grid">
                 {/* PRICE TABLE */}
                 <article className="ffp-money-panel ffp-money-panel--price">
-                  <header className="ffp-money-header" data-aos="fade-up">
-                    <h2>{PRICE_TABLE_SECTION.title}</h2>
-                    <p>{PRICE_TABLE_SECTION.subtitle}</p>
+                  <header className="ffp-money-header">
+                    <h2>{pageT('priceTable.title', PRICE_TABLE_SECTION.title)}</h2>
+                    <p>{pageT('priceTable.subtitle', PRICE_TABLE_SECTION.subtitle)}</p>
                   </header>
 
-                  <div className="ffp-price-board" data-aos="zoom-in-up">
+                  <div className="ffp-price-board">
                     <div className="ffp-price-board__head">
                       {PRICE_TABLE_SECTION.columns.map(({ key, label, icon: Icon }) => (
                         <div key={key} className="ffp-price-board__th">
                           <span className="ffp-price-board__icon">
                             <Icon size={30} />
                           </span>
-                          <strong>{label}</strong>
+                          <strong>{pageT(`priceTable.columns.${key}`, label)}</strong>
                         </div>
                       ))}
                     </div>
@@ -1048,11 +1034,9 @@ function FFreedomProgramPage({ onNavigate }) {
                         <div
                           key={level}
                           className="ffp-price-board__row"
-                          data-aos="fade-up"
-                          data-aos-delay={index * 45}
                         >
                           <div className="ffp-price-board__cell ffp-price-board__cell--level">
-                            <span>Level</span>
+                            <span>{pageT('labels.level', 'Level')}</span>
                             <strong>{level}</strong>
                           </div>
 
@@ -1073,19 +1057,19 @@ function FFreedomProgramPage({ onNavigate }) {
 
                 {/* INCOME TABLE */}
                 <article className="ffp-money-panel ffp-money-panel--income">
-                  <header className="ffp-money-header" data-aos="fade-up">
-                    <h2>{INCOME_TABLE_SECTION.title}</h2>
-                    <p>{INCOME_TABLE_SECTION.subtitle}</p>
+                  <header className="ffp-money-header">
+                    <h2>{pageT('incomeTable.title', INCOME_TABLE_SECTION.title)}</h2>
+                    <p>{pageT('incomeTable.subtitle', INCOME_TABLE_SECTION.subtitle)}</p>
                   </header>
 
-                  <div className="ffp-income-board" data-aos="zoom-in-up" data-aos-delay="120">
+                  <div className="ffp-income-board">
                     <div className="ffp-income-board__head">
                       {INCOME_TABLE_SECTION.columns.map(({ key, label, icon: Icon }) => (
                         <div key={key} className="ffp-income-board__th">
                           <span className="ffp-income-board__icon">
                             <Icon size={22} />
                           </span>
-                          <strong>{label}</strong>
+                          <strong>{pageT(`incomeTable.columns.${key}`, label)}</strong>
                         </div>
                       ))}
                     </div>
@@ -1096,8 +1080,6 @@ function FFreedomProgramPage({ onNavigate }) {
                           <div
                             key={level}
                             className="ffp-income-board__row"
-                            data-aos="fade-up"
-                            data-aos-delay={index * 45}
                           >
                             <div className="ffp-income-board__cell ffp-income-board__cell--level">
                               {level}
@@ -1110,7 +1092,7 @@ function FFreedomProgramPage({ onNavigate }) {
                             </div>
 
                             <div className="ffp-income-board__cell ffp-income-board__cell--progress">
-                              {progress}
+                              {pageT(`levels.items.${level}.title`, progress)}
                             </div>
 
                             <div className="ffp-income-board__cell">
@@ -1146,10 +1128,10 @@ function FFreedomProgramPage({ onNavigate }) {
       
       
       <section className="ffp-final-cta">
-        <span className="ffp-eyebrow"><Wallet size={15} /> Start with the live layer</span>
-        <h2>Enter through the F-Freedom Program.</h2>
-        <p>Connect your wallet, review the notice, and continue into the live participation flow when ready.</p>
-        <button type="button" className="ffp-btn ffp-btn--primary" onClick={handleJoin}>Join the F-Freedom Program <ArrowRight size={17} /></button>
+        <span className="ffp-eyebrow"><Wallet size={15} /> {pageT('finalCta.eyebrow', 'Start with the live layer')}</span>
+        <h2>{pageT('finalCta.title', 'Enter through the F-Freedom Program.')}</h2>
+        <p>{pageT('finalCta.text', 'Connect your wallet, review the notice, and continue into the live participation flow when ready.')}</p>
+        <button type="button" className="ffp-btn ffp-btn--primary" onClick={handleJoin}>{pageT('actions.joinProgram', 'Join the F-Freedom Program')} <ArrowRight size={17} /></button>
       </section>
     </div>
   )

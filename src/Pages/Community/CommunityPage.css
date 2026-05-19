@@ -281,15 +281,6 @@
   background: rgba(9, 16, 28, 0.58);
 }
 
-/* .community-hero__visual {
-  padding: 18px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  /* background: linear-gradient(180deg, rgba(255,255,255,0.03), rgba(255,255,255,0.01)); */
-  background: transparent;
-/* }  */
-
 .community-hero__visual {
   padding: 18px;
   display: flex;
@@ -3321,7 +3312,7 @@
 
 
 /* =========================================================
-   COMMUNITY REFACTOR — JOIN PROMPT + AOS READY UI
+   COMMUNITY REFACTOR - JOIN PROMPT UI
 ========================================================= */
 
 .community-join-modal-backdrop {
@@ -3462,7 +3453,7 @@
   flex-wrap: wrap;
 }
 
-/* AOS-friendly section separation */
+/* Section separation */
 .community-page--refined .community-metrics,
 .community-page--refined .community-growth,
 .community-page--refined .community-leaderboard,

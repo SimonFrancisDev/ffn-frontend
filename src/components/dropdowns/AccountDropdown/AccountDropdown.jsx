@@ -1,6 +1,7 @@
 import "./AccountDropdown.css";
 import { useEffect, useRef, useState } from "react";
 import { createPortal } from "react-dom";
+import { useTranslation } from "react-i18next";
 
 function ModalPortal({ children }) {
   if (typeof document === "undefined") return null;
@@ -20,6 +21,7 @@ const AccountDropdown = ({
   isAdmin = false,
   anchorRef = null, // NEW: Accept anchor ref for positioning
 }) => {
+  const { t } = useTranslation();
   const dialogRef = useRef(null);
   const [desktopPosition, setDesktopPosition] = useState({
     top: 76,
@@ -171,7 +173,7 @@ const AccountDropdown = ({
             isDesktop ? "account-modal__dialog--desktop" : "account-modal__dialog--mobile"
           } glass-panel theme-transition`}
           role="dialog"
-          aria-label="Account menu"
+          aria-label={t("accountDropdown.ariaLabel", "Account menu")}
           onClick={(event) => event.stopPropagation()}
           style={
             isDesktop
@@ -195,9 +197,11 @@ const AccountDropdown = ({
         >
           <div className="account-dropdown__header">
             <div className="account-dropdown__title-group">
-              <h3 className="account-dropdown__title">Account</h3>
+              <h3 className="account-dropdown__title">
+                {t("accountDropdown.title", "Account")}
+              </h3>
               <p className="account-dropdown__subtitle soft-text">
-                Profile and preferences
+                {t("accountDropdown.subtitle", "Profile and preferences")}
               </p>
             </div>
 
@@ -205,7 +209,7 @@ const AccountDropdown = ({
               type="button"
               className="account-dropdown__close"
               onClick={onClose}
-              aria-label="Close account menu"
+              aria-label={t("accountDropdown.closeAriaLabel", "Close account menu")}
             >
               ✕
             </button>
@@ -226,14 +230,16 @@ const AccountDropdown = ({
 
           <div className="account-dropdown__chips">
             <span className="account-dropdown__chip">
-              {account.status || "Active"}
+              {account.status || t("accountDropdown.status.active", "Active")}
             </span>
             <span className="account-dropdown__chip">
-              Level {account.level || 1}
+              {t("accountDropdown.level", "Level {{level}}", {
+                level: account.level || 1,
+              })}
             </span>
             {isAdmin && (
               <span className="account-dropdown__chip admin-chip">
-                🔧 Admin
+                🔧 {t("accountDropdown.adminChip", "Admin")}
               </span>
             )}
           </div>
@@ -246,7 +252,9 @@ const AccountDropdown = ({
             >
               <span className="account-dropdown__item-left">
                 <span className="account-dropdown__item-icon">👤</span>
-                <span className="account-dropdown__item-text">My Account</span>
+                <span className="account-dropdown__item-text">
+                  {t("accountDropdown.items.myAccount", "My Account")}
+                </span>
               </span>
               <span className="account-dropdown__item-arrow">›</span>
             </button>
@@ -258,7 +266,9 @@ const AccountDropdown = ({
             >
               <span className="account-dropdown__item-left">
                 <span className="account-dropdown__item-icon">⚙️</span>
-                <span className="account-dropdown__item-text">Preferences</span>
+                <span className="account-dropdown__item-text">
+                  {t("accountDropdown.items.preferences", "Preferences")}
+                </span>
               </span>
               <span className="account-dropdown__item-arrow">›</span>
             </button>
@@ -270,7 +280,9 @@ const AccountDropdown = ({
             >
               <span className="account-dropdown__item-left">
                 <span className="account-dropdown__item-icon">🔐</span>
-                <span className="account-dropdown__item-text">Security</span>
+                <span className="account-dropdown__item-text">
+                  {t("accountDropdown.items.security", "Security")}
+                </span>
               </span>
               <span className="account-dropdown__item-arrow">›</span>
             </button>
@@ -282,7 +294,9 @@ const AccountDropdown = ({
             >
               <span className="account-dropdown__item-left">
                 <span className="account-dropdown__item-icon">🧾</span>
-                <span className="account-dropdown__item-text">Activity</span>
+                <span className="account-dropdown__item-text">
+                  {t("accountDropdown.items.activity", "Activity")}
+                </span>
               </span>
               <span className="account-dropdown__item-arrow">›</span>
             </button>
@@ -297,7 +311,7 @@ const AccountDropdown = ({
                 <span className="account-dropdown__item-left">
                   <span className="account-dropdown__item-icon">🛡️</span>
                   <span className="account-dropdown__item-text">
-                    Admin Panel
+                    {t("accountDropdown.items.adminPanel", "Admin Panel")}
                   </span>
                 </span>
                 <span className="account-dropdown__item-arrow">›</span>
@@ -311,7 +325,9 @@ const AccountDropdown = ({
             >
               <span className="account-dropdown__item-left">
                 <span className="account-dropdown__item-icon">↪</span>
-                <span className="account-dropdown__item-text">Disconnect</span>
+                <span className="account-dropdown__item-text">
+                  {t("accountDropdown.items.disconnect", "Disconnect")}
+                </span>
               </span>
             </button>
           </div>

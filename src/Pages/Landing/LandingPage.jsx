@@ -1,6 +1,7 @@
 // import { useEffect, useMemo, useState } from 'react'
 import { useEffect, useMemo, useRef, useState } from 'react'
 import { createPortal } from 'react-dom'
+import { useTranslation } from 'react-i18next'
 import {
   ArrowRight,
   ArrowRightLeft,
@@ -55,15 +56,14 @@ import { FaXTwitter } from 'react-icons/fa6'
 import { PiTelegramLogoFill } from 'react-icons/pi'
 import { useWallet } from '../../hooks/useWallet'
 import { useSession } from '../../context/SessionContext'
-import AOS from 'aos'
-import 'aos/dist/aos.css'
+import { getApiUrl } from '../../Services/apiConfig'
+import { useToast } from '../../components/feedback'
 import './LandingPage.css'
 
 const APP_USER_ID_STORAGE_KEY = 'finfreedom_app_user_id_v1'
-const API_BASE_URL = 'https://fin-freedom-backend-3.onrender.com'
 
 async function fetchJson(path, options = {}) {
-  const response = await fetch(`${API_BASE_URL}${path}`, {
+  const response = await fetch(getApiUrl(path), {
     headers: { 'Content-Type': 'application/json', ...(options.headers || {}) },
     ...options,
   })
@@ -611,12 +611,12 @@ It delivers greater rewards, deeper engagement, and sustainable long-term growth
       },
       {
         name: 'FPT',
-        label: 'Freedom Plus Token',
+        label: 'Freedom-Plus Token',
         image: '/images/fpt.png',
       },
       {
         name: 'FPTr',
-        label: 'Freedom Plus Reactivation Token',
+        label: 'Freedom-Plus Reactivation Token',
         image: '/images/fptr.png',
       },
   ],
@@ -638,14 +638,14 @@ It delivers greater rewards, deeper engagement, and sustainable long-term growth
       },
       {
         name: 'FPT',
-        title: 'Freedom Plus Token',
+        title: 'Freedom-Plus Token',
         source: 'Freedom-Plus Program',
         role: 'Activation Reward',
         description: 'Higher-value tokens earned from advanced participation.',
       },
       {
         name: 'FPTr',
-        title: 'Freedom Plus Reactivation Token',
+        title: 'Freedom-Plus Reactivation Token',
         source: 'Freedom-Plus Program',
         role: 'Recycling Reward',
         description: 'Generated during advanced reactivation cycles.',
@@ -986,8 +986,10 @@ function ThemeImage({ image, alt, className, priority = false, style }) {
 }
 
 function LegalModal({ type, onClose }) {
+  const { t } = useTranslation()
   const content = LEGAL_CONTENT[type]
   if (!content) return null; const Icon = content.icon
+  const baseKey = `landingPage.legal.${type}`
 
   return (
     <div className="landing-disclaimer">
@@ -1001,7 +1003,7 @@ function LegalModal({ type, onClose }) {
         <div className="legal-modal-logo-wrap">
         <ThemeImage
           image={FOOTER_LOGO}
-          alt="Fin Freedom Network"
+          alt={t('landingPage.alt.logo', 'Fin Freedom Network')}
           className="legal-modal-logo"
         />
       </div>
@@ -1010,7 +1012,7 @@ function LegalModal({ type, onClose }) {
           type="button"
           className="landing-disclaimer__close"
           onClick={onClose}
-          aria-label="Close legal modal"
+          aria-label={t('landingPage.legal.modal.closeAriaLabel', 'Close legal modal')}
         >
           <X size={18} />
         </button>
@@ -1018,27 +1020,27 @@ function LegalModal({ type, onClose }) {
         <div className="landing-disclaimer__header">
           <div className="landing-disclaimer__badge">
             <Icon size={16} />
-            <span>{content.badge}</span>
+            <span>{t(`${baseKey}.badge`, content.badge)}</span>
           </div>
 
-          <h2 className="landing-disclaimer__title">{content.title}</h2>
-          <p className="landing-disclaimer__intro">{content.subtitle}</p>
+          <h2 className="landing-disclaimer__title">{t(`${baseKey}.title`, content.title)}</h2>
+          <p className="landing-disclaimer__intro">{t(`${baseKey}.subtitle`, content.subtitle)}</p>
         </div>
 
         <div className="landing-disclaimer__body legal-content">
-          {content.warning && <p className="legal-content__warning">{content.warning}</p>}
+          {content.warning && <p className="legal-content__warning">{t(`${baseKey}.warning`, content.warning)}</p>}
 
-          {content.sections.map(([heading, text]) => (
-            <section key={heading} className="legal-content__section">
-              <h4>{heading}</h4>
-              <p>{text}</p>
+          {content.sections.map(([heading, text], index) => (
+            <section key={`${type}-section-${index}`} className="legal-content__section">
+              <h4>{t(`${baseKey}.sections.${index}.heading`, heading)}</h4>
+              <p>{t(`${baseKey}.sections.${index}.text`, text)}</p>
             </section>
           ))}
         </div>
 
         <div className="landing-disclaimer__actions">
           <button type="button" className="landing-btn landing-btn--primary" onClick={onClose}>
-            I agree
+            {t('landingPage.legal.modal.agree', 'I agree')}
           </button>
         </div>
       </div>
@@ -1051,25 +1053,26 @@ function ProgramIcon({ icon: Icon }) {
   return <Icon className="program-detail-icon" />
 }
 
-function ProgramFeatureGrid({ features = [] }) {
+function ProgramFeatureGrid({ programId, features = [] }) {
+  const { t } = useTranslation()
   if (!features.length) return null
 
   return (
     <div className="program-detail-grid">
-      {features.map((feature) => {
+      {features.map((feature, index) => {
         const Icon = PROGRAM_FEATURE_ICONS[feature.title] || Sparkles
 
         return (
-          <div key={feature.title} className="program-detail-box">
+          <div key={`${programId}-feature-${index}`} className="program-detail-box">
             <ProgramIcon icon={Icon} />
             <div>
-              <h4>{feature.title}</h4>
-              <p>{feature.text}</p>
+              <h4>{t(`landingPage.programs.${programId}.features.${index}.title`, feature.title)}</h4>
+              <p>{t(`landingPage.programs.${programId}.features.${index}.text`, feature.text)}</p>
 
               {feature.extra?.length > 0 && (
                 <div className="program-price-list">
-                  {feature.extra.map((item) => (
-                    <span key={item}>{item}</span>
+                  {feature.extra.map((item, extraIndex) => (
+                    <span key={`${programId}-feature-${index}-extra-${extraIndex}`}>{item}</span>
                   ))}
                 </div>
               )}
@@ -1082,25 +1085,26 @@ function ProgramFeatureGrid({ features = [] }) {
 }
 
 function ProgramPhilosophy({ program }) {
+  const { t } = useTranslation()
   if (!program.philosophy && !program.supportingText && !program.proofPoints?.length) return null
 
   return (
     <div className="program-philosophy">
       {program.philosophy && (
         <div className="program-philosophy__statement">
-          <strong>{program.philosophy.title}</strong>
-          <span>{program.philosophy.highlight}</span>
+          <strong>{t(`landingPage.programs.${program.id}.philosophy.title`, program.philosophy.title)}</strong>
+          <span>{t(`landingPage.programs.${program.id}.philosophy.highlight`, program.philosophy.highlight)}</span>
         </div>
       )}
 
-      {program.supportingText && <p>{program.supportingText}</p>}
+      {program.supportingText && <p>{t(`landingPage.programs.${program.id}.supportingText`, program.supportingText)}</p>}
 
       {program.proofPoints?.length > 0 && (
         <div className="program-proof-list">
-          {program.proofPoints.map((item) => (
-            <span key={item}>
+          {program.proofPoints.map((item, index) => (
+            <span key={`${program.id}-proof-${index}`}>
               <FaCheckCircle />
-              {item}
+              {t(`landingPage.programs.${program.id}.proofPoints.${index}`, item)}
             </span>
           ))}
         </div>
@@ -1110,25 +1114,26 @@ function ProgramPhilosophy({ program }) {
 }
 
 function ProgramTierGrid({ tiers = [] }) {
+  const { t } = useTranslation()
   if (!tiers.length) return null
 
   return (
     <div className="program-tier-grid">
-      {tiers.map((tier) => {
+      {tiers.map((tier, index) => {
         const Icon = TIER_ICONS[tier.name] || FaGem
 
         return (
-          <div key={tier.name} className={`program-tier-card program-tier-card--${tier.color}`}>
+          <div key={`tier-${tier.color}-${index}`} className={`program-tier-card program-tier-card--${tier.color}`}>
             <ProgramIcon icon={Icon} />
-            <h4>{tier.name}</h4>
-            <p>{tier.level}</p>
-            <p>{tier.rewards}</p>
+            <h4>{t(`landingPage.programs.freedom-nft-program.tiers.${index}.name`, tier.name)}</h4>
+            <p>{t(`landingPage.programs.freedom-nft-program.tiers.${index}.level`, tier.level)}</p>
+            <p>{t(`landingPage.programs.freedom-nft-program.tiers.${index}.rewards`, tier.rewards)}</p>
             <div className="program-tier-meta">
-              <span>Requirement</span>
+              <span>{t('landingPage.programDetails.requirement', 'Requirement')}</span>
               <strong>{tier.requirement}</strong>
             </div>
             <div className="program-tier-meta">
-              <span>Pool Share</span>
+              <span>{t('landingPage.programDetails.poolShare', 'Pool Share')}</span>
               <strong>{tier.poolShare}</strong>
             </div>
           </div>
@@ -1139,17 +1144,18 @@ function ProgramTierGrid({ tiers = [] }) {
 }
 
 function ProgramValueStrip({ values = [] }) {
+  const { t } = useTranslation()
   if (!values.length) return null
 
   return (
     <div className="program-value-strip">
-      {values.map((value) => {
+      {values.map((value, index) => {
         const Icon = PROGRAM_VALUE_ICONS[value] || Sparkles
 
         return (
-          <span key={value}>
+          <span key={`value-${index}`}>
             <Icon />
-            {value}
+            {t(`landingPage.programValues.${value}`, value)}
           </span>
         )
       })}
@@ -1158,6 +1164,7 @@ function ProgramValueStrip({ values = [] }) {
 }
 
 function ProgramTokenSystem({ program }) {
+  const { t } = useTranslation()
   if (!program.tokens?.length) return null
 
   return (
@@ -1167,13 +1174,13 @@ function ProgramTokenSystem({ program }) {
         <strong>{program.coreToken.title}</strong>
         <p>{program.coreToken.description}</p>
         <div>
-          {program.coreToken.attributes.map((item) => (
-            <em key={item}>{item}</em>
+          {program.coreToken.attributes.map((item, index) => (
+            <em key={`core-token-attribute-${index}`}>{item}</em>
           ))}
         </div>
       </div> */}
       {program.tokenShowcase?.length ? (
-        <div className="program-token-showcase" aria-label={`${program.title} token visuals`}>
+        <div className="program-token-showcase" aria-label={t('landingPage.programDetails.tokenVisualsAriaLabel', '{{program}} token visuals', { program: program.title })}>
           <div className="program-token-showcase__orb">
             {program.tokenShowcase.map((token, index) => (
               <figure
@@ -1183,14 +1190,14 @@ function ProgramTokenSystem({ program }) {
               >
                 <img
                   src={token.image}
-                  alt={token.label}
+                  alt={t(`landingPage.programs.${program.id}.tokenShowcase.${index}.label`, token.label)}
                   className="program-token-showcase__image"
                   loading="lazy"
                   decoding="async"
                 />
                 <figcaption>
                   <strong>{token.name}</strong>
-                  <span>{token.label}</span>
+                  <span>{t(`landingPage.programs.${program.id}.tokenShowcase.${index}.label`, token.label)}</span>
                 </figcaption>
               </figure>
             ))}
@@ -1199,21 +1206,21 @@ function ProgramTokenSystem({ program }) {
       ) : null}
 
       <div className="program-token-grid">
-        {program.tokens.map((token) => {
+        {program.tokens.map((token, index) => {
           const Icon = TOKEN_ICONS[token.name] || FaCoins
 
           return (
             <div key={token.name} className="program-token-card">
               <ProgramIcon icon={Icon} />
               <h4>{token.name}</h4>
-              <strong>{token.title}</strong>
+              <strong>{t(`landingPage.programs.${program.id}.tokens.${index}.title`, token.title)}</strong>
               <p>
-                <span>Source:</span> {token.source}
+                <span>{t('landingPage.programDetails.source', 'Source:')}</span> {t(`landingPage.programs.${program.id}.tokens.${index}.source`, token.source)}
               </p>
               <p>
-                <span>Role:</span> {token.role}
+                <span>{t('landingPage.programDetails.role', 'Role:')}</span> {t(`landingPage.programs.${program.id}.tokens.${index}.role`, token.role)}
               </p>
-              <small>{token.description}</small>
+              <small>{t(`landingPage.programs.${program.id}.tokens.${index}.description`, token.description)}</small>
             </div>
           )
         })}
@@ -1221,8 +1228,8 @@ function ProgramTokenSystem({ program }) {
 
       {program.flow?.length > 0 && (
         <div className="program-flow-strip">
-          {program.flow.map((item) => (
-            <span key={item}>{item}</span>
+          {program.flow.map((item, index) => (
+            <span key={`${program.id}-flow-${index}`}>{t(`landingPage.programs.${program.id}.flow.${index}`, item)}</span>
           ))}
         </div>
       )}
@@ -1231,19 +1238,20 @@ function ProgramTokenSystem({ program }) {
 }
 
 function ProgramMarketplace({ program }) {
+  const { t } = useTranslation()
   return (
     <>
-      <ProgramFeatureGrid features={program.features} />
+      <ProgramFeatureGrid programId={program.id} features={program.features} />
 
       {program.categories?.length > 0 && (
         <div className="program-category-cloud">
-          {program.categories.map((category) => {
+          {program.categories.map((category, index) => {
             const Icon = MARKETPLACE_CATEGORY_ICONS[category] || FaStore
 
             return (
-              <span key={category}>
+              <span key={`${program.id}-category-${index}`}>
                 <Icon />
-                {category}
+                {t(`landingPage.programs.${program.id}.categories.${index}`, category)}
               </span>
             )
           })}
@@ -1252,11 +1260,11 @@ function ProgramMarketplace({ program }) {
 
       {program.trust?.length > 0 && (
         <div className="program-trust-grid">
-          {program.trust.map((item) => (
-            <div key={item.title}>
+          {program.trust.map((item, index) => (
+            <div key={`${program.id}-trust-${index}`}>
               <FaShieldAlt />
-              <strong>{item.title}</strong>
-              <p>{item.description}</p>
+              <strong>{t(`landingPage.programs.${program.id}.trust.${index}.title`, item.title)}</strong>
+              <p>{t(`landingPage.programs.${program.id}.trust.${index}.description`, item.description)}</p>
             </div>
           ))}
         </div>
@@ -1264,8 +1272,8 @@ function ProgramMarketplace({ program }) {
 
       {program.cta && (
         <div className="program-mini-cta">
-          <strong>{program.cta.title}</strong>
-          <span>{program.cta.subtitle}</span>
+          <strong>{t(`landingPage.programs.${program.id}.cta.title`, program.cta.title)}</strong>
+          <span>{t(`landingPage.programs.${program.id}.cta.subtitle`, program.cta.subtitle)}</span>
         </div>
       )}
     </>
@@ -1273,27 +1281,28 @@ function ProgramMarketplace({ program }) {
 }
 
 function ProgramAcademies({ academies = [] }) {
+  const { t } = useTranslation()
   if (!academies.length) return null
 
   return (
     <div className="program-academy-grid">
-      {academies.map((academy) => (
-        <div key={academy.title} className="program-academy-card">
+      {academies.map((academy, academyIndex) => (
+        <div key={`academy-${academyIndex}`} className="program-academy-card">
           <FaGraduationCap className="program-detail-icon" />
-          <h4>{academy.title}</h4>
-          <span>{academy.subtitle}</span>
+          <h4>{t(`landingPage.programs.fin-freedom-institute.academies.${academyIndex}.title`, academy.title)}</h4>
+          <span>{t(`landingPage.programs.fin-freedom-institute.academies.${academyIndex}.subtitle`, academy.subtitle)}</span>
 
           <ul>
-            {academy.topics.map((topic) => (
-              <li key={topic}>
+            {academy.topics.map((topic, topicIndex) => (
+              <li key={`academy-${academyIndex}-topic-${topicIndex}`}>
                 <FaCheckCircle />
-                {topic}
+                {t(`landingPage.programs.fin-freedom-institute.academies.${academyIndex}.topics.${topicIndex}`, topic)}
               </li>
             ))}
           </ul>
 
           <p>
-            <strong>Outcome:</strong> {academy.outcome}
+            <strong>{t('landingPage.programDetails.outcome', 'Outcome:')}</strong> {t(`landingPage.programs.fin-freedom-institute.academies.${academyIndex}.outcome`, academy.outcome)}
           </p>
         </div>
       ))}
@@ -1335,7 +1344,7 @@ function ProgramDetails({ program }) {
 
   return (
     <>
-      <ProgramFeatureGrid features={program.features} />
+      <ProgramFeatureGrid programId={program.id} features={program.features} />
       <ProgramPhilosophy program={program} />
     </>
   )
@@ -1344,8 +1353,9 @@ function ProgramDetails({ program }) {
 
 
 function MiniGrowthChart({ data = [] }) {
+  const { t } = useTranslation()
   if (!Array.isArray(data) || data.length === 0) {
-    return <div className="mini-chart-empty">Chart syncing</div>
+    return <div className="mini-chart-empty">{t('landingPage.metrics.chartSyncing', 'Chart syncing')}</div>
   }
 
   const points = data.slice(-14)
@@ -1372,7 +1382,7 @@ function MiniGrowthChart({ data = [] }) {
         ))}
       </div>
 
-      <div className="mini-chart" aria-label="Registration growth chart">
+      <div className="mini-chart" aria-label={t('landingPage.metrics.chartAriaLabel', 'Registration growth chart')}>
         {points.map((item, index) => {
           const value = Number(item.registrations || item.count || 0)
           const height = Math.max((value / max) * 100, value > 0 ? 16 : 8)
@@ -1393,9 +1403,12 @@ function MiniGrowthChart({ data = [] }) {
 }
 
 function LandingPage({ onNavigate }) {
+  const { t } = useTranslation()
+  const pageT = (key, fallback, options) => t(`landingPage.${key}`, fallback, options)
   const { isConnected, isLoading: isWalletLoading, error: walletError, connect } = useWallet()
   const { isAcknowledged, acknowledge } = useSession()
   const theme = useThemeMode()
+  const toast = useToast()
 
   const [internalUserId, setInternalUserId] = useState('')
   const [forceShowDisclaimer, setForceShowDisclaimer] = useState(false)
@@ -1460,25 +1473,6 @@ function LandingPage({ onNavigate }) {
   }, [isHeroPaused])
 
   useEffect(() => {
-    AOS.init({
-      duration: 650,
-      easing: 'ease-out-cubic',
-      once: true,
-      mirror: false,
-      offset: 80,
-      delay: 0,
-    })
-
-    return () => {
-      AOS.refreshHard()
-    }
-  }, [])
-
-  useEffect(() => {
-    AOS.refresh()
-  }, [theme])
-
-  useEffect(() => {
     let isMounted = true
 
     const loadStats = async () => {
@@ -1520,15 +1514,20 @@ function LandingPage({ onNavigate }) {
 
 
   const primaryCtaLabel = useMemo(() => {
-    if (walletError) return 'Retry Wallet'
-    if (isWalletLoading) return 'Connecting...'
-    if (!isConnected) return 'Connect Wallet'
-    return 'Launch App'
-  }, [isConnected, isWalletLoading, walletError])
+    if (walletError) return pageT('hero.primaryCta.retryWallet', 'Retry Wallet')
+    if (isWalletLoading) return pageT('hero.primaryCta.connecting', 'Connecting...')
+    if (!isConnected) return pageT('hero.primaryCta.connectWallet', 'Connect Wallet')
+    return pageT('hero.primaryCta.launchApp', 'Launch App')
+  }, [isConnected, isWalletLoading, pageT, walletError])
 
-  const primaryCtaAction = () => {
+  const primaryCtaAction = async () => {
     if (walletError || !isConnected) {
-      connect?.()
+      try {
+        await connect?.()
+        toast.success(pageT('toast.walletConnected', 'Wallet Connected'), { dedupeKey: 'landing-wallet-connected' })
+      } catch (error) {
+        toast.danger(error?.message || pageT('toast.walletConnectFailed', 'Wallet connection failed.'), { dedupeKey: 'landing-wallet-connect-failed' })
+      }
       return
     }
 
@@ -1547,6 +1546,7 @@ function LandingPage({ onNavigate }) {
   const handleAcknowledgeDisclaimer = () => {
     acknowledge()
     setForceShowDisclaimer(false)
+    toast.info(pageT('toast.noticeAcknowledged', 'Notice acknowledged.'), { dedupeKey: 'landing-notice-acknowledged' })
   }
 
   const goToPreviousHeroSlide = () => {
@@ -1636,14 +1636,14 @@ const handleProgramModalImagePointerUp = (event) => {
               <div className="legal-modal-logo-wrap">
                   <ThemeImage
                     image={FOOTER_LOGO}
-                    alt="Fin Freedom Network"
+                    alt={pageT('alt.logo', 'Fin Freedom Network')}
                     className="legal-modal-logo"
                   />
                 </div>
               <div className="landing-disclaimer__header">
                 <div className="landing-disclaimer__badge">
                   <ShieldAlert size={16} />
-                  <span>Security & Legal Notice</span>
+                  <span>{pageT('disclaimer.badge', 'Security & Legal Notice')}</span>
                 </div>
 
                 {/* <h2 className="landing-disclaimer__title">Important Notice — Please Read Carefully</h2> */}
@@ -1655,10 +1655,9 @@ const handleProgramModalImagePointerUp = (event) => {
                     <Wallet size={18} />
                   </div>
                   <div>
-                    <h3 className="landing-disclaimer__section-title">Wallet Security</h3>
+                    <h3 className="landing-disclaimer__section-title">{pageT('disclaimer.sections.walletSecurity.title', 'Wallet Security')}</h3>
                     <p className="landing-disclaimer__section-text">
-                      You are solely responsible for securing your wallet. Never share your private key or recovery phrase.
-                      Fin Freedom Network will never request your private key.
+                      {pageT('disclaimer.sections.walletSecurity.text', 'You are solely responsible for securing your wallet. Never share your private key or recovery phrase. Fin Freedom Network will never request your private key.')}
                     </p>
                   </div>
                 </div>
@@ -1668,10 +1667,9 @@ const handleProgramModalImagePointerUp = (event) => {
                     <Lock size={18} />
                   </div>
                   <div>
-                    <h3 className="landing-disclaimer__section-title">Irreversible Registration</h3>
+                    <h3 className="landing-disclaimer__section-title">{pageT('disclaimer.sections.irreversibleRegistration.title', 'Irreversible Registration')}</h3>
                     <p className="landing-disclaimer__section-text">
-                      Wallet addresses cannot be changed after registration. If your wallet is compromised, create a new wallet
-                      before registering.
+                      {pageT('disclaimer.sections.irreversibleRegistration.text', 'Wallet addresses cannot be changed after registration. If your wallet is compromised, create a new wallet before registering.')}
                     </p>
                   </div>
                 </div>
@@ -1681,25 +1679,25 @@ const handleProgramModalImagePointerUp = (event) => {
                     <ArrowRightLeft size={18} />
                   </div>
                   <div>
-                    <h3 className="landing-disclaimer__section-title">Decentralized Participation</h3>
+                    <h3 className="landing-disclaimer__section-title">{pageT('disclaimer.sections.decentralizedParticipation.title', 'Decentralized Participation')}</h3>
                     <p className="landing-disclaimer__section-text">
-                      Blockchain transactions are irreversible once confirmed. Always verify details before signing.
+                      {pageT('disclaimer.sections.decentralizedParticipation.text', 'Blockchain transactions are irreversible once confirmed. Always verify details before signing.')}
                     </p>
                   </div>
                 </div>
 
                 <div className="landing-disclaimer__meta">
-                  <span>Internal app user ID</span>
-                  <code>{internalUserId || 'Preparing...'}</code>
+                  <span>{pageT('disclaimer.internalUserId', 'Internal app user ID')}</span>
+                  <code>{internalUserId || pageT('disclaimer.preparing', 'Preparing...')}</code>
                 </div>
               </div>
 
               <div className="landing-disclaimer__actions">
                 <button type="button" className="landing-btn landing-btn--secondary" onClick={() => setForceShowDisclaimer(false)}>
-                  Cancel
+                  {pageT('disclaimer.actions.cancel', 'Cancel')}
                 </button>
                 <button type="button" className="landing-btn landing-btn--primary" onClick={handleAcknowledgeDisclaimer}>
-                  I Understand & Proceed
+                  {pageT('disclaimer.actions.proceed', 'I Understand & Proceed')}
                 </button>
               </div>
             </div>
@@ -1710,7 +1708,7 @@ const handleProgramModalImagePointerUp = (event) => {
           <div className="landing-program-modal">
             <div className="landing-program-modal__backdrop" onClick={() => setProgramModal(null)} />
             <div className="landing-program-modal__dialog" role="dialog" aria-modal="true">
-              <button type="button" className="landing-modal-close" onClick={() => setProgramModal(null)} aria-label="Close modal">
+              <button type="button" className="landing-modal-close" onClick={() => setProgramModal(null)} aria-label={pageT('programModal.closeAriaLabel', 'Close modal')}>
                 <X size={18} />
               </button>
               <div
@@ -1725,7 +1723,7 @@ const handleProgramModalImagePointerUp = (event) => {
               >
                 <ThemeImage
                   image={programModal.image}
-                  alt={programModal.title}
+                  alt={pageT(`programs.${programModal.id}.title`, programModal.title)}
                   className="landing-program-modal__image"
                   style={{
                     '--program-modal-image-x': `${programModalImageX}%`,
@@ -1733,17 +1731,17 @@ const handleProgramModalImagePointerUp = (event) => {
                 />
 
                 <div className="landing-program-modal__drag-hint">
-                  Drag left or right to explore image
+                  {pageT('programModal.dragHint', 'Drag left or right to explore image')}
                 </div>
               </div>
 
               <div className="landing-program-modal__content">
-                <span className="landing-program-modal__badge">{programModal.status}</span>
-                <h2 className="landing-program-modal__title">{programModal.title}</h2>
-                <p className="landing-program-modal__text">{programModal.description}</p>
+                <span className="landing-program-modal__badge">{pageT(`programs.${programModal.id}.status`, programModal.status)}</span>
+                <h2 className="landing-program-modal__title">{pageT(`programs.${programModal.id}.title`, programModal.title)}</h2>
+                <p className="landing-program-modal__text">{pageT(`programs.${programModal.id}.description`, programModal.description)}</p>
                 <div className="landing-program-modal__loader" />
                 <p className="landing-program-modal__note">
-                  This part of the ecosystem is being prepared for a future release.
+                  {pageT('programModal.futureRelease', 'This part of the ecosystem is being prepared for a future release.')}
                 </p>
               </div>
             </div>
@@ -1756,7 +1754,7 @@ const handleProgramModalImagePointerUp = (event) => {
       <div className="landing-page">
         <section className="landing-hero">
           <div className="landing-hero__stage">
-            <div className="landing-hero__slider" aria-label="Fin Freedom Network visual showcase">
+            <div className="landing-hero__slider" aria-label={pageT('hero.sliderAriaLabel', 'Fin Freedom Network visual showcase')}>
               {HERO_SLIDES.map((slide, index) => (
                 <div
                   key={slide.id}
@@ -1765,19 +1763,19 @@ const handleProgramModalImagePointerUp = (event) => {
                 >
                   <ThemeImage
                     image={slide.image}
-                    alt={slide.title || 'Fin Freedom Network hero visual'}
+                    alt={pageT(`heroSlides.${slide.id}.title`, slide.title || 'Fin Freedom Network hero visual')}
                     className="landing-hero__image"
                     priority={index === activeHeroSlide || index === 0}
                   />
                 </div>
               ))}
 
-              <div className="landing-hero__control-deck" aria-label="Hero slider controls">
+              <div className="landing-hero__control-deck" aria-label={pageT('hero.controlsAriaLabel', 'Hero slider controls')}>
                 <button
                   type="button"
                   className="landing-hero__control-btn"
                   onClick={goToPreviousHeroSlide}
-                  aria-label="Previous hero slide"
+                  aria-label={pageT('hero.previousSlideAriaLabel', 'Previous hero slide')}
                 >
                   <ChevronLeft size={18} />
                 </button>
@@ -1786,7 +1784,7 @@ const handleProgramModalImagePointerUp = (event) => {
                   type="button"
                   className="landing-hero__control-btn landing-hero__control-btn--play"
                   onClick={() => setIsHeroPaused((current) => !current)}
-                  aria-label={isHeroPaused ? 'Play hero slideshow' : 'Pause hero slideshow'}
+                  aria-label={isHeroPaused ? pageT('hero.playAriaLabel', 'Play hero slideshow') : pageT('hero.pauseAriaLabel', 'Pause hero slideshow')}
                 >
                   {isHeroPaused ? <Play size={18} /> : <Pause size={18} />}
                 </button>
@@ -1795,7 +1793,7 @@ const handleProgramModalImagePointerUp = (event) => {
                   type="button"
                   className="landing-hero__control-btn"
                   onClick={goToNextHeroSlide}
-                  aria-label="Next hero slide"
+                  aria-label={pageT('hero.nextSlideAriaLabel', 'Next hero slide')}
                 >
                   <ChevronRight size={18} />
                 </button>
@@ -1804,53 +1802,45 @@ const handleProgramModalImagePointerUp = (event) => {
           </div>
         </section>
 
-        <section className="landing-section landing-intro" data-aos="fade-up">
-          <div className="landing-section__header landing-section__header--center landing-section__header--animated glass-section" data-aos="fade-up" data-aos-duration="1000">
-            <div className="landing-section__eyebrow">Ecosystem Architecture</div>
-            <h2 className="fly-in">One Network. Multiple Systems. Infinite Possibilities.</h2>
-            <p>
-              Fin Freedom Network is composed of interconnected programs — each designed
-              to deliver structured participation, real utility, and long-term ecosystem growth.
-            </p>
+        <section className="landing-section landing-intro">
+          <div className="landing-section__header landing-section__header--center landing-section__header--animated glass-section">
+            <div className="landing-section__eyebrow">{pageT('intro.eyebrow', 'Ecosystem Architecture')}</div>
+            <h2 className="fly-in">{pageT('intro.title', 'One Network. Multiple Systems. Infinite Possibilities.')}</h2>
+            <p>{pageT('intro.text', 'Fin Freedom Network is composed of interconnected programs - each designed to deliver structured participation, real utility, and long-term ecosystem growth.')}</p>
           </div>
 
-          <div className="ecosystem-banner" data-aos="zoom-in-up">
+          <div className="ecosystem-banner">
             <ThemeImage
               image={ECOSYSTEM_IMAGE}
-              alt="Fin Freedom Network ecosystem background"
+              alt={pageT('alt.ecosystem', 'Fin Freedom Network ecosystem background')}
               className="ecosystem-banner__image"
             />
 
             <div className="ecosystem-banner__content">
               <div className="ecosystem-banner__brand">
                 <Sparkles size={16} />
-                <span>Fin Freedom Network</span>
+                <span>{pageT('ecosystem.brand', 'Fin Freedom Network')}</span>
               </div>
 
               <h2 className="ecosystem-banner__title ecosystem-animate-title">
-                <span>A Complete Ecosystem</span>
-                <strong>Built for Freedom</strong>
+                <span>{pageT('ecosystem.titleTop', 'A Complete Ecosystem')}</span>
+                <strong>{pageT('ecosystem.titleBottom', 'Built for Freedom')}</strong>
               </h2>
 
-              <p className="ecosystem-banner__text">
-                A structured digital ecosystem designed to empower individuals through
-                participation, education, innovation, and community.
-              </p>
+              <p className="ecosystem-banner__text">{pageT('ecosystem.text', 'A structured digital ecosystem designed to empower individuals through participation, education, innovation, and community.')}</p>
 
-              <div className="ecosystem-banner__slogan ecosystem-animate-slogan">
-                One Ecosystem. Multiple Paths. Endless Possibilities.
-              </div>
+              <div className="ecosystem-banner__slogan ecosystem-animate-slogan">{pageT('ecosystem.slogan', 'One Ecosystem. Multiple Paths. Endless Possibilities.')}</div>
 
               <div className="ecosystem-banner__features">
                 {ECOSYSTEM_FEATURES.map((feature, index) => {
                   const Icon = feature.icon
 
                   return (
-                    <div key={feature.title} className="ecosystem-feature-inline">
+                    <div key={`ecosystem-feature-${index}`} className="ecosystem-feature-inline">
                       <Icon className="ecosystem-feature-icon" />
 
-                      <h3>{feature.title}</h3>
-                      <p>{feature.text}</p>
+                      <h3>{pageT(`ecosystem.features.${index}.title`, feature.title)}</h3>
+                      <p>{pageT(`ecosystem.features.${index}.text`, feature.text)}</p>
 
                       {index !== ECOSYSTEM_FEATURES.length - 1 && (
                         <div className="ecosystem-divider" />
@@ -1863,14 +1853,11 @@ const handleProgramModalImagePointerUp = (event) => {
           </div>
         </section>
 
-        <section id="programs" className="landing-section landing-program-showcase" data-aos="fade-up" data-aos-duration="1000">
-          <div className="landing-section__header landing-section__header--center glass-section" data-aos="fade-up" data-aos-duration="1000">
-            <div className="landing-section__eyebrow">Key Components</div>
-            <h2 className="highlight-green-yellow fly-in">Explore the Fin Freedom ecosystem.</h2>
-            <p className="center-text">
-              Six connected layers designed for participation, access, education, marketplace utility,
-              token-powered expansion, and long-term digital growth.
-            </p>
+        <section id="programs" className="landing-section landing-program-showcase">
+          <div className="landing-section__header landing-section__header--center glass-section">
+            <div className="landing-section__eyebrow">{pageT('programShowcase.eyebrow', 'Key Components')}</div>
+            <h2 className="highlight-green-yellow fly-in">{pageT('programShowcase.title', 'Explore the Fin Freedom ecosystem.')}</h2>
+            <p className="center-text">{pageT('programShowcase.text', 'Six connected layers designed for participation, access, education, marketplace utility, token-powered expansion, and long-term digital growth.')}</p>
           </div>
 
           <div className="program-card-grid-v2">
@@ -1880,17 +1867,12 @@ const handleProgramModalImagePointerUp = (event) => {
                   className={`program-card-v2 program-card-v2--${program.type} ${
                     program.isLive ? 'program-card-v2--live' : ''
                   }`}
-                  data-aos={index % 3 === 0 ? 'fade-up-right' : index % 3 === 1 ? 'zoom-in-up' : 'fade-up-left'}
-                  data-aos-delay={(index % 3) * 55}
-                  data-aos-duration="680"
-                  data-aos-easing="ease-out-cubic"
-                  data-aos-anchor-placement="top-bottom"
                   style={{ '--card-index': index }}
                 >
                   <div className="program-card-v2__media">
                     <ThemeImage
                       image={program.image}
-                      alt={program.title}
+                      alt={pageT(`programs.${program.id}.title`, program.title)}
                       className="program-card-v2__image"
                     />
                   </div>
@@ -1898,30 +1880,30 @@ const handleProgramModalImagePointerUp = (event) => {
                   <div className="program-card-v2__body">
                     <div className="program-card-v2__scroll">
                       <div className="program-card-v2__badge-row">
-                        <span className={program.isLive ? 'is-live' : ''}>{program.status}</span>
-                        <span>{program.eyebrow}</span>
+                        <span className={program.isLive ? 'is-live' : ''}>{pageT(`programs.${program.id}.status`, program.status)}</span>
+                        <span>{pageT(`programs.${program.id}.eyebrow`, program.eyebrow)}</span>
                       </div>
 
-                      <h3>{program.title}</h3>
+                      <h3>{pageT(`programs.${program.id}.title`, program.title)}</h3>
 
                       {program.headline && (
-                        <p className="program-card-v2__headline">{program.headline}</p>
+                        <p className="program-card-v2__headline">{pageT(`programs.${program.id}.headline`, program.headline)}</p>
                       )}
 
                       {program.description && (
-                        <p className="program-card-v2__description">{program.description}</p>
+                        <p className="program-card-v2__description">{pageT(`programs.${program.id}.description`, program.description)}</p>
                       )}
 
                       <ProgramDetails program={program} />
 
-                      {program.footerLine && <div className="program-footer-line">{program.footerLine}</div>}
+                      {program.footerLine && <div className="program-footer-line">{pageT(`programs.${program.id}.footerLine`, program.footerLine)}</div>}
 
                       <button
                         type="button"
                         className="landing-btn landing-btn--primary"
                         onClick={() => handleProgramSelect(program)}
                       >
-                        {program.isLive ? 'Get Started' : 'View Preview'}
+                        {program.isLive ? pageT('programShowcase.actions.getStarted', 'Get Started') : pageT('programShowcase.actions.viewPreview', 'View Preview')}
                         <ArrowRight size={17} />
                       </button>
                     </div>
@@ -1931,20 +1913,17 @@ const handleProgramModalImagePointerUp = (event) => {
             </div>
         </section>
 
-        <section className="landing-section landing-cta glass-section" data-aos="zoom-in-up">
+        <section className="landing-section landing-cta glass-section">
           <div className="live-layer-panel">
             <div className="live-layer-content">
               <span className="landing-section__eyebrow">
                 <Sparkles size={14} />
-                Join OUr Global Network
+                {pageT('liveLayer.eyebrow', 'Join Our Global Network')}
               </span>
 
-              <h2>Begin Your Journey Through The F-Freedom Program</h2>
+              <h2>{pageT('liveLayer.title', 'Begin Your Journey Through The F-Freedom Program')}</h2>
 
-              <p>
-                Review The Program Presentation, Connect your Web3 wallet on the Polygon network,
-                Activate your orbit levels, and progress through the structured ecosystem.
-              </p>
+              <p>{pageT('liveLayer.text', 'Review the program presentation, connect your Web3 wallet on the Polygon network, activate your orbit levels, and progress through the structured ecosystem.')}</p>
 
               <div className="live-layer-actions">
                 <button
@@ -1954,7 +1933,7 @@ const handleProgramModalImagePointerUp = (event) => {
                     else onNavigate?.('activation')
                   }}
                 >
-                  {isConnected ? 'Join F-Freedom Program' : 'Connect Wallet'}
+                  {isConnected ? pageT('liveLayer.actions.joinProgram', 'Join F-Freedom Program') : pageT('liveLayer.actions.connectWallet', 'Connect Wallet')}
                   <ArrowRight size={16} />
                 </button>
               </div>
@@ -1962,14 +1941,14 @@ const handleProgramModalImagePointerUp = (event) => {
 
             <div className="live-layer-metrics">
               <div className="metric-card">
-                <h3>Current F-Freedom Participants</h3>
+                <h3>{pageT('metrics.currentParticipants', 'Current F-Freedom Participants')}</h3>
                 <span className="metric-number">
                   {statsLoading ? '...' : formatNumber(publicStats.totalParticipants)}
                 </span>
               </div>
 
               <div className="metric-card">
-                <span>Growth (Last 14 Days)</span>
+                <span>{pageT('metrics.growthLast14Days', 'Growth (Last 14 Days)')}</span>
                 <MiniGrowthChart data={growthSeries} />
               </div>
             </div>

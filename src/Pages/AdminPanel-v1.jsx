@@ -15,8 +15,20 @@ import {
 // CONSTANTS & INTERFACES
 // ============================================================
 const API_BASE_URL = 'http://localhost:5000'
-const ADMIN_API_KEY = 'TheEagleEyeOfThe4thBatallionWeaveHowManyFounders1234567ky4574'
 const ADMIN_API_HEADER = 'x-admin-key'
+const ADMIN_SESSION_KEY = 'ffn_admin_api_key_session'
+
+const getRuntimeAdminKey = () => {
+  if (typeof window === 'undefined') return ''
+  const cached = window.sessionStorage.getItem(ADMIN_SESSION_KEY)
+  if (cached) return cached
+  const entered = window.prompt('Enter admin API key for this session')
+  if (entered) {
+    window.sessionStorage.setItem(ADMIN_SESSION_KEY, entered)
+    return entered
+  }
+  return ''
+}
 
 const levelManagerAdminIface = new ethers.Interface([
   'function pause()',
@@ -53,10 +65,12 @@ const boolText = (v) => (v ? 'Yes' : 'No')
 
 // Admin API helper
 const adminApi = async (endpoint, options = {}) => {
+  const adminKey = getRuntimeAdminKey()
+  if (!adminKey) throw new Error('Admin API key is required for this action')
   const response = await fetch(`${API_BASE_URL}${endpoint}`, {
     headers: {
       'Content-Type': 'application/json',
-      [ADMIN_API_HEADER]: ADMIN_API_KEY,
+      [ADMIN_API_HEADER]: adminKey,
       ...(options.headers || {}),
     },
     ...options,
@@ -2291,7 +2305,7 @@ export default AdminPanel
 // // CONSTANTS & INTERFACES
 // // ============================================================
 // const API_BASE_URL = 'http://localhost:5000'
-// const ADMIN_API_KEY = 'TheEagleEyeOfThe4thBatallionWeaveHowManyFounders1234567ky4574'
+// const ADMIN_RUNTIME_KEY = '<runtime session key>'
 // const ADMIN_API_HEADER = 'x-admin-key'
 
 // const levelManagerAdminIface = new ethers.Interface([
@@ -2332,7 +2346,7 @@ export default AdminPanel
 //   const response = await fetch(`${API_BASE_URL}${endpoint}`, {
 //     headers: {
 //       'Content-Type': 'application/json',
-//       [ADMIN_API_HEADER]: ADMIN_API_KEY,
+//       [ADMIN_API_HEADER]: adminKey,
 //       ...(options.headers || {}),
 //     },
 //     ...options,

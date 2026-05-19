@@ -1,7 +1,10 @@
 import './SupportPage.css'
 import { useEffect, useState, useCallback, useMemo, useRef } from 'react'
+import { useTranslation } from 'react-i18next'
 import { useWallet } from '../../hooks/useWallet'
 import { useContracts } from '../../hooks/useContracts'
+import { getApiUrl } from '../../Services/apiConfig'
+import { useToast } from '../../components/feedback'
 import {
   AlertCircle, AlertTriangle, BookOpen, Check, CheckCircle, ChevronRight, Copy,
   ExternalLink, HelpCircle, Info, LifeBuoy, Mail, RefreshCw, Rocket, Search,
@@ -10,8 +13,6 @@ import {
 } from 'lucide-react'
 import { FaTelegramPlane, FaDiscord, FaInstagram, FaFacebookF } from 'react-icons/fa'
 import { FaXTwitter } from 'react-icons/fa6'
-
-const API_BASE_URL = 'https://fin-freedom-backend-3.onrender.com'
 
 const SUPPORT_HERO_IMAGES = {
   dark: '/images/support/support-laptop-dark.png',
@@ -307,28 +308,34 @@ function getResourceIcon(key = '') {
 }
 
 // Helper component for guide groups
-const SupportGuideGroup = ({ title, items }) => (
-  <div className="support-article-guide__group">
-    <h3>{title}</h3>
+const SupportGuideGroup = ({ groupKey, title, items }) => {
+  const { t } = useTranslation()
 
-    <div className="support-article-guide__steps">
-      {items.map((item, index) => (
-        <article className="support-article-guide__step" key={`${title}-${item.title}`}>
-          <span className="support-article-guide__step-number">{index + 1}</span>
+  return (
+    <div className="support-article-guide__group">
+      <h3>{t(`supportPage.registrationGuide.${groupKey}.title`, title)}</h3>
 
-          <div>
-            <h4>{item.title}</h4>
-            <ul>
-              {item.steps.map((step) => (
-                <li key={step}>{step}</li>
-              ))}
-            </ul>
-          </div>
-        </article>
-      ))}
+      <div className="support-article-guide__steps">
+        {items.map((item, index) => (
+          <article className="support-article-guide__step" key={`${groupKey}-${index}`}>
+            <span className="support-article-guide__step-number">{index + 1}</span>
+
+            <div>
+              <h4>{t(`supportPage.registrationGuide.${groupKey}.items.${index}.title`, item.title)}</h4>
+              <ul>
+                {item.steps.map((step, stepIndex) => (
+                  <li key={`${groupKey}-${index}-${stepIndex}`}>
+                    {t(`supportPage.registrationGuide.${groupKey}.items.${index}.steps.${stepIndex}`, step)}
+                  </li>
+                ))}
+              </ul>
+            </div>
+          </article>
+        ))}
+      </div>
     </div>
-  </div>
-)
+  )
+}
 
 // Collapsible Support Section Component
 const CollapsibleSupportSection = ({
@@ -341,6 +348,7 @@ const CollapsibleSupportSection = ({
   setOpenSection,
   children,
 }) => {
+  const { t } = useTranslation()
   const isOpen = openSection === id
 
   return (
@@ -361,7 +369,7 @@ const CollapsibleSupportSection = ({
         </span>
 
         <span className="support-collapsible__action">
-          {isOpen ? 'Hide' : 'Open'}
+          {isOpen ? t('supportPage.collapsible.hide', 'Hide') : t('supportPage.collapsible.open', 'Open')}
           <ChevronRight size={16} />
         </span>
       </button>
@@ -377,6 +385,8 @@ const CollapsibleSupportSection = ({
 
 // Slide Doc Modal Component
 const SlideDocModal = ({ doc, onClose }) => {
+  const { t } = useTranslation()
+
   useEffect(() => {
     if (!doc) return undefined
     document.body.style.overflow = 'hidden'
@@ -392,13 +402,13 @@ const SlideDocModal = ({ doc, onClose }) => {
       <div className="slide-doc-modal glass-panel" onClick={(e) => e.stopPropagation()}>
         <div className="slide-doc-modal__header">
           <div>
-            <span>{doc.eyebrow}</span>
-            <h3>{doc.title}</h3>
+            <span>{t(`supportPage.slideDocs.${doc.id}.eyebrow`, doc.eyebrow)}</span>
+            <h3>{t(`supportPage.slideDocs.${doc.id}.title`, doc.title)}</h3>
           </div>
 
           <div className="slide-doc-modal__actions">
             <a href={doc.src} target="_blank" rel="noopener noreferrer">
-              Open full screen <ExternalLink size={15} />
+              {t('supportPage.slideDocModal.openFullScreen', 'Open full screen')} <ExternalLink size={15} />
             </a>
 
             <button type="button" onClick={onClose}>
@@ -410,7 +420,7 @@ const SlideDocModal = ({ doc, onClose }) => {
         <iframe
           className="slide-doc-modal__frame"
           src={`${doc.src}#toolbar=1&navpanes=0&view=FitH`}
-          title={doc.title}
+          title={t(`supportPage.slideDocs.${doc.id}.title`, doc.title)}
         />
       </div>
     </div>
@@ -450,6 +460,7 @@ const AnimatedCounter = ({ value, label, icon: Icon, suffix = '' }) => {
 
 // Floating Support Button Component
 const FloatingSupportButton = ({ onRefresh, telegramLink, onContactScroll }) => {
+  const { t } = useTranslation()
   const [isOpen, setIsOpen] = useState(false)
   
   useEffect(() => {
@@ -476,13 +487,13 @@ const FloatingSupportButton = ({ onRefresh, telegramLink, onContactScroll }) => 
       {isOpen && (
         <div className="floating-support__menu glass-panel">
           <button type="button" onClick={() => { onContactScroll(); setIsOpen(false); }}>
-            <Mail size={16} /> Contact Support
+            <Mail size={16} /> {t('supportPage.floatingActions.contactSupport', 'Contact Support')}
           </button>
           <button type="button" onClick={() => { window.open(telegramLink, '_blank', 'noopener,noreferrer'); setIsOpen(false); }}>
-            <FaTelegramPlane size={16} /> Telegram
+            <FaTelegramPlane size={16} /> {t('supportPage.floatingActions.telegram', 'Telegram')}
           </button>
           <button type="button" onClick={() => { onRefresh(); setIsOpen(false); }}>
-            <RefreshCw size={16} /> Refresh Data
+            <RefreshCw size={16} /> {t('supportPage.floatingActions.refreshData', 'Refresh Data')}
           </button>
         </div>
       )}
@@ -492,6 +503,8 @@ const FloatingSupportButton = ({ onRefresh, telegramLink, onContactScroll }) => 
 
 // Modal Components for Legal Documents
 const LegalModal = ({ isOpen, onClose, title, children }) => {
+  const { t } = useTranslation()
+
   useEffect(() => {
     if (isOpen) {
       document.body.style.overflow = 'hidden'
@@ -518,7 +531,7 @@ const LegalModal = ({ isOpen, onClose, title, children }) => {
           {children}
         </div>
         <div className="legal-modal__footer">
-          <button type="button" className="legal-modal__close-btn" onClick={onClose}>Close</button>
+          <button type="button" className="legal-modal__close-btn" onClick={onClose}>{t('supportPage.modal.close', 'Close')}</button>
         </div>
       </div>
     </div>
@@ -526,6 +539,8 @@ const LegalModal = ({ isOpen, onClose, title, children }) => {
 }
 
 const ComingSoonModal = ({ isOpen, onClose, title }) => {
+  const { t } = useTranslation()
+
   useEffect(() => {
     if (isOpen) {
       document.body.style.overflow = 'hidden'
@@ -552,11 +567,11 @@ const ComingSoonModal = ({ isOpen, onClose, title }) => {
           <div className="coming-soon-icon">
             <Video size={48} />
           </div>
-          <h4>Tutorial Videos Underway</h4>
-          <p>Video tutorials are currently being prepared and will be available soon. Stay tuned for step-by-step guides on registration, level activation, orbit navigation, and more.</p>
+          <h4>{t('supportPage.tutorialModal.title', 'Tutorial Videos Underway')}</h4>
+          <p>{t('supportPage.tutorialModal.text', 'Video tutorials are currently being prepared and will be available soon. Stay tuned for step-by-step guides on registration, level activation, orbit navigation, and more.')}</p>
         </div>
         <div className="legal-modal__footer">
-          <button type="button" className="legal-modal__close-btn" onClick={onClose}>Close</button>
+          <button type="button" className="legal-modal__close-btn" onClick={onClose}>{t('supportPage.modal.close', 'Close')}</button>
         </div>
       </div>
     </div>
@@ -564,8 +579,11 @@ const ComingSoonModal = ({ isOpen, onClose, title }) => {
 }
 
 const SupportPage = ({ onNavigate }) => {
+  const { t } = useTranslation()
   const { isConnected, account, connect } = useWallet()
   const { contracts, loadContracts } = useContracts()
+  const toast = useToast()
+  const supportT = useCallback((key, fallback, options) => t(`supportPage.${key}`, fallback, options), [t])
 
   // ALL hooks at the top level
   const [loading, setLoading] = useState(true)
@@ -647,7 +665,7 @@ const SupportPage = ({ onNavigate }) => {
 
   const fetchFaqs = useCallback(async () => {
   try {
-    const res = await fetch(`${API_BASE_URL}/api/support/faqs`)
+    const res = await fetch(getApiUrl('/api/support/faqs'))
     const data = await res.json()
 
     const rawItems = Array.isArray(data?.data)
@@ -672,7 +690,7 @@ const SupportPage = ({ onNavigate }) => {
 
   const fetchAnnouncements = useCallback(async () => {
     try {
-      const res = await fetch(`${API_BASE_URL}/api/community/announcements`)
+      const res = await fetch(getApiUrl('/api/community/announcements'))
       const data = await res.json()
       setAnnouncements(data?.ok ? data.data?.items?.slice(0, 5) || [] : [])
     } catch {
@@ -682,7 +700,7 @@ const SupportPage = ({ onNavigate }) => {
 
   const fetchResources = useCallback(async () => {
     try {
-      const res = await fetch(`${API_BASE_URL}/api/community/resources`)
+      const res = await fetch(getApiUrl('/api/community/resources'))
       const data = await res.json()
       setResources(data?.ok ? data.data?.items || [] : [])
     } catch {
@@ -692,7 +710,7 @@ const SupportPage = ({ onNavigate }) => {
 
   const fetchSocialLinks = useCallback(async () => {
     try {
-      const res = await fetch(`${API_BASE_URL}/api/community/social-links`)
+      const res = await fetch(getApiUrl('/api/community/social-links'))
       const data = await res.json()
       setSocialLinks(data?.ok ? data.data?.items || [] : [])
     } catch {
@@ -703,7 +721,7 @@ const SupportPage = ({ onNavigate }) => {
   const fetchRecentTickets = useCallback(async () => {
     if (!account) return setRecentTickets([])
     try {
-      const res = await fetch(`${API_BASE_URL}/api/support/tickets/${account}`)
+      const res = await fetch(getApiUrl(`/api/support/tickets/${account}`))
       const data = await res.json()
       setRecentTickets(data?.ok ? data.data?.slice(0, 3) || [] : [])
     } catch {
@@ -724,7 +742,7 @@ const SupportPage = ({ onNavigate }) => {
       next.network = 'No Wallet'
     }
     try {
-      const res = await fetch(`${API_BASE_URL}/api/health`)
+      const res = await fetch(getApiUrl('/api/health'))
       const data = await res.json()
       next.api = data?.ok ? 'Online' : 'Degraded'
     } catch {
@@ -856,6 +874,7 @@ const SupportPage = ({ onNavigate }) => {
     if (!account) return
     navigator.clipboard.writeText(account)
     setCopiedWallet(true)
+    toast.success(supportT('clipboard.walletCopied', 'Wallet address copied.'), { dedupeKey: 'support-wallet-copied' })
     setTimeout(() => setCopiedWallet(false), 2000)
   }
 
@@ -863,24 +882,29 @@ const SupportPage = ({ onNavigate }) => {
 
   const handleSubmitTicket = async () => {
     if (!ticketForm.category || !ticketForm.subject || !ticketForm.message) {
-      setSubmitStatus({ loading: false, success: false, error: 'Please complete the required fields before sending your request.' })
+      const message = supportT('contact.errors.requiredFields', 'Please complete the required fields before sending your request.')
+      setSubmitStatus({ loading: false, success: false, error: message })
+      toast.warning(message, { dedupeKey: 'support-ticket-required-fields' })
       return
     }
     setSubmitStatus({ loading: true, success: false, error: null })
     try {
-      const res = await fetch(`${API_BASE_URL}/api/support/tickets`, {
+      const res = await fetch(getApiUrl('/api/support/tickets'), {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ wallet: account, ...ticketForm }),
       })
       const data = await res.json()
-      if (!data.ok) throw new Error(data.message || 'Submission failed')
+      if (!data.ok) throw new Error(data.message || supportT('contact.errors.submissionFailed', 'Submission failed'))
       setSubmitStatus({ loading: false, success: true, error: null })
+      toast.success(supportT('contact.successToast', 'Support request submitted.'), { dedupeKey: 'support-ticket-submitted' })
       setTicketForm({ category: '', subject: '', message: '', txHash: '' })
       fetchRecentTickets()
       setTimeout(() => setSubmitStatus({ loading: false, success: false, error: null }), 3000)
     } catch (err) {
-      setSubmitStatus({ loading: false, success: false, error: err.message || 'Submission failed' })
+      const message = err.message || supportT('contact.errors.submissionFailed', 'Submission failed')
+      setSubmitStatus({ loading: false, success: false, error: message })
+      toast.danger(message, { dedupeKey: 'support-ticket-submit-failed' })
     }
   }
 
@@ -917,15 +941,15 @@ const SupportPage = ({ onNavigate }) => {
 
           <div className="support-hero__left">
             <div className="support-hero__text-block">
-              <h1 className="support-hero__title">Support Center</h1>
+              <h1 className="support-hero__title">{supportT('hero.title', 'Support Center')}</h1>
 
               <p className="support-hero__description soft-text">
-                Connect your wallet to access personalized support, guided help, and ticket submission.
+                {supportT('hero.disconnectedDescription', 'Connect your wallet to access personalized support, guided help, and ticket submission.')}
               </p>
             </div>
 
             <button type="button" onClick={connect} className="connect-wallet-btn">
-              <Wallet size={18} /> Connect Wallet
+              <Wallet size={18} /> {supportT('hero.connectWallet', 'Connect Wallet')}
             </button>
           </div>
         </div>
@@ -936,107 +960,107 @@ const SupportPage = ({ onNavigate }) => {
   return (
     <section className="support-page">
       {/* Modals */}
-      <LegalModal isOpen={showPrivacyModal} onClose={() => setShowPrivacyModal(false)} title="Privacy Policy">
+      <LegalModal isOpen={showPrivacyModal} onClose={() => setShowPrivacyModal(false)} title={supportT('legal.privacy.title', 'Privacy Policy')}>
         <div className="legal-content">
-          <h4>1. Data Collection Philosophy</h4>
-          <p>Fin Freedom Network is designed to collect minimal data. The Platform does not require: names, email addresses, phone numbers, government-issued identification. The Platform is built to function without traditional user accounts or centralized identity records.</p>
-          <h4>2. Information Collected</h4>
-          <p>The Platform may collect or process: public wallet addresses, on-chain transaction data, referral relationships recorded on-chain, website usage data (if applicable).</p>
-          <h4>3. Blockchain Transparency</h4>
-          <p>Blockchain data is public, permanent, and accessible to anyone. Your wallet address and all transactions are publicly visible. Fin Freedom Network cannot alter, hide, or delete blockchain data.</p>
-          <h4>4. No Sale or Monetization of Data</h4>
-          <p>Fin Freedom Network does not sell, rent, trade, or monetize user data. The Platform does not engage in data brokerage or targeted advertising based on personal information.</p>
+          <h4>{supportT('legal.privacy.sections.dataCollection.heading', '1. Data Collection Philosophy')}</h4>
+          <p>{supportT('legal.privacy.sections.dataCollection.text', 'Fin Freedom Network is designed to collect minimal data. The Platform does not require: names, email addresses, phone numbers, government-issued identification. The Platform is built to function without traditional user accounts or centralized identity records.')}</p>
+          <h4>{supportT('legal.privacy.sections.information.heading', '2. Information Collected')}</h4>
+          <p>{supportT('legal.privacy.sections.information.text', 'The Platform may collect or process: public wallet addresses, on-chain transaction data, referral relationships recorded on-chain, website usage data (if applicable).')}</p>
+          <h4>{supportT('legal.privacy.sections.blockchain.heading', '3. Blockchain Transparency')}</h4>
+          <p>{supportT('legal.privacy.sections.blockchain.text', 'Blockchain data is public, permanent, and accessible to anyone. Your wallet address and all transactions are publicly visible. Fin Freedom Network cannot alter, hide, or delete blockchain data.')}</p>
+          <h4>{supportT('legal.privacy.sections.noSale.heading', '4. No Sale or Monetization of Data')}</h4>
+          <p>{supportT('legal.privacy.sections.noSale.text', 'Fin Freedom Network does not sell, rent, trade, or monetize user data. The Platform does not engage in data brokerage or targeted advertising based on personal information.')}</p>
         </div>
       </LegalModal>
 
-      <LegalModal isOpen={showRiskModal} onClose={() => setShowRiskModal(false)} title="Risk Disclaimer">
+      <LegalModal isOpen={showRiskModal} onClose={() => setShowRiskModal(false)} title={supportT('legal.risk.title', 'Risk Disclaimer')}>
         <div className="legal-content">
-          <p style={{ fontWeight: 'bold', color: 'var(--danger)', marginBottom: '16px' }}>IMPORTANT NOTICE</p>
-          <p>Participation in Fin Freedom Network involves significant risks. You should only participate if you fully understand and willingly accept these risks.</p>
-          <h4>1. Blockchain & Smart Contract Risks</h4>
-          <p>Smart contracts operate autonomously once deployed and may be difficult or impossible to modify. Risks include vulnerabilities, coding errors, protocol exploits, and chain reorganizations.</p>
-          <h4>2. Token & Digital Asset Risks</h4>
-          <p>Tokens may fluctuate in value, experience low liquidity, lose value entirely, or be affected by regulatory actions. There is no assurance that any token will maintain value or utility.</p>
-          <h4>3. No Financial, Legal, or Tax Advice</h4>
-          <p>Nothing provided constitutes investment, financial, legal, or tax advice. You are solely responsible for seeking independent professional advice.</p>
-          <h4>4. User Error & Security Risks</h4>
-          <p>Fin Freedom Network cannot reverse transactions or recover lost assets from user errors, phishing, or compromised wallets.</p>
+          <p style={{ fontWeight: 'bold', color: 'var(--danger)', marginBottom: '16px' }}>{supportT('legal.risk.importantNotice', 'IMPORTANT NOTICE')}</p>
+          <p>{supportT('legal.risk.intro', 'Participation in Fin Freedom Network involves significant risks. You should only participate if you fully understand and willingly accept these risks.')}</p>
+          <h4>{supportT('legal.risk.sections.smartContract.heading', '1. Blockchain & Smart Contract Risks')}</h4>
+          <p>{supportT('legal.risk.sections.smartContract.text', 'Smart contracts operate autonomously once deployed and may be difficult or impossible to modify. Risks include vulnerabilities, coding errors, protocol exploits, and chain reorganizations.')}</p>
+          <h4>{supportT('legal.risk.sections.token.heading', '2. Token & Digital Asset Risks')}</h4>
+          <p>{supportT('legal.risk.sections.token.text', 'Tokens may fluctuate in value, experience low liquidity, lose value entirely, or be affected by regulatory actions. There is no assurance that any token will maintain value or utility.')}</p>
+          <h4>{supportT('legal.risk.sections.noAdvice.heading', '3. No Financial, Legal, or Tax Advice')}</h4>
+          <p>{supportT('legal.risk.sections.noAdvice.text', 'Nothing provided constitutes investment, financial, legal, or tax advice. You are solely responsible for seeking independent professional advice.')}</p>
+          <h4>{supportT('legal.risk.sections.security.heading', '4. User Error & Security Risks')}</h4>
+          <p>{supportT('legal.risk.sections.security.text', 'Fin Freedom Network cannot reverse transactions or recover lost assets from user errors, phishing, or compromised wallets.')}</p>
         </div>
       </LegalModal>
 
-      <LegalModal isOpen={showTransparencyModal} onClose={() => setShowTransparencyModal(false)} title="Smart Contract Transparency">
+      <LegalModal isOpen={showTransparencyModal} onClose={() => setShowTransparencyModal(false)} title={supportT('legal.transparency.title', 'Smart Contract Transparency')}>
         <div className="legal-content">
-          <h4>On-Chain Smart Contracts</h4>
-          <p>Fin Freedom Network is built with transparency and safety at its core. All core mechanisms are enforced by immutable smart contracts deployed on public blockchains.</p>
-          <h4>Security Features</h4>
+          <h4>{supportT('legal.transparency.sections.onChain.heading', 'On-Chain Smart Contracts')}</h4>
+          <p>{supportT('legal.transparency.sections.onChain.text', 'Fin Freedom Network is built with transparency and safety at its core. All core mechanisms are enforced by immutable smart contracts deployed on public blockchains.')}</p>
+          <h4>{supportT('legal.transparency.sections.security.heading', 'Security Features')}</h4>
           <ul>
-            <li>No admin access to user funds</li>
-            <li>Deterministic payout rules</li>
-            <li>Multisig governance</li>
-            <li>External audits planned</li>
+            <li>{supportT('legal.transparency.sections.security.items.0', 'No admin access to user funds')}</li>
+            <li>{supportT('legal.transparency.sections.security.items.1', 'Deterministic payout rules')}</li>
+            <li>{supportT('legal.transparency.sections.security.items.2', 'Multisig governance')}</li>
+            <li>{supportT('legal.transparency.sections.security.items.3', 'External audits planned')}</li>
           </ul>
-          <h4>Verifiable Operations</h4>
-          <p>Users can independently verify all rules and transactions on-chain. Every reward follows a clear, predefined structure that cannot be altered arbitrarily.</p>
-          <h4>Ecosystem Roadmap</h4>
+          <h4>{supportT('legal.transparency.sections.verifiable.heading', 'Verifiable Operations')}</h4>
+          <p>{supportT('legal.transparency.sections.verifiable.text', 'Users can independently verify all rules and transactions on-chain. Every reward follows a clear, predefined structure that cannot be altered arbitrarily.')}</p>
+          <h4>{supportT('legal.transparency.sections.roadmap.heading', 'Ecosystem Roadmap')}</h4>
           <ul>
-            <li>Phase 2: Freedom-Plus Program rollout</li>
-            <li>Phase 3: Freedom NFT Program activation</li>
-            <li>Phase 4: Token utilities & governance expansion</li>
-            <li>Phase 5: Marketplace, Academy, and ecosystem integrations</li>
+            <li>{supportT('legal.transparency.sections.roadmap.items.0', 'Phase 2: Freedom-Plus Program rollout')}</li>
+            <li>{supportT('legal.transparency.sections.roadmap.items.1', 'Phase 3: Freedom NFT Program activation')}</li>
+            <li>{supportT('legal.transparency.sections.roadmap.items.2', 'Phase 4: Token utilities & governance expansion')}</li>
+            <li>{supportT('legal.transparency.sections.roadmap.items.3', 'Phase 5: Marketplace, Academy, and ecosystem integrations')}</li>
           </ul>
         </div>
       </LegalModal>
 
-      <LegalModal isOpen={showTermsModal} onClose={() => setShowTermsModal(false)} title="Terms & Conditions">
+      <LegalModal isOpen={showTermsModal} onClose={() => setShowTermsModal(false)} title={supportT('legal.terms.title', 'Terms & Conditions')}>
         <div className="legal-content">
-          <h4>1. Acceptance of Terms</h4>
-          <p>By accessing, registering, or using any part of the Fin Freedom Network platform, you confirm that you have read, understood, and agreed to be bound by these Terms & Conditions.</p>
-          <h4>2. Nature of the Platform</h4>
-          <p>Fin Freedom Network is a decentralized, blockchain-based platform that operates through smart contracts. The Platform does not hold user funds, control user wallets, or guarantee earnings.</p>
-          <h4>3. Wallet Responsibility</h4>
-          <p>You are solely responsible for safeguarding your wallet credentials. Wallet addresses cannot be changed once registered. Lost private keys cannot be recovered.</p>
-          <h4>4. No Guarantees</h4>
-          <p>Fin Freedom Network makes no guarantees regarding profits, income, returns, referrals, or future platform performance.</p>
-          <h4>5. Smart Contract Finality</h4>
-          <p>Blockchain transactions are irreversible. Once confirmed, they cannot be reversed or refunded.</p>
+          <h4>{supportT('legal.terms.sections.acceptance.heading', '1. Acceptance of Terms')}</h4>
+          <p>{supportT('legal.terms.sections.acceptance.text', 'By accessing, registering, or using any part of the Fin Freedom Network platform, you confirm that you have read, understood, and agreed to be bound by these Terms & Conditions.')}</p>
+          <h4>{supportT('legal.terms.sections.nature.heading', '2. Nature of the Platform')}</h4>
+          <p>{supportT('legal.terms.sections.nature.text', 'Fin Freedom Network is a decentralized, blockchain-based platform that operates through smart contracts. The Platform does not hold user funds, control user wallets, or guarantee earnings.')}</p>
+          <h4>{supportT('legal.terms.sections.wallet.heading', '3. Wallet Responsibility')}</h4>
+          <p>{supportT('legal.terms.sections.wallet.text', 'You are solely responsible for safeguarding your wallet credentials. Wallet addresses cannot be changed once registered. Lost private keys cannot be recovered.')}</p>
+          <h4>{supportT('legal.terms.sections.noGuarantees.heading', '4. No Guarantees')}</h4>
+          <p>{supportT('legal.terms.sections.noGuarantees.text', 'Fin Freedom Network makes no guarantees regarding profits, income, returns, referrals, or future platform performance.')}</p>
+          <h4>{supportT('legal.terms.sections.finality.heading', '5. Smart Contract Finality')}</h4>
+          <p>{supportT('legal.terms.sections.finality.text', 'Blockchain transactions are irreversible. Once confirmed, they cannot be reversed or refunded.')}</p>
         </div>
       </LegalModal>
 
-      <ComingSoonModal isOpen={showTutorialModal} onClose={() => setShowTutorialModal(false)} title="Tutorial Videos" />
+      <ComingSoonModal isOpen={showTutorialModal} onClose={() => setShowTutorialModal(false)} title={supportT('resources.tutorials', 'Tutorial Videos')} />
 
       {/* Registration Guide Modal */}
       <LegalModal
         isOpen={showRegistrationGuideModal}
         onClose={() => setShowRegistrationGuideModal(false)}
-        title={REGISTRATION_LEVEL_ONE_GUIDE.title}
+        title={supportT('registrationGuide.title', REGISTRATION_LEVEL_ONE_GUIDE.title)}
       >
         <div className="support-doc-modal-content">
           <div className="support-doc-modal-content__meta">
-            <span>{REGISTRATION_LEVEL_ONE_GUIDE.brand}</span>
-            <span>{REGISTRATION_LEVEL_ONE_GUIDE.date}</span>
+            <span>{supportT('registrationGuide.brand', REGISTRATION_LEVEL_ONE_GUIDE.brand)}</span>
+            <span>{supportT('registrationGuide.date', REGISTRATION_LEVEL_ONE_GUIDE.date)}</span>
           </div>
 
           <div className="support-doc-modal-content__summary">
-            <strong>Cocoon AI Summary</strong>
-            <p>{REGISTRATION_LEVEL_ONE_GUIDE.summary}</p>
+            <strong>{supportT('registrationGuide.summaryLabel', 'Cocoon AI Summary')}</strong>
+            <p>{supportT('registrationGuide.summary', REGISTRATION_LEVEL_ONE_GUIDE.summary)}</p>
           </div>
 
           <div className="support-doc-modal-content__intro">
-            <h4>HOW TO REGISTER AND ACTIVATE LEVEL 1 IN THE F-FREEDOM PROGRAM</h4>
-            <p>{REGISTRATION_LEVEL_ONE_GUIDE.intro}</p>
+            <h4>{supportT('registrationGuide.introHeading', 'HOW TO REGISTER AND ACTIVATE LEVEL 1 IN THE F-FREEDOM PROGRAM')}</h4>
+            <p>{supportT('registrationGuide.intro', REGISTRATION_LEVEL_ONE_GUIDE.intro)}</p>
           </div>
 
-          <SupportGuideGroup title="Mobile Guide" items={REGISTRATION_LEVEL_ONE_GUIDE.mobile} />
+          <SupportGuideGroup groupKey="mobile" title="Mobile Guide" items={REGISTRATION_LEVEL_ONE_GUIDE.mobile} />
 
-          <SupportGuideGroup title="Laptop/Desktop Guide" items={REGISTRATION_LEVEL_ONE_GUIDE.desktop} />
+          <SupportGuideGroup groupKey="desktop" title="Laptop/Desktop Guide" items={REGISTRATION_LEVEL_ONE_GUIDE.desktop} />
 
           <div className="support-doc-modal-content__reminders">
-            <h4>Important Reminders</h4>
+            <h4>{supportT('registrationGuide.reminders.title', 'Important Reminders')}</h4>
             <ul>
-              {REGISTRATION_LEVEL_ONE_GUIDE.reminders.map((item) => (
-                <li key={item}>
+              {REGISTRATION_LEVEL_ONE_GUIDE.reminders.map((item, index) => (
+                <li key={`reminder-${index}`}>
                   <CheckCircle size={15} />
-                  <span>{item}</span>
+                  <span>{supportT(`registrationGuide.reminders.items.${index}`, item)}</span>
                 </li>
               ))}
             </ul>
@@ -1048,18 +1072,18 @@ const SupportPage = ({ onNavigate }) => {
       <LegalModal
         isOpen={showGlossaryModal}
         onClose={() => setShowGlossaryModal(false)}
-        title="FinFreedom Glossary — Official Terminology (Version 1)"
+        title={supportT('glossary.title', 'FinFreedom Glossary - Official Terminology (Version 1)')}
       >
         <div className="support-glossary-modal-content">
           <p className="support-glossary-modal-content__intro">
-            This glossary defines the main terms used within the Fin Freedom ecosystem and the F-Freedom Program. These definitions are intended to create a common language for participants, leaders, developers, and community members.
+            {supportT('glossary.intro', 'This glossary defines the main terms used within the Fin Freedom ecosystem and the F-Freedom Program. These definitions are intended to create a common language for participants, leaders, developers, and community members.')}
           </p>
 
           <div className="support-glossary-modal-content__grid">
-            {FINFREEDOM_GLOSSARY.map(([term, definition]) => (
-              <article className="support-glossary-modal-content__item" key={term}>
-                <h4>{term}</h4>
-                <p>{definition}</p>
+            {FINFREEDOM_GLOSSARY.map(([term, definition], index) => (
+              <article className="support-glossary-modal-content__item" key={`glossary-${index}`}>
+                <h4>{supportT(`glossary.items.${index}.term`, term)}</h4>
+                <p>{supportT(`glossary.items.${index}.definition`, definition)}</p>
               </article>
             ))}
           </div>
@@ -1079,11 +1103,10 @@ const SupportPage = ({ onNavigate }) => {
 
         <div className="support-hero__left">
           <div className="support-hero__text-block">
-            <h1 className="support-hero__title">Support Center</h1>
+            <h1 className="support-hero__title">{supportT('hero.title', 'Support Center')}</h1>
 
             <p className="support-hero__description soft-text">
-              Find trusted answers, search common issues, and contact support with the right wallet
-              details or transaction hash for faster resolution.
+              {supportT('hero.description', 'Find trusted answers, search common issues, and contact support with the right wallet details or transaction hash for faster resolution.')}
             </p>
           </div>
 
@@ -1094,7 +1117,7 @@ const SupportPage = ({ onNavigate }) => {
               <input
                 type="text"
                 className="search-input"
-                placeholder="Search registration, activation, wallet, orbit, or support topics..."
+                placeholder={supportT('search.placeholder', 'Search registration, activation, wallet, orbit, or support topics...')}
                 value={searchQuery}
                 onChange={handleSearchChange}
               />
@@ -1107,7 +1130,7 @@ const SupportPage = ({ onNavigate }) => {
                     setSearchSuggestions([])
                   }}
                   type="button"
-                  aria-label="Clear search"
+                  aria-label={supportT('search.clearAriaLabel', 'Clear search')}
                 >
                   <X size={14} />
                 </button>
@@ -1145,7 +1168,7 @@ const SupportPage = ({ onNavigate }) => {
             <div className="support-search-results glass-panel">
               <div className="support-search-results__header">
                 <span>
-                  <Search size={14} /> {filteredFaqs.length} result{filteredFaqs.length === 1 ? '' : 's'} for "{searchQuery}"
+                  <Search size={14} /> {supportT('search.resultsLabel', '{{count}} result{{plural}} for "{{query}}"', { count: filteredFaqs.length, plural: filteredFaqs.length === 1 ? '' : 's', query: searchQuery })}
                 </span>
 
                 <button
@@ -1161,7 +1184,7 @@ const SupportPage = ({ onNavigate }) => {
                     }, 80)
                   }}
                 >
-                  View full results <ChevronRight size={12} />
+                  {supportT('search.viewFullResults', 'View full results')} <ChevronRight size={12} />
                 </button>
               </div>
 
@@ -1184,12 +1207,12 @@ const SupportPage = ({ onNavigate }) => {
                       }}
                     >
                       <strong>{faq.question}</strong>
-                      <span>{faq.category}</span>
+                      <span>{faq.category === 'General' ? supportT('faq.generalCategory', 'General') : faq.category}</span>
                     </button>
                   ))
                 ) : (
                   <div className="support-search-results__empty soft-text">
-                    No direct matches found yet. Try a broader keyword or use the support request section below.
+                    {supportT('search.empty', 'No direct matches found yet. Try a broader keyword or use the support request section below.')}
                   </div>
                 )}
               </div>
@@ -1198,7 +1221,7 @@ const SupportPage = ({ onNavigate }) => {
 
           <div className="support-hero__community">
             <p className="support-hero__community-title">
-              Gain Support Through the Verified Community Platforms
+              {supportT('community.title', 'Gain Support Through the Verified Community Platforms')}
             </p>
 
             <div className="support-telegram-mini-row">
@@ -1209,18 +1232,18 @@ const SupportPage = ({ onNavigate }) => {
                   target="_blank"
                   rel="noopener noreferrer"
                   className="support-telegram-mini-card"
-                  aria-label={item.title}
-                  title={item.title}
+                  aria-label={supportT(`telegram.${item.id}.title`, item.title)}
+                  title={supportT(`telegram.${item.id}.title`, item.title)}
                 >
                   <img
                     src={item.darkImage}
-                    alt={item.title}
+                    alt={supportT(`telegram.${item.id}.title`, item.title)}
                     className="support-telegram-mini-card__image support-telegram-mini-card__image--dark"
                   />
 
                   <img
                     src={item.lightImage}
-                    alt={item.title}
+                    alt={supportT(`telegram.${item.id}.title`, item.title)}
                     className="support-telegram-mini-card__image support-telegram-mini-card__image--light"
                   />
                 </a>
@@ -1233,10 +1256,10 @@ const SupportPage = ({ onNavigate }) => {
       {/* Learning Center Section */}
       <section className="support-slide-library glass-panel">
         <div className="support-section-heading">
-          <span className="support-section-heading__eyebrow">Learning Center</span>
-          <h2 className="support-section-heading__title">Guides, slides, and quick onboarding help</h2>
+          <span className="support-section-heading__eyebrow">{supportT('learning.eyebrow', 'Learning Center')}</span>
+          <h2 className="support-section-heading__title">{supportT('learning.title', 'Guides, slides, and quick onboarding help')}</h2>
           <p className="soft-text">
-            Explore the ecosystem, understand the current F-Freedom Program, or get step-by-step mobile registration help.
+            {supportT('learning.description', 'Explore the ecosystem, understand the current F-Freedom Program, or get step-by-step mobile registration help.')}
           </p>
         </div>
 
@@ -1253,9 +1276,9 @@ const SupportPage = ({ onNavigate }) => {
                 </div>
 
                 <div className="support-slide-card__copy">
-                  <span>{doc.eyebrow}</span>
-                  <h3>{doc.title}</h3>
-                  <p>{doc.description}</p>
+                  <span>{supportT(`slideDocs.${doc.id}.eyebrow`, doc.eyebrow)}</span>
+                  <h3>{supportT(`slideDocs.${doc.id}.title`, doc.title)}</h3>
+                  <p>{supportT(`slideDocs.${doc.id}.description`, doc.description)}</p>
                 </div>
 
                 <button
@@ -1263,7 +1286,7 @@ const SupportPage = ({ onNavigate }) => {
                   className="support-slide-card__button"
                   onClick={() => setActiveSlideDoc(doc)}
                 >
-                  {doc.buttonLabel}
+                  {supportT(`slideDocs.${doc.id}.buttonLabel`, doc.buttonLabel)}
                   <ExternalLink size={15} />
                 </button>
               </article>
@@ -1274,9 +1297,9 @@ const SupportPage = ({ onNavigate }) => {
 
       <CollapsibleSupportSection
         id="quick-help"
-        title="Quick Help"
-        eyebrow="Start here"
-        description="Choose the issue you need help with."
+        title={supportT('sections.quickHelp.title', 'Quick Help')}
+        eyebrow={supportT('sections.quickHelp.eyebrow', 'Start here')}
+        description={supportT('sections.quickHelp.description', 'Choose the issue you need help with.')}
         icon={LifeBuoy}
         openSection={openSupportSection}
         setOpenSection={setOpenSupportSection}
@@ -1284,26 +1307,26 @@ const SupportPage = ({ onNavigate }) => {
         <div className="support-quick-help__grid">
           <button type="button" className="support-quick-help__card glass-panel" onClick={() => setActiveGuideKey('registration')}>
             <span className="support-quick-help__icon"><Rocket size={24} style={{ color: 'var(--glow-teal)' }} /></span>
-            <span className="support-quick-help__title">Registration Help</span>
-            <span className="support-quick-help__text soft-text">Onboarding steps, sponsor confirmation, and irreversible registration.</span>
+            <span className="support-quick-help__title">{supportT('quickHelp.registration.title', 'Registration Help')}</span>
+            <span className="support-quick-help__text soft-text">{supportT('quickHelp.registration.text', 'Onboarding steps, sponsor confirmation, and irreversible registration.')}</span>
             <ChevronRight size={16} className="card-arrow" />
           </button>
           <button type="button" className="support-quick-help__card glass-panel" onClick={() => setActiveGuideKey('levels')}>
             <span className="support-quick-help__icon"><TrendingUp size={24} style={{ color: 'var(--glow-blue)' }} /></span>
-            <span className="support-quick-help__title">Levels & Activation</span>
-            <span className="support-quick-help__text soft-text">10 progressive levels, activation checks, and progression rules.</span>
+            <span className="support-quick-help__title">{supportT('quickHelp.levels.title', 'Levels & Activation')}</span>
+            <span className="support-quick-help__text soft-text">{supportT('quickHelp.levels.text', '10 progressive levels, activation checks, and progression rules.')}</span>
             <ChevronRight size={16} className="card-arrow" />
           </button>
           <button type="button" className="support-quick-help__card glass-panel" onClick={() => setActiveGuideKey('orbit')}>
             <span className="support-quick-help__icon"><Orbit size={24} style={{ color: '#8b5cf6' }} /></span>
-            <span className="support-quick-help__title">Orbit Issues</span>
-            <span className="support-quick-help__text soft-text">Placements, cycles (P4, P12, P39), and payout visibility.</span>
+            <span className="support-quick-help__title">{supportT('quickHelp.orbit.title', 'Orbit Issues')}</span>
+            <span className="support-quick-help__text soft-text">{supportT('quickHelp.orbit.text', 'Placements, cycles (P4, P12, P39), and payout visibility.')}</span>
             <ChevronRight size={16} className="card-arrow" />
           </button>
           <button type="button" className="support-quick-help__card glass-panel" onClick={() => setActiveGuideKey('wallet')}>
             <span className="support-quick-help__icon"><Wallet size={24} style={{ color: '#f59e0b' }} /></span>
-            <span className="support-quick-help__title">Wallet & Network</span>
-            <span className="support-quick-help__text soft-text">Connection, network switching, and transaction confirmations.</span>
+            <span className="support-quick-help__title">{supportT('quickHelp.wallet.title', 'Wallet & Network')}</span>
+            <span className="support-quick-help__text soft-text">{supportT('quickHelp.wallet.text', 'Connection, network switching, and transaction confirmations.')}</span>
             <ChevronRight size={16} className="card-arrow" />
           </button>
         </div>
@@ -1311,9 +1334,9 @@ const SupportPage = ({ onNavigate }) => {
 
       <CollapsibleSupportSection
         id="guides"
-        title="Guides and Official Terms"
-        eyebrow="Helpful resources"
-        description="Open the registration guide or glossary."
+        title={supportT('sections.guides.title', 'Guides and Official Terms')}
+        eyebrow={supportT('sections.guides.eyebrow', 'Helpful resources')}
+        description={supportT('sections.guides.description', 'Open the registration guide or glossary.')}
         icon={BookOpen}
         openSection={openSupportSection}
         setOpenSection={setOpenSupportSection}
@@ -1325,9 +1348,9 @@ const SupportPage = ({ onNavigate }) => {
             onClick={() => setShowRegistrationGuideModal(true)}
           >
             <BookOpen size={22} />
-            <span>Step-by-step guide</span>
-            <strong>How to Register and Activate Level 1</strong>
-            <p>Mobile and desktop instructions for new participants.</p>
+            <span>{supportT('guideCards.registration.eyebrow', 'Step-by-step guide')}</span>
+            <strong>{supportT('guideCards.registration.title', 'How to Register and Activate Level 1')}</strong>
+            <p>{supportT('guideCards.registration.description', 'Mobile and desktop instructions for new participants.')}</p>
           </button>
 
           <button
@@ -1336,18 +1359,18 @@ const SupportPage = ({ onNavigate }) => {
             onClick={() => setShowGlossaryModal(true)}
           >
             <FileText size={22} />
-            <span>Official terminology</span>
-            <strong>FinFreedom Glossary</strong>
-            <p>Understand the key terms used across the ecosystem.</p>
+            <span>{supportT('guideCards.glossary.eyebrow', 'Official terminology')}</span>
+            <strong>{supportT('guideCards.glossary.title', 'FinFreedom Glossary')}</strong>
+            <p>{supportT('guideCards.glossary.description', 'Understand the key terms used across the ecosystem.')}</p>
           </button>
         </div>
       </CollapsibleSupportSection>
 
       <CollapsibleSupportSection
         id="contact"
-        title="Contact Support"
-        eyebrow="Send a request"
-        description="Submit a clear support message with wallet and transaction details."
+        title={supportT('sections.contact.title', 'Contact Support')}
+        eyebrow={supportT('sections.contact.eyebrow', 'Send a request')}
+        description={supportT('sections.contact.description', 'Submit a clear support message with wallet and transaction details.')}
         icon={Mail}
         openSection={openSupportSection}
         setOpenSection={setOpenSupportSection}
@@ -1356,48 +1379,48 @@ const SupportPage = ({ onNavigate }) => {
           <div className="support-contact__grid">
             <div className="support-contact__form">
               <div className="support-contact__field-group">
-                <label className="support-contact__label muted-text">Support Category *</label>
+                <label className="support-contact__label muted-text">{supportT('contact.category.label', 'Support Category *')}</label>
                 <select className="support-contact__select glass-panel" value={ticketForm.category} onChange={(e) => handleFormChange('category', e.target.value)}>
-                  <option value="">Choose the support area</option>
-                  <option value="registration">Registration Issues</option>
-                  <option value="levels">Level Activation</option>
-                  <option value="orbits">Orbit Problems</option>
-                  <option value="referrals">Referral Issues</option>
-                  <option value="wallet">Wallet Connection</option>
-                  <option value="transaction">Transaction Errors</option>
-                  <option value="other">Other</option>
+                  <option value="">{supportT('contact.category.options.choose', 'Choose the support area')}</option>
+                  <option value="registration">{supportT('contact.category.options.registration', 'Registration Issues')}</option>
+                  <option value="levels">{supportT('contact.category.options.levels', 'Level Activation')}</option>
+                  <option value="orbits">{supportT('contact.category.options.orbits', 'Orbit Problems')}</option>
+                  <option value="referrals">{supportT('contact.category.options.referrals', 'Referral Issues')}</option>
+                  <option value="wallet">{supportT('contact.category.options.wallet', 'Wallet Connection')}</option>
+                  <option value="transaction">{supportT('contact.category.options.transaction', 'Transaction Errors')}</option>
+                  <option value="other">{supportT('contact.category.options.other', 'Other')}</option>
                 </select>
               </div>
               <div className="support-contact__field-group">
-                <label className="support-contact__label muted-text">Your Wallet</label>
+                <label className="support-contact__label muted-text">{supportT('contact.wallet.label', 'Your Wallet')}</label>
                 <div className="support-contact__wallet-display glass-panel">
-                  <span>{account ? `${account.slice(0, 8)}...${account.slice(-6)}` : 'Not connected'}</span>
+                  <span>{account ? `${account.slice(0, 8)}...${account.slice(-6)}` : supportT('contact.wallet.notConnected', 'Not connected')}</span>
                   {account ? <button className="copy-wallet-btn" onClick={copyWallet} type="button">{copiedWallet ? <Check size={14} /> : <Copy size={14} />}</button> : null}
                 </div>
               </div>
               <div className="support-contact__field-group">
-                <label className="support-contact__label muted-text">Subject *</label>
-                <input type="text" className="support-contact__input glass-panel" placeholder="Summarize the issue clearly" value={ticketForm.subject} onChange={(e) => handleFormChange('subject', e.target.value)} />
+                <label className="support-contact__label muted-text">{supportT('contact.subject.label', 'Subject *')}</label>
+                <input type="text" className="support-contact__input glass-panel" placeholder={supportT('contact.subject.placeholder', 'Summarize the issue clearly')} value={ticketForm.subject} onChange={(e) => handleFormChange('subject', e.target.value)} />
               </div>
               <div className="support-contact__field-group">
-                <label className="support-contact__label muted-text">Transaction Hash (Optional)</label>
-                <input type="text" className="support-contact__input glass-panel" placeholder="0x... (include for faster resolution)" value={ticketForm.txHash} onChange={(e) => handleFormChange('txHash', e.target.value)} />
+                <label className="support-contact__label muted-text">{supportT('contact.txHash.label', 'Transaction Hash (Optional)')}</label>
+                <input type="text" className="support-contact__input glass-panel" placeholder={supportT('contact.txHash.placeholder', '0x... (include for faster resolution)')} value={ticketForm.txHash} onChange={(e) => handleFormChange('txHash', e.target.value)} />
               </div>
               <div className="support-contact__field-group">
-                <label className="support-contact__label muted-text">Message *</label>
-                <textarea className="support-contact__textarea glass-panel" placeholder="Describe what happened, what you expected, and the steps you already tried. Include level, cycle, and any error messages." value={ticketForm.message} onChange={(e) => handleFormChange('message', e.target.value)} rows={6} />
+                <label className="support-contact__label muted-text">{supportT('contact.message.label', 'Message *')}</label>
+                <textarea className="support-contact__textarea glass-panel" placeholder={supportT('contact.message.placeholder', 'Describe what happened, what you expected, and the steps you already tried. Include level, cycle, and any error messages.')} value={ticketForm.message} onChange={(e) => handleFormChange('message', e.target.value)} rows={6} />
               </div>
               <div className="support-info-note glass-panel">
                 <Info size={14} />
-                <span className="soft-text">Blockchain transactions are irreversible. Always verify details before signing.</span>
+                <span className="soft-text">{supportT('contact.note', 'Blockchain transactions are irreversible. Always verify details before signing.')}</span>
               </div>
-              {submitStatus.success ? <div className="support-success-message"><CheckCircle size={16} /> Support request submitted successfully. Our team will review it and respond as soon as possible.</div> : null}
+              {submitStatus.success ? <div className="support-success-message"><CheckCircle size={16} /> {supportT('contact.success', 'Support request submitted successfully. Our team will review it and respond as soon as possible.')}</div> : null}
               {submitStatus.error ? <div className="support-error-message"><AlertCircle size={16} /> {submitStatus.error}</div> : null}
               <div className="support-contact__actions">
                 <button type="button" className="support-contact__primary-btn" onClick={handleSubmitTicket} disabled={submitStatus.loading}>
-                  {submitStatus.loading ? <><RefreshCw size={16} className="spin" /> Submitting...</> : <><Send size={16} /> Submit Request</>}
+                  {submitStatus.loading ? <><RefreshCw size={16} className="spin" /> {supportT('contact.actions.submitting', 'Submitting...')}</> : <><Send size={16} /> {supportT('contact.actions.submit', 'Submit Request')}</>}
                 </button>
-                <button type="button" className="support-contact__secondary-btn" onClick={() => setTicketForm({ category: '', subject: '', message: '', txHash: '' })}>Clear Form</button>
+                <button type="button" className="support-contact__secondary-btn" onClick={() => setTicketForm({ category: '', subject: '', message: '', txHash: '' })}>{supportT('contact.actions.clear', 'Clear Form')}</button>
               </div>
             </div>
 
@@ -1405,20 +1428,20 @@ const SupportPage = ({ onNavigate }) => {
               <div className="support-contact__assist-card">
                 <LifeBuoy size={20} />
                 <div>
-                  <strong>Before you submit</strong>
-                  <p className="soft-text">Include your wallet address, level, cycle, and transaction hash whenever applicable. This gives support the best chance of resolving your issue quickly.</p>
+                  <strong>{supportT('contact.assist.beforeSubmit.title', 'Before you submit')}</strong>
+                  <p className="soft-text">{supportT('contact.assist.beforeSubmit.text', 'Include your wallet address, level, cycle, and transaction hash whenever applicable. This gives support the best chance of resolving your issue quickly.')}</p>
                 </div>
               </div>
               <div className="support-contact__assist-card">
                 <Shield size={20} style={{ color: 'var(--glow-teal)' }} />
                 <div>
-                  <strong>Wallet responsibility</strong>
-                  <p className="soft-text">You are solely responsible for securing your wallet. Fin Freedom Network will never request your private key or recovery phrase.</p>
+                  <strong>{supportT('contact.assist.wallet.title', 'Wallet responsibility')}</strong>
+                  <p className="soft-text">{supportT('contact.assist.wallet.text', 'You are solely responsible for securing your wallet. Fin Freedom Network will never request your private key or recovery phrase.')}</p>
                 </div>
               </div>
               {recentTickets.length ? 
                 <div className="support-recent-tickets">
-                  <h4>Your Recent Tickets</h4>
+                  <h4>{supportT('contact.recent.title', 'Your Recent Tickets')}</h4>
                   <div className="recent-tickets-list">
                     {recentTickets.map((ticket) => 
                       <div key={ticket._id} className={`recent-ticket-item status-${ticket.status}`}>
@@ -1432,8 +1455,8 @@ const SupportPage = ({ onNavigate }) => {
                 <div className="support-contact__assist-card support-contact__assist-card--muted">
                   <Info size={20} />
                   <div>
-                    <strong>No recent tickets yet</strong>
-                    <p className="soft-text">Once you submit a request, your recent support activity will appear here.</p>
+                    <strong>{supportT('contact.recent.emptyTitle', 'No recent tickets yet')}</strong>
+                    <p className="soft-text">{supportT('contact.recent.emptyText', 'Once you submit a request, your recent support activity will appear here.')}</p>
                   </div>
                 </div>
               }
@@ -1444,28 +1467,28 @@ const SupportPage = ({ onNavigate }) => {
 
       <CollapsibleSupportSection
         id="faq"
-        title="Frequently Asked Questions"
-        eyebrow="Knowledge base"
-        description="Search and read answers about registration, levels, wallets, and orbits."
+        title={supportT('sections.faq.title', 'Frequently Asked Questions')}
+        eyebrow={supportT('sections.faq.eyebrow', 'Knowledge base')}
+        description={supportT('sections.faq.description', 'Search and read answers about registration, levels, wallets, and orbits.')}
         icon={HelpCircle}
         openSection={openSupportSection}
         setOpenSection={setOpenSupportSection}
       >
         <div id="faq-section" className="support-faq">
           <div className="support-section-heading">
-            <span className="support-section-heading__eyebrow muted-text">Knowledge Base</span>
-            <h2 className="support-section-heading__title">Frequently Asked Questions</h2>
-            <p className="soft-text">Clear answers about participation, progression, and platform rules</p>
+            <span className="support-section-heading__eyebrow muted-text">{supportT('faq.eyebrow', 'Knowledge Base')}</span>
+            <h2 className="support-section-heading__title">{supportT('faq.title', 'Frequently Asked Questions')}</h2>
+            <p className="soft-text">{supportT('faq.description', 'Clear answers about participation, progression, and platform rules')}</p>
           </div>
-          {searchQuery ? <div className="search-results-info"><Search size={14} /> Found {filteredFaqs.length} result{filteredFaqs.length === 1 ? '' : 's'} for "{searchQuery}"</div> : null}
+          {searchQuery ? <div className="search-results-info"><Search size={14} /> {supportT('faq.foundResults', 'Found {{count}} result{{plural}} for "{{query}}"', { count: filteredFaqs.length, plural: filteredFaqs.length === 1 ? '' : 's', query: searchQuery })}</div> : null}
           {loading ? 
-            <div className="faq-loading"><RefreshCw size={24} className="spin" /><span>Loading FAQs...</span></div> : 
+            <div className="faq-loading"><RefreshCw size={24} className="spin" /><span>{supportT('faq.loading', 'Loading FAQs...')}</span></div> :
             <div className="support-faq__categories">
               {Object.entries(groupedFaqs).map(([category, items]) => 
                 <div key={category} className="support-faq__category">
                   <h3 className="faq-category-title">
                     {getCategoryIcon(category)}
-                    <span>{category}</span>
+                    <span>{category === 'General' ? supportT('faq.generalCategory', 'General') : category}</span>
                     <span className="category-count">{items.length}</span>
                   </h3>
                   {items.map((faq) => 
@@ -1486,9 +1509,9 @@ const SupportPage = ({ onNavigate }) => {
 
       <CollapsibleSupportSection
         id="safety"
-        title="Safety Guidance"
-        eyebrow="Security first"
-        description="Important wallet, transaction, and platform safety reminders."
+        title={supportT('sections.safety.title', 'Safety Guidance')}
+        eyebrow={supportT('sections.safety.eyebrow', 'Security first')}
+        description={supportT('sections.safety.description', 'Important wallet, transaction, and platform safety reminders.')}
         icon={Shield}
         openSection={openSupportSection}
         setOpenSection={setOpenSupportSection}
@@ -1497,43 +1520,43 @@ const SupportPage = ({ onNavigate }) => {
           <div className="support-safety__item">
             <span className="support-safety__icon"><Shield size={20} style={{ color: 'var(--glow-teal)' }} /></span>
             <div>
-              <h3 className="support-safety__title">Never share your seed phrase</h3>
-              <p className="support-safety__text soft-text">Fin Freedom Network will never ask for your seed phrase, private keys, or recovery phrase.</p>
+              <h3 className="support-safety__title">{supportT('safety.seedPhrase.title', 'Never share your seed phrase')}</h3>
+              <p className="support-safety__text soft-text">{supportT('safety.seedPhrase.text', 'Fin Freedom Network will never ask for your seed phrase, private keys, or recovery phrase.')}</p>
             </div>
           </div>
           <div className="support-safety__item">
             <span className="support-safety__icon"><AlertTriangle size={20} style={{ color: '#f59e0b' }} /></span>
             <div>
-              <h3 className="support-safety__title">Transactions are irreversible</h3>
-              <p className="support-safety__text soft-text">Once confirmed on the blockchain, transactions cannot be reversed or refunded. Always verify details before signing.</p>
+              <h3 className="support-safety__title">{supportT('safety.irreversible.title', 'Transactions are irreversible')}</h3>
+              <p className="support-safety__text soft-text">{supportT('safety.irreversible.text', 'Once confirmed on the blockchain, transactions cannot be reversed or refunded. Always verify details before signing.')}</p>
             </div>
           </div>
           <div className="support-safety__item">
             <span className="support-safety__icon"><Eye size={20} style={{ color: 'var(--glow-blue)' }} /></span>
             <div>
-              <h3 className="support-safety__title">No admin access to funds</h3>
-              <p className="support-safety__text soft-text">Smart contracts enforce deterministic payout rules. No single individual has unilateral authority over user funds.</p>
+              <h3 className="support-safety__title">{supportT('safety.noAdmin.title', 'No admin access to funds')}</h3>
+              <p className="support-safety__text soft-text">{supportT('safety.noAdmin.text', 'Smart contracts enforce deterministic payout rules. No single individual has unilateral authority over user funds.')}</p>
             </div>
           </div>
           <div className="support-safety__item">
             <span className="support-safety__icon"><Search size={20} style={{ color: 'var(--glow-blue)' }} /></span>
             <div>
-              <h3 className="support-safety__title">Review transaction details</h3>
-              <p className="support-safety__text soft-text">Check the wallet prompt, value, and target action before you confirm any transaction.</p>
+              <h3 className="support-safety__title">{supportT('safety.review.title', 'Review transaction details')}</h3>
+              <p className="support-safety__text soft-text">{supportT('safety.review.text', 'Check the wallet prompt, value, and target action before you confirm any transaction.')}</p>
             </div>
           </div>
           <div className="support-safety__item">
             <span className="support-safety__icon"><AlertCircle size={20} style={{ color: '#ef4444' }} /></span>
             <div>
-              <h3 className="support-safety__title">Avoid unofficial links</h3>
-              <p className="support-safety__text soft-text">Use only trusted support channels and never send funds to unknown addresses.</p>
+              <h3 className="support-safety__title">{supportT('safety.links.title', 'Avoid unofficial links')}</h3>
+              <p className="support-safety__text soft-text">{supportT('safety.links.text', 'Use only trusted support channels and never send funds to unknown addresses.')}</p>
             </div>
           </div>
           <div className="support-safety__item">
             <span className="support-safety__icon"><Scale size={20} style={{ color: '#8b5cf6' }} /></span>
             <div>
-              <h3 className="support-safety__title">Wallet addresses are final</h3>
-              <p className="support-safety__text soft-text">Wallet addresses cannot be changed after registration. If compromised, you must create a new wallet before registering.</p>
+              <h3 className="support-safety__title">{supportT('safety.walletFinal.title', 'Wallet addresses are final')}</h3>
+              <p className="support-safety__text soft-text">{supportT('safety.walletFinal.text', 'Wallet addresses cannot be changed after registration. If compromised, you must create a new wallet before registering.')}</p>
             </div>
           </div>
         </div>
@@ -1547,19 +1570,19 @@ const SupportPage = ({ onNavigate }) => {
           <div className="support-guide-modal glass-panel" onClick={(e) => e.stopPropagation()}>
             <div className="support-guide-modal__header">
               <div>
-                <span className="support-section-heading__eyebrow muted-text">Quick Help Guide</span>
-                <h3>{activeGuide.title}</h3>
-                <p className="soft-text">{activeGuide.description}</p>
+                <span className="support-section-heading__eyebrow muted-text">{supportT('quickGuideModal.eyebrow', 'Quick Help Guide')}</span>
+                <h3>{supportT(`quickGuides.${activeGuideKey}.title`, activeGuide.title)}</h3>
+                <p className="soft-text">{supportT(`quickGuides.${activeGuideKey}.description`, activeGuide.description)}</p>
               </div>
               <button type="button" className="support-guide-modal__close" onClick={() => setActiveGuideKey(null)}><X size={16} /></button>
             </div>
             <div className="support-guide-modal__body">
               <ol className="support-guide-modal__steps">
-                {activeGuide.steps.map((step) => <li key={step}>{step}</li>)}
+                {activeGuide.steps.map((step, index) => <li key={`${activeGuideKey}-${index}`}>{supportT(`quickGuides.${activeGuideKey}.steps.${index}`, step)}</li>)}
               </ol>
             </div>
             <div className="support-guide-modal__footer">
-              <button type="button" className="support-contact__secondary-btn" onClick={() => setActiveGuideKey(null)}>Close</button>
+              <button type="button" className="support-contact__secondary-btn" onClick={() => setActiveGuideKey(null)}>{supportT('modal.close', 'Close')}</button>
               <button type="button" className="support-contact__primary-btn" onClick={() => { 
                 setActiveGuideKey(null); 
                 if (activeGuide.route === 'support') { 
@@ -1568,7 +1591,7 @@ const SupportPage = ({ onNavigate }) => {
                   onNavigate?.(activeGuide.route) 
                 } 
               }}>
-                <span>{activeGuide.routeLabel}</span>
+                <span>{supportT(`quickGuides.${activeGuideKey}.routeLabel`, activeGuide.routeLabel)}</span>
                 <ChevronRight size={14} />
               </button>
             </div>

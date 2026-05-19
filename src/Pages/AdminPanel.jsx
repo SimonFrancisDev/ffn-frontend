@@ -8,6 +8,7 @@ import { ethers } from 'ethers';
 import { useTranslation } from 'react-i18next';
 import { getApiUrl } from '../Services/apiConfig';
 import { useToast } from '../components/feedback';
+import { normalizeError } from '../utils/errorMap';
 import './AdminPanel.css';
 import {
   Key, Crown, BarChart3, Clock, AlertTriangle, Plus, Edit, Trash2,
@@ -21,6 +22,16 @@ import {
 // ============================================================
 const ADMIN_API_HEADER = 'x-admin-key';
 const ADMIN_SESSION_KEY = 'ffn_admin_api_key_session';
+const GAS_BUFFER_BPS = 12000n;
+const GAS_BUFFER_DENOMINATOR = 10000n;
+
+const withGasBuffer = (estimate) => {
+  try {
+    return (BigInt(estimate) * GAS_BUFFER_BPS) / GAS_BUFFER_DENOMINATOR;
+  } catch {
+    return estimate;
+  }
+};
 
 const getRuntimeAdminKey = () => {
   if (typeof window === 'undefined') return '';
@@ -1132,7 +1143,7 @@ export const AdminPanel = () => {
       } catch (err) {
         console.error(err);
       }
-    }, 10000);
+    }, 30000);
 
     return () => clearInterval(interval);
   }, [contracts]);
@@ -1154,18 +1165,25 @@ export const AdminPanel = () => {
     setTxStatus({ loading: false, hash: null, error: message, note: null });
     if (message) toast.danger(message, { dedupeKey: `admin-tx-error-${String(message).slice(0, 80)}` });
   };
+  const setNormalizedErrorTx = (err, fallback) => {
+    const normalized = normalizeError(err, fallback);
+    setErrorTx(normalized.message);
+  };
 
   const submitRawProposal = async (target, data, note) => {
     try {
       const writeContracts = await getWriteContracts();
-      const tx = await writeContracts.simpleMultiSig.submitTransaction(target, 0, data);
+      const gasEstimate = await writeContracts.simpleMultiSig.submitTransaction.estimateGas(target, 0, data);
+      const tx = await writeContracts.simpleMultiSig.submitTransaction(target, 0, data, {
+        gasLimit: withGasBuffer(gasEstimate),
+      });
       setLoadingTx(tx.hash, note);
       await tx.wait();
       setDoneTx(tx.hash, note);
       await refreshGovernanceData();
       return tx;
     } catch (err) {
-      setErrorTx(err?.reason || err?.message || `${note} failed`);
+      setNormalizedErrorTx(err, `${note} failed`);
       throw err;
     }
   };
@@ -1175,7 +1193,7 @@ export const AdminPanel = () => {
       const data = levelManagerAdminIface.encodeFunctionData(functionName, args);
       return await submitRawProposal(levelManagerAddress, data, note);
     } catch (err) {
-      setErrorTx(err?.reason || err?.message || `${note} failed`);
+      setNormalizedErrorTx(err, `${note} failed`);
       throw err;
     }
   };
@@ -1186,7 +1204,7 @@ export const AdminPanel = () => {
       const data = guardianIface.encodeFunctionData(functionName, args);
       return await submitRawProposal(guardianAddress, data, note);
     } catch (err) {
-      setErrorTx(err?.reason || err?.message || `${note} failed`);
+      setNormalizedErrorTx(err, `${note} failed`);
       throw err;
     }
   };
@@ -1198,7 +1216,7 @@ export const AdminPanel = () => {
       const data = multisigSelfIface.encodeFunctionData(functionName, args);
       return await submitRawProposal(target, data, note);
     } catch (err) {
-      setErrorTx(err?.reason || err?.message || `${note} failed`);
+      setNormalizedErrorTx(err, `${note} failed`);
       throw err;
     }
   };
@@ -1237,14 +1255,17 @@ export const AdminPanel = () => {
     const idToUse = Number(forcedId ?? txIdInput);
     try {
       const writeContracts = await getWriteContracts();
-      const tx = await writeContracts.simpleMultiSig.approveTransaction(idToUse);
+      const gasEstimate = await writeContracts.simpleMultiSig.approveTransaction.estimateGas(idToUse);
+      const tx = await writeContracts.simpleMultiSig.approveTransaction(idToUse, {
+        gasLimit: withGasBuffer(gasEstimate),
+      });
       setLoadingTx(tx.hash, `Approving transaction #${idToUse}`);
       await tx.wait();
       setDoneTx(tx.hash, `Approved transaction #${idToUse}`);
       await refreshGovernanceData();
       await loadMultisigTx(idToUse);
     } catch (err) {
-      setErrorTx(err?.reason || err?.message || 'Approval failed');
+      setNormalizedErrorTx(err, 'Approval failed');
     }
   };
 
@@ -1252,14 +1273,17 @@ export const AdminPanel = () => {
     const idToUse = Number(forcedId ?? txIdInput);
     try {
       const writeContracts = await getWriteContracts();
-      const tx = await writeContracts.simpleMultiSig.revokeConfirmation(idToUse);
+      const gasEstimate = await writeContracts.simpleMultiSig.revokeConfirmation.estimateGas(idToUse);
+      const tx = await writeContracts.simpleMultiSig.revokeConfirmation(idToUse, {
+        gasLimit: withGasBuffer(gasEstimate),
+      });
       setLoadingTx(tx.hash, `Revoking approval for transaction #${idToUse}`);
       await tx.wait();
       setDoneTx(tx.hash, `Revoked approval for transaction #${idToUse}`);
       await refreshGovernanceData();
       await loadMultisigTx(idToUse);
     } catch (err) {
-      setErrorTx(err?.reason || err?.message || 'Revoke failed');
+      setNormalizedErrorTx(err, 'Revoke failed');
     }
   };
 
@@ -1267,14 +1291,17 @@ export const AdminPanel = () => {
     const idToUse = Number(forcedId ?? txIdInput);
     try {
       const writeContracts = await getWriteContracts();
-      const tx = await writeContracts.simpleMultiSig.executeTransaction(idToUse);
+      const gasEstimate = await writeContracts.simpleMultiSig.executeTransaction.estimateGas(idToUse);
+      const tx = await writeContracts.simpleMultiSig.executeTransaction(idToUse, {
+        gasLimit: withGasBuffer(gasEstimate),
+      });
       setLoadingTx(tx.hash, `Executing transaction #${idToUse}`);
       await tx.wait();
       setDoneTx(tx.hash, `Executed transaction #${idToUse}`);
       await refreshGovernanceData();
       await loadMultisigTx(idToUse);
     } catch (err) {
-      setErrorTx(err?.reason || err?.message || 'Execution failed');
+      setNormalizedErrorTx(err, 'Execution failed');
     }
   };
 

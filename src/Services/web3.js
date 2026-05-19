@@ -41,7 +41,7 @@ export class Web3Service {
         import.meta.env.VITE_AMOY_RPC_URL
       )
 
-      this.readProvider.pollingInterval = 15000
+      this.readProvider.pollingInterval = 30000
     }
 
     return this.readProvider
@@ -84,12 +84,6 @@ export class Web3Service {
         provider
       )
     }
-
-    console.log('RPC:', import.meta.env.VITE_AMOY_RPC_URL)
-    console.log('REGISTRATION:', CONTRACT_ADDRESSES.REGISTRATION)
-    console.log('LEVEL_MANAGER:', CONTRACT_ADDRESSES.LEVEL_MANAGER)
-    console.log('MULTISIG:', CONTRACT_ADDRESSES.MULTISIG)
-    console.log('GUARDIAN:', CONTRACT_ADDRESSES.GUARDIAN)
 
     return this.readContracts
   }

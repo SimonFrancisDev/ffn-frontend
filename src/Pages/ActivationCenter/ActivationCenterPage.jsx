@@ -7,6 +7,7 @@ import { useContracts } from '../../hooks/useContracts'
 import { useSpace } from '../../context/SpaceContext'
 import { web3Service } from '../../Services/web3'
 import { useToast } from '../../components/feedback'
+import { normalizeError } from '../../utils/errorMap'
 import { ethers } from 'ethers'
 // import { fetchAddressReceiptsApi } from '../../Services/orbitsApi'
 // import {
@@ -40,6 +41,8 @@ import {
 const API_BASE = import.meta.env.VITE_API_BASE_URL?.replace(/\/$/, '') || ''
 
 const AMOY_CHAIN_ID = '0x13882'
+const GAS_BUFFER_BPS = 12000n
+const GAS_BUFFER_DENOMINATOR = 10000n
 
 const levelPrices = {
   1: '10',
@@ -192,6 +195,14 @@ const getPositionOnAngle = (angle, radiusPx, centerX, centerY) => {
   return {
     x: centerX + radiusPx * Math.cos(radian),
     y: centerY + radiusPx * Math.sin(radian),
+  }
+}
+
+const withGasBuffer = (estimate) => {
+  try {
+    return (BigInt(estimate) * GAS_BUFFER_BPS) / GAS_BUFFER_DENOMINATOR
+  } catch {
+    return estimate
   }
 }
 
@@ -975,7 +986,7 @@ const ActivationCenterPage = () => {
     const interval = setInterval(() => {
       fetchUserData()
       setLastUpdated(new Date().toLocaleTimeString())
-    }, 30000)
+    }, 60000)
 
     return () => clearInterval(interval)
   }, [contracts, viewer, fetchUserData])
@@ -1097,7 +1108,11 @@ const ActivationCenterPage = () => {
         return null
       }
 
-      const approveTx = await contracts.usdt.connect(signer).approve(spender, requiredAmountWei)
+      const usdtWithSigner = contracts.usdt.connect(signer)
+      const gasEstimate = await usdtWithSigner.approve.estimateGas(spender, requiredAmountWei)
+      const approveTx = await usdtWithSigner.approve(spender, requiredAmountWei, {
+        gasLimit: withGasBuffer(gasEstimate),
+      })
       setTxStatus({ loading: true, hash: approveTx.hash, error: null })
       toast.info(activationT('toast.approvalSubmitted', 'USDT approval submitted.'), { dedupeKey: 'activation-approval-submitted' })
       await approveTx.wait()
@@ -1155,9 +1170,11 @@ const ActivationCenterPage = () => {
 
       const writeContracts = await getWriteContracts()
 
-      const registerTx = await writeContracts.registration.register(
-        finalRegistrationReferrer || ethers.ZeroAddress
-      )
+      const resolvedReferrer = finalRegistrationReferrer || ethers.ZeroAddress
+      const registrationGas = await writeContracts.registration.register.estimateGas(resolvedReferrer)
+      const registerTx = await writeContracts.registration.register(resolvedReferrer, {
+        gasLimit: withGasBuffer(registrationGas),
+      })
       setTxStatus({ loading: true, hash: registerTx.hash, error: null })
       toast.info(activationT('toast.registrationSubmitted', 'Registration transaction submitted.'), { dedupeKey: 'activation-registration-submitted' })
       await registerTx.wait()
@@ -1168,7 +1185,10 @@ const ActivationCenterPage = () => {
         const level1AlreadyActive = await contracts.registration.isLevelActivated(account, 1)
 
         if (!level1AlreadyActive) {
-          const activateTx = await registrationWithSigner.activateLevel(1)
+          const activationGas = await registrationWithSigner.activateLevel.estimateGas(1)
+          const activateTx = await registrationWithSigner.activateLevel(1, {
+            gasLimit: withGasBuffer(activationGas),
+          })
           setTxStatus({ loading: true, hash: activateTx.hash, error: null })
           toast.info(activationT('toast.activationSubmitted', 'Level activation transaction submitted.'), { dedupeKey: 'activation-level-submitted' })
           await activateTx.wait()
@@ -1197,7 +1217,8 @@ const ActivationCenterPage = () => {
     } catch (err) {
       console.error('Registration + Level 1 activation error:', err)
 
-      let errorMessage = err.message || activationT('errors.transactionFailed', 'Transaction failed')
+      const normalized = normalizeError(err, activationT('errors.transactionFailed', 'Transaction failed'))
+      let errorMessage = normalized.message
 
       if (err.message?.includes('Already registered')) {
         errorMessage = activationT('errors.walletAlreadyRegistered', 'This wallet is already registered.')
@@ -1242,7 +1263,10 @@ const ActivationCenterPage = () => {
       }
 
       const writeContracts = await getWriteContracts()
-      const tx = await writeContracts.usdt.transfer(account, amount)
+      const gasEstimate = await writeContracts.usdt.transfer.estimateGas(account, amount)
+      const tx = await writeContracts.usdt.transfer(account, amount, {
+        gasLimit: withGasBuffer(gasEstimate),
+      })
       setTxStatus({ loading: true, hash: tx.hash, error: null })
       toast.info(activationT('toast.transferSubmitted', 'Transfer transaction submitted.'), { dedupeKey: 'activation-transfer-submitted' })
       await tx.wait()
@@ -1256,8 +1280,9 @@ const ActivationCenterPage = () => {
       toast.success(activationT('toast.transferConfirmed', 'Transfer confirmed.'), { dedupeKey: 'activation-transfer-confirmed' })
     } catch (err) {
       console.error('Transfer error:', err)
-      setTxStatus({ loading: false, hash: null, error: err.message })
-      toast.danger(err.message || activationT('errors.transactionFailed', 'Transaction failed'), { dedupeKey: 'activation-transfer-failed' })
+      const normalized = normalizeError(err, activationT('errors.transactionFailed', 'Transaction failed'))
+      setTxStatus({ loading: false, hash: null, error: normalized.message })
+      toast.danger(normalized.message, { dedupeKey: 'activation-transfer-failed' })
     }
   }
 
@@ -1277,7 +1302,10 @@ const ActivationCenterPage = () => {
       }
 
       const writeContracts = await getWriteContracts()
-      const tx = await writeContracts.usdt.transfer(transferAddress, amount)
+      const gasEstimate = await writeContracts.usdt.transfer.estimateGas(transferAddress, amount)
+      const tx = await writeContracts.usdt.transfer(transferAddress, amount, {
+        gasLimit: withGasBuffer(gasEstimate),
+      })
       setTxStatus({ loading: true, hash: tx.hash, error: null })
       toast.info(activationT('toast.transferSubmitted', 'Transfer transaction submitted.'), { dedupeKey: 'activation-transfer-submitted' })
       await tx.wait()
@@ -1294,8 +1322,9 @@ const ActivationCenterPage = () => {
       toast.success(activationT('toast.transferConfirmed', 'Transfer confirmed.'), { dedupeKey: 'activation-transfer-confirmed' })
     } catch (err) {
       console.error('Transfer error:', err)
-      setTxStatus({ loading: false, hash: null, error: err.message })
-      toast.danger(err.message || activationT('errors.transactionFailed', 'Transaction failed'), { dedupeKey: 'activation-transfer-failed' })
+      const normalized = normalizeError(err, activationT('errors.transactionFailed', 'Transaction failed'))
+      setTxStatus({ loading: false, hash: null, error: normalized.message })
+      toast.danger(normalized.message, { dedupeKey: 'activation-transfer-failed' })
     }
   }
 
@@ -1405,7 +1434,10 @@ const ActivationCenterPage = () => {
 
       const signer = await getSigner()
       const registrationWithSigner = contracts.registration.connect(signer)
-      const tx = await registrationWithSigner.activateLevel(level)
+      const gasEstimate = await registrationWithSigner.activateLevel.estimateGas(level)
+      const tx = await registrationWithSigner.activateLevel(level, {
+        gasLimit: withGasBuffer(gasEstimate),
+      })
       setTxStatus({ loading: true, hash: tx.hash, error: null })
       toast.info(activationT('toast.activationSubmitted', 'Level activation transaction submitted.'), { dedupeKey: `activation-level-${level}-submitted` })
       await tx.wait()
@@ -1416,7 +1448,8 @@ const ActivationCenterPage = () => {
     } catch (err) {
       console.error('Activation error:', err)
 
-      let errorMessage = err.message || activationT('errors.transactionFailed', 'Transaction failed')
+      const normalized = normalizeError(err, activationT('errors.transactionFailed', 'Transaction failed'))
+      let errorMessage = normalized.message
       if (err.message?.includes('Previous level not activated')) {
         errorMessage = activationT('errors.activatePreviousLevelFirst', 'You need to activate Level {{level}} first.', { level: level - 1 })
       } else if (err.message?.includes('Level already activated')) {

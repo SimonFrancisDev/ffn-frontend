@@ -4,12 +4,12 @@ const DEFAULT_REQUEST_TIMEOUT_MS = Number(import.meta.env.VITE_API_REQUEST_TIMEO
 const FAST_REQUEST_TIMEOUT_MS = Number(import.meta.env.VITE_API_FAST_REQUEST_TIMEOUT_MS) || 8000
 
 const CACHE_TTLS = {
-  orbitLevels: Number(import.meta.env.VITE_CACHE_TTL_ORBIT_LEVELS) || 1200,
-  orbitLevelSnapshot: Number(import.meta.env.VITE_CACHE_TTL_ORBIT_LEVEL_SNAPSHOT) || 1200,
-  orbitPositionDetails: Number(import.meta.env.VITE_CACHE_TTL_ORBIT_POSITION_DETAILS) || 1500,
-  orbitCycleSnapshot: Number(import.meta.env.VITE_CACHE_TTL_ORBIT_CYCLE_SNAPSHOT) || 2500,
-  addressReceipts: Number(import.meta.env.VITE_CACHE_TTL_ADDRESS_RECEIPTS) || 1500,
-  activationReceipts: Number(import.meta.env.VITE_CACHE_TTL_ACTIVATION_RECEIPTS) || 2500,
+  orbitLevels: Number(import.meta.env.VITE_CACHE_TTL_ORBIT_LEVELS) || 15000,
+  orbitLevelSnapshot: Number(import.meta.env.VITE_CACHE_TTL_ORBIT_LEVEL_SNAPSHOT) || 15000,
+  orbitPositionDetails: Number(import.meta.env.VITE_CACHE_TTL_ORBIT_POSITION_DETAILS) || 15000,
+  orbitCycleSnapshot: Number(import.meta.env.VITE_CACHE_TTL_ORBIT_CYCLE_SNAPSHOT) || 30000,
+  addressReceipts: Number(import.meta.env.VITE_CACHE_TTL_ADDRESS_RECEIPTS) || 30000,
+  activationReceipts: Number(import.meta.env.VITE_CACHE_TTL_ACTIVATION_RECEIPTS) || 30000,
 }
 
 const CACHE_MAX_ENTRIES = 300

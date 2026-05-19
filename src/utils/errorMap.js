@@ -72,6 +72,18 @@ const KNOWN_ERROR_PATTERNS = [
     action: 'Check the transaction status and contact support if it persists.',
   },
   {
+    test: /UplineSearchTooDeep/i,
+    title: 'Referral path needs review',
+    message: 'This activation path is too deep to process safely in one transaction.',
+    action: 'Contact support before retrying this activation.',
+  },
+  {
+    test: /gas required exceeds allowance|gas limit|cannot estimate gas|UNPREDICTABLE_GAS_LIMIT|CALL_EXCEPTION|missing revert data/i,
+    title: 'Transaction preflight failed',
+    message: 'The wallet could not confirm this transaction is safe to submit.',
+    action: 'Refresh account data and try again. If this repeats, contact support with your wallet address and level.',
+  },
+  {
     test: /already active|already activated/i,
     title: 'Already active',
     message: 'This level is already active for the selected wallet.',

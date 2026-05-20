@@ -42,6 +42,7 @@ const API_BASE = import.meta.env.VITE_API_BASE_URL?.replace(/\/$/, '') || ''
 
 const AMOY_CHAIN_ID = '0x13882'
 const GAS_BUFFER_BPS = 12000n
+const ACTIVATION_GAS_BUFFER_BPS = 15000n
 const GAS_BUFFER_DENOMINATOR = 10000n
 
 const levelPrices = {
@@ -198,9 +199,9 @@ const getPositionOnAngle = (angle, radiusPx, centerX, centerY) => {
   }
 }
 
-const withGasBuffer = (estimate) => {
+const withGasBuffer = (estimate, bufferBps = GAS_BUFFER_BPS) => {
   try {
-    return (BigInt(estimate) * GAS_BUFFER_BPS) / GAS_BUFFER_DENOMINATOR
+    return (BigInt(estimate) * bufferBps) / GAS_BUFFER_DENOMINATOR
   } catch {
     return estimate
   }
@@ -1173,7 +1174,7 @@ const ActivationCenterPage = () => {
       const resolvedReferrer = finalRegistrationReferrer || ethers.ZeroAddress
       const registrationGas = await writeContracts.registration.register.estimateGas(resolvedReferrer)
       const registerTx = await writeContracts.registration.register(resolvedReferrer, {
-        gasLimit: withGasBuffer(registrationGas),
+        gasLimit: withGasBuffer(registrationGas, ACTIVATION_GAS_BUFFER_BPS),
       })
       setTxStatus({ loading: true, hash: registerTx.hash, error: null })
       toast.info(activationT('toast.registrationSubmitted', 'Registration transaction submitted.'), { dedupeKey: 'activation-registration-submitted' })
@@ -1187,7 +1188,7 @@ const ActivationCenterPage = () => {
         if (!level1AlreadyActive) {
           const activationGas = await registrationWithSigner.activateLevel.estimateGas(1)
           const activateTx = await registrationWithSigner.activateLevel(1, {
-            gasLimit: withGasBuffer(activationGas),
+            gasLimit: withGasBuffer(activationGas, ACTIVATION_GAS_BUFFER_BPS),
           })
           setTxStatus({ loading: true, hash: activateTx.hash, error: null })
           toast.info(activationT('toast.activationSubmitted', 'Level activation transaction submitted.'), { dedupeKey: 'activation-level-submitted' })
@@ -1436,7 +1437,7 @@ const ActivationCenterPage = () => {
       const registrationWithSigner = contracts.registration.connect(signer)
       const gasEstimate = await registrationWithSigner.activateLevel.estimateGas(level)
       const tx = await registrationWithSigner.activateLevel(level, {
-        gasLimit: withGasBuffer(gasEstimate),
+        gasLimit: withGasBuffer(gasEstimate, ACTIVATION_GAS_BUFFER_BPS),
       })
       setTxStatus({ loading: true, hash: tx.hash, error: null })
       toast.info(activationT('toast.activationSubmitted', 'Level activation transaction submitted.'), { dedupeKey: `activation-level-${level}-submitted` })

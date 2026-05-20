@@ -27,8 +27,12 @@ export function ToastProvider({ children }) {
   const [toasts, setToasts] = useState([])
   const root = typeof document !== 'undefined' ? getToastRoot() : null
 
-  const dismissToast = useCallback((id) => {
-    setToasts((current) => current.filter((toast) => toast.id !== id))
+  const dismissToast = useCallback((id, reason = 'manual') => {
+    setToasts((current) => {
+      const dismissedToast = current.find((toast) => toast.id === id)
+      dismissedToast?.onDismiss?.(reason)
+      return current.filter((toast) => toast.id !== id)
+    })
   }, [])
 
   const pushToast = useCallback((toast) => {
@@ -48,7 +52,7 @@ export function ToastProvider({ children }) {
     })
 
     if (next.timeoutMs) {
-      window.setTimeout(() => dismissToast(id), next.timeoutMs)
+      window.setTimeout(() => dismissToast(id, 'timeout'), next.timeoutMs)
     }
 
     return id
@@ -72,14 +76,18 @@ export function ToastProvider({ children }) {
           {toasts.map((toast) => {
             const Icon = ICONS[toast.tone] || Info
             return (
-              <article key={toast.id} className={`ffn-toast ffn-toast--${toast.tone}`} role={toast.tone === 'danger' ? 'alert' : 'status'}>
-                <Icon size={18} aria-hidden="true" />
+              <article key={toast.id} className={`ffn-toast ffn-toast--${toast.tone} ${toast.variant ? `ffn-toast--${toast.variant}` : ''}`} role={toast.tone === 'danger' ? 'alert' : 'status'}>
+                {toast.emoji ? (
+                  <span className="ffn-toast__emoji" aria-hidden="true">{toast.emoji}</span>
+                ) : (
+                  <Icon size={18} aria-hidden="true" />
+                )}
                 <div className="ffn-toast__body">
                   {toast.title ? <strong>{toast.title}</strong> : null}
                   <p>{toast.message}</p>
                   {toast.action ? <div className="ffn-toast__action">{toast.action}</div> : null}
                 </div>
-                <button type="button" className="ffn-toast__close" onClick={() => dismissToast(toast.id)} aria-label="Dismiss">
+                <button type="button" className="ffn-toast__close" onClick={() => dismissToast(toast.id, 'manual')} aria-label="Dismiss">
                   <X size={14} />
                 </button>
               </article>

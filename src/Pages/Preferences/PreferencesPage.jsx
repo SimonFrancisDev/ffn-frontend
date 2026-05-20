@@ -405,16 +405,19 @@ const PreferencesPage = () => {
             </div>
 
             <div className="preferences-card preferences-telegram-card glass-panel">
-              <span className="preferences-card__label muted-text">{preferencesT('notifications.telegramStatus', 'Telegram Status')}</span>
+              <div className="preferences-telegram-card__header">
+                <div>
+                  <span className="preferences-card__label muted-text">{preferencesT('notifications.telegramStatus', 'Telegram Status')}</span>
+                  <strong className="preferences-telegram-card__title">{preferencesT('notifications.telegramAlerts', 'Telegram Alerts')}</strong>
+                </div>
+                <span className={`preferences-telegram-card__status is-${telegramStatus.status || 'unlinked'}`}>
+                  {telegramStatus.status || 'unlinked'}
+                </span>
+              </div>
               <p className="preferences-card__text soft-text">
                 {telegramStatus.configured
                   ? preferencesT('notifications.telegramConfigured', 'Telegram notifications are available for this environment.')
                   : preferencesT('notifications.telegramNotConfigured', 'Telegram notifications are not configured for this environment yet.')}
-              </p>
-              <p className="preferences-card__text soft-text">
-                {preferencesT('notifications.telegramCurrentStatus', 'Current status: {{status}}', {
-                  status: telegramStatus.status || 'unlinked',
-                })}
               </p>
               {telegramCode ? (
                 <div className="preferences-card__text preferences-telegram-card__code-block">
@@ -432,6 +435,11 @@ const PreferencesPage = () => {
                       : preferencesT('notifications.telegramBotMissing', 'Telegram bot username is not configured. Ask support for the official bot.')}
                   </p>
                 </div>
+              ) : null}
+              {telegramStatus.status === 'active' ? (
+                <p className="preferences-telegram-card__active">
+                  {preferencesT('notifications.telegramActive', 'Telegram is linked and ready for wallet alerts.')}
+                </p>
               ) : null}
               <div className="preferences-actions">
                 <button type="button" className="btn btn-secondary" onClick={handleStartTelegramLink} disabled={!isConnected}>

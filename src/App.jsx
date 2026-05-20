@@ -28,12 +28,13 @@ import useAppDirection from './hooks/useAppDirection'
 import { SpaceProvider } from './context/SpaceContext'
 import { SessionProvider } from './context/SessionContext'
 import { OverlayProvider } from './components/overlay'
-import { ToastProvider } from './components/feedback'
+import { ToastProvider, useToast } from './components/feedback'
 import { NotificationProvider } from './components/notifications'
 import { useCompleteUserData } from './hooks/useUserData'
 import { LANGUAGES } from './constants/languages'
 import { getApiUrl } from './Services/apiConfig'
 import { fetchNotifications, markAllNotificationsRead, markNotificationRead } from './Services/notificationsApi'
+import { fetchTelegramStatus } from './Services/telegramApi'
 import { DollarSign, TrendingUp, Wrench, Bell, Calendar, Megaphone } from 'lucide-react'
 
 // const navItems = [
@@ -121,6 +122,8 @@ const NOTIFICATION_READ_STATUS_KEY = 'finfreedom_notification_read_status_v1'
 const LANGUAGE_STORAGE_KEY = 'finfreedom_language_v1'
 const THEME_STORAGE_KEY = 'finfreedom_theme_v1'
 const APP_USER_ID_STORAGE_KEY = 'finfreedom_app_user_id_v1'
+const TELEGRAM_PROMPT_DISMISSED_KEY = 'finfreedom_telegram_prompt_dismissed_v1'
+const TELEGRAM_PROMPT_SESSION_KEY = 'finfreedom_telegram_prompt_seen_v1'
 
 const routeMap = {
   '/': 'home',
@@ -314,6 +317,80 @@ function RouteAccessFallback({ title = 'Page access required', message }) {
       </section>
     </div>
   )
+}
+
+function TelegramLinkPrompt({ walletAccount, isConnected, currentPage, onNavigate }) {
+  const toast = useToast()
+  const { t } = useTranslation()
+
+  useEffect(() => {
+    if (!isConnected || !walletAccount || currentPage === 'preferences') return undefined
+    if (typeof window === 'undefined') return undefined
+
+    const normalizedWallet = walletAccount.toLowerCase()
+    const dismissedKey = `${TELEGRAM_PROMPT_DISMISSED_KEY}:${normalizedWallet}`
+    const sessionKey = `${TELEGRAM_PROMPT_SESSION_KEY}:${normalizedWallet}`
+
+    if (
+      window.localStorage.getItem(dismissedKey) === '1' ||
+      window.sessionStorage.getItem(sessionKey) === '1'
+    ) {
+      return undefined
+    }
+
+    let cancelled = false
+    const timerId = window.setTimeout(async () => {
+      try {
+        const status = await fetchTelegramStatus(walletAccount)
+        if (cancelled || status?.status === 'active') return
+
+        const promptId = `telegram-link-prompt:${normalizedWallet}`
+        window.sessionStorage.setItem(sessionKey, '1')
+        toast.info(
+          t(
+            'appNotifications.telegramPrompt.message',
+            'Link Telegram to receive wallet alerts, payout updates, and system notices instantly.'
+          ),
+          {
+            title: t('appNotifications.telegramPrompt.title', 'Telegram alerts'),
+            emoji: '💬',
+            variant: 'telegram',
+            timeoutMs: 14000,
+            id: promptId,
+            dedupeKey: promptId,
+            action: (
+              <button
+                type="button"
+                className="ffn-toast__action-button"
+                onClick={() => {
+                  onNavigate('preferences')
+                  toast.dismissToast(promptId, 'action')
+                }}
+              >
+                {t('appNotifications.telegramPrompt.action', 'Open Preferences')}
+              </button>
+            ),
+            onDismiss: (reason) => {
+              if (reason === 'manual') {
+                window.localStorage.setItem(dismissedKey, '1')
+              }
+            },
+          }
+        )
+      } catch (error) {
+        if (!cancelled) {
+          console.warn('Telegram status prompt check failed:', error)
+        }
+      }
+    }, 1800)
+
+    return () => {
+      cancelled = true
+      window.clearTimeout(timerId)
+    }
+  }, [currentPage, isConnected, onNavigate, t, toast, walletAccount])
+
+  return null
 }
 
 function App() {
@@ -1036,6 +1113,12 @@ function App() {
           <OverlayProvider>
             <ToastProvider>
               <>
+          <TelegramLinkPrompt
+            walletAccount={walletAccount}
+            isConnected={isConnected}
+            currentPage={resolveCurrentPage(location.pathname)}
+            onNavigate={handleNavigate}
+          />
           <AppShell
             fullWidth={location.pathname === '/' || location.pathname === '/home'}
             topbar={<TopNoticeBar notices={notices} />}

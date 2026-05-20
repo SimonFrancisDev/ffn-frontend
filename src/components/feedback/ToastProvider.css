@@ -34,6 +34,50 @@
 .ffn-toast--danger { border-color: rgba(239, 68, 68, 0.34); }
 .ffn-toast--info { border-color: rgba(56, 189, 248, 0.3); }
 
+.ffn-toast--telegram {
+  position: relative;
+  overflow: hidden;
+  border-color: rgba(56, 189, 248, 0.36);
+  background:
+    radial-gradient(circle at 14% 22%, rgba(56, 189, 248, 0.18), transparent 34%),
+    var(--ffn-surface-raised);
+}
+
+.ffn-toast--telegram::before,
+.ffn-toast--telegram::after {
+  content: "";
+  position: absolute;
+  border-radius: 999px;
+  background: rgba(56, 189, 248, 0.16);
+  pointer-events: none;
+  animation: ffnToastBubble 2.6s ease-in-out infinite;
+}
+
+.ffn-toast--telegram::before {
+  width: 32px;
+  height: 32px;
+  inset-inline-end: 54px;
+  inset-block-end: -12px;
+}
+
+.ffn-toast--telegram::after {
+  width: 18px;
+  height: 18px;
+  inset-inline-end: 28px;
+  inset-block-start: 12px;
+  animation-delay: 0.5s;
+}
+
+.ffn-toast__emoji {
+  width: 28px;
+  height: 28px;
+  display: inline-grid;
+  place-items: center;
+  border-radius: 999px;
+  background: rgba(56, 189, 248, 0.14);
+  font-size: 17px;
+}
+
 .ffn-toast__body {
   display: grid;
   gap: 4px;
@@ -70,9 +114,30 @@
   color: var(--ffn-text);
 }
 
+.ffn-toast__action .ffn-toast__action-button {
+  min-height: 32px;
+  padding: 0 10px;
+  border-radius: var(--ffn-radius-xs);
+  border: 1px solid rgba(56, 189, 248, 0.34);
+  background: rgba(56, 189, 248, 0.12);
+  color: var(--ffn-text);
+  font-size: var(--ffn-text-sm);
+  font-weight: 800;
+  cursor: pointer;
+}
+
+.ffn-toast__action .ffn-toast__action-button:hover {
+  background: rgba(56, 189, 248, 0.2);
+}
+
 @keyframes ffnToastEnter {
   from { opacity: 0; transform: translateY(-8px); }
   to { opacity: 1; transform: translateY(0); }
+}
+
+@keyframes ffnToastBubble {
+  0%, 100% { transform: translateY(0) scale(1); opacity: 0.55; }
+  50% { transform: translateY(-7px) scale(1.08); opacity: 0.9; }
 }
 
 @media (max-width: 640px) {
@@ -87,5 +152,10 @@
 @media (prefers-reduced-motion: reduce) {
   .ffn-toast {
     animation-duration: 1ms;
+  }
+
+  .ffn-toast--telegram::before,
+  .ffn-toast--telegram::after {
+    animation: none;
   }
 }

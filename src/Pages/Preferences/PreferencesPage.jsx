@@ -404,7 +404,7 @@ const PreferencesPage = () => {
               ))}
             </div>
 
-            <div className="preferences-card glass-panel">
+            <div className="preferences-card preferences-telegram-card glass-panel">
               <span className="preferences-card__label muted-text">{preferencesT('notifications.telegramStatus', 'Telegram Status')}</span>
               <p className="preferences-card__text soft-text">
                 {telegramStatus.configured
@@ -417,8 +417,8 @@ const PreferencesPage = () => {
                 })}
               </p>
               {telegramCode ? (
-                <div className="preferences-card__text">
-                  <p>
+                <div className="preferences-card__text preferences-telegram-card__code-block">
+                  <p className="preferences-telegram-card__code">
                     {preferencesT('notifications.telegramCode', 'Verification code: {{code}}', { code: telegramCode })}
                   </p>
                   {telegramBot.link ? (

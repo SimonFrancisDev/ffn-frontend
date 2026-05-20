@@ -104,22 +104,39 @@ const PreferencesPage = () => {
     applyAccent(savedAccent || 'default')
   }, [])
 
-  useEffect(() => {
-    if (!isConnected || !account) return undefined
+  const refreshTelegramStatus = useCallback(async ({ silent = false } = {}) => {
+    if (!isConnected || !account) return null
 
-    let cancelled = false
-    fetchTelegramStatus(account)
-      .then((status) => {
-        if (!cancelled) setTelegramStatus(status)
-      })
-      .catch(() => {
-        if (!cancelled) setTelegramStatus({ configured: false, status: 'unavailable' })
-      })
-
-    return () => {
-      cancelled = true
+    try {
+      const status = await fetchTelegramStatus(account)
+      setTelegramStatus(status)
+      if (status.status === 'active') {
+        setTelegramCode('')
+        setTelegramBot({ username: '', link: '' })
+        if (!silent) {
+          toast.success(preferencesT('notifications.telegramLinked', 'Telegram linked.'), { dedupeKey: 'preferences-telegram-linked' })
+        }
+      }
+      return status
+    } catch {
+      setTelegramStatus({ configured: false, status: 'unavailable' })
+      return null
     }
-  }, [account, isConnected])
+  }, [account, isConnected, preferencesT, toast])
+
+  useEffect(() => {
+    refreshTelegramStatus({ silent: true })
+  }, [refreshTelegramStatus])
+
+  useEffect(() => {
+    if (!isConnected || !account || telegramStatus.status !== 'pending') return undefined
+
+    const interval = window.setInterval(() => {
+      refreshTelegramStatus({ silent: false })
+    }, 5000)
+
+    return () => window.clearInterval(interval)
+  }, [account, isConnected, refreshTelegramStatus, telegramStatus.status])
 
   const handleStartTelegramLink = useCallback(async () => {
     if (!account) return
@@ -419,6 +436,9 @@ const PreferencesPage = () => {
               <div className="preferences-actions">
                 <button type="button" className="btn btn-secondary" onClick={handleStartTelegramLink} disabled={!isConnected}>
                   {preferencesT('notifications.linkTelegram', 'Link Telegram')}
+                </button>
+                <button type="button" className="btn btn-ghost" onClick={() => refreshTelegramStatus({ silent: false })} disabled={!isConnected}>
+                  {preferencesT('notifications.refreshTelegramStatus', 'Refresh Status')}
                 </button>
                 <button type="button" className="btn btn-ghost" onClick={handleTelegramUnsubscribe} disabled={!isConnected}>
                   {preferencesT('notifications.unsubscribeTelegram', 'Unsubscribe')}

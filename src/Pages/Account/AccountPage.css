@@ -664,6 +664,129 @@
   line-height: 1.65;
 }
 
+.account-network {
+  display: grid;
+  gap: 20px;
+}
+
+.account-network .section-title-group {
+  margin-bottom: 0;
+}
+
+.account-network__summary {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 12px;
+}
+
+.account-network__metric {
+  min-height: 104px;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+}
+
+.account-network__metric span,
+.account-network__member span,
+.account-network__level span {
+  color: var(--text-secondary);
+  font-size: 11px;
+  font-weight: 800;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+}
+
+.account-network__metric strong {
+  color: var(--text-primary);
+  font-family: 'JetBrains Mono', monospace;
+  font-size: clamp(28px, 4vw, 42px);
+  line-height: 1;
+}
+
+.account-network__levels {
+  display: grid;
+  grid-template-columns: repeat(5, minmax(0, 1fr));
+  gap: 10px;
+}
+
+.account-network__level {
+  min-height: 70px;
+  padding: 12px;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  border-radius: 14px;
+  border: 1px solid var(--border-premium);
+  background: var(--surface-inner);
+}
+
+.account-network__level strong {
+  color: var(--text-primary);
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 18px;
+}
+
+.account-network__members {
+  display: grid;
+  gap: 10px;
+}
+
+.account-network__member {
+  min-height: 64px;
+  padding: 12px 14px;
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  align-items: center;
+  gap: 12px;
+  border-radius: 14px;
+  border: 1px solid var(--border-premium);
+  background: var(--surface-inner);
+}
+
+.account-network__member > div {
+  min-width: 0;
+  display: grid;
+  gap: 5px;
+}
+
+.account-network__member strong {
+  color: var(--text-primary);
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 14px;
+}
+
+.account-network__view {
+  min-height: 38px;
+  padding: 0 12px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 7px;
+  border-radius: 11px;
+  border: 1px solid rgba(56, 189, 248, 0.28);
+  background: rgba(56, 189, 248, 0.08);
+  color: var(--glow-blue);
+  font-size: 12px;
+  font-weight: 850;
+  cursor: pointer;
+  white-space: nowrap;
+}
+
+.account-network__view:hover {
+  border-color: var(--glow-blue);
+  background: rgba(56, 189, 248, 0.14);
+}
+
+.account-network__empty {
+  padding: 18px;
+  border-radius: 16px;
+  border: 1px dashed var(--border-premium);
+  background: var(--surface-inner);
+  color: var(--text-secondary);
+  font-size: 13px;
+  text-align: center;
+}
+
 [data-theme='light'] .referral-locked-card {
   border-color: rgba(245, 158, 11, 0.28);
   background:
@@ -674,6 +797,19 @@
 @media (max-width: 520px) {
   .referral-identity-grid {
     grid-template-columns: 1fr;
+  }
+
+  .account-network__summary,
+  .account-network__member {
+    grid-template-columns: 1fr;
+  }
+
+  .account-network__levels {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .account-network__view {
+    width: 100%;
   }
 }
 

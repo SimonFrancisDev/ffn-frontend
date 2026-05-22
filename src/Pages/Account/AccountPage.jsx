@@ -361,28 +361,28 @@ const shouldShowUpgradeProgress =
             )}
           </section>
 
-          <section className="account-surface referral-engine">
+          <section className="account-surface account-network">
             <div className="section-title-group">
               <FaUserFriends />
               <h2>{accountT('network.title', 'Direct Downlines')}</h2>
             </div>
 
-            <div className="referral-identity-grid">
-              <div className="referral-id-tile inner-surface">
+            <div className="account-network__summary">
+              <div className="account-network__metric inner-surface">
                 <span>{accountT('network.direct', 'Direct Downlines')}</span>
                 <strong>{directReferrals.length}</strong>
               </div>
-              <div className="referral-id-tile inner-surface">
+              <div className="account-network__metric inner-surface">
                 <span>{accountT('network.totalTeam', 'Total Team')}</span>
                 <strong>{downlineStats?.total || 0}</strong>
               </div>
             </div>
 
-            <div className="snapshot-list snapshot-list--clean">
+            <div className="account-network__levels">
               {Array.from({ length: 10 }, (_, index) => {
                 const level = index + 1
                 return (
-                  <div key={level} className="snapshot-row">
+                  <div key={level} className="account-network__level">
                     <span>{accountT('network.level', 'Level {{level}}', { level })}</span>
                     <strong>{downlineStats?.[`level${level}`] || 0}</strong>
                   </div>
@@ -390,16 +390,19 @@ const shouldShowUpgradeProgress =
               })}
             </div>
 
-            <div className="snapshot-list snapshot-list--clean">
+            <div className="account-network__members">
               {directReferrals.length ? directReferrals.slice(0, 12).map((item) => (
-                <div key={`${item.user}-${item.txHash || item.blockNumber || ''}`} className="snapshot-row">
-                  <span>{shortAddress(item.user)}</span>
-                  <button type="button" className="nav-action-btn" onClick={() => handleViewAddress(item.user)}>
+                <div key={`${item.user}-${item.txHash || item.blockNumber || ''}`} className="account-network__member">
+                  <div>
+                    <span>{accountT('network.member', 'Member')}</span>
+                    <strong>{shortAddress(item.user)}</strong>
+                  </div>
+                  <button type="button" className="account-network__view" onClick={() => handleViewAddress(item.user)}>
                     {accountT('actions.viewAccount', 'View Account')} <FaArrowRight />
                   </button>
                 </div>
               )) : (
-                <div className="referral-locked-card">
+                <div className="account-network__empty">
                   <p>{accountT('network.empty', 'No direct downlines found yet.')}</p>
                 </div>
               )}

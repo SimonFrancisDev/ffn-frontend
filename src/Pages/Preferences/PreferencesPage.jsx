@@ -96,7 +96,7 @@ const PreferencesPage = () => {
 
     if (savedNotifications) {
       try {
-        setNotifications(JSON.parse(savedNotifications))
+        setNotifications({ ...DEFAULT_NOTIFICATIONS, ...JSON.parse(savedNotifications) })
       } catch {
         setNotifications(DEFAULT_NOTIFICATIONS)
       }
@@ -113,7 +113,7 @@ const PreferencesPage = () => {
       const status = await fetchTelegramStatus(account)
       setTelegramStatus(status)
       if (status.preferences) {
-        setNotifications((current) => ({ ...current, ...status.preferences }))
+        setNotifications((current) => ({ ...DEFAULT_NOTIFICATIONS, ...current, ...status.preferences }))
       }
       if (status.status === 'active') {
         setTelegramCode('')
@@ -189,7 +189,7 @@ const PreferencesPage = () => {
       if (account && telegramStatus.status === 'active') {
         const result = await updateTelegramPreferences(account, notifications)
         if (result.preferences) {
-          setNotifications((current) => ({ ...current, ...result.preferences }))
+          setNotifications((current) => ({ ...DEFAULT_NOTIFICATIONS, ...current, ...result.preferences }))
         }
       }
 
@@ -217,7 +217,7 @@ const PreferencesPage = () => {
   }, [preferencesT, toast])
 
   const toggleNotification = useCallback((key) => {
-    setNotifications((prev) => ({ ...prev, [key]: !prev[key] }))
+    setNotifications((prev) => ({ ...DEFAULT_NOTIFICATIONS, ...prev, [key]: !Boolean(prev[key]) }))
   }, [])
 
   const currentAccent = useMemo(
@@ -417,7 +417,7 @@ const PreferencesPage = () => {
                     <span className="preferences-list__desc soft-text">{desc}</span>
                   </div>
                   <label className="toggle-switch small">
-                    <input type="checkbox" checked={notifications[key]} onChange={() => toggleNotification(key)} />
+                    <input type="checkbox" checked={Boolean(notifications[key])} onChange={() => toggleNotification(key)} />
                     <span className="toggle-slider" />
                   </label>
                 </div>

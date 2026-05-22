@@ -3,16 +3,18 @@ import { useEffect, useState, useCallback, useMemo } from 'react'
 import { useTranslation } from 'react-i18next'
 import { useWallet } from '../../hooks/useWallet'
 import { useSpace } from '../../context/SpaceContext'
-import { fetchTelegramStatus, startTelegramLink, unsubscribeTelegram } from '../../Services/telegramApi'
+import { fetchTelegramStatus, startTelegramLink, unsubscribeTelegram, updateTelegramPreferences } from '../../Services/telegramApi'
 import { useToast } from '../../components/feedback'
 
 const DEFAULT_NOTIFICATIONS = {
-  platformAlerts: true,
-  progressUpdates: true,
-  promotionalNotices: false,
-  emailDigest: false,
-  pushNotifications: true,
-  telegramAlerts: false,
+  paymentReceived: true,
+  paymentSkipped: true,
+  escrow: true,
+  autoUpgrade: true,
+  recycle: true,
+  tokenRewards: true,
+  systemNotices: true,
+  communityNotices: true,
 }
 
 const ACCENT_STYLES = [
@@ -110,6 +112,9 @@ const PreferencesPage = () => {
     try {
       const status = await fetchTelegramStatus(account)
       setTelegramStatus(status)
+      if (status.preferences) {
+        setNotifications((current) => ({ ...current, ...status.preferences }))
+      }
       if (status.status === 'active') {
         setTelegramCode('')
         setTelegramBot({ username: '', link: '' })
@@ -169,7 +174,7 @@ const PreferencesPage = () => {
     }
   }, [account, preferencesT, toast])
 
-  const savePreferences = useCallback(() => {
+  const savePreferences = useCallback(async () => {
     localStorage.setItem('ffn_theme', theme)
     localStorage.setItem('ffn_language', language)
     localStorage.setItem('ffn_timezone', timezone)
@@ -180,10 +185,22 @@ const PreferencesPage = () => {
     applyTheme(theme)
     applyAccent(accentStyle)
 
-    setSaveStatus({ show: true, message: preferencesT('status.saved', 'Preferences saved successfully.'), type: 'success' })
-    toast.success(preferencesT('status.saved', 'Preferences saved successfully.'), { dedupeKey: 'preferences-saved' })
+    try {
+      if (account && telegramStatus.status === 'active') {
+        const result = await updateTelegramPreferences(account, notifications)
+        if (result.preferences) {
+          setNotifications((current) => ({ ...current, ...result.preferences }))
+        }
+      }
+
+      setSaveStatus({ show: true, message: preferencesT('status.saved', 'Preferences saved successfully.'), type: 'success' })
+      toast.success(preferencesT('status.saved', 'Preferences saved successfully.'), { dedupeKey: 'preferences-saved' })
+    } catch (error) {
+      setSaveStatus({ show: true, message: error.message, type: 'error' })
+      toast.danger(error.message || preferencesT('status.saveFailed', 'Preferences could not be saved.'), { dedupeKey: 'preferences-save-failed' })
+    }
     window.setTimeout(() => setSaveStatus({ show: false, message: '', type: '' }), 2500)
-  }, [theme, language, timezone, accentStyle, spaceVisibilityPreference, notifications, preferencesT, toast])
+  }, [account, theme, language, timezone, accentStyle, spaceVisibilityPreference, notifications, preferencesT, toast, telegramStatus.status])
 
   const resetPreferences = useCallback(() => {
     setTheme('dark')
@@ -385,11 +402,14 @@ const PreferencesPage = () => {
 
             <div className="preferences-list">
               {[
-                ['platformAlerts', preferencesT('notifications.platformAlerts', 'Platform Alerts'), preferencesT('notifications.platformAlertsDesc', 'System announcements and maintenance updates')],
-                ['progressUpdates', preferencesT('notifications.progressUpdates', 'Progress Updates'), preferencesT('notifications.progressUpdatesDesc', 'Level and orbit progress notifications')],
-                ['pushNotifications', preferencesT('notifications.pushNotifications', 'Push Notifications'), preferencesT('notifications.pushNotificationsDesc', 'Real-time browser notifications')],
-                ['emailDigest', preferencesT('notifications.emailDigest', 'Email Digest'), preferencesT('notifications.emailDigestDesc', 'Periodic summary emails')],
-                ['telegramAlerts', preferencesT('notifications.telegramAlerts', 'Telegram Alerts'), preferencesT('notifications.telegramAlertsDesc', 'Optional wallet activity alerts through Telegram')],
+                ['paymentReceived', preferencesT('notifications.paymentReceived', 'Payment Received'), preferencesT('notifications.paymentReceivedDesc', 'Liquid USDT paid directly to your wallet')],
+                ['paymentSkipped', preferencesT('notifications.paymentSkipped', 'Payment Missed'), preferencesT('notifications.paymentSkippedDesc', 'Missed or skipped payout events with the reason')],
+                ['escrow', preferencesT('notifications.escrow', 'Escrow Activity'), preferencesT('notifications.escrowDesc', 'Escrow locked, used, or released')],
+                ['autoUpgrade', preferencesT('notifications.autoUpgrade', 'Auto Upgrade'), preferencesT('notifications.autoUpgradeDesc', 'Automatic level upgrade events')],
+                ['recycle', preferencesT('notifications.recycle', 'Recycle'), preferencesT('notifications.recycleDesc', 'Orbit recycle events')],
+                ['tokenRewards', preferencesT('notifications.tokenRewards', 'Token Rewards'), preferencesT('notifications.tokenRewardsDesc', 'FGT and FGTr reward updates')],
+                ['systemNotices', preferencesT('notifications.systemNotices', 'System Notices'), preferencesT('notifications.systemNoticesDesc', 'System maintenance and platform status')],
+                ['communityNotices', preferencesT('notifications.communityNotices', 'Community Notices'), preferencesT('notifications.communityNoticesDesc', 'Community announcements and events')],
               ].map(([key, label, desc]) => (
                 <div key={key} className="preferences-list__item glass-panel">
                   <div className="preferences-list__info">

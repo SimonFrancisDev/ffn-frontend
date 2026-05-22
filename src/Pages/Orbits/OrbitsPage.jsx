@@ -1218,7 +1218,16 @@ const OrbitsPage = () => {
         if (!prev || prev.number !== position.number || Number(prev.level || 0) !== level) {
           return prev
         }
-        return { ...hydrated, detailsLoading: false }
+        return {
+          ...prev,
+          ...hydrated,
+          occupant: hydrated?.occupant || prev.occupant,
+          user: hydrated?.user || prev.user,
+          referrer: hydrated?.referrer || prev.referrer,
+          originalReferrer: hydrated?.originalReferrer || prev.originalReferrer,
+          occupantReferrer: hydrated?.occupantReferrer || prev.occupantReferrer,
+          detailsLoading: false
+        }
       })
     } catch {
       setSelectedPosition(prev => prev ? { ...prev, detailsLoading: false } : prev)

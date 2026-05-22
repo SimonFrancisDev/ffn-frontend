@@ -8,6 +8,7 @@ import { useSpace } from '../../context/SpaceContext'
 import { web3Service } from '../../Services/web3'
 import { useToast } from '../../components/feedback'
 import { normalizeError } from '../../utils/errorMap'
+import { buildTxOptions } from '../../utils/txOptions'
 import { ethers } from 'ethers'
 // import { fetchAddressReceiptsApi } from '../../Services/orbitsApi'
 // import {
@@ -44,6 +45,7 @@ const AMOY_CHAIN_ID = '0x13882'
 const GAS_BUFFER_BPS = 12000n
 const ACTIVATION_GAS_BUFFER_BPS = 15000n
 const GAS_BUFFER_DENOMINATOR = 10000n
+const PENDING_REFERRAL_STORAGE_KEY = 'ffn_pending_registration_referral'
 
 const levelPrices = {
   1: '10',
@@ -380,10 +382,19 @@ const ActivationCenterPage = () => {
     setResolvedReferrerStatus('')
 
     const urlRef = extractReferralFromUrl(location, refCode)
+    const storedRef =
+      typeof window !== 'undefined'
+        ? window.sessionStorage.getItem(PENDING_REFERRAL_STORAGE_KEY) || ''
+        : ''
+    const nextRef = urlRef || storedRef
 
-    if (urlRef && !isRegistered) {
-      setIncomingReferrer(urlRef)
-      setReferrerInputDisplay(urlRef)
+    if (urlRef && typeof window !== 'undefined') {
+      window.sessionStorage.setItem(PENDING_REFERRAL_STORAGE_KEY, urlRef)
+    }
+
+    if (nextRef && !isRegistered) {
+      setIncomingReferrer(nextRef)
+      setReferrerInputDisplay(nextRef)
       setResolvedReferrerStatus(
         'Referral detected. You can keep it, change it, or leave it empty to use the system ID.'
       )
@@ -1111,9 +1122,11 @@ const ActivationCenterPage = () => {
 
       const usdtWithSigner = contracts.usdt.connect(signer)
       const gasEstimate = await usdtWithSigner.approve.estimateGas(spender, requiredAmountWei)
-      const approveTx = await usdtWithSigner.approve(spender, requiredAmountWei, {
-        gasLimit: withGasBuffer(gasEstimate),
-      })
+      const approveTx = await usdtWithSigner.approve(
+        spender,
+        requiredAmountWei,
+        await buildTxOptions({ signer, gasLimit: withGasBuffer(gasEstimate) })
+      )
       setTxStatus({ loading: true, hash: approveTx.hash, error: null })
       toast.info(activationT('toast.approvalSubmitted', 'USDT approval submitted.'), { dedupeKey: 'activation-approval-submitted' })
       await approveTx.wait()
@@ -1170,26 +1183,34 @@ const ActivationCenterPage = () => {
       await ensureSufficientAllowance(totalRequiredUsdt)
 
       const writeContracts = await getWriteContracts()
+      const signer = await getSigner()
 
       const resolvedReferrer = finalRegistrationReferrer || ethers.ZeroAddress
       const registrationGas = await writeContracts.registration.register.estimateGas(resolvedReferrer)
-      const registerTx = await writeContracts.registration.register(resolvedReferrer, {
-        gasLimit: withGasBuffer(registrationGas, ACTIVATION_GAS_BUFFER_BPS),
-      })
+      const registerTx = await writeContracts.registration.register(
+        resolvedReferrer,
+        await buildTxOptions({
+          signer,
+          gasLimit: withGasBuffer(registrationGas, ACTIVATION_GAS_BUFFER_BPS),
+        })
+      )
       setTxStatus({ loading: true, hash: registerTx.hash, error: null })
       toast.info(activationT('toast.registrationSubmitted', 'Registration transaction submitted.'), { dedupeKey: 'activation-registration-submitted' })
       await registerTx.wait()
 
       try {
-        const signer = await getSigner()
         const registrationWithSigner = contracts.registration.connect(signer)
         const level1AlreadyActive = await contracts.registration.isLevelActivated(account, 1)
 
         if (!level1AlreadyActive) {
           const activationGas = await registrationWithSigner.activateLevel.estimateGas(1)
-          const activateTx = await registrationWithSigner.activateLevel(1, {
-            gasLimit: withGasBuffer(activationGas, ACTIVATION_GAS_BUFFER_BPS),
-          })
+          const activateTx = await registrationWithSigner.activateLevel(
+            1,
+            await buildTxOptions({
+              signer,
+              gasLimit: withGasBuffer(activationGas, ACTIVATION_GAS_BUFFER_BPS),
+            })
+          )
           setTxStatus({ loading: true, hash: activateTx.hash, error: null })
           toast.info(activationT('toast.activationSubmitted', 'Level activation transaction submitted.'), { dedupeKey: 'activation-level-submitted' })
           await activateTx.wait()
@@ -1215,6 +1236,9 @@ const ActivationCenterPage = () => {
       await refreshAllAfterWrite()
       setIsRegistrationModalOpen(false)
       setRegistrationReferrer('')
+      if (typeof window !== 'undefined') {
+        window.sessionStorage.removeItem(PENDING_REFERRAL_STORAGE_KEY)
+      }
     } catch (err) {
       console.error('Registration + Level 1 activation error:', err)
 
@@ -1264,10 +1288,13 @@ const ActivationCenterPage = () => {
       }
 
       const writeContracts = await getWriteContracts()
+      const signer = await getSigner()
       const gasEstimate = await writeContracts.usdt.transfer.estimateGas(account, amount)
-      const tx = await writeContracts.usdt.transfer(account, amount, {
-        gasLimit: withGasBuffer(gasEstimate),
-      })
+      const tx = await writeContracts.usdt.transfer(
+        account,
+        amount,
+        await buildTxOptions({ signer, gasLimit: withGasBuffer(gasEstimate) })
+      )
       setTxStatus({ loading: true, hash: tx.hash, error: null })
       toast.info(activationT('toast.transferSubmitted', 'Transfer transaction submitted.'), { dedupeKey: 'activation-transfer-submitted' })
       await tx.wait()
@@ -1303,10 +1330,13 @@ const ActivationCenterPage = () => {
       }
 
       const writeContracts = await getWriteContracts()
+      const signer = await getSigner()
       const gasEstimate = await writeContracts.usdt.transfer.estimateGas(transferAddress, amount)
-      const tx = await writeContracts.usdt.transfer(transferAddress, amount, {
-        gasLimit: withGasBuffer(gasEstimate),
-      })
+      const tx = await writeContracts.usdt.transfer(
+        transferAddress,
+        amount,
+        await buildTxOptions({ signer, gasLimit: withGasBuffer(gasEstimate) })
+      )
       setTxStatus({ loading: true, hash: tx.hash, error: null })
       toast.info(activationT('toast.transferSubmitted', 'Transfer transaction submitted.'), { dedupeKey: 'activation-transfer-submitted' })
       await tx.wait()
@@ -1436,9 +1466,13 @@ const ActivationCenterPage = () => {
       const signer = await getSigner()
       const registrationWithSigner = contracts.registration.connect(signer)
       const gasEstimate = await registrationWithSigner.activateLevel.estimateGas(level)
-      const tx = await registrationWithSigner.activateLevel(level, {
-        gasLimit: withGasBuffer(gasEstimate, ACTIVATION_GAS_BUFFER_BPS),
-      })
+      const tx = await registrationWithSigner.activateLevel(
+        level,
+        await buildTxOptions({
+          signer,
+          gasLimit: withGasBuffer(gasEstimate, ACTIVATION_GAS_BUFFER_BPS),
+        })
+      )
       setTxStatus({ loading: true, hash: tx.hash, error: null })
       toast.info(activationT('toast.activationSubmitted', 'Level activation transaction submitted.'), { dedupeKey: `activation-level-${level}-submitted` })
       await tx.wait()
@@ -2620,6 +2654,9 @@ const ActivationCenterPage = () => {
 
                       if (!value) {
                         setRegistrationReferrer('')
+                        if (typeof window !== 'undefined') {
+                          window.sessionStorage.removeItem(PENDING_REFERRAL_STORAGE_KEY)
+                        }
                         setResolvedReferrerStatus(
                           activationT('registration.systemIdUsed', 'No referral added. The system ID will be used.')
                         )
@@ -2628,6 +2665,9 @@ const ActivationCenterPage = () => {
 
                       if (ethers.isAddress(value)) {
                         setRegistrationReferrer(value)
+                        if (typeof window !== 'undefined') {
+                          window.sessionStorage.setItem(PENDING_REFERRAL_STORAGE_KEY, value)
+                        }
                         setResolvedReferrerStatus(
                           activationT('registration.walletAdded', 'Wallet address added. You can still change it before registration.')
                         )
@@ -2635,6 +2675,9 @@ const ActivationCenterPage = () => {
                       }
 
                       setRegistrationReferrer('')
+                      if (typeof window !== 'undefined') {
+                        window.sessionStorage.setItem(PENDING_REFERRAL_STORAGE_KEY, value)
+                      }
                       setResolvedReferrerStatus(
                         activationT('registration.referralIdAdded', 'Referral ID added. We will check it when you register.')
                       )

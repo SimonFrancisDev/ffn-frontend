@@ -54,50 +54,7 @@ const navItems = [
   { label: 'Support', href: 'support', active: false },
 ]
 
-const baseNotifications = [
-  {
-    id: '1',
-    titleKey: 'appNotifications.base.payout.title',
-    title: 'New payout received',
-    messageKey: 'appNotifications.base.payout.message',
-    message: 'A payout has been recorded in your account activity.',
-    timeKey: 'appNotifications.base.payout.time',
-    time: '2m ago',
-    icon: DollarSign,
-    iconColor: '#22c55e',
-    read: false,
-    route: 'activity',
-    noticeType: 'success',
-  },
-  {
-    id: '2',
-    titleKey: 'appNotifications.base.levelActivation.title',
-    title: 'Level activation available',
-    messageKey: 'appNotifications.base.levelActivation.message',
-    message: 'You now meet the requirements to activate the next level.',
-    timeKey: 'appNotifications.base.levelActivation.time',
-    time: '15m ago',
-    icon: TrendingUp,
-    iconColor: '#3b82f6',
-    read: false,
-    route: 'activation',
-    noticeType: 'info',
-  },
-  {
-    id: '3',
-    titleKey: 'appNotifications.base.systemNotice.title',
-    title: 'System notice',
-    messageKey: 'appNotifications.base.systemNotice.message',
-    message: 'Routine maintenance has been scheduled for this weekend.',
-    timeKey: 'appNotifications.base.systemNotice.time',
-    time: '1h ago',
-    icon: Wrench,
-    iconColor: '#f59e0b',
-    read: true,
-    route: 'support',
-    noticeType: 'warning',
-  },
-]
+const baseNotifications = []
 
 const BASE_NOTIFICATION_TRANSLATION_KEYS = {
   1: {
@@ -204,7 +161,7 @@ const getInitialNotifications = () => {
     const parsed = JSON.parse(stored)
     if (!Array.isArray(parsed)) return baseNotifications
 
-    return parsed.map((n) => ({
+    return parsed.filter((n) => !BASE_NOTIFICATION_TRANSLATION_KEYS[n.id]).map((n) => ({
       ...n,
       ...(BASE_NOTIFICATION_TRANSLATION_KEYS[n.id] || {}),
       icon:

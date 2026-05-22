@@ -7,6 +7,7 @@ import { useContracts } from '../../hooks/useContracts'
 import { useSpace } from '../../context/SpaceContext'
 import { ethers } from 'ethers'
 import { fetchUserSummaryApi } from '../../Services/orbitsApi'
+import { getApiUrl } from '../../Services/apiConfig'
 import { resolveIdentity } from '../../utils/identityResolver'
 import { useToast } from '../../components/feedback'
 import { 
@@ -36,6 +37,8 @@ const AccountPage = () => {
   const [referredByCode, setReferredByCode] = useState('')
   const [referralAccessLoading, setReferralAccessLoading] = useState(false)
   const [referralAccessMessage, setReferralAccessMessage] = useState('')
+  const [directReferrals, setDirectReferrals] = useState([])
+  const [downlineStats, setDownlineStats] = useState(null)
 
   // --- HELPERS ---
   const formatDisplay = useCallback((value) => {
@@ -72,8 +75,18 @@ const AccountPage = () => {
     if (!resolvedAddress) return
     try {
       // Production Standard: One single source of truth for growth and tokens
-      const data = await fetchUserSummaryApi(resolvedAddress)
+      const [data, referralsPayload, downlinePayload] = await Promise.all([
+        fetchUserSummaryApi(resolvedAddress),
+        fetch(getApiUrl(`/api/community/member/${encodeURIComponent(resolvedAddress)}/referrals`))
+          .then((res) => res.json())
+          .catch(() => null),
+        fetch(getApiUrl(`/api/community/member/${encodeURIComponent(resolvedAddress)}/downline`))
+          .then((res) => res.json())
+          .catch(() => null),
+      ])
       setSummary(data)
+      setDirectReferrals(referralsPayload?.data?.directReferrals || [])
+      setDownlineStats(downlinePayload?.data || null)
       setLastUpdated(new Date().toLocaleTimeString())
     } catch (err) {
       console.error("Dashboard Sync Error:", err)
@@ -182,6 +195,12 @@ const AccountPage = () => {
       toast.danger(message, { dedupeKey: 'account-profile-invalid' })
     }
   }
+
+  const handleViewAddress = useCallback((walletAddress) => {
+    if (!walletAddress || !ethers.isAddress(walletAddress)) return
+    switchToVisitor?.(walletAddress)
+    toast.success(accountT('profile.viewingAccount', 'Viewing another account.'), { dedupeKey: `account-profile-loaded-${walletAddress}` })
+  }, [accountT, switchToVisitor, toast])
 
   if (contractsLoading || (!summary && isConnected)) {
     return (
@@ -340,6 +359,51 @@ const shouldShowUpgradeProgress =
                 )}
               </div>
             )}
+          </section>
+
+          <section className="account-surface referral-engine">
+            <div className="section-title-group">
+              <FaUserFriends />
+              <h2>{accountT('network.title', 'Direct Downlines')}</h2>
+            </div>
+
+            <div className="referral-identity-grid">
+              <div className="referral-id-tile inner-surface">
+                <span>{accountT('network.direct', 'Direct Downlines')}</span>
+                <strong>{directReferrals.length}</strong>
+              </div>
+              <div className="referral-id-tile inner-surface">
+                <span>{accountT('network.totalTeam', 'Total Team')}</span>
+                <strong>{downlineStats?.total || 0}</strong>
+              </div>
+            </div>
+
+            <div className="snapshot-list snapshot-list--clean">
+              {Array.from({ length: 10 }, (_, index) => {
+                const level = index + 1
+                return (
+                  <div key={level} className="snapshot-row">
+                    <span>{accountT('network.level', 'Level {{level}}', { level })}</span>
+                    <strong>{downlineStats?.[`level${level}`] || 0}</strong>
+                  </div>
+                )
+              })}
+            </div>
+
+            <div className="snapshot-list snapshot-list--clean">
+              {directReferrals.length ? directReferrals.slice(0, 12).map((item) => (
+                <div key={`${item.user}-${item.txHash || item.blockNumber || ''}`} className="snapshot-row">
+                  <span>{shortAddress(item.user)}</span>
+                  <button type="button" className="nav-action-btn" onClick={() => handleViewAddress(item.user)}>
+                    {accountT('actions.viewAccount', 'View Account')} <FaArrowRight />
+                  </button>
+                </div>
+              )) : (
+                <div className="referral-locked-card">
+                  <p>{accountT('network.empty', 'No direct downlines found yet.')}</p>
+                </div>
+              )}
+            </div>
           </section>
 
           {/* 4. PROTOCOL REWARDS (FGT & FGTR) */}

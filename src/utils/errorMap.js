@@ -78,6 +78,24 @@ const KNOWN_ERROR_PATTERNS = [
     action: 'Contact support before retrying this activation.',
   },
   {
+    test: /could not coalesce|coalesce/i,
+    title: 'Wallet response needs retry',
+    message: 'The wallet or RPC returned an incomplete transaction response. The transaction may not have been submitted.',
+    action: 'Wait a few seconds, refresh account data, and retry only if no transaction is pending in your wallet.',
+  },
+  {
+    test: /gas price below minimum|tip.*minimum|transaction underpriced|replacement fee too low|max fee per gas less than block base fee/i,
+    title: 'Network gas price changed',
+    message: 'The network required a higher gas fee than the wallet submitted.',
+    action: 'Retry the transaction. The app will request a stronger network fee.',
+  },
+  {
+    test: /nonce too low|already known|replacement transaction underpriced/i,
+    title: 'Wallet transaction already pending',
+    message: 'Your wallet may already have a pending transaction for this action.',
+    action: 'Open your wallet activity, wait for the pending transaction to finish, then refresh.',
+  },
+  {
     test: /gas required exceeds allowance|gas limit|cannot estimate gas|UNPREDICTABLE_GAS_LIMIT|CALL_EXCEPTION|missing revert data/i,
     title: 'Transaction preflight failed',
     message: 'The wallet could not confirm this transaction is safe to submit.',

@@ -511,7 +511,7 @@ const PreferencesPage = ({
                 ['systemNotices', preferencesT('notifications.systemNotices', 'System Notices'), preferencesT('notifications.systemNoticesDesc', 'System maintenance and platform status')],
                 ['communityNotices', preferencesT('notifications.communityNotices', 'Community Notices'), preferencesT('notifications.communityNoticesDesc', 'Community announcements and events')],
               ].map(([key, label, desc]) => (
-                <div key={key} className="preferences-list__item glass-panel">
+                <div key={key} className={`preferences-list__item glass-panel ${notifications[key] ? 'is-enabled' : 'is-disabled'}`}>
                   <div className="preferences-list__info">
                     <span className="preferences-list__label">{label}</span>
                     <span className="preferences-list__desc soft-text">{desc}</span>

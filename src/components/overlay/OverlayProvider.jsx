@@ -42,7 +42,7 @@ function useBodyScrollLock(locked) {
   }, [locked])
 }
 
-function FocusTrap({ children, active, onEscape }) {
+function FocusTrap({ children, active, onEscape, restoreFocus = true }) {
   const ref = useRef(null)
 
   useEffect(() => {
@@ -97,11 +97,11 @@ function FocusTrap({ children, active, onEscape }) {
     return () => {
       window.cancelAnimationFrame(frame)
       document.removeEventListener('keydown', handleKeyDown)
-      if (previousActive && typeof previousActive.focus === 'function') {
+      if (restoreFocus && previousActive && typeof previousActive.focus === 'function') {
         previousActive.focus()
       }
     }
-  }, [active, onEscape])
+  }, [active, onEscape, restoreFocus])
 
   return (
     <div ref={ref} tabIndex={-1}>
@@ -118,6 +118,8 @@ function OverlayFrame({ item, onClose }) {
     description,
     content,
     closeOnBackdrop = true,
+    closeOnEscape = true,
+    restoreFocus = true,
     labelledById = `ffn-overlay-title-${id}`,
     describedById = `ffn-overlay-desc-${id}`,
   } = item
@@ -137,7 +139,7 @@ function OverlayFrame({ item, onClose }) {
   return (
     <div className={`ffn-overlay ffn-overlay--${kind}`} role="presentation">
       <div className="ffn-overlay__backdrop" onMouseDown={handleBackdropClick} />
-      <FocusTrap active onEscape={() => onClose(id, 'escape')}>
+      <FocusTrap active restoreFocus={restoreFocus} onEscape={closeOnEscape ? () => onClose(id, 'escape') : undefined}>
         <section
           className={panelClass}
           role="dialog"

@@ -5000,3 +5000,36 @@
 .position-modal--earnings .orbit-earnings-summary .modal-detail {
   display: flex;
 }
+
+/* Absolute final orbit color contract. Keep this at the end of the file. */
+.orbits-page .planet-node.mine,
+.orbits-page .planet-node.orbit-state-owner {
+  background: linear-gradient(135deg, #22c55e, #1de9b6) !important;
+  border-color: rgba(255, 255, 255, 0.92) !important;
+}
+
+.orbits-page .planet-node.downline,
+.orbits-page .planet-node.downline.orbit-state-spillover1,
+.orbits-page .planet-node.downline.orbit-state-spillover2,
+.orbits-page .planet-node.downline.orbit-state-auto-upgrade,
+.orbits-page .planet-node.downline.orbit-state-escrow,
+.orbits-page .planet-node.downline.orbit-state-newly-filled {
+  background: linear-gradient(135deg, #f97316, #facc15) !important;
+  border-color: rgba(255, 255, 255, 0.92) !important;
+}
+
+.orbits-page .planet-node.other,
+.orbits-page .planet-node.other.orbit-state-spillover1,
+.orbits-page .planet-node.other.orbit-state-spillover2,
+.orbits-page .planet-node.other.orbit-state-auto-upgrade,
+.orbits-page .planet-node.other.orbit-state-escrow,
+.orbits-page .planet-node.other.orbit-state-newly-filled {
+  background: linear-gradient(135deg, #2563eb, #4da3ff) !important;
+  border-color: rgba(255, 255, 255, 0.92) !important;
+}
+
+.orbits-page .planet-node.empty,
+.orbits-page .planet-node.orbit-state-empty {
+  background: var(--ffn-surface-muted) !important;
+  border: 1.5px dashed var(--ffn-border-strong) !important;
+}

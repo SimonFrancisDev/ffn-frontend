@@ -2900,6 +2900,8 @@ const OrbitsPage = () => {
           title={orbitsT('position.title', 'Position #{{number}}', { number: selectedPosition.number })}
           description={getOrbitNarration(selectedPosition).title}
           className="orbit-position-overlay"
+          closeOnBackdrop={false}
+          restoreFocus={false}
           onClose={() => {
             setShowPositionModal(false)
             setSelectedPosition(null)

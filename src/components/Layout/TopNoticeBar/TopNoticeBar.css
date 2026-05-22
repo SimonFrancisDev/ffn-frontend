@@ -9,11 +9,35 @@
 }
 
 .top-notice--success .top-notice__inner {
-  min-height: 42px;
+  min-height: 58px;
 }
 
 .top-notice--success .top-notice__message {
-  font-weight: 750;
+  font-size: clamp(16px, 2.2vw, 24px);
+  font-weight: 900;
+  letter-spacing: 0;
+  line-height: 1.15;
+}
+
+.top-notice--success {
+  background:
+    linear-gradient(90deg, rgba(249, 115, 22, 0.2), rgba(29, 233, 182, 0.18), rgba(77, 163, 255, 0.16)),
+    color-mix(in srgb, var(--glass-bg-strong) 88%, transparent);
+  box-shadow:
+    inset 0 -1px 0 rgba(34, 197, 94, 0.24),
+    0 14px 36px rgba(3, 8, 20, 0.24);
+}
+
+.top-notice--success .top-notice__label {
+  color: var(--glow-teal);
+  font-weight: 900;
+}
+
+.top-notice--success .top-notice__icon {
+  width: 34px;
+  height: 34px;
+  background: linear-gradient(135deg, rgba(249, 115, 22, 0.24), rgba(29, 233, 182, 0.22));
+  border-color: rgba(29, 233, 182, 0.38);
 }
 
 .top-notice--info {

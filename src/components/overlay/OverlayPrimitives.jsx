@@ -1,7 +1,7 @@
 import { useEffect, useMemo } from 'react'
 import { useOverlay } from './OverlayProvider'
 
-function DeclarativeOverlay({ open, kind, children, onClose, id, title, description, closeOnBackdrop, className, side, showClose, closeLabel }) {
+function DeclarativeOverlay({ open, kind, children, onClose, id, title, description, closeOnBackdrop, closeOnEscape, restoreFocus, className, side, showClose, closeLabel }) {
   const { openOverlay, closeOverlay } = useOverlay()
   const content = useMemo(() => (
     typeof children === 'function'
@@ -18,6 +18,8 @@ function DeclarativeOverlay({ open, kind, children, onClose, id, title, descript
       title,
       description,
       closeOnBackdrop,
+      closeOnEscape,
+      restoreFocus,
       className,
       side,
       showClose,
@@ -29,7 +31,7 @@ function DeclarativeOverlay({ open, kind, children, onClose, id, title, descript
     return () => {
       closeOverlay(overlayId, 'unmount', { notify: false })
     }
-  }, [className, closeLabel, closeOnBackdrop, closeOverlay, content, description, id, kind, onClose, open, openOverlay, showClose, side, title])
+  }, [className, closeLabel, closeOnBackdrop, closeOnEscape, closeOverlay, content, description, id, kind, onClose, open, openOverlay, restoreFocus, showClose, side, title])
 
   return null
 }

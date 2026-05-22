@@ -928,7 +928,7 @@ function App() {
       label: t('topNotice.launch.label', 'Launch Countdown'),
       message: t(
         'topNotice.launch.message',
-        'F-Freedom launches May 27, 2026, 10:00 UTC. Time left: {{countdown}}',
+        '🔥 F-Freedom launches May 27, 2026, 10:00 UTC. Time left: {{countdown}}',
         { countdown: formatLaunchCountdown(launchNowMs) }
       ),
       source: 'launch',

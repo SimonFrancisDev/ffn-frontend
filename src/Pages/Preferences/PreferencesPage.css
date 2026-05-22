@@ -176,6 +176,22 @@
   color: var(--text-primary);
 }
 
+.preferences-list__item.is-disabled {
+  opacity: 0.64;
+}
+
+.preferences-list__item.is-disabled .preferences-list__label::after {
+  content: 'Off';
+  margin-left: 8px;
+  padding: 2px 7px;
+  border-radius: 999px;
+  background: rgba(239, 68, 68, 0.12);
+  color: #ef4444;
+  font-size: 10px;
+  font-weight: 900;
+  text-transform: uppercase;
+}
+
 .preferences-telegram-card {
   display: flex;
   flex-direction: column;

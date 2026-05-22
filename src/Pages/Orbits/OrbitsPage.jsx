@@ -2953,10 +2953,21 @@ const OrbitsPage = () => {
             <div className="position-modal__heading">
               <h3>{orbitsT('position.title', 'Position #{{number}}', { number: selectedPosition.number })}</h3>
               <p>{getOrbitNarration(selectedPosition).title}</p>
+              <button
+                type="button"
+                className="position-modal__close"
+                onClick={() => {
+                  setShowPositionModal(false)
+                  setSelectedPosition(null)
+                }}
+                aria-label={orbitsT('position.closeAriaLabel', 'Close position details')}
+              >
+                ×
+              </button>
             </div>
             <button
               type="button"
-              className="modal-close"
+              className="modal-close position-modal__legacy-close"
               onClick={() => {
                 setShowPositionModal(false)
                 setSelectedPosition(null)
@@ -3045,8 +3056,10 @@ const OrbitsPage = () => {
                   {getSpilloverReceiptRows(selectedPosition).map((row) => (
                     <div className="modal-detail modal-detail--spillover" key={row.key}>
                       <span className="modal-label">{row.label}</span>
-                      <span>
-                        {getMemberLabel(row.receiver)} - {formatUsdtDisplay(row.amount)} USDT
+                      <span className="spillover-rich-value">
+                        <strong>{getMemberLabel(row.receiver)}</strong>
+                        <em>{formatUsdtDisplay(row.amount)} USDT</em>
+                        {row.txHash ? <small>{shortTx(row.txHash)}</small> : null}
                       </span>
                     </div>
                   ))}

@@ -5020,8 +5020,14 @@
 }
 
 .position-modal__heading {
+  position: sticky;
+  top: 0;
+  z-index: 4;
   padding-right: 42px;
+  padding-bottom: 12px;
   margin-bottom: 12px;
+  background: color-mix(in srgb, var(--bg-primary) 92%, transparent);
+  backdrop-filter: blur(10px);
 }
 
 .position-modal__heading h3 {
@@ -5033,6 +5039,56 @@
   margin: 4px 0 0;
   color: var(--text-secondary);
   font-size: 13px;
+}
+
+.position-modal__close {
+  position: absolute;
+  top: 0;
+  right: 0;
+  width: 38px;
+  height: 38px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border: 1px solid rgba(239, 68, 68, 0.38);
+  border-radius: 12px;
+  background: rgba(239, 68, 68, 0.14);
+  color: var(--text-primary);
+  font-size: 24px;
+  font-weight: 900;
+  cursor: pointer;
+}
+
+.position-modal__legacy-close {
+  display: none !important;
+}
+
+.modal-detail--spillover {
+  border-color: rgba(249, 115, 22, 0.28);
+  background: rgba(249, 115, 22, 0.08);
+}
+
+.spillover-rich-value {
+  display: grid;
+  gap: 3px;
+  justify-items: end;
+  text-align: right;
+}
+
+.spillover-rich-value strong {
+  color: var(--text-primary);
+}
+
+.spillover-rich-value em {
+  color: #f59e0b;
+  font-style: normal;
+  font-weight: 900;
+}
+
+.spillover-rich-value small {
+  color: var(--text-secondary);
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 11px;
 }
 
 /* Absolute final orbit color contract. Keep this at the end of the file. */

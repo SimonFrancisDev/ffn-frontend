@@ -389,7 +389,8 @@ const shouldShowUpgradeProgress =
               </div>
               <div className="account-network__metric inner-surface">
                 <span>{accountT('network.totalTeam', 'Total Team')}</span>
-                <strong>{orbitNetwork?.totalMembersAcrossLevels || Object.values(orbitLevels).reduce((sum, item) => sum + Number(item?.totalMembersAcrossCycles || 0), 0)}</strong>
+                <strong>{downlineStats?.total || 0}</strong>
+                <small>{accountT('network.referralTree', 'Referral tree')}</small>
               </div>
             </div>
 
@@ -406,7 +407,7 @@ const shouldShowUpgradeProgress =
               })}
             </div>
             <p className="account-network__note">
-              {accountT('network.orbitLevelNote', 'Level counts show confirmed orbit members by activation level. Referral depth total: {{count}}.', { count: downlineStats?.total || 0 })}
+              {accountT('network.orbitLevelNote', 'Level counts below show orbit placements by activation level. Total Team above is counted from the referral tree only.')}
             </p>
 
             <div className="account-network__members">

@@ -39,6 +39,8 @@ const AccountPage = () => {
   const [referralAccessMessage, setReferralAccessMessage] = useState('')
   const [directReferrals, setDirectReferrals] = useState([])
   const [downlineStats, setDownlineStats] = useState(null)
+  const [orbitNetwork, setOrbitNetwork] = useState(null)
+  const [showAllDirectReferrals, setShowAllDirectReferrals] = useState(false)
 
   // --- HELPERS ---
   const formatDisplay = useCallback((value) => {
@@ -75,7 +77,7 @@ const AccountPage = () => {
     if (!resolvedAddress) return
     try {
       // Production Standard: One single source of truth for growth and tokens
-      const [data, referralsPayload, downlinePayload] = await Promise.all([
+      const [data, referralsPayload, downlinePayload, orbitNetworkPayload] = await Promise.all([
         fetchUserSummaryApi(resolvedAddress),
         fetch(getApiUrl(`/api/community/member/${encodeURIComponent(resolvedAddress)}/referrals`))
           .then((res) => res.json())
@@ -83,10 +85,14 @@ const AccountPage = () => {
         fetch(getApiUrl(`/api/community/member/${encodeURIComponent(resolvedAddress)}/downline`))
           .then((res) => res.json())
           .catch(() => null),
+        fetch(getApiUrl(`/api/community/member/${encodeURIComponent(resolvedAddress)}/orbit-network`))
+          .then((res) => res.json())
+          .catch(() => null),
       ])
       setSummary(data)
       setDirectReferrals(referralsPayload?.data?.directReferrals || [])
       setDownlineStats(downlinePayload?.data || null)
+      setOrbitNetwork(orbitNetworkPayload?.data || null)
       setLastUpdated(new Date().toLocaleTimeString())
     } catch (err) {
       console.error("Dashboard Sync Error:", err)
@@ -201,6 +207,12 @@ const AccountPage = () => {
     switchToVisitor?.(walletAddress)
     toast.success(accountT('profile.viewingAccount', 'Viewing another account.'), { dedupeKey: `account-profile-loaded-${walletAddress}` })
   }, [accountT, switchToVisitor, toast])
+
+  const visibleDirectReferrals = showAllDirectReferrals
+    ? directReferrals
+    : directReferrals.slice(0, 6)
+
+  const orbitLevels = orbitNetwork?.levels || {}
 
   if (contractsLoading || (!summary && isConnected)) {
     return (
@@ -374,28 +386,33 @@ const shouldShowUpgradeProgress =
               </div>
               <div className="account-network__metric inner-surface">
                 <span>{accountT('network.totalTeam', 'Total Team')}</span>
-                <strong>{downlineStats?.total || 0}</strong>
+                <strong>{orbitNetwork?.totalMembersAcrossLevels || Object.values(orbitLevels).reduce((sum, item) => sum + Number(item?.totalMembersAcrossCycles || 0), 0)}</strong>
               </div>
             </div>
 
             <div className="account-network__levels">
               {Array.from({ length: 10 }, (_, index) => {
                 const level = index + 1
+                const levelData = orbitLevels[`level${level}`] || {}
                 return (
                   <div key={level} className="account-network__level">
                     <span>{accountT('network.level', 'Level {{level}}', { level })}</span>
-                    <strong>{downlineStats?.[`level${level}`] || 0}</strong>
+                    <strong>{levelData.totalMembersAcrossCycles || 0}</strong>
                   </div>
                 )
               })}
             </div>
+            <p className="account-network__note">
+              {accountT('network.orbitLevelNote', 'Level counts show confirmed orbit members by activation level. Referral depth total: {{count}}.', { count: downlineStats?.total || 0 })}
+            </p>
 
             <div className="account-network__members">
-              {directReferrals.length ? directReferrals.slice(0, 12).map((item) => (
+              {directReferrals.length ? visibleDirectReferrals.map((item) => (
                 <div key={`${item.user}-${item.txHash || item.blockNumber || ''}`} className="account-network__member">
                   <div>
                     <span>{accountT('network.member', 'Member')}</span>
-                    <strong>{shortAddress(item.user)}</strong>
+                    <strong>{item.referralId || item.shortCode || accountT('network.pendingReferralId', 'Referral ID pending')}</strong>
+                    <small>{shortAddress(item.user)}</small>
                   </div>
                   <button type="button" className="account-network__view" onClick={() => handleViewAddress(item.user)}>
                     {accountT('actions.viewAccount', 'View Account')} <FaArrowRight />
@@ -407,6 +424,17 @@ const shouldShowUpgradeProgress =
                 </div>
               )}
             </div>
+            {directReferrals.length > 6 && (
+              <button
+                type="button"
+                className="account-network__toggle"
+                onClick={() => setShowAllDirectReferrals((current) => !current)}
+              >
+                {showAllDirectReferrals
+                  ? accountT('actions.seeLess', 'See less')
+                  : accountT('actions.seeMore', 'See more')}
+              </button>
+            )}
           </section>
 
           {/* 4. PROTOCOL REWARDS (FGT & FGTR) */}

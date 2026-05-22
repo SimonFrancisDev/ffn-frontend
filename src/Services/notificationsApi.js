@@ -45,6 +45,14 @@ export async function clearReadNotifications(wallet) {
   }))
 }
 
+export async function clearAllNotifications(wallet) {
+  return parseResponse(await fetch(getApiUrl('/api/notifications/clear-all'), {
+    method: 'PATCH',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ wallet }),
+  }))
+}
+
 export async function fetchNotificationPreferences(wallet) {
   return parseResponse(await fetch(buildApiUrl('/api/notifications/preferences', { wallet })))
 }

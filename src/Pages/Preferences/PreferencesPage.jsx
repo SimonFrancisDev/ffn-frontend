@@ -4,6 +4,7 @@ import { useTranslation } from 'react-i18next'
 import { useWallet } from '../../hooks/useWallet'
 import { useSpace } from '../../context/SpaceContext'
 import { fetchTelegramStatus, startTelegramLink, unsubscribeTelegram, updateTelegramPreferences } from '../../Services/telegramApi'
+import { fetchNotificationPreferences, updateNotificationPreferences } from '../../Services/notificationsApi'
 import { useToast } from '../../components/feedback'
 
 const DEFAULT_NOTIFICATIONS = {
@@ -63,14 +64,14 @@ const applyAccent = (accentId) => {
 }
 
 const PreferencesPage = () => {
-  const { t } = useTranslation()
+  const { t, i18n } = useTranslation()
   const preferencesT = useCallback((key, fallback, options) => t(`preferencesPage.${key}`, fallback, options), [t])
   const { isConnected, account, connect } = useWallet()
   const { isOwnSpace, subjectAddress, switchToSelf } = useSpace()
   const toast = useToast()
 
   const [theme, setTheme] = useState('dark')
-  const [language, setLanguage] = useState('English')
+  const [language, setLanguage] = useState('en')
   const [timezone, setTimezone] = useState('Africa/Lagos')
   const [accentStyle, setAccentStyle] = useState('default')
   const [spaceVisibilityPreference, setSpaceVisibilityPreference] = useState('public')
@@ -89,7 +90,11 @@ const PreferencesPage = () => {
     const savedNotifications = localStorage.getItem('ffn_notifications')
 
     if (savedTheme) setTheme(savedTheme)
-    if (savedLanguage) setLanguage(savedLanguage)
+    if (savedLanguage) {
+      const normalizedLanguage = LANGUAGES.some((item) => item.code === savedLanguage) ? savedLanguage : 'en'
+      setLanguage(normalizedLanguage)
+      i18n.changeLanguage(normalizedLanguage)
+    }
     if (savedTimezone) setTimezone(savedTimezone)
     if (savedAccent) setAccentStyle(savedAccent)
     if (savedSpaceVisibility) setSpaceVisibilityPreference(savedSpaceVisibility)
@@ -104,7 +109,26 @@ const PreferencesPage = () => {
 
     applyTheme(savedTheme || 'dark')
     applyAccent(savedAccent || 'default')
-  }, [])
+  }, [i18n])
+
+  const refreshNotificationPreferences = useCallback(async () => {
+    if (!isConnected || !account) return
+
+    try {
+      const result = await fetchNotificationPreferences(account)
+      const prefs = result?.preferences || {}
+      if (prefs.language && LANGUAGES.some((item) => item.code === prefs.language)) {
+        setLanguage(prefs.language)
+        i18n.changeLanguage(prefs.language)
+        localStorage.setItem('ffn_language', prefs.language)
+      }
+      if (prefs.web) {
+        setNotifications((current) => ({ ...DEFAULT_NOTIFICATIONS, ...current, ...prefs.web }))
+      }
+    } catch (error) {
+      console.error('Failed to load notification preferences:', error)
+    }
+  }, [account, i18n, isConnected])
 
   const refreshTelegramStatus = useCallback(async ({ silent = false } = {}) => {
     if (!isConnected || !account) return null
@@ -132,6 +156,10 @@ const PreferencesPage = () => {
   useEffect(() => {
     refreshTelegramStatus({ silent: true })
   }, [refreshTelegramStatus])
+
+  useEffect(() => {
+    refreshNotificationPreferences()
+  }, [refreshNotificationPreferences])
 
   useEffect(() => {
     if (!isConnected || !account || telegramStatus.status !== 'pending') return undefined
@@ -176,7 +204,9 @@ const PreferencesPage = () => {
 
   const savePreferences = useCallback(async () => {
     localStorage.setItem('ffn_theme', theme)
+    localStorage.setItem('finfreedom_theme_v1', theme)
     localStorage.setItem('ffn_language', language)
+    localStorage.setItem('finfreedom_language_v1', language)
     localStorage.setItem('ffn_timezone', timezone)
     localStorage.setItem('ffn_accent', accentStyle)
     localStorage.setItem('ffn_space_visibility_pref', spaceVisibilityPreference)
@@ -184,8 +214,18 @@ const PreferencesPage = () => {
 
     applyTheme(theme)
     applyAccent(accentStyle)
+    i18n.changeLanguage(language)
 
     try {
+      if (account) {
+        await updateNotificationPreferences(account, {
+          language,
+          telegramEnabled: telegramStatus.status === 'active',
+          web: notifications,
+          telegram: notifications,
+        })
+      }
+
       if (account && telegramStatus.status === 'active') {
         const result = await updateTelegramPreferences(account, notifications)
         if (result.preferences) {
@@ -200,21 +240,22 @@ const PreferencesPage = () => {
       toast.danger(error.message || preferencesT('status.saveFailed', 'Preferences could not be saved.'), { dedupeKey: 'preferences-save-failed' })
     }
     window.setTimeout(() => setSaveStatus({ show: false, message: '', type: '' }), 2500)
-  }, [account, theme, language, timezone, accentStyle, spaceVisibilityPreference, notifications, preferencesT, toast, telegramStatus.status])
+  }, [account, theme, language, timezone, accentStyle, spaceVisibilityPreference, notifications, preferencesT, toast, telegramStatus.status, i18n])
 
   const resetPreferences = useCallback(() => {
     setTheme('dark')
-    setLanguage('English')
+    setLanguage('en')
     setTimezone('Africa/Lagos')
     setAccentStyle('default')
     setSpaceVisibilityPreference('public')
     setNotifications(DEFAULT_NOTIFICATIONS)
     applyTheme('dark')
     applyAccent('default')
+    i18n.changeLanguage('en')
     setSaveStatus({ show: true, message: preferencesT('status.reset', 'Preferences reset to defaults.'), type: 'info' })
     toast.info(preferencesT('status.reset', 'Preferences reset to defaults.'), { dedupeKey: 'preferences-reset' })
     window.setTimeout(() => setSaveStatus({ show: false, message: '', type: '' }), 2500)
-  }, [preferencesT, toast])
+  }, [i18n, preferencesT, toast])
 
   const toggleNotification = useCallback((key) => {
     setNotifications((prev) => ({ ...DEFAULT_NOTIFICATIONS, ...prev, [key]: !Boolean(prev[key]) }))
@@ -305,7 +346,7 @@ const PreferencesPage = () => {
 
           <div className="preferences-hero__chips">
             <span className="preferences-hero__chip glass-panel">{theme === 'light' ? preferencesT('theme.lightMode', 'Light Mode') : theme === 'system' ? preferencesT('theme.systemTheme', 'System Theme') : preferencesT('theme.darkMode', 'Dark Mode')}</span>
-            <span className="preferences-hero__chip glass-panel">{language}</span>
+            <span className="preferences-hero__chip glass-panel">{LANGUAGES.find((item) => item.code === language)?.label || language}</span>
             <span className="preferences-hero__chip glass-panel">{preferencesT('hero.alertsEnabled', '{{count}} alerts enabled', { count: activeNotifications })}</span>
           </div>
         </div>
@@ -378,7 +419,7 @@ const PreferencesPage = () => {
                 <span className="preferences-card__label muted-text">{preferencesT('language.label', 'Language')}</span>
                 <select className="preference-select" value={language} onChange={(e) => setLanguage(e.target.value)}>
                   {LANGUAGES.map((item) => (
-                    <option key={item.code} value={item.label}>{item.label}</option>
+                    <option key={item.code} value={item.code}>{item.label}</option>
                   ))}
                 </select>
               </div>

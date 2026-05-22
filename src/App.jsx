@@ -33,7 +33,12 @@ import { NotificationProvider } from './components/notifications'
 import { useCompleteUserData } from './hooks/useUserData'
 import { LANGUAGES } from './constants/languages'
 import { getApiUrl } from './Services/apiConfig'
-import { fetchNotifications, markAllNotificationsRead, markNotificationRead } from './Services/notificationsApi'
+import {
+  clearAllNotifications,
+  fetchNotifications,
+  markAllNotificationsRead,
+  markNotificationRead,
+} from './Services/notificationsApi'
 import { fetchTelegramStatus } from './Services/telegramApi'
 import { DollarSign, TrendingUp, Wrench, Bell, Calendar, Megaphone } from 'lucide-react'
 
@@ -81,6 +86,11 @@ const THEME_STORAGE_KEY = 'finfreedom_theme_v1'
 const APP_USER_ID_STORAGE_KEY = 'finfreedom_app_user_id_v1'
 const TELEGRAM_PROMPT_DISMISSED_KEY = 'finfreedom_telegram_prompt_dismissed_v1'
 const TELEGRAM_PROMPT_SESSION_KEY = 'finfreedom_telegram_prompt_seen_v1'
+
+const scopedStorageKey = (baseKey, wallet) => {
+  const suffix = wallet ? String(wallet).trim().toLowerCase() : 'guest'
+  return `${baseKey}:${suffix}`
+}
 
 const routeMap = {
   '/': 'home',
@@ -152,37 +162,7 @@ const isInternalNavigationState = (state) => {
 }
 
 const getInitialNotifications = () => {
-  if (typeof window === 'undefined') return baseNotifications
-
-  try {
-    const stored = window.localStorage.getItem(NOTIFICATIONS_STORAGE_KEY)
-    if (!stored) return baseNotifications
-
-    const parsed = JSON.parse(stored)
-    if (!Array.isArray(parsed)) return baseNotifications
-
-    return parsed.filter((n) => !BASE_NOTIFICATION_TRANSLATION_KEYS[n.id]).map((n) => ({
-      ...n,
-      ...(BASE_NOTIFICATION_TRANSLATION_KEYS[n.id] || {}),
-      icon:
-        n.iconName === 'DollarSign'
-          ? DollarSign
-          : n.iconName === 'TrendingUp'
-            ? TrendingUp
-            : n.iconName === 'Wrench'
-              ? Wrench
-              : n.iconName === 'Megaphone'
-                ? Megaphone
-                : n.iconName === 'Calendar'
-                  ? Calendar
-                  : n.iconName === 'Bell'
-                    ? Bell
-                    : Bell,
-    }))
-  } catch (error) {
-    console.error('Failed to read stored notifications:', error)
-    return baseNotifications
-  }
+  return baseNotifications
 }
 
 const getInitialLanguage = () => {
@@ -450,7 +430,7 @@ function App() {
       const storedReadStatus =
         typeof window !== 'undefined'
           ? JSON.parse(
-              window.localStorage.getItem(NOTIFICATION_READ_STATUS_KEY) || '{}'
+              window.localStorage.getItem(scopedStorageKey(NOTIFICATION_READ_STATUS_KEY, walletAccount)) || '{}'
             )
           : {}
 
@@ -490,7 +470,7 @@ function App() {
       console.error('Failed to fetch community notifications:', err)
       return []
     }
-  }, [])
+  }, [walletAccount])
 
   const fetchBackendNotifications = useCallback(async () => {
     if (!isConnected || !walletAccount) return []
@@ -528,20 +508,15 @@ function App() {
   }, [isConnected, walletAccount])
 
   const refreshNotifications = useCallback(async () => {
-    const [communityNotifs, backendNotifs] = await Promise.all([
-      fetchCommunityNotifications(),
-      fetchBackendNotifications(),
-    ])
-
-    const storedNotifications = getInitialNotifications()
+    const backendNotifs = await fetchBackendNotifications()
     const storedReadStatus =
       typeof window !== 'undefined'
         ? JSON.parse(
-            window.localStorage.getItem(NOTIFICATION_READ_STATUS_KEY) || '{}'
+            window.localStorage.getItem(scopedStorageKey(NOTIFICATION_READ_STATUS_KEY, walletAccount)) || '{}'
           )
         : {}
 
-    const allNotifications = [...storedNotifications, ...communityNotifs, ...backendNotifs].map(
+    const allNotifications = backendNotifs.map(
       (n) => ({
         ...n,
         read:
@@ -561,7 +536,7 @@ function App() {
 
     const cleaned = cleanOldNotifications(uniqueNotifications)
     setNotifications(cleaned.slice(0, 50))
-  }, [fetchBackendNotifications, fetchCommunityNotifications])
+  }, [fetchBackendNotifications, walletAccount])
 
   useEffect(() => {
     refreshNotifications()
@@ -591,13 +566,13 @@ function App() {
         icon: undefined,
       }))
       window.localStorage.setItem(
-        NOTIFICATIONS_STORAGE_KEY,
+        scopedStorageKey(NOTIFICATIONS_STORAGE_KEY, walletAccount),
         JSON.stringify(serializable)
       )
     } catch (error) {
       console.error('Failed to persist notifications:', error)
     }
-  }, [notifications])
+  }, [notifications, walletAccount])
 
   useEffect(() => {
     try {
@@ -772,7 +747,7 @@ function App() {
 
     if (typeof window !== 'undefined') {
       window.localStorage.setItem(
-        NOTIFICATION_READ_STATUS_KEY,
+        scopedStorageKey(NOTIFICATION_READ_STATUS_KEY, walletAccount),
         JSON.stringify(nextReadStatus)
       )
     }
@@ -788,10 +763,16 @@ function App() {
     setNotifications([])
 
     if (typeof window !== 'undefined') {
-      window.localStorage.removeItem(NOTIFICATIONS_STORAGE_KEY)
-      window.localStorage.removeItem(NOTIFICATION_READ_STATUS_KEY)
+      window.localStorage.removeItem(scopedStorageKey(NOTIFICATIONS_STORAGE_KEY, walletAccount))
+      window.localStorage.removeItem(scopedStorageKey(NOTIFICATION_READ_STATUS_KEY, walletAccount))
     }
-  }, [])
+
+    if (walletAccount) {
+      clearAllNotifications(walletAccount).catch((error) => {
+        console.error('Failed to clear backend notifications:', error)
+      })
+    }
+  }, [walletAccount])
 
   const handleNotificationClick = useCallback(
     (notification) => {
@@ -803,11 +784,11 @@ function App() {
 
       if (typeof window !== 'undefined') {
         const storedReadStatus = JSON.parse(
-          window.localStorage.getItem(NOTIFICATION_READ_STATUS_KEY) || '{}'
+          window.localStorage.getItem(scopedStorageKey(NOTIFICATION_READ_STATUS_KEY, walletAccount)) || '{}'
         )
         storedReadStatus[notification.id] = true
         window.localStorage.setItem(
-          NOTIFICATION_READ_STATUS_KEY,
+          scopedStorageKey(NOTIFICATION_READ_STATUS_KEY, walletAccount),
           JSON.stringify(storedReadStatus)
         )
       }

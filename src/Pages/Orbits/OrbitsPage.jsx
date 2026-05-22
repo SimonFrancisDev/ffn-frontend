@@ -6,10 +6,10 @@ import { useContracts } from '../../hooks/useContracts'
 import { useTxFlow } from '../../hooks/useTxFlow'
 import { useLocation, useNavigate } from 'react-router-dom'
 import { ethers } from 'ethers'
-import { Modal } from '../../components/overlay'
 import { InlineAlert, Skeleton } from '../../components/ui'
 import { TransactionStatus, useToast } from '../../components/feedback'
 import { resolveIdentity } from '../../utils/identityResolver'
+import { getApiUrl } from '../../Services/apiConfig'
 import {
   fetchOrbitLevelsApi,
   fetchOrbitLevelSnapshotApi,
@@ -289,6 +289,7 @@ const OrbitsPage = () => {
   const galaxyRef = useRef(null)
   const modalRef = useRef(null)
   const referrerCacheRef = useRef(new Map())
+  const directDownlineSetRef = useRef(new Set())
   const viewedLevelsCacheRef = useRef(new Map())
   const fetchIdRef = useRef(0)
   const cycleHistoryCacheRef = useRef(new Map())
@@ -391,6 +392,24 @@ const OrbitsPage = () => {
     return resolvedMemberIds[address?.toLowerCase?.()] || shortAddress(address)
   }, [orbitsT, resolvedMemberIds, shortAddress])
 
+  const getSpilloverReceiptRows = useCallback((position) => {
+    const receipts = Array.isArray(position?.indexedReceipts) ? position.indexedReceipts : []
+    return receipts
+      .filter((receipt) => Number(receipt.receiptType || 0) === 3)
+      .map((receipt, index) => {
+        const roleText = String(receipt.routedRole || '').toLowerCase()
+        const spilloverNumber = roleText.includes('2') ? 2 : index + 1
+        return {
+          key: `${receipt.txHash}-${receipt.logIndex}-${index}`,
+          label: spilloverNumber === 2 ? 'Spillover 2' : 'Spillover 1',
+          receiver: receipt.receiver,
+          amount: getReceiptGeneratedGross(receipt) || getReceiptWalletCredited(receipt),
+          txHash: receipt.txHash,
+        }
+      })
+      .slice(0, 2)
+  }, [])
+
   const formatTruthLabel = useCallback((truthLabel) => {
     if (!truthLabel) return orbitsT('truth.unknown', 'Unknown')
     return String(truthLabel)
@@ -455,6 +474,28 @@ const OrbitsPage = () => {
       return ethers.ZeroAddress
     }
   }, [getCachedReferrer])
+
+  const refreshDirectDownlineSet = useCallback(async (address) => {
+    if (!address || !ethers.isAddress(address)) {
+      directDownlineSetRef.current = new Set()
+      return directDownlineSetRef.current
+    }
+
+    try {
+      const res = await fetch(getApiUrl(`/api/community/member/${encodeURIComponent(address)}/referrals`))
+      const payload = await res.json().catch(() => null)
+      const rows = payload?.data?.directReferrals || []
+      directDownlineSetRef.current = new Set(
+        rows
+          .map((item) => String(item.user || '').toLowerCase())
+          .filter(Boolean)
+      )
+    } catch {
+      directDownlineSetRef.current = new Set()
+    }
+
+    return directDownlineSetRef.current
+  }, [])
 
   useEffect(() => {
     setShowStructuralPreview(Boolean(orbitDisplayOptions.structureLines))
@@ -590,6 +631,7 @@ const OrbitsPage = () => {
     const occupantLower = occupantAddress.toLowerCase()
     const viewedLower = viewedAddr.toLowerCase()
     if (occupantLower === viewedLower) return 'mine'
+    if (directDownlineSetRef.current.has(occupantLower)) return 'downline'
 
     const truthLabel = String(backendItem?.truthLabel || '').toUpperCase()
     const referrer =
@@ -891,6 +933,8 @@ const OrbitsPage = () => {
     setLoadingLevelsMap(prev => ({ ...prev, [level]: true }))
 
     try {
+      await refreshDirectDownlineSet(viewAddress)
+
         const snapshot = await fetchOrbitLevelSnapshotApi(viewAddress, level, {
           forceRefresh,
         })
@@ -999,7 +1043,7 @@ const OrbitsPage = () => {
         setIsLoadingOrbits(false)
       }
     }
-  }, [viewAddress, mergePositionTruth, orbitData, orbitsT])
+  }, [viewAddress, mergePositionTruth, orbitData, orbitsT, refreshDirectDownlineSet])
 
   const fetchAllOrbitData = useCallback(async (forceRefresh = false) => {
     if (!viewAddress || !ethers.isAddress(viewAddress)) return
@@ -2895,22 +2939,21 @@ const OrbitsPage = () => {
       </div>
 
       {showPositionModal && selectedPosition && (
-        <Modal
-          open={showPositionModal}
-          title={orbitsT('position.title', 'Position #{{number}}', { number: selectedPosition.number })}
-          description={getOrbitNarration(selectedPosition).title}
-          className="orbit-position-overlay"
-          closeOnBackdrop={false}
-          restoreFocus={false}
-          onClose={() => {
-            setShowPositionModal(false)
-            setSelectedPosition(null)
-          }}
+        <div
+          className="orbit-position-local-overlay"
+          role="dialog"
+          aria-modal="true"
+          aria-label={orbitsT('position.title', 'Position #{{number}}', { number: selectedPosition.number })}
         >
           <div
             className="position-modal position-modal--shared position-modal--earnings"
             ref={modalRef}
+            onMouseDown={(event) => event.stopPropagation()}
           >
+            <div className="position-modal__heading">
+              <h3>{orbitsT('position.title', 'Position #{{number}}', { number: selectedPosition.number })}</h3>
+              <p>{getOrbitNarration(selectedPosition).title}</p>
+            </div>
             <button
               type="button"
               className="modal-close"
@@ -2998,6 +3041,15 @@ const OrbitsPage = () => {
                       )}
                     </>
                   )}
+
+                  {getSpilloverReceiptRows(selectedPosition).map((row) => (
+                    <div className="modal-detail modal-detail--spillover" key={row.key}>
+                      <span className="modal-label">{row.label}</span>
+                      <span>
+                        {getMemberLabel(row.receiver)} - {formatUsdtDisplay(row.amount)} USDT
+                      </span>
+                    </div>
+                  ))}
 
                   {!!selectedPosition.indexedReceipts?.length && (
                     <div className="modal-record-list">
@@ -3247,7 +3299,7 @@ const OrbitsPage = () => {
               </>
             )}
           </div>
-        </Modal>
+        </div>
       )}
     </section>
   )

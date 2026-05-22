@@ -5001,6 +5001,40 @@
   display: flex;
 }
 
+.orbit-position-local-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 1000;
+  display: grid;
+  place-items: center;
+  padding: 18px;
+  background: rgba(3, 8, 20, 0.74);
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
+}
+
+.orbit-position-local-overlay .position-modal {
+  width: min(680px, calc(100vw - 28px));
+  max-height: min(82vh, 780px);
+  overflow: auto;
+}
+
+.position-modal__heading {
+  padding-right: 42px;
+  margin-bottom: 12px;
+}
+
+.position-modal__heading h3 {
+  margin: 0;
+  color: var(--text-primary);
+}
+
+.position-modal__heading p {
+  margin: 4px 0 0;
+  color: var(--text-secondary);
+  font-size: 13px;
+}
+
 /* Absolute final orbit color contract. Keep this at the end of the file. */
 .orbits-page .planet-node.mine,
 .orbits-page .planet-node.orbit-state-owner {

@@ -196,6 +196,13 @@ export function OverlayProvider({ children }) {
     return id
   }, [])
 
+  const updateOverlay = useCallback((id, patch = {}) => {
+    if (!id) return
+    setItems((current) =>
+      current.map((item) => (item.id === id ? { ...item, ...patch, id } : item))
+    )
+  }, [])
+
   const openModal = useCallback((config) => openOverlay({ ...config, kind: 'modal' }), [openOverlay])
   const openDrawer = useCallback((config) => openOverlay({ ...config, kind: 'drawer' }), [openOverlay])
   const openSheet = useCallback((config) => openOverlay({ ...config, kind: 'sheet' }), [openOverlay])
@@ -204,13 +211,14 @@ export function OverlayProvider({ children }) {
   const value = useMemo(() => ({
     overlays: items,
     openOverlay,
+    updateOverlay,
     openModal,
     openDrawer,
     openSheet,
     openDropdown,
     closeOverlay,
     closeAllOverlays,
-  }), [closeAllOverlays, closeOverlay, items, openDrawer, openDropdown, openModal, openOverlay, openSheet])
+  }), [closeAllOverlays, closeOverlay, items, openDrawer, openDropdown, openModal, openOverlay, openSheet, updateOverlay])
 
   return (
     <OverlayContext.Provider value={value}>

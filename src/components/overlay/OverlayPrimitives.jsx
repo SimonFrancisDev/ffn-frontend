@@ -1,8 +1,9 @@
-import { useEffect, useMemo } from 'react'
+import { useEffect, useMemo, useRef } from 'react'
 import { useOverlay } from './OverlayProvider'
 
 function DeclarativeOverlay({ open, kind, children, onClose, id, title, description, closeOnBackdrop, closeOnEscape, restoreFocus, className, side, showClose, closeLabel }) {
-  const { openOverlay, closeOverlay } = useOverlay()
+  const { openOverlay, closeOverlay, updateOverlay } = useOverlay()
+  const overlayIdRef = useRef(null)
   const content = useMemo(() => (
     typeof children === 'function'
       ? children
@@ -10,10 +11,23 @@ function DeclarativeOverlay({ open, kind, children, onClose, id, title, descript
   ), [children])
 
   useEffect(() => {
-    if (!open) return undefined
-
-    const overlayId = openOverlay({
+    if (!open || overlayIdRef.current) return undefined
+    overlayIdRef.current = openOverlay({
       id,
+      kind,
+    })
+
+    return () => {
+      if (overlayIdRef.current) {
+        closeOverlay(overlayIdRef.current, 'unmount', { notify: false })
+        overlayIdRef.current = null
+      }
+    }
+  }, [closeOverlay, id, kind, open, openOverlay])
+
+  useEffect(() => {
+    if (!open || !overlayIdRef.current) return
+    updateOverlay(overlayIdRef.current, {
       kind,
       title,
       description,
@@ -27,11 +41,7 @@ function DeclarativeOverlay({ open, kind, children, onClose, id, title, descript
       content,
       onClose,
     })
-
-    return () => {
-      closeOverlay(overlayId, 'unmount', { notify: false })
-    }
-  }, [className, closeLabel, closeOnBackdrop, closeOnEscape, closeOverlay, content, description, id, kind, onClose, open, openOverlay, restoreFocus, showClose, side, title])
+  }, [className, closeLabel, closeOnBackdrop, closeOnEscape, content, description, kind, onClose, open, restoreFocus, showClose, side, title, updateOverlay])
 
   return null
 }

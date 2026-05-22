@@ -280,6 +280,9 @@ const shouldShowUpgradeProgress =
           <span className="hero-stat-chip">{accountT('hero.receipts', '{{count}} Receipts', { count: earnings?.receiptCount || earnings?.count || 0 })}</span>
           <span className="hero-stat-chip">{accountT('hero.amoyNetwork', 'Amoy Network')}</span>
         </div>
+        <button type="button" className="account-hero-action" onClick={() => navigate('/activation')}>
+          {accountT('actions.goToActivationCenter', 'Go to Activation Center')} <FaArrowRight />
+        </button>
       </header>
 
       {/* 2. PROFILE SWITCHER (CENTERED & CLEAN) */}

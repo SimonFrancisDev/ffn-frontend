@@ -4,7 +4,7 @@ import { useTranslation } from 'react-i18next'
 import { useWallet } from '../../hooks/useWallet'
 import { useContracts } from '../../hooks/useContracts'
 import { useTxFlow } from '../../hooks/useTxFlow'
-import { useLocation } from 'react-router-dom'
+import { useLocation, useNavigate } from 'react-router-dom'
 import { ethers } from 'ethers'
 import { Modal } from '../../components/overlay'
 import { InlineAlert, Skeleton } from '../../components/ui'
@@ -230,6 +230,7 @@ const OrbitsPage = () => {
   const { contracts, isLoading: contractsLoading, error: contractsError, loadContracts } = useContracts()
   const { txState: orbitTxState } = useTxFlow()
   const location = useLocation()
+  const navigate = useNavigate()
   const routedLevel = Number(location.state?.level || 0)
   const routedAddress = location.state?.address || ''
   const routedDisplayId = location.state?.displayId || ''
@@ -384,6 +385,11 @@ const OrbitsPage = () => {
     if (!txHash) return '—'
     return `${txHash.slice(0, 10)}...${txHash.slice(-8)}`
   }, [])
+
+  const getMemberLabel = useCallback((address) => {
+    if (!address || address === ethers.ZeroAddress) return orbitsT('modal.memberIdUnavailable', 'ID unavailable')
+    return resolvedMemberIds[address?.toLowerCase?.()] || shortAddress(address)
+  }, [orbitsT, resolvedMemberIds, shortAddress])
 
   const formatTruthLabel = useCallback((truthLabel) => {
     if (!truthLabel) return orbitsT('truth.unknown', 'Unknown')
@@ -1838,11 +1844,6 @@ const OrbitsPage = () => {
     }
   }
 
-  const getMemberLabel = useCallback((address) => {
-    if (!address || address === ethers.ZeroAddress) return orbitsT('modal.memberIdUnavailable', 'ID unavailable')
-    return resolvedMemberIds[address?.toLowerCase?.()] || shortAddress(address)
-  }, [orbitsT, resolvedMemberIds])
-
   const toggleOrbitDisplayOption = (key) => {
     setOrbitDisplayOptions((current) => ({
       ...current,
@@ -2143,6 +2144,9 @@ const OrbitsPage = () => {
               {identityLookupState.status === 'loading' ? orbitsT('actions.resolving', 'Resolving...') : orbitsT('actions.loadAddress', 'Load Address')}
             </button>
             <button className="address-btn secondary" onClick={viewMyOrbit}>{orbitsT('actions.myOrbits', 'My Orbits')}</button>
+            <button className="address-btn secondary" onClick={() => navigate('/activation')}>
+              {orbitsT('actions.activationCenter', 'Activation Center')}
+            </button>
             <button className="refresh-btn" onClick={refreshData} disabled={isRefreshing}>{orbitsT('actions.refresh', 'Refresh')}</button>
             <span className="last-sync">{orbitsT('controls.lastSync', 'Last sync: {{time}}', { time: lastUpdated })}</span>
           </div>

@@ -266,6 +266,7 @@ const OrbitsPage = () => {
   )
   const [isLoadingOrbits, setIsLoadingOrbits] = useState(true)
   const [loadingLevelsMap, setLoadingLevelsMap] = useState({})
+  const [orbitZoom, setOrbitZoom] = useState(1)
 
   const [isOrbitToolsOpen, setIsOrbitToolsOpen] = useState(false)
   const [orbitCockpitTab, setOrbitCockpitTab] = useState('overview')
@@ -1837,6 +1838,11 @@ const OrbitsPage = () => {
     }
   }
 
+  const getMemberLabel = useCallback((address) => {
+    if (!address || address === ethers.ZeroAddress) return orbitsT('modal.memberIdUnavailable', 'ID unavailable')
+    return resolvedMemberIds[address?.toLowerCase?.()] || shortAddress(address)
+  }, [orbitsT, resolvedMemberIds])
+
   const toggleOrbitDisplayOption = (key) => {
     setOrbitDisplayOptions((current) => ({
       ...current,
@@ -2453,6 +2459,31 @@ const OrbitsPage = () => {
                     </div>
                   )}
 
+                  <div className="orbit-zoom-controls glass-panel" aria-label={orbitsT('zoom.controls', 'Orbit zoom controls')}>
+                    <button
+                      type="button"
+                      onClick={() => setOrbitZoom((current) => Math.max(0.75, Number((current - 0.1).toFixed(2))))}
+                      aria-label={orbitsT('zoom.out', 'Zoom out')}
+                    >
+                      -
+                    </button>
+                    <span>{Math.round(orbitZoom * 100)}%</span>
+                    <button
+                      type="button"
+                      onClick={() => setOrbitZoom((current) => Math.min(1.7, Number((current + 0.1).toFixed(2))))}
+                      aria-label={orbitsT('zoom.in', 'Zoom in')}
+                    >
+                      +
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => setOrbitZoom(1)}
+                      aria-label={orbitsT('zoom.reset', 'Reset zoom')}
+                    >
+                      {orbitsT('zoom.reset', 'Reset')}
+                    </button>
+                  </div>
+
                   <div
                     key={`galaxy-${activeTab}`}
                     className={`galaxy-container ${orbitType.toLowerCase()} ${!isGalaxyMeasured ? 'is-measuring' : ''}`}
@@ -2620,7 +2651,7 @@ const OrbitsPage = () => {
                                   height: stageSize,
                                   left: '50%',
                                   top: '50%',
-                                  transform: 'translate(-50%, -50%)'
+                                  transform: `translate(-50%, -50%) scale(${orbitZoom})`
                                 }}
                               >
                                 <div
@@ -2946,13 +2977,17 @@ const OrbitsPage = () => {
                       {Number(selectedPosition.positionInfo.exactToSpillover1 || 0) > 0 && (
                         <div className="modal-detail">
                           <span className="modal-label">{orbitsT('modal.toSpillover1', 'To Spillover 1')}</span>
-                          <span>{formatUsdtDisplay(selectedPosition.positionInfo.exactToSpillover1 || 0)} USDT</span>
+                          <span>
+                            {getMemberLabel(selectedPosition.positionInfo.spillover1Recipient)} - {formatUsdtDisplay(selectedPosition.positionInfo.exactToSpillover1 || 0)} USDT
+                          </span>
                         </div>
                       )}
                       {Number(selectedPosition.positionInfo.exactToSpillover2 || 0) > 0 && (
                         <div className="modal-detail">
                           <span className="modal-label">{orbitsT('modal.toSpillover2', 'To Spillover 2')}</span>
-                          <span>{formatUsdtDisplay(selectedPosition.positionInfo.exactToSpillover2 || 0)} USDT</span>
+                          <span>
+                            {getMemberLabel(selectedPosition.positionInfo.spillover2Recipient)} - {formatUsdtDisplay(selectedPosition.positionInfo.exactToSpillover2 || 0)} USDT
+                          </span>
                         </div>
                       )}
                     </>
@@ -2964,6 +2999,9 @@ const OrbitsPage = () => {
                         <div key={`${receipt.txHash}-${receipt.logIndex}`} className="modal-record-item">
                           <div><strong>{orbitsT('modal.earnedRecord', 'Earned')}</strong> {shortTx(receipt.txHash)}</div>
                           <div>{orbitsT('modal.receiver', 'Receiver')}: {resolvedMemberIds[receipt.receiver?.toLowerCase?.()] || orbitsT('modal.memberIdUnavailable', 'ID unavailable')}</div>
+                          {Number(receipt.receiptType || 0) === 3 && (
+                            <div>{orbitsT('modal.spilloverReceiver', 'Spillover Receiver')}: {getMemberLabel(receipt.receiver)}</div>
+                          )}
                           <div>{orbitsT('modal.walletCredited', 'Wallet Credited')}: {formatUsdtDisplay(getReceiptWalletCredited(receipt))} USDT</div>
                           {getReceiptEscrowLocked(receipt) > 0 && <div>{orbitsT('modal.escrowLocked', 'Escrow Locked')}: {formatUsdtDisplay(getReceiptEscrowLocked(receipt))} USDT</div>}
                         </div>
@@ -3135,11 +3173,15 @@ const OrbitsPage = () => {
                     </div>
                     <div className="modal-detail">
                       <span className="modal-label">{orbitsT('modal.toSpillover1', 'To Spillover 1')}</span>
-                      <span>{formatUsdtDisplay(selectedPosition.positionInfo.exactToSpillover1 || 0)} USDT</span>
+                      <span>
+                        {getMemberLabel(selectedPosition.positionInfo.spillover1Recipient)} - {formatUsdtDisplay(selectedPosition.positionInfo.exactToSpillover1 || 0)} USDT
+                      </span>
                     </div>
                     <div className="modal-detail">
                       <span className="modal-label">{orbitsT('modal.toSpillover2', 'To Spillover 2')}</span>
-                      <span>{formatUsdtDisplay(selectedPosition.positionInfo.exactToSpillover2 || 0)} USDT</span>
+                      <span>
+                        {getMemberLabel(selectedPosition.positionInfo.spillover2Recipient)} - {formatUsdtDisplay(selectedPosition.positionInfo.exactToSpillover2 || 0)} USDT
+                      </span>
                     </div>
                     <div className="modal-detail">
                       <span className="modal-label">{orbitsT('modal.toEscrow', 'To Escrow')}</span>
@@ -3169,6 +3211,9 @@ const OrbitsPage = () => {
                         <div key={`${receipt.txHash}-${receipt.logIndex}`} className="modal-record-item">
                           <div><strong>{receipt.rawEventName || orbitsT('cockpit.receipts.receipt', 'Receipt')}</strong> • {shortTx(receipt.txHash)}</div>
                           <div>{orbitsT('modal.receiver', 'Receiver')}: {shortAddress(receipt.receiver)}</div>
+                          {Number(receipt.receiptType || 0) === 3 && (
+                            <div>{orbitsT('modal.spilloverReceiver', 'Spillover Receiver')}: {getMemberLabel(receipt.receiver)}</div>
+                          )}
                           <div>{orbitsT('modal.gross', 'Generated')}: {formatUsdtDisplay(getReceiptGeneratedGross(receipt))} USDT</div>
                           <div>{orbitsT('modal.liquid', 'Liquid')}: {formatUsdtDisplay(getReceiptWalletCredited(receipt))} USDT</div>
                         </div>

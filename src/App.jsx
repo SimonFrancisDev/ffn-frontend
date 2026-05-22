@@ -187,11 +187,41 @@ const getInitialTheme = () => {
 
   try {
     const stored = window.localStorage.getItem(THEME_STORAGE_KEY)
-    return stored === 'light' || stored === 'dark' ? stored : 'dark'
+    return stored === 'light' || stored === 'dark' || stored === 'system' ? stored : 'dark'
   } catch (error) {
     console.error('Failed to read stored theme:', error)
     return 'dark'
   }
+}
+
+const resolveThemeMode = (theme) => {
+  if (theme !== 'system') return theme
+  if (typeof window === 'undefined') return 'dark'
+  return window.matchMedia?.('(prefers-color-scheme: light)').matches ? 'light' : 'dark'
+}
+
+const formatLaunchCountdown = (nowMs) => {
+  const targetMs = Date.UTC(2026, 4, 27, 10, 0, 0, 0)
+  const remaining = Math.max(0, targetMs - nowMs)
+  const hours = Math.floor(remaining / 3600000)
+  const minutes = Math.floor((remaining % 3600000) / 60000)
+  const seconds = Math.floor((remaining % 60000) / 1000)
+  const milliseconds = remaining % 1000
+  const pad = (value, size = 2) => String(value).padStart(size, '0')
+  return `${pad(hours)}:${pad(minutes)}:${pad(seconds)}:${pad(milliseconds, 3)}`
+}
+
+const applyStoredAccent = () => {
+  if (typeof window === 'undefined') return
+  const accents = {
+    default: '#1de9b6',
+    blue: '#3b82f6',
+    purple: '#8b5cf6',
+    gold: '#f59e0b',
+  }
+  const accent = accents[window.localStorage.getItem('ffn_accent')] || accents.default
+  document.documentElement.style.setProperty('--glow-teal', accent)
+  document.documentElement.style.setProperty('--glow-blue', accent)
 }
 
 const createInternalUserId = () => {
@@ -349,6 +379,7 @@ function App() {
   const [adminCheckComplete, setAdminCheckComplete] = useState(false)
   const [internalUserId, setInternalUserId] = useState('')
   const [modalNotification, setModalNotification] = useState(null)
+  const [launchNowMs, setLaunchNowMs] = useState(Date.now())
 
   const {
     account: walletAccount,
@@ -371,6 +402,7 @@ function App() {
 
   useEffect(() => {
     setInternalUserId(getOrCreateInternalUserId())
+    applyStoredAccent()
   }, [])
 
   useEffect(() => {
@@ -407,8 +439,22 @@ function App() {
   }, [isConnected, loadContracts])
 
   useEffect(() => {
-    document.documentElement.setAttribute('data-theme', theme)
+    const applyResolvedTheme = () => {
+      document.documentElement.setAttribute('data-theme', resolveThemeMode(theme))
+    }
+
+    applyResolvedTheme()
+
+    if (theme !== 'system') return undefined
+    const media = window.matchMedia?.('(prefers-color-scheme: light)')
+    media?.addEventListener?.('change', applyResolvedTheme)
+    return () => media?.removeEventListener?.('change', applyResolvedTheme)
   }, [theme])
+
+  useEffect(() => {
+    const interval = window.setInterval(() => setLaunchNowMs(Date.now()), 73)
+    return () => window.clearInterval(interval)
+  }, [])
 
   const fetchCommunityNotifications = useCallback(async () => {
     try {
@@ -654,6 +700,11 @@ function App() {
     setTheme((current) => (current === 'dark' ? 'light' : 'dark'))
   }
 
+  const handleSetTheme = useCallback((nextTheme) => {
+    if (!['dark', 'light', 'system'].includes(nextTheme)) return
+    setTheme(nextTheme)
+  }, [])
+
   const handleToggleNotifications = () => {
     setIsLanguageOpen(false)
     setIsWalletOpen(false)
@@ -695,6 +746,12 @@ function App() {
     setCurrentLanguage(language.code)
     setIsLanguageOpen(false)
   }
+
+  const handleSetLanguageCode = useCallback((languageCode) => {
+    const matched = LANGUAGES.find((language) => language.code === languageCode)
+    if (!matched) return
+    setCurrentLanguage(matched.code)
+  }, [])
 
   const handleToggleWallet = () => {
     setIsNotificationsOpen(false)
@@ -865,7 +922,20 @@ function App() {
   }, [notifications])
 
   const notices = useMemo(() => {
-    const nextNotices = []
+    const nextNotices = [{
+      id: 'launch-countdown',
+      type: 'success',
+      label: t('topNotice.launch.label', 'Launch Countdown'),
+      message: t(
+        'topNotice.launch.message',
+        'F-Freedom launches May 27, 2026, 10:00 UTC. Time left: {{countdown}}',
+        { countdown: formatLaunchCountdown(launchNowMs) }
+      ),
+      source: 'launch',
+      sticky: true,
+      dismissible: false,
+      dedupeKey: 'launch-countdown',
+    }]
 
     if (typeof window !== 'undefined' && !window.ethereum) {
       nextNotices.push({
@@ -1000,6 +1070,7 @@ function App() {
     handleNotificationClick,
     isConnected,
     isWalletLoading,
+    launchNowMs,
     latestUnreadNotification,
     switchToAmoy,
     t,
@@ -1133,7 +1204,14 @@ function App() {
 
               <Route
                 path="/preferences"
-                element={renderFlowOnlyPage('preferences', <PreferencesPage />)}
+                element={renderFlowOnlyPage('preferences', (
+                  <PreferencesPage
+                    appTheme={theme}
+                    onThemeChange={handleSetTheme}
+                    appLanguage={currentLanguage}
+                    onLanguageChange={handleSetLanguageCode}
+                  />
+                ))}
               />
 
               <Route

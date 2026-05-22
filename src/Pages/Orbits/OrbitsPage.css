@@ -4788,6 +4788,65 @@
   border-radius: var(--ffn-radius-sm);
 }
 
+.orbit-zoom-controls {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  width: fit-content;
+  margin: 12px auto 0;
+  padding: 8px 10px;
+  border-radius: 12px;
+}
+
+.orbit-zoom-controls button {
+  min-width: 34px;
+  height: 32px;
+  border: 1px solid var(--border-soft);
+  border-radius: 9px;
+  background: color-mix(in srgb, var(--bg-secondary) 86%, transparent);
+  color: var(--text-primary);
+  font-weight: 850;
+  cursor: pointer;
+}
+
+.orbit-zoom-controls span {
+  min-width: 52px;
+  text-align: center;
+  color: var(--text-secondary);
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 12px;
+  font-weight: 800;
+}
+
+.galaxy-container {
+  overflow: auto;
+}
+
+.galaxy-stage {
+  transform-origin: center center;
+}
+
+/* Final occupant identity color priority. */
+.planet-node.mine,
+.planet-node.orbit-state-owner {
+  background: linear-gradient(135deg, #22c55e, #1de9b6) !important;
+}
+
+.planet-node.downline {
+  background: linear-gradient(135deg, #f97316, #facc15) !important;
+}
+
+.planet-node.other {
+  background: linear-gradient(135deg, #2563eb, #4da3ff) !important;
+}
+
+.planet-node.empty,
+.planet-node.orbit-state-empty {
+  background: var(--ffn-surface-muted) !important;
+  border: 1.5px dashed var(--ffn-border-strong) !important;
+}
+
 .legend-dot.mine { background: linear-gradient(135deg, #22c55e, #1de9b6); }
 .legend-dot.downline { background: linear-gradient(135deg, #f97316, #facc15); }
 .legend-dot.other { background: linear-gradient(135deg, #2563eb, #4da3ff); }

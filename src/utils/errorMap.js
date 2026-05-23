@@ -96,7 +96,13 @@ const KNOWN_ERROR_PATTERNS = [
     action: 'Open your wallet activity, wait for the pending transaction to finish, then refresh.',
   },
   {
-    test: /gas required exceeds allowance|gas limit|cannot estimate gas|UNPREDICTABLE_GAS_LIMIT|CALL_EXCEPTION|missing revert data/i,
+    test: /gas required exceeds allowance|gas exceeds configured limit|exceeds the configured limit|gas limit|intrinsic gas too low|exceeds block gas limit/i,
+    title: 'Gas limit blocked',
+    message: 'The wallet or RPC rejected the requested gas limit before the transaction could run.',
+    action: 'Refresh account data and retry. If this repeats, contact support with your wallet address and level.',
+  },
+  {
+    test: /cannot estimate gas|UNPREDICTABLE_GAS_LIMIT|CALL_EXCEPTION|missing revert data/i,
     title: 'Transaction preflight failed',
     message: 'The wallet could not confirm this transaction is safe to submit.',
     action: 'Refresh account data and try again. If this repeats, contact support with your wallet address and level.',

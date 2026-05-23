@@ -1,7 +1,7 @@
 import { ethers } from 'ethers'
 
-const DEFAULT_MIN_PRIORITY_FEE_GWEI = 260
-const DEFAULT_MIN_MAX_FEE_GWEI = 320
+const DEFAULT_MIN_PRIORITY_FEE_GWEI = 35
+const DEFAULT_MIN_MAX_FEE_GWEI = 80
 
 function getEnvNumber(name, fallback) {
   const value = Number(import.meta.env?.[name])

@@ -43,7 +43,7 @@ const API_BASE = import.meta.env.VITE_API_BASE_URL?.replace(/\/$/, '') || ''
 
 const AMOY_CHAIN_ID = '0x13882'
 const GAS_BUFFER_BPS = 12000n
-const ACTIVATION_GAS_BUFFER_BPS = 15000n
+const ACTIVATION_GAS_BUFFER_BPS = 12500n
 const GAS_BUFFER_DENOMINATOR = 10000n
 const PENDING_REFERRAL_STORAGE_KEY = 'ffn_pending_registration_referral'
 

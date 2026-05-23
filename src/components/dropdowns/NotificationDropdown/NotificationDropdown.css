@@ -98,15 +98,15 @@
 ----------------------------------------- */
 @media (max-width: 767px) {
   .notification-modal {
-    align-items: center;
+    align-items: flex-start;
     justify-content: center;
-    padding: 14px;
+    padding: calc(var(--notice-height, 40px) + var(--nav-height, 64px) + max(10px, env(safe-area-inset-top))) 12px 12px;
   }
 
   .notification-modal__dialog {
     width: min(92vw, 420px);
     max-width: min(92vw, 420px);
-    max-height: min(82vh, 680px);
+    max-height: calc(100vh - var(--notice-height, 40px) - var(--nav-height, 64px) - 28px);
     padding: 12px;
     border-radius: 20px;
   }

@@ -73,9 +73,11 @@ const TopNoticeBar = ({ notices = [] }) => {
   const IconComponent = NOTICE_ICONS[activeNotice.type] || NOTICE_ICONS.info
   const iconColor = NOTICE_COLORS[activeNotice.type] || NOTICE_COLORS.info
   const showProgress = !activeNotice.sticky && !!activeNotice.autoHideMs
+  const isMarqueeNotice = activeNotice.marquee || activeNotice.id === 'launch-countdown'
+  const marqueeMessage = `🔥🔥🔥 ${activeNotice.message} 🔥🔥🔥`
 
   return (
-    <div className={`top-notice top-notice--${activeNotice.type} theme-transition`}>
+    <div className={`top-notice top-notice--${activeNotice.type} ${isMarqueeNotice ? 'top-notice--marquee' : ''}`}>
       <div className="app-container">
         <div className="top-notice__inner">
           <div className="top-notice__left">
@@ -88,7 +90,16 @@ const TopNoticeBar = ({ notices = [] }) => {
                 <span className="top-notice__label">{activeNotice.label}</span>
               ) : null}
 
-              <p className="top-notice__message">{activeNotice.message}</p>
+              {isMarqueeNotice ? (
+                <div className="top-notice__marquee" aria-label={activeNotice.message}>
+                  <p className="top-notice__message top-notice__marquee-track">
+                    <span>{marqueeMessage}</span>
+                    <span aria-hidden="true">{marqueeMessage}</span>
+                  </p>
+                </div>
+              ) : (
+                <p className="top-notice__message">{activeNotice.message}</p>
+              )}
             </div>
           </div>
 

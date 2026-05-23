@@ -570,6 +570,41 @@
   border: 2px dashed rgba(255, 255, 255, 0.3);
 }
 
+.planet-node.orbit-state-target {
+  border-color: rgba(255, 169, 64, 0.86);
+  box-shadow:
+    0 0 0 1px rgba(255, 245, 214, 0.42),
+    0 0 18px rgba(255, 105, 28, 0.5),
+    0 0 34px rgba(255, 194, 74, 0.26);
+}
+
+.planet-node.orbit-state-target::before,
+.planet-node.orbit-state-target::after {
+  content: "";
+  position: absolute;
+  inset: -8px;
+  border-radius: inherit;
+  pointer-events: none;
+}
+
+.planet-node.orbit-state-target::before {
+  border: 2px solid transparent;
+  background:
+    conic-gradient(from 0deg, transparent 0 20%, rgba(255, 97, 31, 0.98) 27%, rgba(255, 214, 92, 0.92) 33%, transparent 42% 100%) border-box;
+  mask:
+    linear-gradient(#000 0 0) padding-box,
+    linear-gradient(#000 0 0);
+  mask-composite: exclude;
+  animation: orbit-target-fire-spin 0.72s linear infinite;
+}
+
+.planet-node.orbit-state-target::after {
+  inset: -13px;
+  border: 1px solid rgba(255, 190, 90, 0.38);
+  opacity: 0;
+  animation: orbit-target-fire-pulse 1.8s ease-out infinite;
+}
+
 .planet-node.structural-preview {
   animation: structural-pulse 1s infinite;
 }
@@ -577,6 +612,15 @@
 @keyframes structural-pulse {
   0%, 100% { box-shadow: 0 0 0 0 rgba(255, 193, 7, 0.7); }
   50% { box-shadow: 0 0 0 10px rgba(255, 193, 7, 0); }
+}
+
+@keyframes orbit-target-fire-spin {
+  to { transform: rotate(360deg); }
+}
+
+@keyframes orbit-target-fire-pulse {
+  0% { opacity: 0.62; transform: scale(0.9); }
+  70%, 100% { opacity: 0; transform: scale(1.2); }
 }
 
 .planet-content {
@@ -5122,4 +5166,27 @@
 .orbits-page .planet-node.orbit-state-empty {
   background: var(--ffn-surface-muted) !important;
   border: 1.5px dashed var(--ffn-border-strong) !important;
+}
+
+.orbits-page .planet-node.orbit-state-target {
+  border-color: rgba(255, 169, 64, 0.88) !important;
+  box-shadow:
+    0 0 0 1px rgba(255, 245, 214, 0.42),
+    0 0 18px rgba(255, 105, 28, 0.5),
+    0 0 34px rgba(255, 194, 74, 0.26) !important;
+}
+
+[data-theme="light"] .orbits-page .planet-node.orbit-state-target {
+  border-color: rgba(201, 139, 58, 0.9) !important;
+  box-shadow:
+    0 0 0 1px rgba(255, 250, 232, 0.72),
+    0 0 18px rgba(201, 139, 58, 0.42),
+    0 0 34px rgba(23, 107, 115, 0.2) !important;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .orbits-page .planet-node.orbit-state-target::before,
+  .orbits-page .planet-node.orbit-state-target::after {
+    animation: none !important;
+  }
 }

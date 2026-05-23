@@ -143,9 +143,20 @@
 @media (max-width: 640px) {
   .ffn-toast-viewport {
     inset-inline: 12px;
-    inset-block-start: auto;
-    inset-block-end: max(12px, env(safe-area-inset-bottom));
+    inset-block-start: calc(var(--notice-height, 40px) + var(--nav-height, 64px) + max(10px, env(safe-area-inset-top)));
+    inset-block-end: auto;
     width: auto;
+  }
+
+  .ffn-toast {
+    grid-template-columns: auto minmax(0, 1fr) auto;
+    padding: 10px;
+    border-radius: 12px;
+  }
+
+  .ffn-toast__body strong,
+  .ffn-toast__body p {
+    font-size: 0.8125rem;
   }
 }
 

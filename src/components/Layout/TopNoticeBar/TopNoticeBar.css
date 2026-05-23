@@ -9,14 +9,14 @@
 }
 
 .top-notice--success .top-notice__inner {
-  min-height: 58px;
+  min-height: 48px;
 }
 
 .top-notice--success .top-notice__message {
-  font-size: clamp(16px, 2.2vw, 24px);
-  font-weight: 900;
+  font-size: clamp(13px, 1.3vw, 16px);
+  font-weight: 800;
   letter-spacing: 0;
-  line-height: 1.15;
+  line-height: 1.25;
 }
 
 .top-notice--success {
@@ -91,6 +91,7 @@
   display: flex;
   flex-direction: column;
   gap: 2px;
+  width: 100%;
 }
 
 .top-notice__label {
@@ -106,6 +107,47 @@
   line-height: 1.35;
   color: var(--text-primary);
   word-break: break-word;
+}
+
+.top-notice--marquee .top-notice__left {
+  flex: 1 1 auto;
+  align-items: center;
+}
+
+.top-notice--marquee .top-notice__icon,
+.top-notice--marquee .top-notice__label {
+  display: none;
+}
+
+.top-notice__marquee {
+  width: 100%;
+  min-width: 0;
+  overflow: hidden;
+  white-space: nowrap;
+  mask-image: linear-gradient(90deg, transparent 0, #000 24px, #000 calc(100% - 24px), transparent 100%);
+}
+
+.top-notice__marquee-track {
+  display: inline-flex;
+  width: max-content;
+  gap: 56px;
+  padding-inline: 0;
+  white-space: nowrap;
+  word-break: normal;
+  animation: top-notice-marquee 26s linear infinite;
+}
+
+.top-notice__marquee-track span {
+  flex: 0 0 auto;
+}
+
+@keyframes top-notice-marquee {
+  from {
+    transform: translateX(0);
+  }
+  to {
+    transform: translateX(calc(-50% - 28px));
+  }
 }
 
 .top-notice__dismiss {
@@ -145,6 +187,37 @@
 
   .top-notice__message {
     font-size: 14px;
+  }
+}
+
+@media (max-width: 640px) {
+  .top-notice__inner {
+    min-height: 38px;
+    padding: 7px 0;
+    gap: 8px;
+  }
+
+  .top-notice--success .top-notice__inner {
+    min-height: 40px;
+  }
+
+  .top-notice__right {
+    gap: 4px;
+  }
+
+  .top-notice__action {
+    min-height: 28px;
+    padding-inline: 9px;
+    font-size: 11px;
+  }
+
+  .top-notice__dismiss {
+    width: 26px;
+    height: 26px;
+  }
+
+  .top-notice--marquee .top-notice__message {
+    font-size: 12px;
   }
 }
 
@@ -241,5 +314,22 @@
     min-height: 28px;
     padding: 0 10px;
     font-size: 11px;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .top-notice__marquee {
+    white-space: normal;
+    mask-image: none;
+  }
+
+  .top-notice__marquee-track {
+    display: block;
+    animation: none;
+    white-space: normal;
+  }
+
+  .top-notice__marquee-track span[aria-hidden="true"] {
+    display: none;
   }
 }

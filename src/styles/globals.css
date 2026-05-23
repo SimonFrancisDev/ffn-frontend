@@ -104,7 +104,7 @@ body {
 
 [data-theme="light"] body {
   background-image:
-    linear-gradient(rgba(244, 247, 252, 0.72), rgba(244, 247, 252, 0.86)),
+    linear-gradient(rgba(247, 251, 248, 0.74), rgba(239, 245, 242, 0.88)),
     url('/images/app-grid-bg.png');
 
   background-size: cover, cover;
@@ -352,9 +352,9 @@ p {
   }
 
   [data-theme="light"] body {
-    background-color: #f8fbff !important;
+    background-color: #f3f7f4 !important;
     background-image:
-      linear-gradient(rgba(248, 251, 255, 0.74), rgba(248, 251, 255, 0.88)),
+      linear-gradient(rgba(247, 251, 248, 0.78), rgba(239, 245, 242, 0.9)),
       url('/images/app-grid-bg.png') !important;
     background-size: cover, cover !important;
     background-position: center top, center top !important;
@@ -398,14 +398,36 @@ p {
   }
 
   [data-theme="light"] body {
-    background-color: #f8fbff !important;
+    background-color: #f3f7f4 !important;
     background-image:
-      linear-gradient(rgba(248, 251, 255, 0.58), rgba(248, 251, 255, 0.84)),
+      linear-gradient(rgba(247, 251, 248, 0.62), rgba(239, 245, 242, 0.86)),
       url("/images/app-grid-bg.png") !important;
 
     background-size: cover, 760px auto !important;
     background-position: center top, center top !important;
     background-repeat: no-repeat, repeat-y !important;
     background-attachment: scroll, scroll !important;
+  }
+}
+
+@media (max-width: 640px) {
+  html,
+  body,
+  #root {
+    width: 100%;
+    overflow-x: clip;
+  }
+
+  .app-container,
+  .full-bleed,
+  main,
+  section {
+    min-width: 0;
+  }
+
+  input,
+  textarea,
+  select {
+    max-width: 100%;
   }
 }

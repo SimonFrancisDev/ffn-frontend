@@ -2214,13 +2214,18 @@ body {
   }
 
   .landing-disclaimer__actions {
+    justify-content: center;
     gap: 8px;
     margin-top: 16px;
   }
 
   .landing-disclaimer__actions .landing-btn {
-    flex: 1 1 140px;
+    flex: 0 1 auto;
     min-width: 0;
+    min-height: 42px;
+    padding: 0 13px;
+    font-size: 12px;
+    gap: 6px;
   }
 
   .landing-modal-language {

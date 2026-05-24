@@ -5045,6 +5045,29 @@
   display: flex;
 }
 
+.position-modal--earnings .modal-subtitle--visible {
+  display: block;
+  margin: 8px 0 2px;
+  color: var(--ffn-text);
+  font-size: 0.78rem;
+  font-weight: 900;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+}
+
+.position-modal--earnings .modal-record-list--proof {
+  display: grid;
+  gap: 10px;
+  margin-top: 4px;
+}
+
+.position-modal--earnings .modal-record-list--proof .modal-record-item {
+  display: grid;
+  gap: 5px;
+  padding: 11px;
+  border-radius: 12px;
+}
+
 .orbit-position-local-overlay {
   position: fixed;
   inset: 0;
@@ -5133,6 +5156,44 @@
   color: var(--text-secondary);
   font-family: 'JetBrains Mono', monospace;
   font-size: 11px;
+}
+
+.orbits-page .galaxy-container {
+  display: grid;
+  place-items: center;
+  touch-action: pan-y;
+}
+
+.orbits-page .galaxy-container.is-pannable {
+  cursor: grab;
+  touch-action: none;
+  user-select: none;
+}
+
+.orbits-page .galaxy-container.is-panning {
+  cursor: grabbing;
+}
+
+.orbits-page .galaxy-stage {
+  will-change: transform;
+}
+
+@media (max-width: 767px) {
+  .orbits-page .galaxy-container {
+    width: 100% !important;
+    max-width: 100% !important;
+    min-width: 0 !important;
+    margin-inline: auto !important;
+    overflow: hidden !important;
+  }
+
+  .orbits-page .galaxy-inner {
+    min-width: 0 !important;
+  }
+
+  .orbits-page .galaxy-container.is-pannable {
+    overflow: hidden !important;
+  }
 }
 
 /* Absolute final orbit color contract. Keep this at the end of the file. */

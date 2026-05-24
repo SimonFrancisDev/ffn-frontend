@@ -248,6 +248,8 @@ const OrbitsPage = () => {
   const [hoveredPosition, setHoveredPosition] = useState(null)
   const [showStructuralPreview, setShowStructuralPreview] = useState(false)
   const [containerSize, setContainerSize] = useState({ width: 640, height: 640 })
+  const [orbitPan, setOrbitPan] = useState({ x: 0, y: 0 })
+  const [isOrbitPanning, setIsOrbitPanning] = useState(false)
   const [isGalaxyMeasured, setIsGalaxyMeasured] = useState(false)
   const [viewAddress, setViewAddress] = useState('')
   const [inputAddress, setInputAddress] = useState('')
@@ -288,6 +290,14 @@ const OrbitsPage = () => {
 
   const galaxyRef = useRef(null)
   const modalRef = useRef(null)
+  const orbitDragRef = useRef({
+    active: false,
+    startX: 0,
+    startY: 0,
+    startPanX: 0,
+    startPanY: 0,
+    didDrag: false
+  })
   const referrerCacheRef = useRef(new Map())
   const directDownlineSetRef = useRef(new Set())
   const viewedLevelsCacheRef = useRef(new Map())
@@ -377,6 +387,20 @@ const OrbitsPage = () => {
     return Math.max(0, grossAmount - systemCharge)
   }, [])
 
+  const clampOrbitPan = useCallback((nextPan, zoomValue = orbitZoom) => {
+    if (zoomValue <= 1) return { x: 0, y: 0 }
+
+    const extraX = Math.max(0, (containerSize.width * (zoomValue - 1)) / 2)
+    const extraY = Math.max(0, (containerSize.height * (zoomValue - 1)) / 2)
+    const limitX = extraX + 96
+    const limitY = extraY + 96
+
+    return {
+      x: Math.max(-limitX, Math.min(limitX, nextPan.x)),
+      y: Math.max(-limitY, Math.min(limitY, nextPan.y))
+    }
+  }, [containerSize.height, containerSize.width, orbitZoom])
+
   const shortAddress = useCallback((addr) => {
     if (!addr || addr === ethers.ZeroAddress) return '—'
     return `${addr.slice(0, 8)}...${addr.slice(-6)}`
@@ -387,10 +411,70 @@ const OrbitsPage = () => {
     return `${txHash.slice(0, 10)}...${txHash.slice(-8)}`
   }, [])
 
+  const getReceiptTypeLabel = (receipt) => {
+    const type = Number(receipt?.receiptType || 0)
+    if (type === RECEIPT_TYPES.FOUNDER_PATH) return orbitsT('receiptTypes.founderPath', 'Founder Path')
+    if (type === RECEIPT_TYPES.DIRECT_OWNER) return orbitsT('receiptTypes.directOwner', 'Direct Owner')
+    if (type === RECEIPT_TYPES.ROUTED_SPILLOVER) return orbitsT('receiptTypes.routedSpillover', 'Routed Spillover')
+    if (type === RECEIPT_TYPES.RECYCLE) return orbitsT('receiptTypes.recycle', 'Recycle')
+    return receipt?.rawEventName || orbitsT('receiptTypes.unknown', 'Receipt')
+  }
+
   const getMemberLabel = useCallback((address) => {
     if (!address || address === ethers.ZeroAddress) return orbitsT('modal.memberIdUnavailable', 'ID unavailable')
     return resolvedMemberIds[address?.toLowerCase?.()] || shortAddress(address)
   }, [orbitsT, resolvedMemberIds, shortAddress])
+
+  const handleOrbitPointerDown = useCallback((event) => {
+    if (orbitZoom <= 1) return
+    if (event.pointerType === 'mouse' && event.button !== 0) return
+
+    orbitDragRef.current = {
+      active: true,
+      startX: event.clientX,
+      startY: event.clientY,
+      startPanX: orbitPan.x,
+      startPanY: orbitPan.y,
+      didDrag: false
+    }
+    setIsOrbitPanning(true)
+    event.currentTarget.setPointerCapture?.(event.pointerId)
+  }, [orbitPan.x, orbitPan.y, orbitZoom])
+
+  const handleOrbitPointerMove = useCallback((event) => {
+    const drag = orbitDragRef.current
+    if (!drag.active) return
+
+    const dx = event.clientX - drag.startX
+    const dy = event.clientY - drag.startY
+
+    if (Math.abs(dx) > 4 || Math.abs(dy) > 4) {
+      drag.didDrag = true
+    }
+
+    setOrbitPan(clampOrbitPan({
+      x: drag.startPanX + dx,
+      y: drag.startPanY + dy
+    }))
+    event.preventDefault()
+  }, [clampOrbitPan])
+
+  const handleOrbitPointerEnd = useCallback((event) => {
+    if (!orbitDragRef.current.active) return
+
+    const hadDrag = orbitDragRef.current.didDrag
+    orbitDragRef.current.active = false
+    setIsOrbitPanning(false)
+    try {
+      event.currentTarget.releasePointerCapture?.(event.pointerId)
+    } catch {
+      // Pointer may already be released by the browser.
+    }
+
+    window.setTimeout(() => {
+      orbitDragRef.current.didDrag = false
+    }, hadDrag ? 80 : 0)
+  }, [])
 
   const getSpilloverReceiptRows = useCallback((position) => {
     const receipts = Array.isArray(position?.indexedReceipts) ? position.indexedReceipts : []
@@ -552,7 +636,7 @@ const OrbitsPage = () => {
         startAngles: { 1: -90, 2: -90 },
         customAngles: {
           1: { 1: -90, 2: 30, 3: 150 },
-          2: { 4: -138, 7: -102, 10: -66, 5: -18, 8: 18, 11: 54, 6: 102, 9: 138, 12: 174 }
+          2: { 4: -138, 7: -120, 10: -102, 5: -18, 8: 0, 11: 18, 6: 102, 9: 120, 12: 138 }
         }
       },
       P39: {
@@ -562,17 +646,17 @@ const OrbitsPage = () => {
         startAngles: { 1: -90, 2: -90, 3: -90 },
         customAngles: {
           1: { 1: -90, 2: 30, 3: 150 },
-          2: { 4: -138, 7: -102, 10: -66, 5: -18, 8: 18, 11: 54, 6: 102, 9: 138, 12: 174 },
+          2: { 4: -138, 7: -120, 10: -102, 5: -18, 8: 0, 11: 18, 6: 102, 9: 120, 12: 138 },
           3: {
-            13: -145, 22: -133, 31: -121,
-            14: -25, 23: -13, 32: -1,
-            15: 95, 24: 107, 33: 119,
-            16: -109, 25: -97, 34: -85,
-            17: 11, 26: 23, 35: 35,
-            18: 131, 27: 143, 36: 155,
-            19: -73, 28: -61, 37: -49,
-            20: 47, 29: 59, 38: 71,
-            21: 167, 30: 179, 39: 191
+            13: -168, 22: -160, 31: -152,
+            14: -128, 23: -120, 32: -112,
+            15: -88, 24: -80, 33: -72,
+            16: -48, 25: -40, 34: -32,
+            17: -8, 26: 0, 35: 8,
+            18: 32, 27: 40, 36: 48,
+            19: 72, 28: 80, 37: 88,
+            20: 112, 29: 120, 38: 128,
+            21: 152, 30: 160, 39: 168
           }
         }
       }
@@ -1535,6 +1619,15 @@ const OrbitsPage = () => {
       if (settleTimer) window.clearTimeout(settleTimer)
     }
   }, [activeTab, activeLevelReady])
+
+  useEffect(() => {
+    if (orbitZoom <= 1) {
+      setOrbitPan({ x: 0, y: 0 })
+      return
+    }
+
+    setOrbitPan((current) => clampOrbitPan(current, orbitZoom))
+  }, [activeTab, clampOrbitPan, orbitZoom])
 
   const renderPositionTooltip = (position) => {
     const viewerBreakdown = position.viewerReceiptBreakdown || {
@@ -2525,7 +2618,10 @@ const OrbitsPage = () => {
                     </button>
                     <button
                       type="button"
-                      onClick={() => setOrbitZoom(1)}
+                      onClick={() => {
+                        setOrbitZoom(1)
+                        setOrbitPan({ x: 0, y: 0 })
+                      }}
                       aria-label={orbitsT('zoom.reset', 'Reset zoom')}
                     >
                       {orbitsT('zoom.reset', 'Reset')}
@@ -2534,8 +2630,13 @@ const OrbitsPage = () => {
 
                   <div
                     key={`galaxy-${activeTab}`}
-                    className={`galaxy-container ${orbitType.toLowerCase()} ${!isGalaxyMeasured ? 'is-measuring' : ''}`}
+                    className={`galaxy-container ${orbitType.toLowerCase()} ${orbitZoom > 1 ? 'is-pannable' : ''} ${isOrbitPanning ? 'is-panning' : ''} ${!isGalaxyMeasured ? 'is-measuring' : ''}`}
                     ref={galaxyRef}
+                    onPointerDown={handleOrbitPointerDown}
+                    onPointerMove={handleOrbitPointerMove}
+                    onPointerUp={handleOrbitPointerEnd}
+                    onPointerCancel={handleOrbitPointerEnd}
+                    onPointerLeave={handleOrbitPointerEnd}
                   >
                    {!isGalaxyMeasured ? (
                       <div className="galaxy-measure-loader">
@@ -2699,7 +2800,7 @@ const OrbitsPage = () => {
                                   height: stageSize,
                                   left: '50%',
                                   top: '50%',
-                                  transform: `translate(-50%, -50%) scale(${orbitZoom})`
+                                  transform: `translate(calc(-50% + ${orbitPan.x}px), calc(-50% + ${orbitPan.y}px)) scale(${orbitZoom})`
                                 }}
                               >
                                 <div
@@ -2788,7 +2889,7 @@ const OrbitsPage = () => {
                                         position: pos.number,
                                         state: semanticState.replace(/-/g, ' '),
                                       })}
-                                       style={{
+                                      style={{
                                         left: coords.x,
                                         top: coords.y,
                                         width: planetSize,
@@ -2796,7 +2897,10 @@ const OrbitsPage = () => {
                                         transform: 'translate(-50%, -50%)',
                                         '--index': index
                                       }}
-                                      onClick={() => handlePositionClick(pos)}
+                                      onClick={() => {
+                                        if (orbitDragRef.current.didDrag) return
+                                        handlePositionClick(pos)
+                                      }}
                                       onKeyDown={(event) => {
                                         if (event.key === 'Enter' || event.key === ' ') {
                                           event.preventDefault()
@@ -2992,6 +3096,8 @@ const OrbitsPage = () => {
         ) : (
               <>
                 <div className="orbit-earnings-summary">
+                  <div className="modal-subtitle modal-subtitle--visible">{orbitsT('modal.summaryTitle', 'Transaction Summary')}</div>
+
                   {selectedPosition.occupant ? (
                     <div className="modal-detail">
                       <span className="modal-label">{orbitsT('modal.occupant', 'Position Holder')}</span>
@@ -3005,18 +3111,76 @@ const OrbitsPage = () => {
                   )}
 
                   <div className="modal-detail">
-                    <span className="modal-label">{orbitsT('modal.generatedAmount', 'Generated Amount')}</span>
+                    <span className="modal-label">{orbitsT('modal.generatedForViewer', 'Generated for Viewed Wallet')}</span>
                     <span>{formatUsdtDisplay(getPositionGeneratedGross(selectedPosition))} USDT</span>
                   </div>
 
                   <div className="modal-detail">
-                    <span className="modal-label">{orbitsT('modal.walletCredited', 'Wallet Credited')}</span>
-                    <span>{formatUsdtDisplay(getPositionWalletCredited(selectedPosition) || getEstimatedNetAmount(Number(selectedPosition.amount || 0)))} USDT</span>
+                    <span className="modal-label">
+                      {getPositionWalletCredited(selectedPosition) > 0
+                        ? orbitsT('modal.creditedToViewedWallet', 'Credited to Viewed Wallet')
+                        : orbitsT('modal.netAmountEstimate', 'Net Amount Estimate')}
+                    </span>
+                    <span>
+                      {formatUsdtDisplay(getPositionWalletCredited(selectedPosition) || getEstimatedNetAmount(Number(selectedPosition.amount || 0)))} USDT
+                    </span>
                   </div>
 
                   <div className="modal-detail">
-                    <span className="modal-label">{orbitsT('modal.escrowLocked', 'Escrow Locked')}</span>
+                    <span className="modal-label">{orbitsT('modal.lockedForAutoUpgrade', 'Locked for Auto-upgrade')}</span>
                     <span>{formatUsdtDisplay(getExecutedEscrowLocked(selectedPosition))} USDT</span>
+                  </div>
+
+                  <div className="modal-detail">
+                    <span className="modal-label">{orbitsT('modal.totalTransactionGenerated', 'Total Transaction Generated')}</span>
+                    <span>{formatUsdtDisplay(getTotalsGeneratedGross(selectedPosition.receiptTotals))} USDT</span>
+                  </div>
+
+                  <div className="modal-detail">
+                    <span className="modal-label">{orbitsT('modal.totalTransactionCredited', 'Total Transaction Credited')}</span>
+                    <span>{formatUsdtDisplay(getTotalsWalletCredited(selectedPosition.receiptTotals))} USDT</span>
+                  </div>
+
+                  <div className="modal-detail">
+                    <span className="modal-label">{orbitsT('modal.totalTransactionLocked', 'Total Transaction Locked')}</span>
+                    <span>{formatUsdtDisplay(getTotalsEscrowLocked(selectedPosition.receiptTotals))} USDT</span>
+                  </div>
+
+                  <div className="modal-detail">
+                    <span className="modal-label">{orbitsT('modal.truthType', 'Truth Type')}</span>
+                    <span>{formatTruthLabel(selectedPosition.truthLabel || selectedPosition.positionInfo?.type || 'Unknown')}</span>
+                  </div>
+
+                  <div className="modal-detail">
+                    <span className="modal-label">{orbitsT('modal.receiptProof', 'Receipt Proof')}</span>
+                    <span>
+                      {Number(selectedPosition.indexedReceiptCount || selectedPosition.indexedReceipts?.length || 0)}
+                      {' '}
+                      {orbitsT('modal.receiptsIndexed', 'indexed receipt(s)')}
+                    </span>
+                  </div>
+
+                  {selectedPosition.activationId > 0 && (
+                    <div className="modal-detail">
+                      <span className="modal-label">{orbitsT('modal.activationId', 'Activation ID')}</span>
+                      <span>#{selectedPosition.activationId}</span>
+                    </div>
+                  )}
+
+                  <div className="modal-detail">
+                    <span className="modal-label">{orbitsT('modal.activationPath', 'Activation Path')}</span>
+                    <span>{selectedPosition.isMirrorActivation ? orbitsT('modal.paths.mirror', 'Mirror activation') : orbitsT('modal.paths.direct', 'Direct activation')}</span>
+                  </div>
+
+                  <div className="modal-detail">
+                    <span className="modal-label">{orbitsT('modal.lineAndCycle', 'Line / Cycle')}</span>
+                    <span>
+                      {orbitsT('line.value', 'Line {{line}}', { line: selectedPosition.line || selectedPosition.positionInfo?.line || 1 })}
+                      {' - '}
+                      {selectedPosition.isHistoricalPosition
+                        ? `Historical ${selectedPosition.cycleNumber || selectedPosition.activationCycleNumber || '—'}`
+                        : `Current ${selectedPosition.activationCycleNumber || '—'}`}
+                    </span>
                   </div>
 
                   {selectedPosition.positionInfo && Number(selectedPosition.positionInfo.exactToRecycle || 0) > 0 && (
@@ -3028,6 +3192,7 @@ const OrbitsPage = () => {
 
                   {selectedPosition.positionInfo && (
                     <>
+                      <div className="modal-subtitle modal-subtitle--visible">{orbitsT('modal.routingTitle', 'Routing Rule Snapshot')}</div>
                       {Number(selectedPosition.positionInfo.exactToOwner || 0) > 0 && (
                         <div className="modal-detail">
                           <span className="modal-label">{orbitsT('modal.toOwner', 'To Owner')}</span>
@@ -3065,14 +3230,18 @@ const OrbitsPage = () => {
                   ))}
 
                   {!!selectedPosition.indexedReceipts?.length && (
-                    <div className="modal-record-list">
-                      {selectedPosition.indexedReceipts.slice(0, 5).map((receipt) => (
+                    <div className="modal-record-list modal-record-list--proof">
+                      <div className="modal-subtitle modal-subtitle--visible">{orbitsT('modal.transactionProofTitle', 'Transaction Proof')}</div>
+                      {selectedPosition.indexedReceipts.slice(0, 8).map((receipt) => (
                         <div key={`${receipt.txHash}-${receipt.logIndex}`} className="modal-record-item">
-                          <div><strong>{orbitsT('modal.earnedRecord', 'Earned')}</strong> {shortTx(receipt.txHash)}</div>
-                          <div>{orbitsT('modal.receiver', 'Receiver')}: {resolvedMemberIds[receipt.receiver?.toLowerCase?.()] || orbitsT('modal.memberIdUnavailable', 'ID unavailable')}</div>
+                          <div><strong>{getReceiptTypeLabel(receipt)}</strong> - {shortTx(receipt.txHash)}</div>
+                          <div>{orbitsT('modal.receiver', 'Receiver')}: {resolvedMemberIds[receipt.receiver?.toLowerCase?.()] || shortAddress(receipt.receiver)}</div>
+                          <div>{orbitsT('modal.activationId', 'Activation ID')}: #{receipt.activationId || selectedPosition.activationId || '—'}</div>
+                          <div>{orbitsT('modal.sourcePosition', 'Source Position')}: {receipt.sourcePosition || selectedPosition.number || '—'}</div>
                           {Number(receipt.receiptType || 0) === 3 && (
                             <div>{orbitsT('modal.spilloverReceiver', 'Spillover Receiver')}: {getMemberLabel(receipt.receiver)}</div>
                           )}
+                          <div>{orbitsT('modal.gross', 'Generated')}: {formatUsdtDisplay(getReceiptGeneratedGross(receipt))} USDT</div>
                           <div>{orbitsT('modal.walletCredited', 'Wallet Credited')}: {formatUsdtDisplay(getReceiptWalletCredited(receipt))} USDT</div>
                           {getReceiptEscrowLocked(receipt) > 0 && <div>{orbitsT('modal.escrowLocked', 'Escrow Locked')}: {formatUsdtDisplay(getReceiptEscrowLocked(receipt))} USDT</div>}
                         </div>

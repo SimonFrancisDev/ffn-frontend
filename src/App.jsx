@@ -86,6 +86,7 @@ const THEME_STORAGE_KEY = 'finfreedom_theme_v1'
 const APP_USER_ID_STORAGE_KEY = 'finfreedom_app_user_id_v1'
 const TELEGRAM_PROMPT_DISMISSED_KEY = 'finfreedom_telegram_prompt_dismissed_v1'
 const TELEGRAM_PROMPT_SESSION_KEY = 'finfreedom_telegram_prompt_seen_v1'
+const TESTNET_REMINDER_SEEN_KEY = 'finfreedom_testnet_reminder_seen_v1'
 
 const scopedStorageKey = (baseKey, wallet) => {
   const suffix = wallet ? String(wallet).trim().toLowerCase() : 'guest'
@@ -921,6 +922,30 @@ function App() {
     return notifications.find((item) => !item.read) || null
   }, [notifications])
 
+  const [showTestnetReminder, setShowTestnetReminder] = useState(false)
+
+  useEffect(() => {
+    if (!isConnected || !walletAccount || typeof window === 'undefined') {
+      setShowTestnetReminder(false)
+      return
+    }
+
+    try {
+      const todayKey = new Date().toISOString().slice(0, 10)
+      const storageKey = scopedStorageKey(TESTNET_REMINDER_SEEN_KEY, walletAccount)
+      const lastSeen = window.localStorage.getItem(storageKey)
+      const shouldShow = lastSeen !== todayKey
+
+      setShowTestnetReminder(shouldShow)
+
+      if (shouldShow) {
+        window.localStorage.setItem(storageKey, todayKey)
+      }
+    } catch {
+      setShowTestnetReminder(true)
+    }
+  }, [isConnected, walletAccount])
+
   const notices = useMemo(() => {
     const nextNotices = [{
       id: 'launch-countdown',
@@ -1024,20 +1049,22 @@ function App() {
         dedupeKey: `wallet-connected:${walletAccount}`,
       })
 
-      nextNotices.push({
-        id: 'testnet-reminder',
-        type: 'warning',
-        label: t('topNotice.testnetNotice.label', 'Testnet Notice'),
-        message: t(
-          'topNotice.testnetNotice.message',
-          'You are connected to Polygon Amoy Testnet. Verify transactions and values before confirming.'
-        ),
-        source: 'network',
-        sticky: false,
-        dismissible: true,
-        autoHideMs: 9000,
-        dedupeKey: 'testnet-reminder',
-      })
+      if (showTestnetReminder) {
+        nextNotices.push({
+          id: 'testnet-reminder',
+          type: 'warning',
+          label: t('topNotice.testnetNotice.label', 'Testnet Notice'),
+          message: t(
+            'topNotice.testnetNotice.message',
+            'You are connected to Polygon Amoy Testnet. Verify transactions and values before confirming.'
+          ),
+          source: 'network',
+          sticky: false,
+          dismissible: true,
+          autoHideMs: 9000,
+          dedupeKey: `testnet-reminder:${walletAccount}`,
+        })
+      }
     }
 
     if (latestUnreadNotification) {
@@ -1072,6 +1099,7 @@ function App() {
     isWalletLoading,
     launchNowMs,
     latestUnreadNotification,
+    showTestnetReminder,
     switchToAmoy,
     t,
     walletAccount,

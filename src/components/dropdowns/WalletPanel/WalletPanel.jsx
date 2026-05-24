@@ -2,6 +2,7 @@ import './WalletPanel.css'
 import { useEffect, useRef, useState } from 'react'
 import { createPortal } from 'react-dom'
 import { useTranslation } from 'react-i18next'
+import { lockBodyScroll } from '../../../utils/bodyScrollLock'
 
 function ModalPortal({ children }) {
   if (typeof document === 'undefined') return null
@@ -37,16 +38,7 @@ const WalletPanel = ({
     // Desktop dropdowns should not lock the page like a modal.
     if (window.innerWidth >= 768) return undefined
 
-    const previousOverflow = document.body.style.overflow
-    const previousTouchAction = document.body.style.touchAction
-
-    document.body.style.overflow = 'hidden'
-    document.body.style.touchAction = 'none'
-
-    return () => {
-      document.body.style.overflow = previousOverflow
-      document.body.style.touchAction = previousTouchAction
-    }
+    return lockBodyScroll()
   }, [isOpen])
 
   // Desktop detection effect

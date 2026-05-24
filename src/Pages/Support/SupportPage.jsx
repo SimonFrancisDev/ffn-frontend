@@ -5,6 +5,7 @@ import { useWallet } from '../../hooks/useWallet'
 import { useContracts } from '../../hooks/useContracts'
 import { getApiUrl } from '../../Services/apiConfig'
 import { useToast } from '../../components/feedback'
+import { lockBodyScroll } from '../../utils/bodyScrollLock'
 import {
   AlertCircle, AlertTriangle, BookOpen, Check, CheckCircle, ChevronRight, Copy,
   ExternalLink, HelpCircle, Info, LifeBuoy, Mail, RefreshCw, Rocket, Search,
@@ -389,10 +390,7 @@ const SlideDocModal = ({ doc, onClose }) => {
 
   useEffect(() => {
     if (!doc) return undefined
-    document.body.style.overflow = 'hidden'
-    return () => {
-      document.body.style.overflow = ''
-    }
+    return lockBodyScroll()
   }, [doc])
 
   if (!doc) return null
@@ -506,14 +504,8 @@ const LegalModal = ({ isOpen, onClose, title, children }) => {
   const { t } = useTranslation()
 
   useEffect(() => {
-    if (isOpen) {
-      document.body.style.overflow = 'hidden'
-    } else {
-      document.body.style.overflow = ''
-    }
-    return () => {
-      document.body.style.overflow = ''
-    }
+    if (!isOpen) return undefined
+    return lockBodyScroll()
   }, [isOpen])
 
   if (!isOpen) return null
@@ -542,14 +534,8 @@ const ComingSoonModal = ({ isOpen, onClose, title }) => {
   const { t } = useTranslation()
 
   useEffect(() => {
-    if (isOpen) {
-      document.body.style.overflow = 'hidden'
-    } else {
-      document.body.style.overflow = ''
-    }
-    return () => {
-      document.body.style.overflow = ''
-    }
+    if (!isOpen) return undefined
+    return lockBodyScroll()
   }, [isOpen])
 
   if (!isOpen) return null

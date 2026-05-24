@@ -9,6 +9,7 @@ import { web3Service } from '../../Services/web3'
 import { useToast } from '../../components/feedback'
 import { normalizeError } from '../../utils/errorMap'
 import { buildTxOptions } from '../../utils/txOptions'
+import { lockBodyScroll } from '../../utils/bodyScrollLock'
 import { ethers } from 'ethers'
 // import { fetchAddressReceiptsApi } from '../../Services/orbitsApi'
 // import {
@@ -1028,21 +1029,17 @@ const ActivationCenterPage = () => {
       isRegistrationModalOpen ||
       showSecurityNotice
 
-    const previousBodyOverflow = document.body.style.overflow
-    const previousBodyTouchAction = document.body.style.touchAction
     const previousHtmlOverflow = document.documentElement.style.overflow
     const previousHtmlScrollBehavior = document.documentElement.style.scrollBehavior
+    const releaseBodyLock = shouldLock ? lockBodyScroll() : null
 
     if (shouldLock) {
-      document.body.style.overflow = 'hidden'
-      document.body.style.touchAction = 'none'
       document.documentElement.style.overflow = 'hidden'
       document.documentElement.style.scrollBehavior = 'auto'
     }
 
     return () => {
-      document.body.style.overflow = previousBodyOverflow
-      document.body.style.touchAction = previousBodyTouchAction
+      releaseBodyLock?.()
       document.documentElement.style.overflow = previousHtmlOverflow
       document.documentElement.style.scrollBehavior = previousHtmlScrollBehavior
     }

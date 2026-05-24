@@ -2,6 +2,7 @@ import { createContext, useCallback, useContext, useEffect, useMemo, useRef, use
 import { createPortal } from 'react-dom'
 import { X } from 'lucide-react'
 import { IconButton } from '../ui'
+import { lockBodyScroll } from '../../utils/bodyScrollLock'
 import './OverlayProvider.css'
 
 const OverlayContext = createContext(null)
@@ -21,24 +22,8 @@ function getOverlayRoot() {
 
 function useBodyScrollLock(locked) {
   useEffect(() => {
-    if (!locked || typeof document === 'undefined') return undefined
-
-    const previousOverflow = document.body.style.overflow
-    const previousTouchAction = document.body.style.touchAction
-    const previousPaddingRight = document.body.style.paddingRight
-    const scrollbarWidth = window.innerWidth - document.documentElement.clientWidth
-
-    document.body.classList.add('ffn-no-scroll')
-    document.body.style.overflow = 'hidden'
-    document.body.style.touchAction = 'none'
-    if (scrollbarWidth > 0) document.body.style.paddingRight = `${scrollbarWidth}px`
-
-    return () => {
-      document.body.classList.remove('ffn-no-scroll')
-      document.body.style.overflow = previousOverflow
-      document.body.style.touchAction = previousTouchAction
-      document.body.style.paddingRight = previousPaddingRight
-    }
+    if (!locked) return undefined
+    return lockBodyScroll()
   }, [locked])
 }
 

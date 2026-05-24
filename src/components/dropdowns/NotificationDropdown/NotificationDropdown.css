@@ -29,7 +29,7 @@
   z-index: 1;
   width: min(100%, 420px);
   max-width: calc(100% - 24px);
-  max-height: min(88vh, 720px);
+  max-height: min(88dvh, 720px);
   padding: 14px;
   border-radius: 22px;
   overflow: hidden;
@@ -106,7 +106,7 @@
   .notification-modal__dialog {
     width: min(92vw, 420px);
     max-width: min(92vw, 420px);
-    max-height: calc(100vh - var(--notice-height, 40px) - var(--nav-height, 64px) - 28px);
+    max-height: calc(100dvh - var(--notice-height, 40px) - var(--nav-height, 64px) - 28px - env(safe-area-inset-top));
     padding: 12px;
     border-radius: 20px;
   }
@@ -114,7 +114,7 @@
 
 @media (max-width: 480px) {
   .notification-modal {
-    padding: 12px;
+    padding: calc(var(--notice-height, 40px) + var(--nav-height, 64px) + max(10px, env(safe-area-inset-top))) 10px 10px;
   }
 
   .notification-modal__dialog {

@@ -3371,6 +3371,10 @@
   pointer-events: auto;
 }
 
+.ffn-orbit-cockpit__grab {
+  display: none;
+}
+
 .ffn-orbit-cockpit__top {
   flex: 0 0 auto;
   display: flex;
@@ -3656,19 +3660,25 @@
   .ffn-orbit-cockpit-toggle {
     left: 14px;
     right: 14px;
-    bottom: 14px;
+    bottom: max(8px, env(safe-area-inset-bottom));
     width: auto;
     justify-content: center;
   }
 
+  .ffn-orbit-cockpit-toggle.is-open {
+    opacity: 0;
+    pointer-events: none;
+  }
+
   .ffn-orbit-cockpit {
     top: auto;
-    left: 10px;
-    right: 10px;
-    bottom: 82px;
+    left: 0;
+    right: 0;
+    bottom: 0;
     width: auto;
-    max-height: min(72vh, 620px);
-    border-radius: 26px;
+    max-height: min(76dvh, 640px);
+    border-radius: 26px 26px 0 0;
+    border-bottom: 0;
     transform: translateY(calc(100% + 100px));
   }
 
@@ -3676,12 +3686,75 @@
     transform: translateY(0);
   }
 
+  .ffn-orbit-cockpit__grab {
+    display: block;
+    width: 46px;
+    height: 5px;
+    flex: 0 0 auto;
+    margin: 10px auto 2px;
+    border-radius: 999px;
+    background: rgba(148, 163, 184, 0.42);
+  }
+
+  .ffn-orbit-cockpit__top {
+    padding: 10px 14px 9px;
+    border-bottom: 0;
+  }
+
+  .ffn-orbit-cockpit__top span {
+    margin-bottom: 3px;
+    font-size: 10px;
+  }
+
+  .ffn-orbit-cockpit__top strong {
+    font-size: 15px;
+  }
+
+  .ffn-orbit-cockpit__close {
+    width: 36px;
+    height: 36px;
+    border-radius: 12px;
+    font-size: 24px;
+  }
+
   .ffn-orbit-cockpit__tabs {
+    display: grid;
+    grid-auto-flow: column;
+    grid-auto-columns: minmax(74px, 1fr);
+    gap: 7px;
     padding: 10px 12px;
+    overflow-x: auto;
+    scrollbar-width: none;
+  }
+
+  .ffn-orbit-cockpit__tabs::-webkit-scrollbar {
+    display: none;
+  }
+
+  .ffn-orbit-cockpit__tabs button {
+    min-height: 34px;
+    padding: 0 9px;
+    border-radius: 12px;
+    font-size: 11px;
   }
 
   .ffn-orbit-cockpit__body {
-    padding: 14px;
+    padding: 12px;
+  }
+
+  .ffn-orbit-cockpit__section {
+    gap: 10px;
+  }
+
+  .ffn-orbit-cockpit__metric-grid > div,
+  .ffn-orbit-cockpit__split > div,
+  .ffn-orbit-cockpit__status-row,
+  .ffn-orbit-cockpit__list-item,
+  .ffn-orbit-cockpit__note,
+  .ffn-orbit-cockpit__empty,
+  .ffn-orbit-cockpit__guide p {
+    padding: 10px;
+    border-radius: 13px;
   }
 
   .ffn-orbit-cockpit__list-item {
@@ -5161,6 +5234,24 @@
   font-weight: 700;
 }
 
+.position-modal--earnings .modal-empty-state--syncing {
+  display: grid;
+  gap: 5px;
+  border-style: solid;
+  background: color-mix(in srgb, var(--ffn-primary) 9%, transparent);
+}
+
+.position-modal--earnings .modal-empty-state--syncing strong {
+  color: var(--ffn-text);
+  font-size: 0.9rem;
+}
+
+.position-modal--earnings .modal-empty-state--syncing span {
+  color: var(--ffn-muted);
+  font-size: 0.82rem;
+  line-height: 1.45;
+}
+
 .orbit-position-local-overlay {
   position: fixed;
   inset: 0;
@@ -5342,5 +5433,46 @@
   .orbits-page .planet-node.orbit-state-target::before,
   .orbits-page .planet-node.orbit-state-target::after {
     animation: none !important;
+  }
+}
+
+@media (max-width: 767px) {
+  .orbits-page--focused .ffn-orbit-cockpit-toggle {
+    left: auto !important;
+    right: max(16px, env(safe-area-inset-right)) !important;
+    bottom: max(16px, env(safe-area-inset-bottom)) !important;
+    width: 56px !important;
+    min-width: 56px !important;
+    height: 56px !important;
+    min-height: 56px !important;
+    padding: 0 !important;
+    border-radius: 50% !important;
+    justify-content: center !important;
+    box-shadow:
+      0 14px 34px rgba(77, 163, 255, 0.34),
+      0 0 0 1px rgba(255, 255, 255, 0.16) inset;
+  }
+
+  .orbits-page--focused .ffn-orbit-cockpit-toggle::before {
+    content: "";
+    width: 22px;
+    height: 16px;
+    background:
+      linear-gradient(#07111f 0 0) top center / 100% 2px no-repeat,
+      linear-gradient(#07111f 0 0) center center / 100% 2px no-repeat,
+      linear-gradient(#07111f 0 0) bottom center / 100% 2px no-repeat;
+  }
+
+  .orbits-page--focused .ffn-orbit-cockpit-toggle > span {
+    position: absolute !important;
+    width: 1px !important;
+    height: 1px !important;
+    overflow: hidden !important;
+    clip: rect(0 0 0 0) !important;
+    white-space: nowrap !important;
+  }
+
+  .orbits-page--focused .ffn-orbit-cockpit-toggle > strong {
+    display: none !important;
   }
 }

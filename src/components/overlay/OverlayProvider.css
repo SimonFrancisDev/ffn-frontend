@@ -162,12 +162,30 @@
 
 @media (max-width: 640px) {
   .ffn-overlay {
+    align-items: center;
+    padding:
+      max(10px, env(safe-area-inset-top))
+      10px
+      max(10px, env(safe-area-inset-bottom));
+  }
+
+  .ffn-overlay--sheet {
     align-items: flex-end;
-    padding: 10px;
+    padding: 0;
   }
 
   .ffn-overlay__panel {
+    width: min(100%, calc(100vw - 20px));
+    max-height: calc(100dvh - max(20px, env(safe-area-inset-top)) - max(20px, env(safe-area-inset-bottom)));
+  }
+
+  .ffn-overlay__panel--drawer {
+    width: min(88vw, 380px);
+    max-height: 100dvh;
+  }
+
+  .ffn-overlay__panel--sheet {
     width: 100%;
-    max-height: min(88dvh, 720px);
+    max-height: 82dvh;
   }
 }

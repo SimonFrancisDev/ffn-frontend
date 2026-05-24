@@ -2,6 +2,7 @@
 import { useEffect, useMemo, useRef, useState } from 'react'
 import { createPortal } from 'react-dom'
 import { useTranslation } from 'react-i18next'
+import i18n from '../../i18n'
 import {
   ArrowRight,
   ArrowRightLeft,
@@ -58,9 +59,12 @@ import { useWallet } from '../../hooks/useWallet'
 import { useSession } from '../../context/SessionContext'
 import { getApiUrl } from '../../Services/apiConfig'
 import { useToast } from '../../components/feedback'
+import { LANGUAGES } from '../../constants/languages'
+import { lockBodyScroll } from '../../utils/bodyScrollLock'
 import './LandingPage.css'
 
 const APP_USER_ID_STORAGE_KEY = 'finfreedom_app_user_id_v1'
+const LANGUAGE_STORAGE_KEY = 'finfreedom_language_v1'
 
 async function fetchJson(path, options = {}) {
   const response = await fetch(getApiUrl(path), {
@@ -985,6 +989,73 @@ function ThemeImage({ image, alt, className, priority = false, style }) {
   )
 }
 
+function LandingModalLanguageSelect() {
+  const { t } = useTranslation()
+  const [isOpen, setIsOpen] = useState(false)
+  const [activeCode, setActiveCode] = useState(i18n.language || 'en')
+
+  const activeLanguage =
+    LANGUAGES.find((language) => language.code === activeCode) ||
+    LANGUAGES.find((language) => language.code === 'en') ||
+    LANGUAGES[0]
+
+  useEffect(() => {
+    const handleLanguageChanged = (languageCode) => {
+      setActiveCode(languageCode || 'en')
+    }
+
+    i18n.on('languageChanged', handleLanguageChanged)
+    return () => i18n.off('languageChanged', handleLanguageChanged)
+  }, [])
+
+  const handleSelectLanguage = (language) => {
+    if (!language?.code) return
+
+    setActiveCode(language.code)
+    i18n.changeLanguage(language.code)
+
+    try {
+      window.localStorage.setItem(LANGUAGE_STORAGE_KEY, language.code)
+    } catch {
+      // no-op
+    }
+
+    setIsOpen(false)
+  }
+
+  return (
+    <div className="landing-modal-language">
+      <button
+        type="button"
+        className="landing-modal-language__button"
+        onClick={() => setIsOpen((current) => !current)}
+        aria-expanded={isOpen}
+      >
+        <FaGlobe aria-hidden="true" />
+        <span>{activeLanguage?.nativeLabel || activeLanguage?.label || 'English'}</span>
+      </button>
+
+      {isOpen && (
+        <div className="landing-modal-language__menu" role="listbox" aria-label={t('languageDropdown.title', 'Choose language')}>
+          {LANGUAGES.map((language) => (
+            <button
+              key={language.code}
+              type="button"
+              className={`landing-modal-language__option ${language.code === activeCode ? 'is-active' : ''}`}
+              onClick={() => handleSelectLanguage(language)}
+              role="option"
+              aria-selected={language.code === activeCode}
+            >
+              <span>{language.nativeLabel || language.label}</span>
+              <small>{language.label}</small>
+            </button>
+          ))}
+        </div>
+      )}
+    </div>
+  )
+}
+
 function LegalModal({ type, onClose }) {
   const { t } = useTranslation()
   const content = LEGAL_CONTENT[type]
@@ -1007,6 +1078,8 @@ function LegalModal({ type, onClose }) {
           className="legal-modal-logo"
         />
       </div>
+
+        <LandingModalLanguageSelect />
 
         <button
           type="button"
@@ -1446,20 +1519,8 @@ function LandingPage({ onNavigate }) {
   }, [])
 
   useEffect(() => {
-    if (typeof document === 'undefined') return undefined
-
-    const previousOverflow = document.body.style.overflow
-    const previousTouchAction = document.body.style.touchAction
-
-    if (showDisclaimer || programModal || legalModal) {
-      document.body.style.overflow = 'hidden'
-      document.body.style.touchAction = 'none'
-    }
-
-    return () => {
-      document.body.style.overflow = previousOverflow
-      document.body.style.touchAction = previousTouchAction
-    }
+    if (!(showDisclaimer || programModal || legalModal)) return undefined
+    return lockBodyScroll()
   }, [showDisclaimer, programModal, legalModal])
 
   useEffect(() => {
@@ -1640,6 +1701,7 @@ const handleProgramModalImagePointerUp = (event) => {
                     className="legal-modal-logo"
                   />
                 </div>
+              <LandingModalLanguageSelect />
               <div className="landing-disclaimer__header">
                 <div className="landing-disclaimer__badge">
                   <ShieldAlert size={16} />

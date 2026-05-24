@@ -6,6 +6,7 @@ import { useWallet } from '../../hooks/useWallet'
 import { useContracts } from '../../hooks/useContracts'
 import { useTranslation } from 'react-i18next'
 import { LanguageSwitcher } from './LanguageSwitcher'
+import { lockBodyScroll } from '../../utils/bodyScrollLock'
 import logo from '../../assets/Fin-logo.jpg'
 
 export const Navigation = () => {
@@ -95,15 +96,8 @@ export const Navigation = () => {
   }, [])
 
   useEffect(() => {
-    if (expanded) {
-      document.body.style.overflow = 'hidden'
-    } else {
-      document.body.style.overflow = ''
-    }
-
-    return () => {
-      document.body.style.overflow = ''
-    }
+    if (!expanded) return undefined
+    return lockBodyScroll()
   }, [expanded])
 
   const customStyles = `

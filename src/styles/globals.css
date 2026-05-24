@@ -95,6 +95,10 @@ body {
   -moz-osx-font-smoothing: grayscale;
 }
 
+body.ffn-scroll-locked {
+  overscroll-behavior: contain;
+}
+
 [data-theme="dark"] body {
   background-image:
     radial-gradient(circle at 50% 35%, rgba(0, 194, 255, 0.14), transparent 38%),
@@ -423,6 +427,10 @@ p {
   main,
   section {
     min-width: 0;
+  }
+
+  .app-container {
+    padding-inline: 10px;
   }
 
   input,

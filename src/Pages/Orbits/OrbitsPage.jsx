@@ -987,15 +987,11 @@ const OrbitsPage = () => {
         recyclePaidLiquid: 0,
         recycleEscrowLocked: 0
       },
-      indexedReceipts: rawPosition?.indexedReceipts || [],
+      indexedReceipts: rawPosition?.indexedReceipts || rawPosition?.receipts || rawPosition?.payoutReceipts || [],
       indexedEvents: rawPosition?.indexedEvents || [],
       ruleView: rawPosition?.ruleView || null,
-      receiptsHydrated: !!(
-        rawPosition?.indexedReceipts ||
-        rawPosition?.indexedEvents ||
-        rawPosition?.activationId ||
-        rawPosition?.ruleView
-      )
+      detailsHydrated: !!rawPosition?.detailsHydrated,
+      receiptsHydrated: !!rawPosition?.receiptsHydrated || Array.isArray(rawPosition?.indexedReceipts) || Array.isArray(rawPosition?.receipts) || Array.isArray(rawPosition?.payoutReceipts)
     }
   }, [resolveOccupantReferrer, deriveOccupantType, viewAddress])
 
@@ -1250,27 +1246,28 @@ const OrbitsPage = () => {
     await fetchOrbitLevelData(currentLevel, { forceRefresh, silent: false })
   }, [viewAddress, activeTab, fetchOrbitLevelData, focusedOnly, routedLevel])
 
-  const hydrateLivePositionDetails = useCallback(async (level, position) => {
+  const hydrateLivePositionDetails = useCallback(async (level, position, options = {}) => {
     if (!viewAddress || !ethers.isAddress(viewAddress) || !position) return position
     const positionNumber = Number(position?.number || 0)
     if (!positionNumber) return position
+    const forceRefresh = !!options.forceRefresh
 
     const cacheKey = `${viewAddress.toLowerCase()}-${level}-${positionNumber}`
-    if (position?.receiptsHydrated) {
+    if (!forceRefresh && position?.detailsHydrated) {
       positionDetailsCacheRef.current.set(cacheKey, position)
       return position
     }
-    if (positionDetailsCacheRef.current.has(cacheKey)) {
+    if (!forceRefresh && positionDetailsCacheRef.current.has(cacheKey)) {
       return positionDetailsCacheRef.current.get(cacheKey)
     }
-    if (positionHydrationPromisesRef.current.has(cacheKey)) {
+    if (!forceRefresh && positionHydrationPromisesRef.current.has(cacheKey)) {
       return await positionHydrationPromisesRef.current.get(cacheKey)
     }
 
     const promise = (async () => {
-      const details = await fetchOrbitPositionDetailsApi(viewAddress, level, positionNumber)
+      const details = await fetchOrbitPositionDetailsApi(viewAddress, level, positionNumber, { forceRefresh })
       const hydrated = await mergePositionTruth(level, { ...position, ...details }, details?.orbitType || levelToOrbitType[level], 0, false)
-      const finalHydrated = { ...hydrated, receiptsHydrated: true }
+      const finalHydrated = { ...hydrated, detailsHydrated: true, receiptsHydrated: true }
 
       positionDetailsCacheRef.current.set(cacheKey, finalHydrated)
 
@@ -1306,7 +1303,7 @@ const OrbitsPage = () => {
 
     const cacheKey = `${viewAddress.toLowerCase()}-${level}-${cycleNumber}-${positionNumber}`
 
-    if (position?.receiptsHydrated) return position
+    if (position?.detailsHydrated) return position
     if (positionDetailsCacheRef.current.has(cacheKey)) return positionDetailsCacheRef.current.get(cacheKey)
 
     try {
@@ -1322,7 +1319,7 @@ const OrbitsPage = () => {
         true
       )
 
-      const finalHydrated = { ...hydrated, receiptsHydrated: true }
+      const finalHydrated = { ...hydrated, detailsHydrated: true, receiptsHydrated: true }
       positionDetailsCacheRef.current.set(cacheKey, finalHydrated)
       return finalHydrated
     } catch (err) {
@@ -1449,7 +1446,58 @@ const OrbitsPage = () => {
     try {
       const hydrated = isHistorical
         ? await hydrateHistoricalPositionDetails(level, Number(selectedCycle), initialPosition)
-        : await hydrateLivePositionDetails(level, initialPosition)
+        : await hydrateLivePositionDetails(level, initialPosition, { forceRefresh: !!initialPosition.occupant })
+
+      let enrichedPosition = hydrated
+      const currentReceipts = Array.isArray(enrichedPosition?.indexedReceipts) ? enrichedPosition.indexedReceipts : []
+
+      if (enrichedPosition?.occupant && currentReceipts.length === 0) {
+        const positionNumber = Number(enrichedPosition.number || position.number || 0)
+        const activationId = Number(enrichedPosition.activationId || 0)
+        const matchesPosition = (receipt) => {
+          const sourcePosition = Number(receipt?.sourcePosition || receipt?.position || receipt?.positionNumber || 0)
+          const receiptActivationId = Number(receipt?.activationId || 0)
+          return (
+            (positionNumber > 0 && sourcePosition === positionNumber) ||
+            (activationId > 0 && receiptActivationId === activationId)
+          )
+        }
+
+        const receiptMap = new Map()
+        const addReceipts = (receipts) => {
+          ;(Array.isArray(receipts) ? receipts : []).forEach((receipt, index) => {
+            if (!matchesPosition(receipt)) return
+            const key = [
+              receipt?.txHash || 'no-tx',
+              receipt?.logIndex ?? index,
+              receipt?.receiptType || receipt?.rawEventName || 'receipt',
+              receipt?.receiver || ''
+            ].join(':')
+            receiptMap.set(key, receipt)
+          })
+        }
+
+        addReceipts(receiptBucketsByLevel[level] || [])
+
+        if (activationId > 0) {
+          try {
+            const activationResult = await fetchActivationReceiptsApi(activationId, { forceRefresh: true })
+            addReceipts(Array.isArray(activationResult) ? activationResult : activationResult?.receipts)
+          } catch (err) {
+            console.error('Error fetching activation receipts for position modal:', err)
+          }
+        }
+
+        const recoveredReceipts = [...receiptMap.values()]
+        if (recoveredReceipts.length > 0) {
+          enrichedPosition = {
+            ...enrichedPosition,
+            indexedReceipts: recoveredReceipts,
+            indexedReceiptCount: recoveredReceipts.length,
+            receiptsHydrated: true
+          }
+        }
+      }
 
       setSelectedPosition(prev => {
         if (!prev || prev.number !== position.number || Number(prev.level || 0) !== level) {
@@ -1457,19 +1505,19 @@ const OrbitsPage = () => {
         }
         return {
           ...prev,
-          ...hydrated,
-          occupant: hydrated?.occupant || prev.occupant,
-          user: hydrated?.user || prev.user,
-          referrer: hydrated?.referrer || prev.referrer,
-          originalReferrer: hydrated?.originalReferrer || prev.originalReferrer,
-          occupantReferrer: hydrated?.occupantReferrer || prev.occupantReferrer,
+          ...enrichedPosition,
+          occupant: enrichedPosition?.occupant || prev.occupant,
+          user: enrichedPosition?.user || prev.user,
+          referrer: enrichedPosition?.referrer || prev.referrer,
+          originalReferrer: enrichedPosition?.originalReferrer || prev.originalReferrer,
+          occupantReferrer: enrichedPosition?.occupantReferrer || prev.occupantReferrer,
           detailsLoading: false
         }
       })
     } catch {
       setSelectedPosition(prev => prev ? { ...prev, detailsLoading: false } : prev)
     }
-  }, [activeTab, selectedCycleByLevel, hydrateHistoricalPositionDetails, hydrateLivePositionDetails])
+  }, [activeTab, selectedCycleByLevel, hydrateHistoricalPositionDetails, hydrateLivePositionDetails, receiptBucketsByLevel])
 
   const handleStructuralPreview = (position) => {
     if (position.parentPosition) {
@@ -3165,6 +3213,7 @@ const OrbitsPage = () => {
               className={`ffn-orbit-cockpit ${isOrbitToolsOpen ? 'is-open' : ''}`}
               aria-hidden={!isOrbitToolsOpen}
             >
+              <span className="ffn-orbit-cockpit__grab" aria-hidden="true" />
               <div className="ffn-orbit-cockpit__top">
                 <div>
                   <span>{orbitsT('cockpit.title', 'Orbit Cockpit')}</span>
@@ -3274,6 +3323,15 @@ const OrbitsPage = () => {
                     const beneficiaryRows = getBeneficiaryRows(selectedPosition)
 
                     if (!beneficiaryRows.length) {
+                      if (selectedPosition.occupant) {
+                        return (
+                          <div className="modal-empty-state modal-empty-state--syncing">
+                            <strong>{orbitsT('modal.positionFilledNoMovementTitle', 'Position is filled')}</strong>
+                            <span>{orbitsT('modal.positionFilledNoMovement', 'No payout movement is recorded for this position.')}</span>
+                          </div>
+                        )
+                      }
+
                       return (
                         <div className="modal-empty-state">
                           {orbitsT('modal.noBeneficiaryMovement', 'No beneficiary movement recorded yet.')}

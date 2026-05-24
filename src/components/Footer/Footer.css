@@ -520,7 +520,7 @@
   .landing-disclaimer__dialog--legal {
     padding: 16px;
     border-radius: 24px;
-    max-height: 88vh;
+    max-height: 88dvh;
   }
 
   .landing-disclaimer__close {
@@ -557,7 +557,7 @@
 
 .landing-program-modal__dialog {
   width: min(980px, 100%);
-  max-height: min(88vh, 860px);
+  max-height: min(88dvh, 860px);
   padding: 0;
   display: grid;
   grid-template-columns: minmax(0, 1.04fr) minmax(320px, 0.92fr);
@@ -593,7 +593,7 @@
 
 .landing-program-modal__content {
   min-width: 0;
-  max-height: min(88vh, 860px);
+  max-height: min(88dvh, 860px);
   overflow-y: auto;
   padding: clamp(22px, 3vw, 38px);
   display: grid;

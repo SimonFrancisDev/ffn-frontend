@@ -1132,19 +1132,21 @@
   display: flex;
   align-items: center;
   justify-content: center;
-  padding: 24px;
+  padding:
+    max(14px, env(safe-area-inset-top))
+    14px
+    max(14px, env(safe-area-inset-bottom));
   background: rgba(2, 6, 23, 0.78);
   backdrop-filter: blur(6px);
   -webkit-backdrop-filter: blur(6px);
   overscroll-behavior: contain;
-  touch-action: none;
 }
 
 .activation-modal {
   position: relative;
   z-index: 100000;
   width: min(100%, 640px);
-  max-height: min(85vh, 760px);
+  max-height: min(85dvh, 760px);
   overflow-y: auto;
   border-radius: 24px;
   padding: 22px;
@@ -2346,22 +2348,22 @@ body.light-theme .activation-overlay {
 /* Ensure modal is perfectly centered on all screen sizes */
 @media (max-width: 768px) {
   .activation-overlay {
-    padding: 16px;
-    align-items: flex-start;
-    padding-top: 10vh;
+    align-items: center;
   }
   
   .activation-modal {
-    max-height: 80vh;
-    margin: 0 auto;
+    max-height: calc(100dvh - max(28px, env(safe-area-inset-top)) - max(28px, env(safe-area-inset-bottom)));
+    margin: auto;
   }
 }
 
 @media (max-width: 480px) {
   .activation-overlay {
-    padding: 12px;
-    align-items: flex-start;
-    padding-top: 8vh;
+    padding:
+      max(10px, env(safe-area-inset-top))
+      10px
+      max(10px, env(safe-area-inset-bottom));
+    align-items: center;
   }
   
   .activation-modal {
@@ -2425,7 +2427,7 @@ body.light-theme .activation-overlay {
 
 .activation-orbit-modal {
   width: min(96vw, 980px);
-  max-height: min(92vh, 880px);
+  max-height: min(92dvh, 880px);
   padding: clamp(18px, 2.4vw, 28px);
   overflow: auto;
 }
@@ -2799,13 +2801,16 @@ body.light-theme .activation-overlay {
 
 @media (max-width: 640px) {
   .activation-orbit-overlay {
-    align-items: flex-start;
-    padding: 10px;
+    align-items: center;
+    padding:
+      max(10px, env(safe-area-inset-top))
+      10px
+      max(10px, env(safe-area-inset-bottom));
   }
 
   .activation-orbit-modal {
     width: 100%;
-    max-height: 92vh;
+    max-height: calc(100dvh - max(20px, env(safe-area-inset-top)) - max(20px, env(safe-area-inset-bottom)));
     border-radius: 22px;
     padding: 16px;
   }

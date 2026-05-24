@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react'
 import { createPortal } from 'react-dom'
 import { useTranslation } from 'react-i18next'
+import { lockBodyScroll } from '../../utils/bodyScrollLock'
 import {
   ArrowRight,
   ArrowRightLeft,
@@ -977,18 +978,8 @@ export default function Footer({ onNavigate }) {
   const hasOpenModal = Boolean(programModal || legalModal || forceShowDisclaimer)
 
   useEffect(() => {
-    if (!hasOpenModal) return
-
-    const originalOverflow = document.body.style.overflow
-    const originalTouchAction = document.body.style.touchAction
-
-    document.body.style.overflow = 'hidden'
-    document.body.style.touchAction = 'none'
-
-    return () => {
-      document.body.style.overflow = originalOverflow
-      document.body.style.touchAction = originalTouchAction
-    }
+    if (!hasOpenModal) return undefined
+    return lockBodyScroll()
   }, [hasOpenModal])
 
   const handleProgramClick = (program) => {

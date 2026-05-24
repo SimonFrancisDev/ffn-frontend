@@ -657,6 +657,19 @@ const CommunityPage = ({ onNavigate }) => {
     toast.info(communityT('profile.returnedToast', 'Viewing your account again.'), { dedupeKey: 'community-profile-returned' })
   }, [switchToSelf, communityT, toast])
 
+  const handleOpenProfileModal = useCallback(() => {
+    setProfileModalOpen(true)
+  }, [])
+
+  const handleCloseProfileModal = useCallback(() => {
+    setProfileModalOpen(false)
+  }, [])
+
+  const handleCloseJoinPrompt = useCallback(() => {
+    setIsJoinPromptOpen(false)
+    setHasDismissedJoinPrompt(true)
+  }, [])
+
   const fetchPublicReadStats = useCallback(async () => {
     try {
       const [summaryPayload, statsPayload] = await Promise.all([
@@ -1093,7 +1106,7 @@ const CommunityPage = ({ onNavigate }) => {
       <button
         type="button"
         className="community-lookup-tool"
-        onClick={() => setProfileModalOpen(true)}
+        onClick={handleOpenProfileModal}
         aria-label={communityT('lookup.openAriaLabel', 'Search for any member of the community')}
       >
         <span className="community-lookup-tool__icon"><Search size={16} /></span>
@@ -1102,7 +1115,7 @@ const CommunityPage = ({ onNavigate }) => {
 
       <Modal
         open={profileModalOpen}
-        onClose={() => setProfileModalOpen(false)}
+        onClose={handleCloseProfileModal}
         title={communityT('profile.switcherLabel', 'Profile switcher')}
         description={communityT('profile.note', 'Enter a wallet address or Referral ID to view a public community profile.')}
         className="community-profile-modal community-profile-modal--overlay"
@@ -1148,10 +1161,7 @@ const CommunityPage = ({ onNavigate }) => {
 
       <Modal
         open={canShowJoinPrompt && isJoinPromptOpen}
-        onClose={() => {
-          setIsJoinPromptOpen(false)
-          setHasDismissedJoinPrompt(true)
-        }}
+        onClose={handleCloseJoinPrompt}
         closeLabel={communityT('joinPrompt.closeAriaLabel', 'Close join prompt')}
         className="community-join-modal community-join-modal--overlay"
         showClose

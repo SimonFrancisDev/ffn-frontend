@@ -29,6 +29,11 @@ function useBodyScrollLock(locked) {
 
 function FocusTrap({ children, active, onEscape, restoreFocus = true }) {
   const ref = useRef(null)
+  const onEscapeRef = useRef(onEscape)
+
+  useEffect(() => {
+    onEscapeRef.current = onEscape
+  }, [onEscape])
 
   useEffect(() => {
     if (!active || typeof document === 'undefined') return undefined
@@ -54,7 +59,7 @@ function FocusTrap({ children, active, onEscape, restoreFocus = true }) {
 
     const handleKeyDown = (event) => {
       if (event.key === 'Escape') {
-        onEscape?.()
+        onEscapeRef.current?.()
         return
       }
 
@@ -86,7 +91,7 @@ function FocusTrap({ children, active, onEscape, restoreFocus = true }) {
         previousActive.focus()
       }
     }
-  }, [active, onEscape, restoreFocus])
+  }, [active, restoreFocus])
 
   return (
     <div ref={ref} tabIndex={-1}>

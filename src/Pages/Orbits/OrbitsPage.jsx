@@ -476,23 +476,99 @@ const OrbitsPage = () => {
     }, hadDrag ? 80 : 0)
   }, [])
 
-  const getSpilloverReceiptRows = useCallback((position) => {
+  const getBeneficiaryRows = (position) => {
     const receipts = Array.isArray(position?.indexedReceipts) ? position.indexedReceipts : []
-    return receipts
-      .filter((receipt) => Number(receipt.receiptType || 0) === 3)
-      .map((receipt, index) => {
+    const rowsByKey = new Map()
+
+    const addRow = ({ address, role, walletCredited = 0, escrowLocked = 0, recycled = 0 }) => {
+      const normalizedAddress = address && ethers.isAddress(address) && address !== ethers.ZeroAddress
+        ? address.toLowerCase()
+        : ''
+      const key = `${role}:${normalizedAddress || 'system'}`
+      const existing = rowsByKey.get(key) || {
+        key,
+        address: normalizedAddress ? address : '',
+        role,
+        walletCredited: 0,
+        escrowLocked: 0,
+        recycled: 0
+      }
+
+      existing.walletCredited += toFiniteNumber(walletCredited)
+      existing.escrowLocked += toFiniteNumber(escrowLocked)
+      existing.recycled += toFiniteNumber(recycled)
+      rowsByKey.set(key, existing)
+    }
+
+    receipts.forEach((receipt, index) => {
+      const type = Number(receipt.receiptType || 0)
+      const isRecycle = type === RECEIPT_TYPES.RECYCLE
+      const receiptWalletCredited = getReceiptWalletCredited(receipt)
+      const escrowLocked = getReceiptEscrowLocked(receipt)
+      const generatedGross = getReceiptGeneratedGross(receipt)
+      const walletCredited = !isRecycle && receiptWalletCredited <= 0 && escrowLocked <= 0
+        ? generatedGross
+        : receiptWalletCredited
+      const recycled = isRecycle
+        ? getReceiptRecycleLiquid(receipt) + getReceiptRecycleEscrow(receipt) || generatedGross
+        : 0
+
+      if (type === RECEIPT_TYPES.ROUTED_SPILLOVER) {
         const roleText = String(receipt.routedRole || '').toLowerCase()
         const spilloverNumber = roleText.includes('2') ? 2 : index + 1
-        return {
-          key: `${receipt.txHash}-${receipt.logIndex}-${index}`,
-          label: spilloverNumber === 2 ? 'Spillover 2' : 'Spillover 1',
-          receiver: receipt.receiver,
-          amount: getReceiptGeneratedGross(receipt) || getReceiptWalletCredited(receipt),
-          txHash: receipt.txHash,
-        }
+        addRow({
+          address: receipt.receiver,
+          role: spilloverNumber === 2 ? orbitsT('modal.spillover2', 'Spillover 2') : orbitsT('modal.spillover1', 'Spillover 1'),
+          walletCredited,
+          escrowLocked,
+          recycled
+        })
+        return
+      }
+
+      addRow({
+        address: isRecycle ? '' : receipt.receiver,
+        role: isRecycle ? orbitsT('modal.recycle', 'Recycled') : orbitsT('modal.direct', 'Direct'),
+        walletCredited: isRecycle ? 0 : walletCredited,
+        escrowLocked: isRecycle ? 0 : escrowLocked,
+        recycled
       })
-      .slice(0, 2)
-  }, [])
+    })
+
+    if (!rowsByKey.size && position?.positionInfo) {
+      const info = position.positionInfo
+      addRow({
+        address: info.orbitOwner || position.occupant,
+        role: orbitsT('modal.direct', 'Direct'),
+        walletCredited: info.exactToOwner
+      })
+      addRow({
+        address: info.spillover1Recipient,
+        role: orbitsT('modal.spillover1', 'Spillover 1'),
+        walletCredited: info.exactToSpillover1
+      })
+      addRow({
+        address: info.spillover2Recipient,
+        role: orbitsT('modal.spillover2', 'Spillover 2'),
+        walletCredited: info.exactToSpillover2
+      })
+      addRow({
+        address: info.orbitOwner || position.occupant,
+        role: orbitsT('modal.autoUpgradeEscrow', 'Auto-upgrade escrow'),
+        escrowLocked: info.exactToEscrow
+      })
+      addRow({
+        role: orbitsT('modal.recycle', 'Recycled'),
+        recycled: info.exactToRecycle
+      })
+    }
+
+    return [...rowsByKey.values()].filter((row) =>
+      row.walletCredited > 0 ||
+      row.escrowLocked > 0 ||
+      row.recycled > 0
+    )
+  }
 
   const formatTruthLabel = useCallback((truthLabel) => {
     if (!truthLabel) return orbitsT('truth.unknown', 'Unknown')
@@ -620,7 +696,42 @@ const OrbitsPage = () => {
     return 1
   }
 
+  const buildGroupedAngles = (parentAngles, childGroups, childStepDegrees) => {
+    const nextAngles = {}
+
+    Object.entries(childGroups).forEach(([parentPosition, children]) => {
+      const parentAngle = parentAngles[Number(parentPosition)]
+      if (typeof parentAngle !== 'number') return
+
+      const middleIndex = (children.length - 1) / 2
+      children.forEach((childPosition, childIndex) => {
+        nextAngles[childPosition] = parentAngle + ((childIndex - middleIndex) * childStepDegrees)
+      })
+    })
+
+    return nextAngles
+  }
+
   const getOrbitStructure = (orbitType) => {
+    const line1Angles = { 1: -90, 2: 30, 3: 150 }
+    const line2ChildGroups = {
+      1: [4, 7, 10],
+      2: [5, 8, 11],
+      3: [6, 9, 12]
+    }
+    const line2Angles = buildGroupedAngles(line1Angles, line2ChildGroups, 40)
+    const line3Angles = buildGroupedAngles(line2Angles, {
+      4: [13, 22, 31],
+      5: [14, 23, 32],
+      6: [15, 24, 33],
+      7: [16, 25, 34],
+      8: [17, 26, 35],
+      9: [18, 27, 36],
+      10: [19, 28, 37],
+      11: [20, 29, 38],
+      12: [21, 30, 39]
+    }, 40 / 3)
+
     return {
       P4: {
         lines: [1],
@@ -634,31 +745,14 @@ const OrbitsPage = () => {
         counts: { 1: 3, 2: 9 },
         positions: { 1: [1, 2, 3], 2: [4, 5, 6, 7, 8, 9, 10, 11, 12] },
         startAngles: { 1: -90, 2: -90 },
-        customAngles: {
-          1: { 1: -90, 2: 30, 3: 150 },
-          2: { 4: -138, 7: -120, 10: -102, 5: -18, 8: 0, 11: 18, 6: 102, 9: 120, 12: 138 }
-        }
+        customAngles: { 1: line1Angles, 2: line2Angles }
       },
       P39: {
         lines: [1, 2, 3],
         counts: { 1: 3, 2: 9, 3: 27 },
         positions: { 1: [1, 2, 3], 2: [4, 5, 6, 7, 8, 9, 10, 11, 12], 3: Array.from({ length: 27 }, (_, i) => i + 13) },
         startAngles: { 1: -90, 2: -90, 3: -90 },
-        customAngles: {
-          1: { 1: -90, 2: 30, 3: 150 },
-          2: { 4: -138, 7: -120, 10: -102, 5: -18, 8: 0, 11: 18, 6: 102, 9: 120, 12: 138 },
-          3: {
-            13: -168, 22: -160, 31: -152,
-            14: -128, 23: -120, 32: -112,
-            15: -88, 24: -80, 33: -72,
-            16: -48, 25: -40, 34: -32,
-            17: -8, 26: 0, 35: 8,
-            18: 32, 27: 40, 36: 48,
-            19: 72, 28: 80, 37: 88,
-            20: 112, 29: 120, 38: 128,
-            21: 152, 30: 160, 39: 168
-          }
-        }
+        customAngles: { 1: line1Angles, 2: line2Angles, 3: line3Angles }
       }
     }[orbitType] || {
       lines: [1],
@@ -689,6 +783,14 @@ const OrbitsPage = () => {
     if (stageSize <= 260) return orbitType === 'P39' ? 22 : 30
     if (stageSize <= 420) return orbitType === 'P39' ? 26 : 36
     return base
+  }
+
+  const getPlanetSizeForLine = (orbitType, lineNum, stageSize) => {
+    const baseSize = getPlanetSize(orbitType, stageSize)
+    if (orbitType !== 'P39') return baseSize
+    if (lineNum === 3) return Math.max(18, Math.round(baseSize * 0.74))
+    if (lineNum === 2) return Math.max(20, Math.round(baseSize * 0.88))
+    return baseSize
   }
 
   const getCoreSize = (orbitType, stageSize) => {
@@ -1430,6 +1532,53 @@ const OrbitsPage = () => {
 
     run()
   }, [orbitData, fetchMemberId])
+
+  useEffect(() => {
+    if (!selectedPosition) return
+
+    let cancelled = false
+    const addresses = new Set()
+    const addAddress = (address) => {
+      if (address && ethers.isAddress(address) && address !== ethers.ZeroAddress) {
+        addresses.add(address.toLowerCase())
+      }
+    }
+
+    addAddress(selectedPosition.occupant)
+    ;(selectedPosition.indexedReceipts || []).forEach((receipt) => addAddress(receipt.receiver))
+
+    const info = selectedPosition.positionInfo || {}
+    ;[
+      info.orbitOwner,
+      info.spillover1Recipient,
+      info.spillover2Recipient,
+      info.referrer,
+      info.originalReferrer,
+      info.occupantReferrer
+    ].forEach(addAddress)
+
+    const missing = [...addresses].filter((addr) => !resolvedMemberIds[addr])
+    if (!missing.length) return
+
+    const run = async () => {
+      const next = {}
+      await Promise.all(
+        missing.map(async (addr) => {
+          next[addr] = await fetchMemberId(addr)
+        })
+      )
+
+      if (!cancelled) {
+        setResolvedMemberIds((prev) => ({ ...prev, ...next }))
+      }
+    }
+
+    run()
+
+    return () => {
+      cancelled = true
+    }
+  }, [selectedPosition, resolvedMemberIds, fetchMemberId])
 
   useEffect(() => {
     if (focusedOnly && routedLevel >= 1 && routedLevel <= 10) {
@@ -2667,7 +2816,9 @@ const OrbitsPage = () => {
                           {(() => {
                             const outerWidth = containerSize.width || galaxyRef.current?.clientWidth || 560
                             const outerHeight = containerSize.height || galaxyRef.current?.clientHeight || outerWidth
-                            const usableSize = Math.max(Math.min(outerWidth, outerHeight) * 0.86, 240)
+                            const minViewportSide = Math.min(outerWidth, outerHeight)
+                            const p39StageScale = minViewportSide <= 420 ? 1.2 : minViewportSide <= 720 ? 1.12 : 1.04
+                            const usableSize = Math.max(minViewportSide * 0.86 * (orbitType === 'P39' ? p39StageScale : 1), 240)
                             const stageSize = usableSize
                             const centerX = stageSize / 2
                             const centerY = stageSize / 2
@@ -2684,12 +2835,15 @@ const OrbitsPage = () => {
                               2: Math.min(stageSize * 0.43, (stageSize / 2) - nodePadding)
                             }
                             if (orbitType === 'P39') ringRadiiPx = {
-                              1: Math.max(coreClearance, stageSize * 0.17),
-                              2: Math.min(stageSize * 0.32, (stageSize / 2) - nodePadding - 34),
-                              3: Math.min(stageSize * 0.47, (stageSize / 2) - nodePadding)
+                              1: Math.max(coreClearance, stageSize * 0.18),
+                              2: Math.min(stageSize * 0.34, (stageSize / 2) - nodePadding - 18),
+                              3: stageSize * 0.485
                             }
                             Object.keys(ringRadiiPx).forEach(key => {
-                              ringRadiiPx[key] = Math.min(ringRadiiPx[key], (stageSize / 2) - nodePadding)
+                              const linePadding = orbitType === 'P39'
+                                ? (getPlanetSizeForLine(orbitType, Number(key), stageSize) / 2) + 7
+                                : nodePadding
+                              ringRadiiPx[key] = Math.min(ringRadiiPx[key], (stageSize / 2) - linePadding)
                             })
 
                             const createEmptyPosition = (posNumber, lineNum) => ({
@@ -2841,18 +2995,20 @@ const OrbitsPage = () => {
                                   if (fromIndex < 0 || toIndex < 0) return null
                                   const fromCoords = getCoordsForPosition(fromPos.number, fromPos.line, fromIndex)
                                   const toCoords = getCoordsForPosition(toPos.number, toPos.line, toIndex)
+                                  const fromNodeSize = getPlanetSizeForLine(orbitType, fromPos.line, stageSize)
+                                  const toNodeSize = getPlanetSizeForLine(orbitType, toPos.line, stageSize)
 
                                   const connectionStyle = getTrimmedConnectionStyle(
                                     fromCoords,
                                     toCoords,
-                                    planetSize / 2,
-                                    planetSize / 2
+                                    fromNodeSize / 2,
+                                    toNodeSize / 2
                                   )
 
                                   return (
                                     <div
                                       key={`grey-conn-${posNumber}`}
-                                      className="structural-connection-grey"
+                                      className={`structural-connection-grey line${fromPos.line}`}
                                       style={connectionStyle}
                                     />
                                   )
@@ -2861,15 +3017,17 @@ const OrbitsPage = () => {
                                 {structure.lines.map(lineNum => structure.positions[lineNum].map((posNumber, index) => {
                                    const pos = allPositionMap[posNumber]
                                    const coords = getCoordsForPosition(posNumber, lineNum, index)
+                                  const planetNodeSize = getPlanetSizeForLine(orbitType, lineNum, stageSize)
                                   const semanticState = getPositionSemanticState(pos, currentFillTarget, newestFilledPosition)
                                    let planetClass = 'planet-node '
                                   if (pos.occupantType === 'mine') planetClass += 'mine'
                                   else if (pos.occupantType === 'downline') planetClass += 'downline'
                                   else if (pos.occupantType === 'other') planetClass += 'other'
                                   else planetClass += 'empty'
-                                   if (showStructuralPreview && hoveredPosition?.parentPosition === pos.number) {
+                                  if (showStructuralPreview && hoveredPosition?.parentPosition === pos.number) {
                                      planetClass += ' structural-preview'
                                    }
+                                  if (orbitType === 'P39') planetClass += ' p39'
                                   planetClass += ` orbit-state-${semanticState}`
 
                                   const badgeValue = getPlanetBadgeValue(pos)
@@ -2892,8 +3050,8 @@ const OrbitsPage = () => {
                                       style={{
                                         left: coords.x,
                                         top: coords.y,
-                                        width: planetSize,
-                                        height: planetSize,
+                                        width: planetNodeSize,
+                                        height: planetNodeSize,
                                         transform: 'translate(-50%, -50%)',
                                         '--index': index
                                       }}
@@ -2935,18 +3093,20 @@ const OrbitsPage = () => {
                                   if (fromIndex < 0 || toIndex < 0) return null
                                   const fromCoords = getCoordsForPosition(fromPos.number, fromPos.line, fromIndex)
                                   const toCoords = getCoordsForPosition(toPos.number, toPos.line, toIndex)
+                                  const fromNodeSize = getPlanetSizeForLine(orbitType, fromPos.line, stageSize)
+                                  const toNodeSize = getPlanetSizeForLine(orbitType, toPos.line, stageSize)
 
                                   const connectionStyle = getTrimmedConnectionStyle(
                                     fromCoords,
                                     toCoords,
-                                    planetSize / 2,
-                                    planetSize / 2
+                                    fromNodeSize / 2,
+                                    toNodeSize / 2
                                   )
 
                                   return (
                                     <div
                                       key={`conn-${idx}`}
-                                      className="structural-connection"
+                                      className={`structural-connection line${fromPos.line}`}
                                       style={connectionStyle}
                                     />
                                   )
@@ -3096,12 +3256,12 @@ const OrbitsPage = () => {
         ) : (
               <>
                 <div className="orbit-earnings-summary">
-                  <div className="modal-subtitle modal-subtitle--visible">{orbitsT('modal.summaryTitle', 'Transaction Summary')}</div>
+                  <div className="modal-subtitle modal-subtitle--visible">{orbitsT('modal.beneficiaryTitle', 'Beneficiary Summary')}</div>
 
                   {selectedPosition.occupant ? (
                     <div className="modal-detail">
                       <span className="modal-label">{orbitsT('modal.occupant', 'Position Holder')}</span>
-                      <span>{resolvedMemberIds[selectedPosition.occupant?.toLowerCase()] || orbitsT('modal.memberIdUnavailable', 'ID unavailable')}</span>
+                      <span>{getMemberLabel(selectedPosition.occupant)}</span>
                     </div>
                   ) : (
                     <div className="modal-detail">
@@ -3110,67 +3270,47 @@ const OrbitsPage = () => {
                     </div>
                   )}
 
-                  <div className="modal-detail">
-                    <span className="modal-label">{orbitsT('modal.generatedForViewer', 'Generated for Viewed Wallet')}</span>
-                    <span>{formatUsdtDisplay(getPositionGeneratedGross(selectedPosition))} USDT</span>
-                  </div>
+                  {(() => {
+                    const beneficiaryRows = getBeneficiaryRows(selectedPosition)
 
-                  <div className="modal-detail">
-                    <span className="modal-label">
-                      {getPositionWalletCredited(selectedPosition) > 0
-                        ? orbitsT('modal.creditedToViewedWallet', 'Credited to Viewed Wallet')
-                        : orbitsT('modal.netAmountEstimate', 'Net Amount Estimate')}
-                    </span>
-                    <span>
-                      {formatUsdtDisplay(getPositionWalletCredited(selectedPosition) || getEstimatedNetAmount(Number(selectedPosition.amount || 0)))} USDT
-                    </span>
-                  </div>
+                    if (!beneficiaryRows.length) {
+                      return (
+                        <div className="modal-empty-state">
+                          {orbitsT('modal.noBeneficiaryMovement', 'No beneficiary movement recorded yet.')}
+                        </div>
+                      )
+                    }
 
-                  <div className="modal-detail">
-                    <span className="modal-label">{orbitsT('modal.lockedForAutoUpgrade', 'Locked for Auto-upgrade')}</span>
-                    <span>{formatUsdtDisplay(getExecutedEscrowLocked(selectedPosition))} USDT</span>
-                  </div>
-
-                  <div className="modal-detail">
-                    <span className="modal-label">{orbitsT('modal.totalTransactionGenerated', 'Total Transaction Generated')}</span>
-                    <span>{formatUsdtDisplay(getTotalsGeneratedGross(selectedPosition.receiptTotals))} USDT</span>
-                  </div>
-
-                  <div className="modal-detail">
-                    <span className="modal-label">{orbitsT('modal.totalTransactionCredited', 'Total Transaction Credited')}</span>
-                    <span>{formatUsdtDisplay(getTotalsWalletCredited(selectedPosition.receiptTotals))} USDT</span>
-                  </div>
-
-                  <div className="modal-detail">
-                    <span className="modal-label">{orbitsT('modal.totalTransactionLocked', 'Total Transaction Locked')}</span>
-                    <span>{formatUsdtDisplay(getTotalsEscrowLocked(selectedPosition.receiptTotals))} USDT</span>
-                  </div>
-
-                  <div className="modal-detail">
-                    <span className="modal-label">{orbitsT('modal.truthType', 'Truth Type')}</span>
-                    <span>{formatTruthLabel(selectedPosition.truthLabel || selectedPosition.positionInfo?.type || 'Unknown')}</span>
-                  </div>
-
-                  <div className="modal-detail">
-                    <span className="modal-label">{orbitsT('modal.receiptProof', 'Receipt Proof')}</span>
-                    <span>
-                      {Number(selectedPosition.indexedReceiptCount || selectedPosition.indexedReceipts?.length || 0)}
-                      {' '}
-                      {orbitsT('modal.receiptsIndexed', 'indexed receipt(s)')}
-                    </span>
-                  </div>
-
-                  {selectedPosition.activationId > 0 && (
-                    <div className="modal-detail">
-                      <span className="modal-label">{orbitsT('modal.activationId', 'Activation ID')}</span>
-                      <span>#{selectedPosition.activationId}</span>
-                    </div>
-                  )}
-
-                  <div className="modal-detail">
-                    <span className="modal-label">{orbitsT('modal.activationPath', 'Activation Path')}</span>
-                    <span>{selectedPosition.isMirrorActivation ? orbitsT('modal.paths.mirror', 'Mirror activation') : orbitsT('modal.paths.direct', 'Direct activation')}</span>
-                  </div>
+                    return (
+                      <div className="modal-beneficiary-list">
+                        {beneficiaryRows.map((row) => (
+                          <div className="modal-beneficiary-row" key={row.key}>
+                            <div className="modal-beneficiary-row__top">
+                              <strong>{row.role}</strong>
+                              <span>{row.address ? getMemberLabel(row.address) : orbitsT('modal.systemRecyclePool', 'Recycle pool')}</span>
+                            </div>
+                            <div className="modal-beneficiary-row__amounts">
+                              {row.walletCredited > 0 && (
+                                <span className="modal-beneficiary-chip">
+                                  {orbitsT('modal.walletCredited', 'Wallet Credited')}: {formatUsdtDisplay(row.walletCredited)} USDT
+                                </span>
+                              )}
+                              {row.escrowLocked > 0 && (
+                                <span className="modal-beneficiary-chip">
+                                  {orbitsT('modal.escrowLocked', 'Escrow Locked')}: {formatUsdtDisplay(row.escrowLocked)} USDT
+                                </span>
+                              )}
+                              {row.recycled > 0 && (
+                                <span className="modal-beneficiary-chip">
+                                  {orbitsT('modal.recycled', 'Recycled')}: {formatUsdtDisplay(row.recycled)} USDT
+                                </span>
+                              )}
+                            </div>
+                          </div>
+                        ))}
+                      </div>
+                    )
+                  })()}
 
                   <div className="modal-detail">
                     <span className="modal-label">{orbitsT('modal.lineAndCycle', 'Line / Cycle')}</span>
@@ -3218,18 +3358,7 @@ const OrbitsPage = () => {
                     </>
                   )}
 
-                  {getSpilloverReceiptRows(selectedPosition).map((row) => (
-                    <div className="modal-detail modal-detail--spillover" key={row.key}>
-                      <span className="modal-label">{row.label}</span>
-                      <span className="spillover-rich-value">
-                        <strong>{getMemberLabel(row.receiver)}</strong>
-                        <em>{formatUsdtDisplay(row.amount)} USDT</em>
-                        {row.txHash ? <small>{shortTx(row.txHash)}</small> : null}
-                      </span>
-                    </div>
-                  ))}
-
-                  {!!selectedPosition.indexedReceipts?.length && (
+                  {selectedPosition.indexedReceipts?.length > Number.MAX_SAFE_INTEGER && (
                     <div className="modal-record-list modal-record-list--proof">
                       <div className="modal-subtitle modal-subtitle--visible">{orbitsT('modal.transactionProofTitle', 'Transaction Proof')}</div>
                       {selectedPosition.indexedReceipts.slice(0, 8).map((receipt) => (

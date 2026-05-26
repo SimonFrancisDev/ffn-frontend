@@ -105,6 +105,66 @@ const emptyFinancialTruth = {
   }
 };
 
+const unwrapCommunitySummary = (payload = {}) => {
+  const data = payload?.data || payload || {};
+  return data.public || payload.public || data || {};
+};
+
+const buildAdminFinancialTruth = (publicData = {}) => {
+  const totalGeneratedVolume =
+    publicData.generatedGross ??
+    publicData.totalGeneratedVolume ??
+    publicData.totalGross ??
+    '0.00';
+
+  const nftPoolAllocated =
+    publicData.nftPoolAllocated ??
+    publicData.nftPoolReceived ??
+    publicData.nftRewardPool?.totalInflow ??
+    '0.00';
+
+  const operationsAllocated =
+    publicData.operationsAllocated ??
+    publicData.operationsReceived ??
+    publicData.devOperations?.totalInflow ??
+    '0.00';
+
+  const nftPoolLiveBalance =
+    publicData.nftPoolLiveBalance ??
+    publicData.nftPool ??
+    publicData.nftPoolBalance ??
+    publicData.nftRewardPool?.currentBalance ??
+    '0.00';
+
+  const operationsLiveBalance =
+    publicData.operationsLiveBalance ??
+    publicData.operations ??
+    publicData.operationsBalance ??
+    publicData.devOperations?.currentBalance ??
+    '0.00';
+
+  return {
+    totalGeneratedVolume,
+    systemChargeTotal: publicData.systemChargeTotal ?? '0.00',
+    nftRewardPool: {
+      totalInflow: nftPoolAllocated,
+      totalDistributed:
+        publicData.nftPoolDistributed ??
+        publicData.nftRewardPool?.totalDistributed ??
+        '0.00',
+      currentBalance: nftPoolLiveBalance
+    },
+    devOperations: {
+      totalInflow: operationsAllocated,
+      totalUtilized:
+        publicData.operationsUtilized ??
+        publicData.devOperations?.totalUtilized ??
+        '0.00',
+      currentBalance: operationsLiveBalance
+    }
+  };
+};
+
 const formatMoney = (value) => {
   const num = Number(value || 0);
   if (!Number.isFinite(num)) return '0.00';
@@ -692,21 +752,7 @@ export const AdminPanel = () => {
       const response = await fetch(getApiUrl('/api/community/summary'));
       const payload = await response.json().catch(() => null);
       if (!response.ok) throw new Error(payload?.message || `Request failed: ${response.status}`);
-      const publicSummary = payload?.public || payload || {};
-      setFinancialTruth({
-        totalGeneratedVolume: publicSummary.totalGeneratedVolume || publicSummary.generatedGross || '0.00',
-        systemChargeTotal: publicSummary.systemChargeTotal || '0.00',
-        nftRewardPool: {
-          totalInflow: publicSummary.nftRewardPool?.totalInflow || publicSummary.nftPoolAllocated || '0.00',
-          totalDistributed: publicSummary.nftRewardPool?.totalDistributed || publicSummary.nftPoolDistributed || '0.00',
-          currentBalance: publicSummary.nftRewardPool?.currentBalance || publicSummary.nftPoolLiveBalance || '0.00'
-        },
-        devOperations: {
-          totalInflow: publicSummary.devOperations?.totalInflow || publicSummary.operationsAllocated || '0.00',
-          totalUtilized: publicSummary.devOperations?.totalUtilized || publicSummary.operationsUtilized || '0.00',
-          currentBalance: publicSummary.devOperations?.currentBalance || publicSummary.operationsLiveBalance || '0.00'
-        }
-      });
+      setFinancialTruth(buildAdminFinancialTruth(unwrapCommunitySummary(payload)));
       setFinancialTruthError('');
     } catch (err) {
       setFinancialTruthError(err?.message || 'Unable to load indexed financial truth');
@@ -1862,6 +1908,62 @@ export const AdminPanel = () => {
                         </div>
                       </Col>
                     </Row>
+                  </div>
+                </div>
+              </Col>
+            </Row>
+
+            <Row className="g-3 mb-4">
+              <Col xl={12}>
+                <div className="admin-card-premium" style={{ padding: '10px' }}>
+                  <div className="admin-header-premium">
+                    <div className="header-title" style={{ textAlign: 'center' }}>Operations Vault Disbursement</div>
+                  </div>
+                  <div className="admin-body-premium">
+                    <div className="admin-subtitle mb-3">
+                      Submit a multisig proposal to send USDT from the operations vault. Execution still requires the configured approvals and timelock.
+                    </div>
+                    <div className="soft-panel-premium mb-3">
+                      <div className="small-label-premium">Vault</div>
+                      <div className="mono" style={{ fontSize: '12px', color: 'rgba(255,255,255,0.68)' }}>
+                        {operationsVaultAddress || 'Missing VITE_OPERATIONS_VAULT_ADDRESS'}
+                      </div>
+                    </div>
+                    <Row className="g-2">
+                      <Col md={5}>
+                        <Form.Control
+                          className="input-premium"
+                          placeholder="Recipient wallet"
+                          value={opsDisbursement.recipient}
+                          onChange={(e) => setOpsDisbursement((current) => ({ ...current, recipient: e.target.value }))}
+                        />
+                      </Col>
+                      <Col md={3}>
+                        <Form.Control
+                          className="input-premium"
+                          placeholder="USDT amount"
+                          value={opsDisbursement.amount}
+                          onChange={(e) => setOpsDisbursement((current) => ({ ...current, amount: e.target.value }))}
+                        />
+                      </Col>
+                      <Col md={4}>
+                        <Form.Control
+                          className="input-premium"
+                          placeholder="Reason"
+                          value={opsDisbursement.reason}
+                          onChange={(e) => setOpsDisbursement((current) => ({ ...current, reason: e.target.value }))}
+                        />
+                      </Col>
+                    </Row>
+                    <div className="d-flex justify-content-end mt-3">
+                      <button
+                        className="btn-premium"
+                        onClick={handleOperationsDisbursementProposal}
+                        disabled={txStatus.loading || !operationsVaultAddress}
+                      >
+                        Submit Operations Proposal
+                      </button>
+                    </div>
                   </div>
                 </div>
               </Col>

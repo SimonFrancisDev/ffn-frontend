@@ -1,4 +1,5 @@
 import { buildApiUrl, getApiUrl } from './apiConfig'
+import { ethers } from 'ethers'
 
 async function parseResponse(response) {
   const payload = await response.json().catch(() => null)
@@ -8,15 +9,31 @@ async function parseResponse(response) {
   return payload
 }
 
+const TELEGRAM_ACTIONS = {
+  linkStart: 'telegram_link_start',
+  preferencesUpdate: 'telegram_preferences_update',
+  unsubscribe: 'telegram_unsubscribe',
+}
+
+export function buildTelegramWalletMessage(action, walletAddress, timestamp) {
+  const normalizedWallet = ethers.getAddress(walletAddress)
+  return [
+    'Fin Freedom Network',
+    `Action: ${action}`,
+    `Wallet: ${normalizedWallet}`,
+    `Timestamp: ${timestamp}`,
+  ].join('\n')
+}
+
 export async function fetchTelegramStatus(wallet) {
   return parseResponse(await fetch(buildApiUrl('/api/telegram/status', { wallet })))
 }
 
-export async function startTelegramLink({ walletAddress, language }) {
+export async function startTelegramLink({ walletAddress, language, signature, timestamp }) {
   return parseResponse(await fetch(getApiUrl('/api/telegram/link/start'), {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ walletAddress, language }),
+    body: JSON.stringify({ walletAddress, language, signature, timestamp }),
   }))
 }
 
@@ -28,18 +45,20 @@ export async function verifyTelegramLink(payload) {
   }))
 }
 
-export async function updateTelegramPreferences(wallet, preferences) {
+export async function updateTelegramPreferences(wallet, preferences, proof = {}) {
   return parseResponse(await fetch(getApiUrl('/api/telegram/preferences'), {
     method: 'PATCH',
     headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ wallet, preferences }),
+    body: JSON.stringify({ wallet, preferences, ...proof }),
   }))
 }
 
-export async function unsubscribeTelegram(wallet) {
+export async function unsubscribeTelegram(wallet, proof = {}) {
   return parseResponse(await fetch(getApiUrl('/api/telegram/unsubscribe'), {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ wallet }),
+    body: JSON.stringify({ wallet, ...proof }),
   }))
 }
+
+export { TELEGRAM_ACTIONS }

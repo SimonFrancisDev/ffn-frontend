@@ -3,7 +3,14 @@ import { useEffect, useState, useCallback, useMemo } from 'react'
 import { useTranslation } from 'react-i18next'
 import { useWallet } from '../../hooks/useWallet'
 import { useSpace } from '../../context/SpaceContext'
-import { fetchTelegramStatus, startTelegramLink, unsubscribeTelegram, updateTelegramPreferences } from '../../Services/telegramApi'
+import {
+  TELEGRAM_ACTIONS,
+  buildTelegramWalletMessage,
+  fetchTelegramStatus,
+  startTelegramLink,
+  unsubscribeTelegram,
+  updateTelegramPreferences,
+} from '../../Services/telegramApi'
 import { fetchNotificationPreferences, updateNotificationPreferences } from '../../Services/notificationsApi'
 import { useToast } from '../../components/feedback'
 
@@ -172,6 +179,19 @@ const PreferencesPage = ({
     }
   }, [account, isConnected, preferencesT, toast])
 
+  const signTelegramAction = useCallback(async (action) => {
+    if (!account || !window.ethereum?.request) {
+      throw new Error(preferencesT('notifications.walletSignatureRequired', 'Connect your wallet to authorize Telegram alerts.'))
+    }
+    const timestamp = Date.now()
+    const message = buildTelegramWalletMessage(action, account, timestamp)
+    const signature = await window.ethereum.request({
+      method: 'personal_sign',
+      params: [message, account],
+    })
+    return { signature, timestamp }
+  }, [account, preferencesT])
+
   useEffect(() => {
     refreshTelegramStatus({ silent: true })
   }, [refreshTelegramStatus])
@@ -193,7 +213,8 @@ const PreferencesPage = ({
   const handleStartTelegramLink = useCallback(async () => {
     if (!account) return
     try {
-      const result = await startTelegramLink({ walletAddress: account, language })
+      const proof = await signTelegramAction(TELEGRAM_ACTIONS.linkStart)
+      const result = await startTelegramLink({ walletAddress: account, language, ...proof })
       setTelegramCode(result.verificationCode || '')
       setTelegramBot({
         username: result.botUsername || '',
@@ -205,12 +226,13 @@ const PreferencesPage = ({
       setSaveStatus({ show: true, message: error.message, type: 'error' })
       toast.danger(error.message || preferencesT('notifications.telegramLinkFailed', 'Unable to start Telegram linking.'), { dedupeKey: 'preferences-telegram-link-failed' })
     }
-  }, [account, language, preferencesT, toast])
+  }, [account, language, preferencesT, signTelegramAction, toast])
 
   const handleTelegramUnsubscribe = useCallback(async () => {
     if (!account) return
     try {
-      await unsubscribeTelegram(account)
+      const proof = await signTelegramAction(TELEGRAM_ACTIONS.unsubscribe)
+      await unsubscribeTelegram(account, proof)
       setTelegramStatus((current) => ({ ...current, status: 'unsubscribed' }))
       setTelegramCode('')
       setTelegramBot({ username: '', link: '' })
@@ -219,7 +241,7 @@ const PreferencesPage = ({
       setSaveStatus({ show: true, message: error.message, type: 'error' })
       toast.danger(error.message || preferencesT('notifications.telegramUnsubscribeFailed', 'Unable to unsubscribe Telegram alerts.'), { dedupeKey: 'preferences-telegram-unsubscribe-failed' })
     }
-  }, [account, preferencesT, toast])
+  }, [account, preferencesT, signTelegramAction, toast])
 
   const savePreferences = useCallback(async () => {
     localStorage.setItem('ffn_theme', theme)
@@ -248,7 +270,8 @@ const PreferencesPage = ({
       }
 
       if (account && telegramStatus.status === 'active') {
-        const result = await updateTelegramPreferences(account, notifications)
+        const proof = await signTelegramAction(TELEGRAM_ACTIONS.preferencesUpdate)
+        const result = await updateTelegramPreferences(account, notifications, proof)
         if (result.preferences) {
           setNotifications((current) => ({ ...DEFAULT_NOTIFICATIONS, ...current, ...result.preferences }))
         }
@@ -261,7 +284,7 @@ const PreferencesPage = ({
       toast.danger(error.message || preferencesT('status.saveFailed', 'Preferences could not be saved.'), { dedupeKey: 'preferences-save-failed' })
     }
     window.setTimeout(() => setSaveStatus({ show: false, message: '', type: '' }), 2500)
-  }, [account, theme, language, timezone, accentStyle, spaceVisibilityPreference, notifications, preferencesT, toast, telegramStatus.status, i18n, onThemeChange, onLanguageChange])
+  }, [account, theme, language, timezone, accentStyle, spaceVisibilityPreference, notifications, preferencesT, signTelegramAction, toast, telegramStatus.status, i18n, onThemeChange, onLanguageChange])
 
   const resetPreferences = useCallback(() => {
     setTheme('dark')
@@ -289,9 +312,6 @@ const PreferencesPage = ({
       web: nextNotifications,
       telegram: nextNotifications,
     })
-    if (telegramStatus.status === 'active') {
-      await updateTelegramPreferences(account, nextNotifications)
-    }
   }, [account, language, telegramStatus.status])
 
   const toggleNotification = useCallback((key) => {

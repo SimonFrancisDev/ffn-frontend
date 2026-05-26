@@ -481,6 +481,7 @@ const DashboardPage = () => {
   const [isCheckingRegistration, setIsCheckingRegistration] = useState(true)
   const [memberSummary, setMemberSummary] = useState({
     isRegistered: false,
+    isProtocolId1Wallet: false,
     referrer: '',
     highestActiveLevel: 0,
     activeLevelsCount: 0,
@@ -598,6 +599,7 @@ const DashboardPage = () => {
 
       setMemberSummary({
         isRegistered: Boolean(data.isRegistered),
+        isProtocolId1Wallet: Boolean(data.isProtocolId1Wallet),
         referrer: data.referrer || '',
         highestActiveLevel: Number(data.highestActiveLevel || 0),
         activeLevelsCount: Number(data.activeLevelsCount || 0),

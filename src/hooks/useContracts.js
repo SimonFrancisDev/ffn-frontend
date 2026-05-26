@@ -11,7 +11,6 @@ export const useContracts = () => {
     setError(null)
 
     try {
-      web3Service.reset()
       const initializedContracts = web3Service.getReadContracts()
       setContracts(initializedContracts)
       return initializedContracts

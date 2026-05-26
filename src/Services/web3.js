@@ -18,6 +18,7 @@ export class Web3Service {
   constructor() {
     this.readProvider = null
     this.walletProvider = null
+    this.eip1193Provider = null
     this.signer = null
     this.readContracts = {}
     this.writeContracts = {}
@@ -26,8 +27,16 @@ export class Web3Service {
   reset() {
     this.readProvider=null
     this.walletProvider=null
+    this.eip1193Provider = null
     this.signer = null
     this.readContracts = {}
+    this.writeContracts = {}
+  }
+
+  resetWallet() {
+    this.walletProvider = null
+    this.eip1193Provider = null
+    this.signer = null
     this.writeContracts = {}
   }
 
@@ -89,16 +98,18 @@ export class Web3Service {
   }
 
   async initWallet(options = {}) {
-    const { requestAccounts = true } = options
+    const { provider: externalProvider, requestAccounts = true } = options
+    const ethereumProvider = externalProvider || window.ethereum
 
-    if (!window.ethereum) {
-      throw new Error('MetaMask not installed')
+    if (!ethereumProvider) {
+      throw new Error('No wallet provider available')
     }
 
     this.initReadContracts()
 
-    if (!this.walletProvider) {
-      this.walletProvider = new ethers.BrowserProvider(window.ethereum)
+    if (!this.walletProvider || externalProvider) {
+      this.eip1193Provider = ethereumProvider
+      this.walletProvider = new ethers.BrowserProvider(ethereumProvider)
     }
 
     if (requestAccounts) {
@@ -154,6 +165,10 @@ export class Web3Service {
 
   getWalletProvider() {
     return this.walletProvider
+  }
+
+  getEip1193Provider() {
+    return this.eip1193Provider || null
   }
 
   getSigner() {

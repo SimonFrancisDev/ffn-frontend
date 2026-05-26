@@ -13,6 +13,7 @@ import {
 } from '../../Services/telegramApi'
 import { fetchNotificationPreferences, updateNotificationPreferences } from '../../Services/notificationsApi'
 import { useToast } from '../../components/feedback'
+import { web3Service } from '../../Services/web3'
 
 const DEFAULT_NOTIFICATIONS = {
   paymentReceived: true,
@@ -180,12 +181,14 @@ const PreferencesPage = ({
   }, [account, isConnected, preferencesT, toast])
 
   const signTelegramAction = useCallback(async (action) => {
-    if (!account || !window.ethereum?.request) {
+    const provider = web3Service.getEip1193Provider() || window.ethereum
+
+    if (!account || !provider?.request) {
       throw new Error(preferencesT('notifications.walletSignatureRequired', 'Connect your wallet to authorize Telegram alerts.'))
     }
     const timestamp = Date.now()
     const message = buildTelegramWalletMessage(action, account, timestamp)
-    const signature = await window.ethereum.request({
+    const signature = await provider.request({
       method: 'personal_sign',
       params: [message, account],
     })

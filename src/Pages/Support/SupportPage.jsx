@@ -4,6 +4,7 @@ import { useTranslation } from 'react-i18next'
 import { useWallet } from '../../hooks/useWallet'
 import { useContracts } from '../../hooks/useContracts'
 import { getApiUrl } from '../../Services/apiConfig'
+import { web3Service } from '../../Services/web3'
 import { useToast } from '../../components/feedback'
 import { lockBodyScroll } from '../../utils/bodyScrollLock'
 import {
@@ -717,9 +718,10 @@ const SupportPage = ({ onNavigate }) => {
 
   const checkSystemStatusSafe = useCallback(async () => {
     const next = { contracts: 'Checking...', network: 'Checking...', api: 'Checking...', indexer: 'Checking...', lastBlock: 0 }
-    if (window.ethereum) {
+    const walletProvider = web3Service.getEip1193Provider() || window.ethereum
+    if (walletProvider?.request) {
       try {
-        const chainId = await window.ethereum.request({ method: 'eth_chainId' })
+        const chainId = await walletProvider.request({ method: 'eth_chainId' })
         next.network = chainId === '0x13882' ? 'Healthy' : 'Wrong Network'
       } catch {
         next.network = 'Unknown'

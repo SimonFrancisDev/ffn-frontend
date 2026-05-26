@@ -568,9 +568,18 @@ const ActivationCenterPage = () => {
   }
 
   const getSigner = async () => {
-    if (!window.ethereum) throw new Error(activationT('errors.metamaskNotInstalled', 'MetaMask not installed'))
-    const provider = new ethers.BrowserProvider(window.ethereum)
-    return await provider.getSigner()
+    const existingSigner = web3Service.getSigner()
+    if (existingSigner) return existingSigner
+
+    const walletProvider = web3Service.getWalletProvider()
+    if (walletProvider) return await walletProvider.getSigner()
+
+    if (window.ethereum) {
+      const provider = new ethers.BrowserProvider(window.ethereum)
+      return await provider.getSigner()
+    }
+
+    throw new Error(activationT('errors.walletConnectionRequired', 'Connect your wallet to continue.'))
   }
 
   const getLevelBackground = (level) => {
@@ -973,17 +982,19 @@ const ActivationCenterPage = () => {
 
   useEffect(() => {
     const checkNetwork = async () => {
-      if (!window.ethereum) return
-      const chainId = await window.ethereum.request({ method: 'eth_chainId' })
+      const provider = web3Service.getEip1193Provider() || window.ethereum
+      if (!provider?.request) return
+      const chainId = await provider.request({ method: 'eth_chainId' })
       setNetworkWarning(chainId !== AMOY_CHAIN_ID)
     }
 
     checkNetwork()
 
     const handleChainChanged = () => window.location.reload()
-    window.ethereum?.on('chainChanged', handleChainChanged)
+    const provider = web3Service.getEip1193Provider() || window.ethereum
+    provider?.on?.('chainChanged', handleChainChanged)
 
-    return () => window.ethereum?.removeListener('chainChanged', handleChainChanged)
+    return () => provider?.removeListener?.('chainChanged', handleChainChanged)
   }, [])
 
   useEffect(() => {

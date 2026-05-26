@@ -4,6 +4,7 @@ import { useTranslation } from 'react-i18next'
 import { useWallet } from '../../hooks/useWallet'
 import { useContracts } from '../../hooks/useContracts'
 import { useSpace } from '../../context/SpaceContext'
+import { web3Service } from '../../Services/web3'
 import { useToast } from '../../components/feedback'
 import {
   Shield, Lock, Key,
@@ -27,9 +28,10 @@ const SecurityPage = () => {
 
   useEffect(() => {
     const checkNetwork = async () => {
-      if (!window.ethereum) return
+      const walletProvider = web3Service.getEip1193Provider() || window.ethereum
+      if (!walletProvider?.request) return
       try {
-        const chainId = await window.ethereum.request({ method: 'eth_chainId' })
+        const chainId = await walletProvider.request({ method: 'eth_chainId' })
         setNetworkWarning(chainId !== AMOY_CHAIN_ID)
       } catch {
         setNetworkWarning(true)

@@ -2,6 +2,11 @@ import { useState, useEffect, useCallback } from 'react'
 import { ethers } from 'ethers'
 import { web3Service } from '../Services/web3'
 import { AMOY_CHAIN_ID, NETWORK_CONFIG } from '../constants/addresses'
+import {
+  connectWalletConnectProvider,
+  hasWalletConnectSupport,
+  walletOnboard,
+} from '../Services/walletOnboard'
 
 export const useWallet = () => {
   const [account, setAccount] = useState(null)
@@ -9,6 +14,8 @@ export const useWallet = () => {
   const [isConnected, setIsConnected] = useState(false)
   const [isLoading, setIsLoading] = useState(false)
   const [error, setError] = useState(null)
+  const [walletLabel, setWalletLabel] = useState('')
+  const [activeProvider, setActiveProvider] = useState(null)
 
   const refreshBalance = useCallback(async (address) => {
     try {
@@ -22,11 +29,48 @@ export const useWallet = () => {
     }
   }, [])
 
+  const resetWalletState = useCallback(() => {
+    web3Service.resetWallet()
+    setAccount(null)
+    setBalance(null)
+    setIsConnected(false)
+    setWalletLabel('')
+    setActiveProvider(null)
+  }, [])
+
+  const resolveWalletAddress = (wallet) => {
+    const address = wallet?.accounts?.[0]?.address
+    return address ? ethers.getAddress(address) : null
+  }
+
+  const activateWallet = useCallback(
+    async (wallet) => {
+      const address = resolveWalletAddress(wallet)
+      if (!wallet?.provider || !address) {
+        resetWalletState()
+        return
+      }
+
+      await web3Service.initWallet({
+        provider: wallet.provider,
+        requestAccounts: false,
+      })
+
+      setActiveProvider(wallet.provider)
+      setWalletLabel(wallet.label || 'Wallet')
+      setAccount(address)
+      setIsConnected(true)
+      await refreshBalance(address)
+    },
+    [refreshBalance, resetWalletState]
+  )
+
   const switchToAmoy = useCallback(async () => {
-    if (!window.ethereum) return false
+    const provider = activeProvider || web3Service.getEip1193Provider() || window.ethereum
+    if (!provider?.request) return false
 
     try {
-      await window.ethereum.request({
+      await provider.request({
         method: 'wallet_switchEthereumChain',
         params: [{ chainId: AMOY_CHAIN_ID }]
       })
@@ -34,7 +78,7 @@ export const useWallet = () => {
     } catch (err) {
       if (err.code === 4902) {
         try {
-          await window.ethereum.request({
+          await provider.request({
             method: 'wallet_addEthereumChain',
             params: [NETWORK_CONFIG]
           })
@@ -46,13 +90,20 @@ export const useWallet = () => {
       }
 
       console.error('Error switching network:', err)
-      return false
+
+      try {
+        await walletOnboard.setChain({ chainId: AMOY_CHAIN_ID })
+        return true
+      } catch (setChainErr) {
+        console.error('Error setting Onboard chain:', setChainErr)
+        return false
+      }
     }
-  }, [])
+  }, [activeProvider])
 
   const connect = useCallback(async () => {
-    if (!window.ethereum) {
-      setError('MetaMask not installed')
+    if (!hasWalletConnectSupport && !window.ethereum) {
+      setError('No browser wallet detected. Configure WalletConnect to support mobile browser connections.')
       return
     }
 
@@ -60,9 +111,19 @@ export const useWallet = () => {
     setError(null)
 
     try {
-      const chainId = await window.ethereum.request({ method: 'eth_chainId' })
+      const connectedWallets = window.ethereum
+        ? await walletOnboard.connectWallet()
+        : [await connectWalletConnectProvider()]
+      const wallet = connectedWallets?.[0]
 
-      if (chainId !== AMOY_CHAIN_ID) {
+      if (!wallet?.provider) {
+        throw new Error('No wallet selected')
+      }
+
+      const chainId = await wallet.provider.request({ method: 'eth_chainId' })
+
+      if (chainId?.toLowerCase() !== AMOY_CHAIN_ID.toLowerCase()) {
+        setActiveProvider(wallet.provider)
         const switched = await switchToAmoy()
         if (!switched) {
           throw new Error('Please switch to Polygon Amoy Testnet manually')
@@ -70,89 +131,60 @@ export const useWallet = () => {
         await new Promise(resolve => setTimeout(resolve, 700))
       }
 
-      const provider = new ethers.BrowserProvider(window.ethereum)
+      const provider = new ethers.BrowserProvider(wallet.provider)
       const accounts = await provider.send('eth_requestAccounts', [])
 
       if (!accounts || accounts.length === 0) {
         throw new Error('No wallet account found')
       }
 
-      const address = ethers.getAddress(accounts[0])
-
-      await web3Service.initWallet({ requestAccounts: false })
-
-      setAccount(address)
-      setIsConnected(true)
-      await refreshBalance(address)
+      await activateWallet(wallet)
     } catch (err) {
       console.error('Connection error:', err)
       setError(err?.reason || err?.message || 'Wallet connection failed')
     } finally {
       setIsLoading(false)
     }
-  }, [refreshBalance, switchToAmoy])
+  }, [activateWallet, switchToAmoy])
 
-  const disconnect = useCallback(() => {
-    setAccount(null)
-    setBalance(null)
-    setIsConnected(false)
-    setError(null)
-  }, [])
+  const disconnect = useCallback(async () => {
+    const connectedWallets = walletOnboard.state.get().wallets || []
+    await Promise.all(
+      connectedWallets.map((wallet) =>
+        walletOnboard.disconnectWallet({ label: wallet.label }).catch((err) => {
+          console.error('Wallet disconnect failed:', err)
+        })
+      )
+    )
 
-  useEffect(() => {
-    const checkConnection = async () => {
-      if (!window.ethereum) return
-
-      try {
-        const accounts = await window.ethereum.request({ method: 'eth_accounts' })
-        const chainId = await window.ethereum.request({ method: 'eth_chainId' })
-
-        if (accounts.length > 0) {
-          const address = ethers.getAddress(accounts[0])
-          setAccount(address)
-          setIsConnected(true)
-
-          if (chainId === AMOY_CHAIN_ID) {
-            await web3Service.initWallet({ requestAccounts: false })
-            await refreshBalance(address)
-          }
-        }
-      } catch (err) {
-        console.error('Error checking connection:', err)
-      }
+    const provider = activeProvider || web3Service.getEip1193Provider()
+    if (provider?.disconnect) {
+      await provider.disconnect().catch((err) => {
+        console.error('WalletConnect disconnect failed:', err)
+      })
     }
 
-    checkConnection()
-  }, [refreshBalance])
+    resetWalletState()
+    setError(null)
+  }, [activeProvider, resetWalletState])
 
   useEffect(() => {
-    if (!window.ethereum) return
+    const subscription = walletOnboard.state.select('wallets').subscribe((wallets) => {
+      const wallet = wallets?.[0]
 
-    const handleAccountsChanged = async (accounts) => {
-      if (accounts.length === 0) {
-        disconnect()
+      if (!wallet) {
+        resetWalletState()
         return
       }
 
-      const address = ethers.getAddress(accounts[0])
-      setAccount(address)
-      setIsConnected(true)
-      await web3Service.initWallet({ requestAccounts: false })
-      await refreshBalance(address)
-    }
+      activateWallet(wallet).catch((err) => {
+        console.error('Error activating wallet:', err)
+        setError(err?.reason || err?.message || 'Wallet connection failed')
+      })
+    })
 
-    const handleChainChanged = () => {
-      window.location.reload()
-    }
-
-    window.ethereum.on('accountsChanged', handleAccountsChanged)
-    window.ethereum.on('chainChanged', handleChainChanged)
-
-    return () => {
-      window.ethereum.removeListener('accountsChanged', handleAccountsChanged)
-      window.ethereum.removeListener('chainChanged', handleChainChanged)
-    }
-  }, [disconnect, refreshBalance])
+    return () => subscription.unsubscribe()
+  }, [activateWallet, resetWalletState])
 
   return {
     account,
@@ -160,6 +192,8 @@ export const useWallet = () => {
     isConnected,
     isLoading,
     error,
+    walletLabel,
+    hasMobileWalletSupport: hasWalletConnectSupport,
     connect,
     disconnect,
     switchToAmoy

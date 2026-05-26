@@ -388,6 +388,8 @@ function App() {
     isConnected,
     isLoading: isWalletLoading,
     error: walletError,
+    walletLabel,
+    hasMobileWalletSupport,
     connect,
     disconnect,
     switchToAmoy,
@@ -878,16 +880,13 @@ function App() {
         ? shortenAddress(walletAccount)
         : 'No wallet connected',
       network: isConnected ? 'Polygon Amoy Testnet' : 'Not connected',
-      provider:
-    typeof window !== 'undefined' && window.ethereum
-      ? 'Browser Wallet'
-      : 'No wallet provider',
+      provider: walletLabel || (hasMobileWalletSupport ? 'WalletConnect ready' : 'No wallet provider'),
       balance: balance ? Number(balance).toFixed(4) : null,
       isConnected,
       isLoading: isWalletLoading,
       rawAddress: walletAccount || '',
     }
-  }, [balance, isConnected, isWalletLoading, walletAccount])
+  }, [balance, hasMobileWalletSupport, isConnected, isWalletLoading, walletAccount, walletLabel])
 
   const account = useMemo(() => {
     const walletDisplay = walletAccount
@@ -962,14 +961,14 @@ function App() {
       dedupeKey: 'launch-countdown',
     }]
 
-    if (typeof window !== 'undefined' && !window.ethereum) {
+    if (typeof window !== 'undefined' && !window.ethereum && !hasMobileWalletSupport) {
       nextNotices.push({
         id: 'wallet-missing',
         type: 'danger',
         label: t('topNotice.walletRequired.label', 'Wallet Required'),
         message: t(
           'topNotice.walletRequired.message',
-          'No compatible browser wallet was detected. Install MetaMask or another EVM-compatible wallet to connect and use live platform data.'
+          'No browser wallet was detected. Enable WalletConnect support or install an EVM-compatible wallet to connect and use live platform data.'
         ),
         source: 'wallet',
         sticky: true,
@@ -1095,6 +1094,7 @@ function App() {
   }, [
     connect,
     handleNotificationClick,
+    hasMobileWalletSupport,
     isConnected,
     isWalletLoading,
     launchNowMs,

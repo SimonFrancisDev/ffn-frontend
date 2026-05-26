@@ -1,8 +1,7 @@
 import Onboard from '@web3-onboard/core'
 import injectedModule from '@web3-onboard/injected-wallets'
-import { NETWORK_CONFIG } from '../constants/addresses'
+import { DECIMAL_CHAIN_ID, NETWORK_CONFIG } from '../constants/addresses'
 
-const AMOY_DECIMAL_CHAIN_ID = 80002
 const walletConnectProjectId = import.meta.env.VITE_WALLETCONNECT_PROJECT_ID
 
 const injected = injectedModule({
@@ -24,11 +23,11 @@ export async function connectWalletConnectProvider() {
 
   const provider = await EthereumProvider.init({
     projectId: walletConnectProjectId,
-    chains: [AMOY_DECIMAL_CHAIN_ID],
-    optionalChains: [AMOY_DECIMAL_CHAIN_ID],
+    chains: [DECIMAL_CHAIN_ID],
+    optionalChains: [DECIMAL_CHAIN_ID],
     showQrModal: true,
     rpcMap: {
-      [AMOY_DECIMAL_CHAIN_ID]: NETWORK_CONFIG.rpcUrls[0],
+      [DECIMAL_CHAIN_ID]: NETWORK_CONFIG.rpcUrls[0],
     },
     metadata: {
       name: 'Fin Freedom',

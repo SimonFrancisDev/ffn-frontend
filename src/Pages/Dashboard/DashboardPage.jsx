@@ -4,6 +4,7 @@ import { useTranslation } from 'react-i18next'
 import { useWallet } from '../../hooks/useWallet'
 import { getApiUrl } from '../../Services/apiConfig'
 import { useToast } from '../../components/feedback'
+import { CONTRACT_ADDRESSES, NETWORK_CONFIG } from '../../constants/addresses'
 import {
   Activity,
   Shield,
@@ -17,7 +18,7 @@ import {
   Link2,
 } from 'lucide-react'
 
-const AMOY_EXPLORER_BASE = 'https://amoy.polygonscan.com/address'
+const EXPLORER_ADDRESS_BASE = `${NETWORK_CONFIG.blockExplorerUrls[0]}address`
 const DASHBOARD_REQUEST_TIMEOUT_MS = 12000
 
 const formatNumber = (value, decimals = 2) => {
@@ -520,60 +521,46 @@ const DashboardPage = () => {
   const [announcements, setAnnouncements] = useState([])
 
   const contractDirectory = useMemo(() => {
-    const env = import.meta.env || {}
-
     return [
       {
         key: 'registration',
         label: dashboardT('contracts.registration.label', 'Registration Contract'),
-        address:
-          env.VITE_REGISTRATION_ADDRESS ||
-          '0x782FE376de66a3866e972D119a4a5D6E6B897Bac',
+        address: CONTRACT_ADDRESSES.REGISTRATION,
         note: dashboardT('contracts.registration.note', 'Manages identity, registration status, and participant records.'),
       },
       {
         key: 'level-manager',
         label: dashboardT('contracts.levelManager.label', 'Level Manager'),
-        address:
-          env.VITE_LEVELMANAGER_ADDRESS ||
-          '0xb4605C2a9B7e591240Eff49B13D7B638C15e6168',
+        address: CONTRACT_ADDRESSES.LEVEL_MANAGER,
         note: dashboardT('contracts.levelManager.note', 'Controls level upgrades, reward routing, and system logic.'),
       },
       {
         key: 'escrow',
         label: dashboardT('contracts.escrow.label', 'Auto-Upgrade Escrow'),
-        address:
-          env.VITE_ESCROW_ADDRESS ||
-          '0x605B01408548655b5C73AF48c5f5B4A780BbB7eB',
+        address: CONTRACT_ADDRESSES.ESCROW,
         note: dashboardT('contracts.escrow.note', 'Holds reserved liquidity for automated upgrades.'),
       },
       {
         key: 'p4',
         label: dashboardT('contracts.p4.label', 'P4 Orbit'),
-        address:
-          env.VITE_P4_ORBIT_ADDRESS ||
-          '0x147d5b7269f9BC6c27E31a3BDF352fe4d315847F',
+        address: CONTRACT_ADDRESSES.P4_ORBIT,
         note: dashboardT('contracts.p4.note', 'Entry-level orbit with 4 positions.'),
       },
       {
         key: 'p12',
         label: dashboardT('contracts.p12.label', 'P12 Orbit'),
-        address:
-          env.VITE_P12_ORBIT_ADDRESS ||
-          '0xd2E2605e5b2326272B53A5A9a7f5F0e3F648E6Ce',
+        address: CONTRACT_ADDRESSES.P12_ORBIT,
         note: dashboardT('contracts.p12.note', 'Growth orbit with 12 positions for broader reach.'),
       },
       {
         key: 'p39',
         label: dashboardT('contracts.p39.label', 'P39 Orbit'),
-        address:
-          env.VITE_P39_ORBIT_ADDRESS ||
-          '0xFDb2dbfb5D86bf05BEa334F84F8672aEb0eafe6a',
+        address: CONTRACT_ADDRESSES.P39_ORBIT,
         note: dashboardT('contracts.p39.note', 'Expansion orbit with 39 positions for deeper progression.'),
       },
     ].map((item) => ({
       ...item,
-      href: item.address ? `${AMOY_EXPLORER_BASE}/${item.address}` : '#',
+      href: item.address ? `${EXPLORER_ADDRESS_BASE}/${item.address}` : '#',
     }))
   }, [dashboardT])
 

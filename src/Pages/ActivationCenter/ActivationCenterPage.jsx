@@ -10,6 +10,7 @@ import { useToast } from '../../components/feedback'
 import { normalizeError } from '../../utils/errorMap'
 import { buildTxOptions } from '../../utils/txOptions'
 import { lockBodyScroll } from '../../utils/bodyScrollLock'
+import { CHAIN_ID, NETWORK_CONFIG } from '../../constants/addresses'
 import { ethers } from 'ethers'
 // import { fetchAddressReceiptsApi } from '../../Services/orbitsApi'
 // import {
@@ -42,7 +43,6 @@ import {
 
 const API_BASE = import.meta.env.VITE_API_BASE_URL?.replace(/\/$/, '') || ''
 
-const AMOY_CHAIN_ID = '0x13882'
 const GAS_BUFFER_BPS = 12000n
 const ACTIVATION_GAS_BUFFER_BPS = 12500n
 const GAS_BUFFER_DENOMINATOR = 10000n
@@ -985,7 +985,7 @@ const ActivationCenterPage = () => {
       const provider = web3Service.getEip1193Provider() || window.ethereum
       if (!provider?.request) return
       const chainId = await provider.request({ method: 'eth_chainId' })
-      setNetworkWarning(chainId !== AMOY_CHAIN_ID)
+      setNetworkWarning(chainId?.toLowerCase() !== CHAIN_ID.toLowerCase())
     }
 
     checkNetwork()
@@ -1161,7 +1161,7 @@ const ActivationCenterPage = () => {
     if (!ensureWritableSpace()) return
 
     if (networkWarning) {
-      const message = activationT('errors.switchNetworkFirst', 'Please switch to Polygon Amoy Testnet first.')
+      const message = activationT('errors.switchNetworkFirst', 'Please switch to {{network}} first.', { network: NETWORK_CONFIG.chainName })
       setTxStatus({
         loading: false,
         hash: null,
@@ -1383,11 +1383,11 @@ const ActivationCenterPage = () => {
         },
         {
           key: 'network',
-          label: activationT('eligibility.network.label', 'Correct network (Polygon Amoy)'),
+          label: activationT('eligibility.network.label', 'Correct network ({{network}})', { network: NETWORK_CONFIG.chainName }),
           passed: !networkWarning,
           hint: !networkWarning
             ? activationT('eligibility.network.correct', 'Correct network detected.')
-            : activationT('eligibility.network.switch', 'Switch to Polygon Amoy before continuing.'),
+            : activationT('eligibility.network.switch', 'Switch to {{network}} before continuing.', { network: NETWORK_CONFIG.chainName }),
         },
         {
           key: 'registration',
@@ -1432,7 +1432,7 @@ const ActivationCenterPage = () => {
   const executeLevelActivation = async (level) => {
     if (!ensureWritableSpace()) return
     if (networkWarning) {
-      const message = activationT('errors.switchNetworkFirst', 'Please switch to Polygon Amoy Testnet first.')
+      const message = activationT('errors.switchNetworkFirst', 'Please switch to {{network}} first.', { network: NETWORK_CONFIG.chainName })
       setTxStatus({
         loading: false,
         hash: null,
@@ -1598,7 +1598,7 @@ const ActivationCenterPage = () => {
               </div>
 
               <div className="activation-referral-card__mini">
-                <span>{activationT('referral.referredBy', 'Invited By')}</span>
+                <span>{activationT('referral.referredBy', 'Sponsor/Upline ID')}</span>
                 <strong>{referredByCode || 'FIN-FREEDOM'}</strong>
               </div>
             </div>
@@ -1817,7 +1817,7 @@ const ActivationCenterPage = () => {
               <FaExclamationTriangle /> {activationT('notices.networkError.title', 'Network Error')}
             </h3>
             <p className="activation-notices__text">
-              {activationT('notices.networkError.text', 'Please switch to Polygon Amoy Testnet to continue. Actions are blocked until the network is correct.')}
+              {activationT('notices.networkError.text', 'Please switch to {{network}} to continue. Actions are blocked until the network is correct.', { network: NETWORK_CONFIG.chainName })}
             </p>
           </div>
         </div>
@@ -1850,7 +1850,7 @@ const ActivationCenterPage = () => {
             <h3 className="activation-notices__title">{activationT('notices.transactionSubmitted', 'Transaction Submitted')}</h3>
             <p className="activation-notices__text">
               <a
-                href={`https://amoy.polygonscan.com/tx/${txStatus.hash}`}
+                href={`${NETWORK_CONFIG.blockExplorerUrls[0]}tx/${txStatus.hash}`}
                 target="_blank"
                 rel="noopener noreferrer"
                 className="activation-inline-link"

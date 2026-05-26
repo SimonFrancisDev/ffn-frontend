@@ -21,19 +21,39 @@ export const CONTRACT_ADDRESSES = {
   GUARDIAN: import.meta.env.VITE_GUARDIAN_ADDRESS
 }
 
+const requireEnv = (name, fallbackName = '') => {
+  const value = import.meta.env[name] || (fallbackName ? import.meta.env[fallbackName] : '')
+  if (!value) throw new Error(`${name} is required`)
+  return value
+}
+
+const normalizeHexChainId = (value) => {
+  const raw = String(value || '').trim()
+  if (!raw) throw new Error('VITE_CHAIN_ID is required')
+  if (/^0x[0-9a-f]+$/i.test(raw)) return raw.toLowerCase()
+  const numeric = Number(raw)
+  if (!Number.isInteger(numeric) || numeric <= 0) throw new Error('VITE_CHAIN_ID must be a positive chain id')
+  return `0x${numeric.toString(16)}`
+}
+
+const chainId = normalizeHexChainId(requireEnv('VITE_CHAIN_ID', 'VITE_NETWORK_CHAIN_ID'))
+const isMainnet = chainId === '0x89'
+
 export const NETWORK_CONFIG = {
-  chainId: '0x13882', // 80002
-  chainName: 'Polygon Amoy Testnet',
+  chainId,
+  chainName: requireEnv('VITE_CHAIN_NAME'),
   nativeCurrency: {
-    name: 'POL',
-    symbol: 'POL',
-    decimals: 18
+    name: requireEnv('VITE_NATIVE_CURRENCY_NAME'),
+    symbol: requireEnv('VITE_NATIVE_CURRENCY_SYMBOL'),
+    decimals: Number(requireEnv('VITE_NATIVE_CURRENCY_DECIMALS'))
   },
-  rpcUrls: [import.meta.env.VITE_AMOY_RPC_URL || 'https://rpc-amoy.polygon.technology/'],
-  blockExplorerUrls: ['https://amoy.polygonscan.com/']
+  rpcUrls: [requireEnv('VITE_RPC_URL')],
+  blockExplorerUrls: [requireEnv('VITE_BLOCK_EXPLORER_URL')]
 }
 
 export const AMOY_CHAIN_ID = NETWORK_CONFIG.chainId
+export const CHAIN_ID = NETWORK_CONFIG.chainId
+export const DECIMAL_CHAIN_ID = Number.parseInt(NETWORK_CONFIG.chainId, 16)
 
 export const ORBIT_LEVEL_MAP = {
   1: 'P4',

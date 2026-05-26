@@ -1,4 +1,5 @@
 import './WalletPanel.css'
+import { NETWORK_CONFIG } from '../../../constants/addresses'
 import { useEffect, useRef, useState } from 'react'
 import { createPortal } from 'react-dom'
 import { useTranslation } from 'react-i18next'
@@ -140,7 +141,7 @@ const WalletPanel = ({
   const isConnected = !!wallet.isConnected
   const isLoading = !!wallet.isLoading
   const rawAddress = wallet.rawAddress || ''
-  const explorerBaseUrl = 'https://amoy.polygonscan.com/address/'
+  const explorerBaseUrl = `${NETWORK_CONFIG.blockExplorerUrls[0]}address/`
   const canCopy = !!rawAddress
   const canOpenExplorer = !!rawAddress
   const canDisconnect = isConnected && !isLoading
@@ -478,7 +479,7 @@ export default WalletPanel
 //   const isConnected = !!wallet.isConnected
 //   const isLoading = !!wallet.isLoading
 //   const rawAddress = wallet.rawAddress || ''
-//   const explorerBaseUrl = 'https://amoy.polygonscan.com/address/'
+//   const explorerBaseUrl = `${NETWORK_CONFIG.blockExplorerUrls[0]}address/`
 //   const canCopy = !!rawAddress
 //   const canOpenExplorer = !!rawAddress
 //   const canDisconnect = isConnected && !isLoading

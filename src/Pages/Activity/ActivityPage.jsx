@@ -6,6 +6,7 @@ import { useContracts } from '../../hooks/useContracts'
 import { ethers } from 'ethers'
 import { fetchAddressReceiptsApi, fetchOrbitLevelsApi } from '../../Services/orbitsApi'
 import { useToast } from '../../components/feedback'
+import { NETWORK_CONFIG } from '../../constants/addresses'
 
 const ACTIVITY_PAGE_SIZE = 8
 const RECEIPTS_PAGE_SIZE = 6
@@ -513,7 +514,7 @@ const ActivityPage = () => {
                       ) : null}
                       {activity.hash ? (
                         <div className="activity-hash">
-                          <a href={`https://amoy.polygonscan.com/tx/${activity.hash}`} target="_blank" rel="noopener noreferrer">
+                          <a href={`${NETWORK_CONFIG.blockExplorerUrls[0]}tx/${activity.hash}`} target="_blank" rel="noopener noreferrer">
                             {activityT('activity.tx', 'TX: {{hash}}', { hash: shortHash(activity.hash) })}
                           </a>
                         </div>

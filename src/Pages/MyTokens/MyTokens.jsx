@@ -7,6 +7,7 @@ import { useWallet } from '../../hooks/useWallet'
 import { useContracts } from '../../hooks/useContracts'
 import { fetchUserSummaryApi } from '../../Services/orbitsApi' // Use the API instead of manual scraping
 import { useToast } from '../../components/feedback'
+import { NETWORK_CONFIG } from '../../constants/addresses'
 
 export const MyTokens = () => {
   const { t } = useTranslation()
@@ -549,7 +550,7 @@ export const MyTokens = () => {
                     <div className="small timeline-date">{new Date(entry.timestamp * 1000).toLocaleString()}</div>
                   </div>
                   <div className="fw-semibold">{entry.narrative}</div>
-                  <div className="small"><a href={`https://amoy.polygonscan.com/tx/${entry.txHash}`} target="_blank" rel="noreferrer" style={{color: 'var(--glow-blue)'}}>{myTokensT('actions.viewTransaction', 'View Transaction')}</a></div>
+                  <div className="small"><a href={`${NETWORK_CONFIG.blockExplorerUrls[0]}tx/${entry.txHash}`} target="_blank" rel="noreferrer" style={{color: 'var(--glow-blue)'}}>{myTokensT('actions.viewTransaction', 'View Transaction')}</a></div>
                 </div>
               ))}
               <div className="text-center mt-3">
@@ -659,7 +660,7 @@ const RecordTable = ({ records, reasonVariant, displayLevel, myTokensT }) => (
                 : '—'}
             </td>
             <td>{new Date(r.timestamp * 1000).toLocaleDateString()}</td>
-            <td><a href={`https://amoy.polygonscan.com/tx/${r.txHash}`} target="_blank" rel="noreferrer">{myTokensT('actions.verify', 'Verify')}</a></td>
+            <td><a href={`${NETWORK_CONFIG.blockExplorerUrls[0]}tx/${r.txHash}`} target="_blank" rel="noreferrer">{myTokensT('actions.verify', 'Verify')}</a></td>
           </tr>
         ))}
       </tbody>

@@ -481,6 +481,16 @@ const NotificationDropdown = ({
                     })
                   : selectedNotification.message}
               </p>
+              {selectedNotification.detailKey || selectedNotification.detail ? (
+                <p className="notification-details-modal__message soft-text">
+                  {selectedNotification.detailKey
+                    ? t(selectedNotification.detailKey, {
+                        ...(selectedNotification.i18nParams || {}),
+                        defaultValue: selectedNotification.detail,
+                      })
+                    : selectedNotification.detail}
+                </p>
+              ) : null}
             </div>
 
             <div className="notification-details-modal__actions">

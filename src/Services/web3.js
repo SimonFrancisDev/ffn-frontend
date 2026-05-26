@@ -42,13 +42,12 @@ export class Web3Service {
 
   initReadProvider() {
     if (!this.readProvider) {
-      if (!import.meta.env.VITE_AMOY_RPC_URL) {
-        throw new Error('VITE_AMOY_RPC_URL is missing')
+      const rpcUrl = NETWORK_CONFIG.rpcUrls?.[0]
+      if (!rpcUrl) {
+        throw new Error('VITE_RPC_URL is missing')
       }
 
-      this.readProvider = new ethers.JsonRpcProvider(
-        import.meta.env.VITE_AMOY_RPC_URL
-      )
+      this.readProvider = new ethers.JsonRpcProvider(rpcUrl)
 
       this.readProvider.pollingInterval = 30000
     }

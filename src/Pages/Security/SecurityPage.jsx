@@ -6,6 +6,7 @@ import { useContracts } from '../../hooks/useContracts'
 import { useSpace } from '../../context/SpaceContext'
 import { web3Service } from '../../Services/web3'
 import { useToast } from '../../components/feedback'
+import { CHAIN_ID, NETWORK_CONFIG } from '../../constants/addresses'
 import {
   Shield, Lock, Key,
   AlertTriangle, CheckCircle, XCircle, Clock,
@@ -24,15 +25,13 @@ const SecurityPage = () => {
   const [networkWarning, setNetworkWarning] = useState('')
   const [lastUpdated, setLastUpdated] = useState(new Date().toLocaleTimeString())
 
-  const AMOY_CHAIN_ID = '0x13882'
-
   useEffect(() => {
     const checkNetwork = async () => {
       const walletProvider = web3Service.getEip1193Provider() || window.ethereum
       if (!walletProvider?.request) return
       try {
         const chainId = await walletProvider.request({ method: 'eth_chainId' })
-        setNetworkWarning(chainId !== AMOY_CHAIN_ID)
+        setNetworkWarning(chainId?.toLowerCase() !== CHAIN_ID.toLowerCase())
       } catch {
         setNetworkWarning(true)
       }
@@ -184,7 +183,7 @@ const SecurityPage = () => {
           <AlertTriangle size={22} className="text-warning" />
           <div className="network-warning__body">
             <strong>{securityT('network.warningTitle', 'Wrong Network Detected')}</strong>
-            <p className="soft-text">{securityT('network.warningText', 'Please switch to Polygon Amoy Testnet for secure transactions.')}</p>
+            <p className="soft-text">{securityT('network.warningText', 'Please switch to {{network}} for secure transactions.', { network: NETWORK_CONFIG.chainName })}</p>
           </div>
           <button type="button" className="switch-network-btn" onClick={handleSwitchNetwork}>
             <RefreshCw size={14} /> {securityT('actions.switchNetwork', 'Switch Network')}

@@ -33,6 +33,7 @@ import { NotificationProvider } from './components/notifications'
 import { useCompleteUserData } from './hooks/useUserData'
 import { LANGUAGES } from './constants/languages'
 import { getApiUrl } from './Services/apiConfig'
+import { NETWORK_CONFIG } from './constants/addresses'
 import {
   clearAllNotifications,
   fetchNotifications,
@@ -532,6 +533,8 @@ function App() {
         title: item.notificationType?.replace(/_/g, ' ') || 'Notification',
         messageKey: item.messageKey,
         message: item.notificationType?.replace(/_/g, ' ') || '',
+        detailKey: item.detailKey,
+        detail: '',
         time: item.createdAt ? new Date(item.createdAt).toLocaleString() : '',
         icon: Bell,
         iconColor:
@@ -879,7 +882,7 @@ function App() {
       address: walletAccount
         ? shortenAddress(walletAccount)
         : 'No wallet connected',
-      network: isConnected ? 'Polygon Amoy Testnet' : 'Not connected',
+      network: isConnected ? NETWORK_CONFIG.chainName : 'Not connected',
       provider: walletLabel || (hasMobileWalletSupport ? 'WalletConnect ready' : 'No wallet provider'),
       balance: balance ? Number(balance).toFixed(4) : null,
       isConnected,
@@ -1055,7 +1058,8 @@ function App() {
           label: t('topNotice.testnetNotice.label', 'Testnet Notice'),
           message: t(
             'topNotice.testnetNotice.message',
-            'You are connected to Polygon Amoy Testnet. Verify transactions and values before confirming.'
+            'You are connected to {{network}}. Verify transactions and values before confirming.',
+            { network: NETWORK_CONFIG.chainName }
           ),
           source: 'network',
           sticky: false,

@@ -67,6 +67,7 @@ export function NotificationCenter({
                 </div>
                 <h3>{item.title}</h3>
                 {item.message ? <p>{item.message}</p> : null}
+                {item.detail ? <p>{item.detail}</p> : null}
                 <div className="ffn-notification-item__controls">
                   {!item.read ? (
                     <Button variant="ghost" size="sm" onClick={() => markRead(item.id)}>

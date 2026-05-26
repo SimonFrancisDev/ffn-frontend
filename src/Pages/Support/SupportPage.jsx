@@ -5,6 +5,7 @@ import { useWallet } from '../../hooks/useWallet'
 import { useContracts } from '../../hooks/useContracts'
 import { getApiUrl } from '../../Services/apiConfig'
 import { web3Service } from '../../Services/web3'
+import { CHAIN_ID } from '../../constants/addresses'
 import { useToast } from '../../components/feedback'
 import { lockBodyScroll } from '../../utils/bodyScrollLock'
 import {
@@ -722,7 +723,7 @@ const SupportPage = ({ onNavigate }) => {
     if (walletProvider?.request) {
       try {
         const chainId = await walletProvider.request({ method: 'eth_chainId' })
-        next.network = chainId === '0x13882' ? 'Healthy' : 'Wrong Network'
+        next.network = chainId?.toLowerCase() === CHAIN_ID.toLowerCase() ? 'Healthy' : 'Wrong Network'
       } catch {
         next.network = 'Unknown'
       }

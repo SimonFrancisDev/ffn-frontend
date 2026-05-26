@@ -541,9 +541,13 @@ const CommunityPage = ({ onNavigate }) => {
     }))
   }, [activeLeaderboardTab, leaderboardItems, topReferrersData, mostActiveData])
 
-  const SYSTEM_WALLETS = [
-    '0x884e48f9897E8633238747b608DD49dE12bF94df'.toLowerCase(),
-  ]
+  const SYSTEM_WALLETS = useMemo(
+    () => String(import.meta.env.VITE_SYSTEM_WALLETS || '')
+      .split(',')
+      .map((value) => value.trim().toLowerCase())
+      .filter(Boolean),
+    []
+  )
 
   const isSystemWallet =
     resolvedAddress &&

@@ -9,6 +9,7 @@ import { ethers } from 'ethers'
 import { fetchUserSummaryApi } from '../../Services/orbitsApi'
 import { getApiUrl } from '../../Services/apiConfig'
 import { resolveIdentity } from '../../utils/identityResolver'
+import { NETWORK_CONFIG } from '../../constants/addresses'
 import { useToast } from '../../components/feedback'
 import { 
   FaUserFriends, FaCoins, FaArrowRight, FaTelegram, 
@@ -278,7 +279,7 @@ const shouldShowUpgradeProgress =
         <div className="hero-stats-row">
           <span className="hero-stat-chip">{accountT('hero.level', 'Level {{level}}', { level: earnings?.highestLevel || 0 })}</span>
           <span className="hero-stat-chip">{accountT('hero.receipts', '{{count}} Receipts', { count: earnings?.receiptCount || earnings?.count || 0 })}</span>
-          <span className="hero-stat-chip">{accountT('hero.amoyNetwork', 'Amoy Network')}</span>
+          <span className="hero-stat-chip">{accountT('hero.amoyNetwork', '{{network}}', { network: NETWORK_CONFIG.chainName })}</span>
         </div>
         <button type="button" className="account-hero-action" onClick={() => navigate('/activation')}>
           {accountT('actions.goToActivationCenter', 'Go to Activation Center')} <FaArrowRight />
@@ -331,7 +332,7 @@ const shouldShowUpgradeProgress =
                   </div>
 
                   <div className="referral-id-tile inner-surface">
-                    <span>{accountT('referral.referredBy', 'Invited By')}</span>
+                    <span>{accountT('referral.referredBy', 'Sponsor/Upline ID')}</span>
                     <strong>{referredByCode || 'FIN-FREEDOM'}</strong>
                   </div>
                 </div>

@@ -7,6 +7,7 @@ import { web3Service } from '../Services/web3';
 import { ethers } from 'ethers';
 import { useTranslation } from 'react-i18next';
 import { getApiUrl } from '../Services/apiConfig';
+import { NETWORK_CONFIG } from '../constants/addresses';
 import { useToast } from '../components/feedback';
 import { normalizeError } from '../utils/errorMap';
 import './AdminPanel.css';
@@ -77,6 +78,15 @@ const multisigSelfIface = new ethers.Interface([
 'function removeOwner(address owner)',
 'function replaceOwner(address oldOwner,address newOwner)',
 'function changeRequirement(uint256 _requiredConfirmations)']
+);
+
+const operationsVaultIface = new ethers.Interface([
+'function disburse(address recipient,uint256 amount,string reason)']
+);
+
+const nftPoolVaultIface = new ethers.Interface([
+'function setDistributionRoot(bytes32 distributionId,bytes32 merkleRoot,string metadataURI,string reason)',
+'function distribute(address recipient,uint256 amount,bytes32 distributionId,string reason)']
 );
 
 const boolText = (v) => v ? 'Yes' : 'No';
@@ -546,6 +556,8 @@ export const AdminPanel = () => {
   const [repAddress, setRepAddress] = useState('');
   const [nftPool, setNftPool] = useState('');
   const [opsWallet, setOpsWallet] = useState('');
+  const [opsDisbursement, setOpsDisbursement] = useState({ recipient: '', amount: '', reason: '' });
+  const [nftDistribution, setNftDistribution] = useState({ recipient: '', amount: '', distributionId: '', merkleRoot: '', metadataURI: '', reason: '' });
 
   const [txStatus, setTxStatus] = useState({ loading: false, hash: null, error: null, note: null });
   const [isOwner, setIsOwner] = useState(false);
@@ -622,12 +634,12 @@ export const AdminPanel = () => {
   const levelManagerAddress = import.meta.env.VITE_LEVELMANAGER_ADDRESS;
   const guardianAddress = import.meta.env.VITE_GUARDIAN_ADDRESS || '';
   const multisigAddress = import.meta.env.VITE_MULTISIG_ADDRESS || '';
+  const nftPoolVaultAddress = import.meta.env.VITE_NFT_POOL_VAULT_ADDRESS || import.meta.env.VITE_NFT_POOL_ADDRESS || '';
+  const operationsVaultAddress = import.meta.env.VITE_OPERATIONS_VAULT_ADDRESS || import.meta.env.VITE_OPERATIONS_WALLET_ADDRESS || '';
 
   // ============================================================
   // HELPER FUNCTIONS
   // ============================================================
-  const generateRandomEthAddresses = (count = 1) => Array.from({ length: count }, () => ethers.Wallet.createRandom().address);
-
   const shortAddress = (addr) => !addr ? '—' : `${addr.slice(0, 8)}...${addr.slice(-6)}`;
 
   const formatUnix = (value) => {
@@ -707,7 +719,9 @@ export const AdminPanel = () => {
     const tries = [
     { iface: levelManagerAdminIface, name: 'LevelManager' },
     { iface: guardianIface, name: 'Guardian' },
-    { iface: multisigSelfIface, name: 'Multisig' }];
+    { iface: multisigSelfIface, name: 'Multisig' },
+    { iface: operationsVaultIface, name: 'OperationsVault' },
+    { iface: nftPoolVaultIface, name: 'NFTPoolVault' }];
 
 
     for (const entry of tries) {
@@ -764,6 +778,21 @@ export const AdminPanel = () => {
               return { label: 'Unpause guardian admin', details: 'Resume guardian mutation functions', category: 'Guardian', targetLabel: 'Guardian' };
             default:
               return { label: name, details: JSON.stringify(args), category: 'Guardian', targetLabel: 'Guardian' };
+          }
+        }
+
+        if (entry.name === 'OperationsVault') {
+          if (name === 'disburse') {
+            return { label: 'Operations disbursement', details: `${formatMoney(ethers.formatUnits(args[1], 6))} USDT to ${shortAddress(args[0])} - ${args[2] || 'No reason'}`, category: 'Treasury', targetLabel: 'OperationsVault' };
+          }
+        }
+
+        if (entry.name === 'NFTPoolVault') {
+          if (name === 'setDistributionRoot') {
+            return { label: 'Set NFT distribution root', details: `${String(args[0]).slice(0, 10)}... - ${args[3] || args[2] || 'No reason'}`, category: 'Treasury', targetLabel: 'NFTPoolVault' };
+          }
+          if (name === 'distribute') {
+            return { label: 'NFT pool distribution', details: `${formatMoney(ethers.formatUnits(args[1], 6))} USDT to ${shortAddress(args[0])} - ${args[3] || 'No reason'}`, category: 'Treasury', targetLabel: 'NFTPoolVault' };
           }
         }
 
@@ -1221,6 +1250,14 @@ export const AdminPanel = () => {
     }
   };
 
+  const submitVaultProposal = async (target, iface, functionName, args = [], note = 'Treasury proposal submitted') => {
+    if (!target || !ethers.isAddress(target)) {
+      throw new Error('Treasury vault address is missing or invalid. Check frontend env configuration.');
+    }
+    const data = iface.encodeFunctionData(functionName, args);
+    return submitRawProposal(target, data, note);
+  };
+
   const loadMultisigTx = async (forcedId = null) => {
     const idToLoad = forcedId ?? txIdInput;
     if (!contracts?.simpleMultiSig || idToLoad === '' || idToLoad === null || idToLoad === undefined) return;
@@ -1351,6 +1388,88 @@ export const AdminPanel = () => {
     await submitLevelManagerProposal('updateChargeRecipients', [nftPool, opsWallet], 'Charge routing proposal');
   };
 
+  const handleOperationsDisbursementProposal = async () => {
+    if (!ethers.isAddress(opsDisbursement.recipient)) {
+      alert('Enter a valid recipient address');
+      return;
+    }
+    if (!opsDisbursement.reason.trim()) {
+      alert('A clear reason is required for operations disbursement');
+      return;
+    }
+    const amount = ethers.parseUnits(String(opsDisbursement.amount || '0'), 6);
+    if (amount <= 0n) {
+      alert('Enter a valid USDT amount');
+      return;
+    }
+    await submitVaultProposal(
+      operationsVaultAddress,
+      operationsVaultIface,
+      'disburse',
+      [opsDisbursement.recipient.trim(), amount, opsDisbursement.reason.trim()],
+      'Operations vault disbursement proposal'
+    );
+  };
+
+  const handleNFTDistributionRootProposal = async () => {
+    if (!nftDistribution.distributionId.trim()) {
+      alert('Distribution ID is required');
+      return;
+    }
+    const distributionId = nftDistribution.distributionId?.startsWith('0x')
+      ? nftDistribution.distributionId
+      : ethers.id(nftDistribution.distributionId || '');
+    const merkleRoot = nftDistribution.merkleRoot;
+
+    if (!ethers.isHexString(distributionId, 32) || !ethers.isHexString(merkleRoot, 32) || merkleRoot === ethers.ZeroHash) {
+      alert('Distribution ID and Merkle root are required');
+      return;
+    }
+    if (!nftDistribution.reason.trim()) {
+      alert('A clear reason is required for NFT pool root setup');
+      return;
+    }
+
+    await submitVaultProposal(
+      nftPoolVaultAddress,
+      nftPoolVaultIface,
+      'setDistributionRoot',
+      [distributionId, merkleRoot, nftDistribution.metadataURI.trim(), nftDistribution.reason.trim()],
+      'NFT pool distribution root proposal'
+    );
+  };
+
+  const handleNFTDistributionProposal = async () => {
+    if (!ethers.isAddress(nftDistribution.recipient)) {
+      alert('Enter a valid recipient address');
+      return;
+    }
+    if (!nftDistribution.reason.trim()) {
+      alert('A clear reason is required for NFT pool distribution');
+      return;
+    }
+    const amount = ethers.parseUnits(String(nftDistribution.amount || '0'), 6);
+    if (amount <= 0n) {
+      alert('Enter a valid USDT amount');
+      return;
+    }
+    const distributionId = nftDistribution.distributionId?.startsWith('0x')
+      ? nftDistribution.distributionId
+      : ethers.id(nftDistribution.distributionId || '');
+    if (!ethers.isHexString(distributionId, 32)) {
+      alert('Enter a valid distribution ID or label');
+      return;
+    }
+
+    await submitVaultProposal(
+      nftPoolVaultAddress,
+      nftPoolVaultIface,
+      'distribute',
+      [nftDistribution.recipient.trim(), amount, distributionId || ethers.ZeroHash, nftDistribution.reason.trim()],
+      'NFT pool distribution proposal'
+    );
+  };
+
   const handleGuardianFreeze = async (frozen) => {
     await submitGuardianProposal('setGlobalUpgradeFreeze', [frozen], frozen ? 'Freeze upgrades proposal' : 'Unfreeze upgrades proposal');
   };
@@ -1437,22 +1556,8 @@ export const AdminPanel = () => {
     setRatioInputs(updated);
   };
 
-  const fillFounderTestAddresses = () => {
-    setWalletInputs(generateRandomEthAddresses(8));
+  const applyEqualFounderRatios = () => {
     setRatioInputs(Array(8).fill('1250'));
-  };
-
-  const fillRepTestAddress = () => {
-    const [randomAddr] = generateRandomEthAddresses(1);
-    setRepAddress(randomAddr);
-  };
-
-  const fillChargeTestAddresses = () => {
-    const [randomNft, randomOps] = generateRandomEthAddresses(2);
-    setNftPool(randomNft);
-    setOpsWallet(randomOps);
-    setSkipAutoRefresh(true);
-    setTimeout(() => setSkipAutoRefresh(false), 5000);
   };
 
   const txStage = getStageFromTx(multisigTx);
@@ -1627,7 +1732,7 @@ export const AdminPanel = () => {
       <Alert variant="info" className="alert-premium">
           <div style={{ fontSize: '11px', opacity: 0.6, marginBottom: '4px' }}>{adminT("ui.line1514.tRANSACTIONBROADCAST", "TRANSACTION BROADCAST")}</div>
           {txStatus.note && <div className="mb-2">{txStatus.note}</div>}
-          <a href={`https://amoy.polygonscan.com/tx/${txStatus.hash}`} target="_blank" rel="noopener noreferrer" className="text-glow" style={{ textDecoration: 'none', display: 'flex', alignItems: 'center', gap: '4px' }}>
+          <a href={`${NETWORK_CONFIG.blockExplorerUrls[0]}tx/${txStatus.hash}`} target="_blank" rel="noopener noreferrer" className="text-glow" style={{ textDecoration: 'none', display: 'flex', alignItems: 'center', gap: '4px' }}>
             {txStatus.hash} <ExternalLink size={12} />
           </a>
         </Alert>
@@ -2084,7 +2189,7 @@ export const AdminPanel = () => {
                           founderWallets.map((wallet, index) =>
                           <tr key={index}>
                                   <td>
-                                    <a href={`https://amoy.polygonscan.com/address/${wallet}`} target="_blank" rel="noopener noreferrer" className="text-glow" style={{ textDecoration: 'none', display: 'flex', alignItems: 'center', gap: '4px' }}>
+                                    <a href={`${NETWORK_CONFIG.blockExplorerUrls[0]}address/${wallet}`} target="_blank" rel="noopener noreferrer" className="text-glow" style={{ textDecoration: 'none', display: 'flex', alignItems: 'center', gap: '4px' }}>
                                       <span className="mono">{wallet.slice(0, 10)}...{wallet.slice(-8)}</span>
                                       <ExternalLink size={10} />
                                     </a>
@@ -2134,7 +2239,7 @@ export const AdminPanel = () => {
                           </div>
 
                           <div className="small-label-premium mb-2">{adminT("ui.line1975.setAllFounderWallets", "Set All Founder Wallets")}</div>
-                          <button className="btn-premium btn-premium-sm mb-3" onClick={fillFounderTestAddresses} disabled={txStatus.loading}>{adminT("ui.line1976.fillTestAddresses", "Fill Test Addresses")}</button>
+                          <button className="btn-premium btn-premium-sm mb-3" onClick={applyEqualFounderRatios} disabled={txStatus.loading}>Apply Equal Ratios</button>
 
                           {walletInputs.map((wallet, index) =>
                         <div key={index} className="wallet-grid-premium mb-2">
@@ -2155,7 +2260,6 @@ export const AdminPanel = () => {
                             <div className="admin-subtitle mb-3">{adminT("ui.line1994.submitAMultisigProposalToAdd", "Submit a multisig proposal to add a founder representative.")}</div>
                             <div className="flex-between-premium mb-3" style={{ gap: '8px' }}>
                               <Form.Control className="input-premium" placeholder={adminT("ui.line1996.representativeAddress0x", "Representative address (0x...)")} value={repAddress} onChange={(e) => setRepAddress(e.target.value)} />
-                              <button className="btn-premium btn-premium-sm" onClick={fillRepTestAddress} disabled={txStatus.loading}>{adminT("ui.line1997.fillTest", "Fill Test")}</button>
                             </div>
                             <button className="btn-premium w-100" onClick={handleAddFounderRep} disabled={txStatus.loading || !repAddress}>{adminT("ui.line1999.submitRepresentativeProposal", "Submit representative proposal")}</button>
                           </div>
@@ -2721,6 +2825,58 @@ export const AdminPanel = () => {
                 <div className="mono" style={{ fontSize: '11px', color: 'rgba(255,255,255,0.6)' }}>
                   <div>{adminT("ui.line2561.nFTPool", "NFT Pool:")}{nftPool ? shortAddress(nftPool) : adminT("ui.line2561.notSet", "Not set")}</div>
                   <div className="mt-1">{adminT("ui.line2562.operations", "Operations:")}{opsWallet ? shortAddress(opsWallet) : adminT("ui.line2562.notSet", "Not set")}</div>
+                  <div className="mt-1">NFT Vault: {nftPoolVaultAddress ? shortAddress(nftPoolVaultAddress) : 'Missing env'}</div>
+                  <div className="mt-1">Operations Vault: {operationsVaultAddress ? shortAddress(operationsVaultAddress) : 'Missing env'}</div>
+                </div>
+              </div>
+
+              <div className="soft-panel-premium" style={{ marginBottom: '20px' }}>
+                <div className="small-label-premium mb-2">Operations Vault Disbursement</div>
+                <Row className="g-2">
+                  <Col md={5}>
+                    <Form.Control className="input-premium" placeholder="Recipient wallet" value={opsDisbursement.recipient} onChange={(e) => setOpsDisbursement((current) => ({ ...current, recipient: e.target.value }))} />
+                  </Col>
+                  <Col md={3}>
+                    <Form.Control className="input-premium" placeholder="USDT amount" value={opsDisbursement.amount} onChange={(e) => setOpsDisbursement((current) => ({ ...current, amount: e.target.value }))} />
+                  </Col>
+                  <Col md={4}>
+                    <Form.Control className="input-premium" placeholder="Reason" value={opsDisbursement.reason} onChange={(e) => setOpsDisbursement((current) => ({ ...current, reason: e.target.value }))} />
+                  </Col>
+                </Row>
+                <button className="btn-premium mt-3" onClick={handleOperationsDisbursementProposal} disabled={txStatus.loading || !operationsVaultAddress}>
+                  Submit Operations Proposal
+                </button>
+              </div>
+
+              <div className="soft-panel-premium" style={{ marginBottom: '20px' }}>
+                <div className="small-label-premium mb-2">NFT Pool Future Distribution</div>
+                <Row className="g-2">
+                  <Col md={4}>
+                    <Form.Control className="input-premium" placeholder="Distribution ID or label" value={nftDistribution.distributionId} onChange={(e) => setNftDistribution((current) => ({ ...current, distributionId: e.target.value }))} />
+                  </Col>
+                  <Col md={4}>
+                    <Form.Control className="input-premium" placeholder="Merkle root" value={nftDistribution.merkleRoot} onChange={(e) => setNftDistribution((current) => ({ ...current, merkleRoot: e.target.value }))} />
+                  </Col>
+                  <Col md={4}>
+                    <Form.Control className="input-premium" placeholder="Metadata URI" value={nftDistribution.metadataURI} onChange={(e) => setNftDistribution((current) => ({ ...current, metadataURI: e.target.value }))} />
+                  </Col>
+                  <Col md={4}>
+                    <Form.Control className="input-premium" placeholder="Recipient wallet" value={nftDistribution.recipient} onChange={(e) => setNftDistribution((current) => ({ ...current, recipient: e.target.value }))} />
+                  </Col>
+                  <Col md={3}>
+                    <Form.Control className="input-premium" placeholder="USDT amount" value={nftDistribution.amount} onChange={(e) => setNftDistribution((current) => ({ ...current, amount: e.target.value }))} />
+                  </Col>
+                  <Col md={5}>
+                    <Form.Control className="input-premium" placeholder="Reason" value={nftDistribution.reason} onChange={(e) => setNftDistribution((current) => ({ ...current, reason: e.target.value }))} />
+                  </Col>
+                </Row>
+                <div style={{ display: 'flex', gap: '12px', marginTop: '12px', flexWrap: 'wrap' }}>
+                  <button className="btn-premium-secondary" onClick={handleNFTDistributionRootProposal} disabled={txStatus.loading || !nftPoolVaultAddress}>
+                    Submit Root Proposal
+                  </button>
+                  <button className="btn-premium" onClick={handleNFTDistributionProposal} disabled={txStatus.loading || !nftPoolVaultAddress}>
+                    Submit Distribution Proposal
+                  </button>
                 </div>
               </div>
 
@@ -2728,15 +2884,12 @@ export const AdminPanel = () => {
                 <button
                 className="btn-premium-secondary"
                 onClick={() => {
-                  const [randomNft, randomOps] = generateRandomEthAddresses(2);
-                  setNftPool(randomNft);
-                  setOpsWallet(randomOps);
-                  setSkipAutoRefresh(true);
-                  setTimeout(() => setSkipAutoRefresh(false), 5000);
+                  setNftPool(nftPoolVaultAddress);
+                  setOpsWallet(operationsVaultAddress);
                 }}
-                disabled={txStatus.loading}>
+                disabled={txStatus.loading || !nftPoolVaultAddress || !operationsVaultAddress}>
 
-                  <RefreshCw size={14} />{adminT("ui.line2578.fillTestAddresses", "Fill Test Addresses")}
+                  <RefreshCw size={14} />Use Env Vaults
               </button>
                 <button
                 className="btn-premium"

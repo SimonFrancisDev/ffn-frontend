@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback } from 'react'
+import { createContext, createElement, useContext, useState, useEffect, useCallback, useMemo } from 'react'
 import { ethers } from 'ethers'
 import { web3Service } from '../Services/web3'
 import { AMOY_CHAIN_ID, NETWORK_CONFIG } from '../constants/addresses'
@@ -8,7 +8,9 @@ import {
   walletOnboard,
 } from '../Services/walletOnboard'
 
-export const useWallet = () => {
+const WalletContext = createContext(null)
+
+const useWalletState = () => {
   const [account, setAccount] = useState(null)
   const [balance, setBalance] = useState(null)
   const [isConnected, setIsConnected] = useState(false)
@@ -65,7 +67,7 @@ export const useWallet = () => {
     [refreshBalance, resetWalletState]
   )
 
-  const switchToAmoy = useCallback(async () => {
+  const switchToConfiguredNetwork = useCallback(async () => {
     const provider = activeProvider || web3Service.getEip1193Provider() || window.ethereum
     if (!provider?.request) return false
 
@@ -84,7 +86,7 @@ export const useWallet = () => {
           })
           return true
         } catch (addErr) {
-          console.error('Error adding Amoy network:', addErr)
+          console.error('Error adding configured network:', addErr)
           return false
         }
       }
@@ -124,9 +126,9 @@ export const useWallet = () => {
 
       if (chainId?.toLowerCase() !== AMOY_CHAIN_ID.toLowerCase()) {
         setActiveProvider(wallet.provider)
-        const switched = await switchToAmoy()
+        const switched = await switchToConfiguredNetwork()
         if (!switched) {
-          throw new Error('Please switch to Polygon Amoy Testnet manually')
+          throw new Error(`Please switch to ${NETWORK_CONFIG.chainName} manually`)
         }
         await new Promise(resolve => setTimeout(resolve, 700))
       }
@@ -145,7 +147,7 @@ export const useWallet = () => {
     } finally {
       setIsLoading(false)
     }
-  }, [activateWallet, switchToAmoy])
+  }, [activateWallet, switchToConfiguredNetwork])
 
   const disconnect = useCallback(async () => {
     const connectedWallets = walletOnboard.state.get().wallets || []
@@ -186,7 +188,7 @@ export const useWallet = () => {
     return () => subscription.unsubscribe()
   }, [activateWallet, resetWalletState])
 
-  return {
+  return useMemo(() => ({
     account,
     balance,
     isConnected,
@@ -196,7 +198,31 @@ export const useWallet = () => {
     hasMobileWalletSupport: hasWalletConnectSupport,
     connect,
     disconnect,
-    switchToAmoy
-  }
+    switchToAmoy: switchToConfiguredNetwork,
+    switchToConfiguredNetwork
+  }), [
+    account,
+    balance,
+    isConnected,
+    isLoading,
+    error,
+    walletLabel,
+    connect,
+    disconnect,
+    switchToConfiguredNetwork
+  ])
 }
 
+export function WalletProvider({ children }) {
+  const wallet = useWalletState()
+
+  return createElement(WalletContext.Provider, { value: wallet }, children)
+}
+
+export const useWallet = () => {
+  const wallet = useContext(WalletContext)
+  if (!wallet) {
+    throw new Error('useWallet must be used inside WalletProvider')
+  }
+  return wallet
+}

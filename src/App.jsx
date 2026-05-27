@@ -88,6 +88,10 @@ const APP_USER_ID_STORAGE_KEY = 'finfreedom_app_user_id_v1'
 const TELEGRAM_PROMPT_DISMISSED_KEY = 'finfreedom_telegram_prompt_dismissed_v1'
 const TELEGRAM_PROMPT_SESSION_KEY = 'finfreedom_telegram_prompt_seen_v1'
 const TESTNET_REMINDER_SEEN_KEY = 'finfreedom_testnet_reminder_seen_v1'
+const EARLY_ACCESS_STORAGE_KEY = 'finfreedom_early_access_v1'
+const LAUNCH_GATE_MODE = String(import.meta.env.VITE_LAUNCH_GATE_MODE || 'open').toLowerCase()
+const EARLY_ACCESS_CODE = String(import.meta.env.VITE_EARLY_ACCESS_CODE || '').trim()
+const PUBLIC_LAUNCH_AT = String(import.meta.env.VITE_PUBLIC_LAUNCH_AT || '').trim()
 
 const scopedStorageKey = (baseKey, wallet) => {
   const suffix = wallet ? String(wallet).trim().toLowerCase() : 'guest'
@@ -203,7 +207,10 @@ const resolveThemeMode = (theme) => {
 }
 
 const formatLaunchCountdown = (nowMs) => {
-  const targetMs = Date.UTC(2026, 4, 27, 10, 0, 0, 0)
+  const configuredTarget = PUBLIC_LAUNCH_AT ? Date.parse(PUBLIC_LAUNCH_AT) : NaN
+  const targetMs = Number.isFinite(configuredTarget)
+    ? configuredTarget
+    : Date.UTC(2026, 4, 27, 10, 0, 0, 0)
   const remaining = Math.max(0, targetMs - nowMs)
   const hours = Math.floor(remaining / 3600000)
   const minutes = Math.floor((remaining % 3600000) / 60000)
@@ -211,6 +218,31 @@ const formatLaunchCountdown = (nowMs) => {
   const milliseconds = remaining % 1000
   const pad = (value, size = 2) => String(value).padStart(size, '0')
   return `${pad(hours)}:${pad(minutes)}:${pad(seconds)}:${pad(milliseconds, 3)}`
+}
+
+const getLaunchTargetMs = () => {
+  const configuredTarget = PUBLIC_LAUNCH_AT ? Date.parse(PUBLIC_LAUNCH_AT) : NaN
+  return Number.isFinite(configuredTarget) ? configuredTarget : null
+}
+
+const isLaunchGateOpen = (nowMs = Date.now()) => {
+  if (LAUNCH_GATE_MODE === 'open') return true
+
+  const launchTargetMs = getLaunchTargetMs()
+  if (launchTargetMs && nowMs >= launchTargetMs) return true
+
+  if (LAUNCH_GATE_MODE !== 'early' && LAUNCH_GATE_MODE !== 'closed') return true
+
+  if (typeof window === 'undefined') return false
+
+  const params = new URLSearchParams(window.location.search)
+  const suppliedCode = params.get('code') || params.get('access') || ''
+  if (EARLY_ACCESS_CODE && suppliedCode === EARLY_ACCESS_CODE) {
+    window.sessionStorage.setItem(EARLY_ACCESS_STORAGE_KEY, '1')
+    return true
+  }
+
+  return window.sessionStorage.getItem(EARLY_ACCESS_STORAGE_KEY) === '1'
 }
 
 const applyStoredAccent = () => {
@@ -285,6 +317,62 @@ function RouteAccessFallback({ title = 'Page access required', message }) {
         </a>
       </section>
     </div>
+  )
+}
+
+function LaunchGate({ nowMs }) {
+  const [codeInput, setCodeInput] = useState('')
+  const [error, setError] = useState('')
+  const launchTargetMs = getLaunchTargetMs()
+  const countdown = formatLaunchCountdown(nowMs)
+  const launchText = launchTargetMs
+    ? new Date(launchTargetMs).toLocaleString()
+    : 'Opening soon'
+
+  const submitAccessCode = (event) => {
+    event.preventDefault()
+    if (!EARLY_ACCESS_CODE || codeInput.trim() !== EARLY_ACCESS_CODE) {
+      setError('Invalid early access code')
+      return
+    }
+
+    window.sessionStorage.setItem(EARLY_ACCESS_STORAGE_KEY, '1')
+    window.location.assign('/home')
+  }
+
+  return (
+    <main className="route-access-fallback">
+      <section className="route-access-fallback__card">
+        <p className="route-access-fallback__eyebrow">Fin Freedom Network</p>
+        <h1>Coming Soon</h1>
+        <p>Public access opens {launchText}. Time left: {countdown}</p>
+        {LAUNCH_GATE_MODE === 'early' ? (
+          <form onSubmit={submitAccessCode} style={{ display: 'grid', gap: '12px', marginTop: '20px' }}>
+            <input
+              value={codeInput}
+              onChange={(event) => {
+                setCodeInput(event.target.value)
+                setError('')
+              }}
+              placeholder="Early access code"
+              aria-label="Early access code"
+              style={{
+                width: '100%',
+                border: '1px solid rgba(255,255,255,0.18)',
+                borderRadius: '8px',
+                padding: '12px 14px',
+                background: 'rgba(255,255,255,0.08)',
+                color: 'inherit',
+              }}
+            />
+            {error ? <p style={{ color: '#fca5a5', margin: 0 }}>{error}</p> : null}
+            <button type="submit" className="route-access-fallback__button">
+              Enter
+            </button>
+          </form>
+        ) : null}
+      </section>
+    </main>
   )
 }
 
@@ -397,6 +485,7 @@ function App() {
   } = useWallet()
 
   const { contracts, loadContracts } = useContracts()
+  const launchGateOpen = isLaunchGateOpen(launchNowMs)
 
   const {
     summary: userSummary,
@@ -1146,6 +1235,10 @@ function App() {
 
     return <AdminPanel />
   }, [adminCheckComplete, hasInternalRouteAccess, isMultisigOwner])
+
+  if (!launchGateOpen) {
+    return <LaunchGate nowMs={launchNowMs} />
+  }
 
   return (
     <SessionProvider>

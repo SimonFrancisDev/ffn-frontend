@@ -90,7 +90,7 @@ const TELEGRAM_PROMPT_DISMISSED_KEY = 'finfreedom_telegram_prompt_dismissed_v1'
 const TELEGRAM_PROMPT_SESSION_KEY = 'finfreedom_telegram_prompt_seen_v1'
 const TESTNET_REMINDER_SEEN_KEY = 'finfreedom_testnet_reminder_seen_v1'
 const EARLY_ACCESS_STORAGE_KEY = 'finfreedom_early_access_v1'
-const LAUNCH_GATE_MODE = String(import.meta.env.VITE_LAUNCH_GATE_MODE || 'closed').toLowerCase()
+const LAUNCH_GATE_MODE = String(import.meta.env.VITE_LAUNCH_GATE_MODE || 'open').toLowerCase()
 const EARLY_ACCESS_CODE = String(import.meta.env.VITE_EARLY_ACCESS_CODE || '').trim()
 const PUBLIC_LAUNCH_AT = String(import.meta.env.VITE_PUBLIC_LAUNCH_AT || '').trim()
 

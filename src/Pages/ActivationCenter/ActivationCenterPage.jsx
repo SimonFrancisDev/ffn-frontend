@@ -292,6 +292,8 @@ const ActivationCenterPage = () => {
   const [isId1Wallet, setIsId1Wallet] = useState(false)
   const [id1Address, setId1Address] = useState('')
   const [registrationReferrer, setRegistrationReferrer] = useState('')
+  const [isFounderRepresentative, setIsFounderRepresentative] = useState(false)
+  const [founderRepLevelsActivated, setFounderRepLevelsActivated] = useState(0)
 
   const [orbitLevelData, setOrbitLevelData] = useState({})
   const [downlineData, setDownlineData] = useState({})
@@ -788,9 +790,17 @@ const ActivationCenterPage = () => {
     try {
       const id1WalletAddress = await contracts.registration.id1Wallet()
       const isId1 = id1WalletAddress?.toLowerCase() === viewer.toLowerCase()
+      const [founderRepStatus, founderRepLevelCount] = contracts.levelManager?.founderRepresentative
+        ? await Promise.all([
+            contracts.levelManager.founderRepresentative(viewer).catch(() => false),
+            contracts.levelManager.founderRepLevelsActivated(viewer).catch(() => 0),
+          ])
+        : [false, 0]
 
       setIsId1Wallet(isId1)
       setId1Address(id1WalletAddress || '')
+      setIsFounderRepresentative(Boolean(founderRepStatus))
+      setFounderRepLevelsActivated(Number(founderRepLevelCount || 0))
 
       let registered = false
       const levels = {}
@@ -1110,6 +1120,11 @@ const ActivationCenterPage = () => {
     [activeLevels]
   )
 
+  const isFounderRepFreeLevel = useCallback(
+    (level) => isFounderRepresentative && founderRepLevelsActivated < 10 && !activeLevels[level],
+    [activeLevels, founderRepLevelsActivated, isFounderRepresentative]
+  )
+
   const toggleLevelDetails = useCallback((level) => {
     setOpenLevelDetails((prev) => ({
       ...prev,
@@ -1175,11 +1190,12 @@ const ActivationCenterPage = () => {
     toast.info(activationT('toast.registrationPreparing', 'Preparing registration transaction.'), { dedupeKey: 'activation-registration-preparing' })
 
     try {
-      const totalRequiredUsdt = 10
+      const isFounderRepFree = isFounderRepFreeLevel(1)
+      const totalRequiredUsdt = isFounderRepFree ? 0 : 10
       const totalRequiredWei = ethers.parseUnits(String(totalRequiredUsdt), 6)
       const balance = await contracts.usdt.balanceOf(account)
 
-      if (balance < totalRequiredWei) {
+      if (!isFounderRepFree && balance < totalRequiredWei) {
         throw new Error(
           activationT('errors.insufficientRegistrationBalance', 'Insufficient USDT balance. You need {{amount}} USDT for registration and Level 1 activation. Current balance: {{balance}} USDT', {
             amount: totalRequiredUsdt,
@@ -1188,7 +1204,9 @@ const ActivationCenterPage = () => {
         )
       }
 
-      await ensureSufficientAllowance(totalRequiredUsdt)
+      if (!isFounderRepFree) {
+        await ensureSufficientAllowance(totalRequiredUsdt)
+      }
 
       const writeContracts = await getWriteContracts()
       const signer = await getSigner()
@@ -1279,6 +1297,7 @@ const ActivationCenterPage = () => {
     registrationReferrer,
     refreshAllAfterWrite,
     toast,
+    isFounderRepFreeLevel,
   ])
 
   const handleTransferToSelf = async () => {
@@ -1370,7 +1389,8 @@ const ActivationCenterPage = () => {
   const buildEligibilityChecks = useCallback(
     (level) => {
       const price = parseFloat(levelPrices[level] || '0')
-      const totalRequired = price
+      const isFounderRepFree = isFounderRepFreeLevel(level)
+      const totalRequired = isFounderRepFree ? 0 : price
 
       return [
         {
@@ -1415,10 +1435,14 @@ const ActivationCenterPage = () => {
         },
         {
           key: 'balance',
-          label: activationT('eligibility.balance.label', '{{amount}} USDT available', { amount: totalRequired }),
-          passed: parseFloat(usdtBalance) >= totalRequired,
+          label: isFounderRepFree
+            ? activationT('eligibility.balance.founderRepFreeLabel', 'Founder representative free activation')
+            : activationT('eligibility.balance.label', '{{amount}} USDT available', { amount: totalRequired }),
+          passed: isFounderRepFree || parseFloat(usdtBalance) >= totalRequired,
           hint:
-            parseFloat(usdtBalance) >= totalRequired
+            isFounderRepFree
+              ? activationT('eligibility.balance.founderRepFreeHint', 'This founder representative level does not require USDT.')
+              : parseFloat(usdtBalance) >= totalRequired
               ? activationT('eligibility.balance.sufficient', 'Wallet balance is sufficient.')
               : level === 1 && !isRegistered
                 ? activationT('eligibility.balance.needRegistration', 'You need {{amount}} USDT for registration and Level 1 activation.', { amount: totalRequired })
@@ -1426,7 +1450,7 @@ const ActivationCenterPage = () => {
         },
       ]
     },
-    [activationT, isConnected, networkWarning, isRegistered, canActivateLevel, usdtBalance]
+    [activationT, isConnected, networkWarning, isRegistered, canActivateLevel, usdtBalance, isFounderRepFreeLevel]
   )
 
   const executeLevelActivation = async (level) => {
@@ -1463,13 +1487,16 @@ const ActivationCenterPage = () => {
 
     try {
       const price = parseFloat(levelPrices[level])
+      const isFounderRepFree = isFounderRepFreeLevel(level)
       const balanceNum = parseFloat(usdtBalance)
 
-      if (balanceNum < price) {
+      if (!isFounderRepFree && balanceNum < price) {
         throw new Error(activationT('errors.insufficientActivationBalance', 'Insufficient USDT balance. You have {{balance}} USDT but need {{amount}} USDT.', { balance: usdtBalance, amount: price }))
       }
 
-      await ensureSufficientAllowance(price)
+      if (!isFounderRepFree) {
+        await ensureSufficientAllowance(price)
+      }
 
       const signer = await getSigner()
       const registrationWithSigner = contracts.registration.connect(signer)
@@ -1985,8 +2012,9 @@ const ActivationCenterPage = () => {
             const fgtEarned = tokenSummary.fgtByLevel[level] || 0
             const fgtrEarned = tokenSummary.fgtrByLevel[level] || 0
             const latestTokenEvent = tokenSummary.lastEventByLevel[level] || null
-            const combinedRequired = level === 1 && !isRegistered ? 10 : price
-            const hasEnoughBalance = parseFloat(usdtBalance) >= combinedRequired
+            const isFounderRepFree = isFounderRepFreeLevel(level)
+            const combinedRequired = isFounderRepFree ? 0 : level === 1 && !isRegistered ? 10 : price
+            const hasEnoughBalance = isFounderRepFree || parseFloat(usdtBalance) >= combinedRequired
             const isOpen = !!openLevelDetails[level]
 
             return (
@@ -2008,7 +2036,11 @@ const ActivationCenterPage = () => {
                 </div>
 
                 <div className={`compact-level-card__price ${hasEnoughBalance ? 'is-sufficient' : 'is-insufficient'}`}>
-                  {level === 1 && !isRegistered ? activationT('levels.onboardingPrice', '10 USDT Onboarding') : activationT('levels.price', '{{price}} USDT', { price })}
+                  {isFounderRepFree
+                    ? activationT('levels.founderRepFree', 'Founder Rep Free')
+                    : level === 1 && !isRegistered
+                      ? activationT('levels.onboardingPrice', '10 USDT Onboarding')
+                      : activationT('levels.price', '{{price}} USDT', { price })}
                 </div>
 
                 <div className="compact-level-card__actions">
@@ -2172,16 +2204,24 @@ const ActivationCenterPage = () => {
                           <div className="detail-row">
                             <span>{activationT('metrics.requirement', 'Requirement:')}</span>
                             <strong>
-                              {level === 1 && !isRegistered ? activationT('levels.onboardingTotal', '10 USDT total') : activationT('levels.price', '{{price}} USDT', { price })}
+                              {isFounderRepFree
+                                ? activationT('levels.founderRepFree', 'Founder Rep Free')
+                                : level === 1 && !isRegistered
+                                  ? activationT('levels.onboardingTotal', '10 USDT total')
+                                  : activationT('levels.price', '{{price}} USDT', { price })}
                             </strong>
                           </div>
                         </div>
 
                         <p className="level-description">
                           {level === 1 && !isRegistered
-                            ? activationT('levels.descriptions.levelOne', 'This step registers your wallet and activates Level 1 in one flow.')
+                            ? isFounderRepFree
+                              ? activationT('levels.descriptions.founderRepLevelOne', 'This founder representative wallet can register and activate Level 1 without USDT.')
+                              : activationT('levels.descriptions.levelOne', 'This step registers your wallet and activates Level 1 in one flow.')
                             : isNext
-                              ? activationT('levels.descriptions.next', 'Activate for {{price}} USDT to unlock {{orbit}} Orbit.', { price, orbit: orbitTypeForLevel })
+                              ? isFounderRepFree
+                                ? activationT('levels.descriptions.founderRepNext', 'Founder representative free activation unlocks {{orbit}} Orbit.', { orbit: orbitTypeForLevel })
+                                : activationT('levels.descriptions.next', 'Activate for {{price}} USDT to unlock {{orbit}} Orbit.', { price, orbit: orbitTypeForLevel })
                               : activationT('levels.descriptions.locked', 'Requires Level {{level}} activation first.', { level: level - 1 })}
                         </p>
                       </>
@@ -2300,9 +2340,11 @@ const ActivationCenterPage = () => {
                     <div>
                       <h3 className="activation-notices__title">
                         {nextLevel
-                          ? !isRegistered && nextLevel === 1
-                            ? activationT('guidance.onboardingRequired', 'Onboarding requires 10 USDT')
-                            : activationT('guidance.levelRequired', 'Level {{level}}: {{amount}} USDT required', { level: nextLevel, amount: levelPrices[nextLevel] })
+                          ? isFounderRepFreeLevel(nextLevel)
+                            ? activationT('guidance.founderRepFreeRequired', 'Founder representative free activation')
+                            : !isRegistered && nextLevel === 1
+                              ? activationT('guidance.onboardingRequired', 'Onboarding requires 10 USDT')
+                              : activationT('guidance.levelRequired', 'Level {{level}}: {{amount}} USDT required', { level: nextLevel, amount: levelPrices[nextLevel] })
                           : activationT('guidance.maxLevel', 'Maximum level achieved')}
                       </h3>
                       <p className="activation-notices__text soft-text">
@@ -2434,9 +2476,11 @@ const ActivationCenterPage = () => {
                   {!canWriteHere
                     ? activationT('nextAction.readOnlyText', "You are currently viewing another member's space. Progress and orbit state are visible, but wallet actions are disabled.")
                     : nextLevel
-                      ? !isRegistered && nextLevel === 1
-                        ? activationT('nextAction.onboardingText', 'Complete onboarding to register this wallet and activate Level 1 in a single action.')
-                        : activationT('nextAction.levelText', 'Level {{level}} requires {{amount}} USDT and unlocks {{orbit}} Orbit with new visibility and earning potential.', { level: nextLevel, amount: levelPrices[nextLevel], orbit: levelToOrbitType[nextLevel] })
+                      ? isFounderRepFreeLevel(nextLevel)
+                        ? activationT('nextAction.founderRepFreeText', 'This founder representative wallet can activate the next eligible level without USDT.')
+                        : !isRegistered && nextLevel === 1
+                          ? activationT('nextAction.onboardingText', 'Complete onboarding to register this wallet and activate Level 1 in a single action.')
+                          : activationT('nextAction.levelText', 'Level {{level}} requires {{amount}} USDT and unlocks {{orbit}} Orbit with new visibility and earning potential.', { level: nextLevel, amount: levelPrices[nextLevel], orbit: levelToOrbitType[nextLevel] })
                       : activationT('nextAction.completeText', 'You have activated all 10 levels. Explore the Orbits page to inspect your full network and earnings.')}
                 </p>
 
@@ -2452,16 +2496,18 @@ const ActivationCenterPage = () => {
                       disabled={
                         txStatus.loading ||
                         !canActivateLevel(nextLevel) ||
-                        parseFloat(usdtBalance) <
-                          parseFloat(nextLevel === 1 && !isRegistered ? '10' : levelPrices[nextLevel]) ||
+                        (!isFounderRepFreeLevel(nextLevel) && parseFloat(usdtBalance) <
+                          parseFloat(nextLevel === 1 && !isRegistered ? '10' : levelPrices[nextLevel])) ||
                         networkWarning
                       }
                     >
                       {txStatus.loading
                         ? activationT('states.processing', 'Processing...')
-                        : nextLevel === 1 && !isRegistered
-                          ? activationT('actions.registerAndActivateLevelOne', 'Register & Activate Level 1')
-                          : activationT('actions.activateLevelPrice', 'Activate Level {{level}} ({{amount}} USDT)', { level: nextLevel, amount: levelPrices[nextLevel] })}
+                        : isFounderRepFreeLevel(nextLevel)
+                          ? activationT('actions.activateFounderRepFree', 'Activate Founder Rep Free')
+                          : nextLevel === 1 && !isRegistered
+                            ? activationT('actions.registerAndActivateLevelOne', 'Register & Activate Level 1')
+                            : activationT('actions.activateLevelPrice', 'Activate Level {{level}} ({{amount}} USDT)', { level: nextLevel, amount: levelPrices[nextLevel] })}
                     </button>
                   ) : null}
 
@@ -2637,7 +2683,14 @@ const ActivationCenterPage = () => {
                 <div className="registration-warning registration-warning--spaced">
                   <div className="warning-header">{activationT('registration.onboardingDetails', 'Onboarding Details')}</div>
                   <div className="warning-details">
-                    <div>{activationT('registration.levelOneCost', 'Registration + Level 1:')} <strong>{activationT('levels.onboardingTotal', '10 USDT total')}</strong></div>
+                    <div>
+                      {activationT('registration.levelOneCost', 'Registration + Level 1:')}{' '}
+                      <strong>
+                        {isFounderRepFreeLevel(1)
+                          ? activationT('levels.founderRepFree', 'Founder Rep Free')
+                          : activationT('levels.onboardingTotal', '10 USDT total')}
+                      </strong>
+                    </div>
                     <div>{activationT('registration.balance', 'Your USDT Balance:')} <strong>{usdtBalance} USDT</strong></div>
                     <div>{activationT('registration.allowance', 'Current Allowance:')} <strong>{allowance} USDT</strong></div>
                   </div>
@@ -2697,7 +2750,7 @@ const ActivationCenterPage = () => {
                   </p>
                 </div>
 
-                {parseFloat(usdtBalance) < 10 && (
+                {!isFounderRepFreeLevel(1) && parseFloat(usdtBalance) < 10 && (
                   <div className="insufficient-funds-warning">
                     {activationT('registration.insufficientBalance', 'Insufficient USDT balance. Need 10 USDT for onboarding.')}
                   </div>
@@ -2715,7 +2768,7 @@ const ActivationCenterPage = () => {
                     type="button"
                     className="activation-modal__button activation-modal__button--primary"
                     onClick={handleRegisterFromModal}
-                    disabled={txStatus.loading || referrerResolveLoading || parseFloat(usdtBalance) < 10 || networkWarning}
+                    disabled={txStatus.loading || referrerResolveLoading || (!isFounderRepFreeLevel(1) && parseFloat(usdtBalance) < 10) || networkWarning}
                   >
                     {txStatus.loading || referrerResolveLoading
                       ? activationT('registration.preparing', 'Preparing registration...')

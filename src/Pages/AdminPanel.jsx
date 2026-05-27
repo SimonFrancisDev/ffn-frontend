@@ -23,6 +23,8 @@ import {
 // ============================================================
 const ADMIN_API_HEADER = 'x-admin-key';
 const ADMIN_SESSION_KEY = 'ffn_admin_api_key_session';
+const HIDDEN_MULTISIG_TXS_KEY = 'ffn_hidden_multisig_txs';
+const MULTISIG_RECENT_WINDOW_SECONDS = 7 * 24 * 60 * 60;
 const GAS_BUFFER_BPS = 12000n;
 const GAS_BUFFER_DENOMINATOR = 10000n;
 
@@ -95,6 +97,16 @@ const nftPoolVaultIface = new ethers.Interface([
 );
 
 const boolText = (v) => v ? 'Yes' : 'No';
+const readHiddenMultisigTxs = () => {
+  if (typeof window === 'undefined') return [];
+  try {
+    const parsed = JSON.parse(window.localStorage.getItem(HIDDEN_MULTISIG_TXS_KEY) || '[]');
+    return Array.isArray(parsed) ? parsed.map(String) : [];
+  } catch {
+    return [];
+  }
+};
+
 const emptyFinancialTruth = {
   totalGeneratedVolume: '0.00',
   systemChargeTotal: '0.00',
@@ -634,6 +646,9 @@ export const AdminPanel = () => {
   const [txIdInput, setTxIdInput] = useState('');
   const [multisigTx, setMultisigTx] = useState(null);
   const [recentTxs, setRecentTxs] = useState([]);
+  const [showHiddenTxs, setShowHiddenTxs] = useState(false);
+  const [showExecutedTxs, setShowExecutedTxs] = useState(false);
+  const [hiddenTxIds, setHiddenTxIds] = useState(readHiddenMultisigTxs);
   const [ownerList, setOwnerList] = useState([]);
 
   const [guardianState, setGuardianState] = useState({
@@ -754,6 +769,43 @@ export const AdminPanel = () => {
     const required = Number(multisigStats.requiredConfirmations || 1);
     return Math.min(confirmations / required * 100, 100);
   }, [multisigTx, multisigStats.requiredConfirmations]);
+
+  const visibleRecentTxs = useMemo(() => {
+    const now = Number(multisigStats.currentTimestamp || Math.floor(Date.now() / 1000));
+    return recentTxs.filter((tx) => {
+      const txId = String(tx.txId);
+      const hidden = hiddenTxIds.includes(txId);
+      if (hidden && !showHiddenTxs) return false;
+
+      const executed = Boolean(tx.executed);
+      const submittedAt = Number(tx.submittedAt || 0);
+      const isRecent = submittedAt > 0 && now - submittedAt <= MULTISIG_RECENT_WINDOW_SECONDS;
+      if (executed && !showExecutedTxs && !isRecent) return false;
+
+      return true;
+    });
+  }, [hiddenTxIds, multisigStats.currentTimestamp, recentTxs, showExecutedTxs, showHiddenTxs]);
+
+  const persistHiddenTxIds = useCallback((nextIds) => {
+    const normalized = Array.from(new Set(nextIds.map(String)));
+    setHiddenTxIds(normalized);
+    if (typeof window !== 'undefined') {
+      window.localStorage.setItem(HIDDEN_MULTISIG_TXS_KEY, JSON.stringify(normalized));
+    }
+  }, []);
+
+  const handleHideTx = useCallback((txId) => {
+    persistHiddenTxIds([...hiddenTxIds, String(txId)]);
+  }, [hiddenTxIds, persistHiddenTxIds]);
+
+  const handleUnhideTx = useCallback((txId) => {
+    persistHiddenTxIds(hiddenTxIds.filter((id) => id !== String(txId)));
+  }, [hiddenTxIds, persistHiddenTxIds]);
+
+  const handleHideExecutedTxs = useCallback(() => {
+    const executedIds = recentTxs.filter((tx) => tx.executed).map((tx) => String(tx.txId));
+    persistHiddenTxIds([...hiddenTxIds, ...executedIds]);
+  }, [hiddenTxIds, persistHiddenTxIds, recentTxs]);
 
   const refreshFinancialTruth = useCallback(async () => {
     try {
@@ -2031,6 +2083,22 @@ export const AdminPanel = () => {
                   </div>
                   <div className="admin-body-premium">
                     <div className="admin-subtitle mb-3">{adminT("ui.line1658.everyProposalAppearsHereWithStatus", "Every proposal appears here with status, votes, countdown, and quick actions.")}</div>
+                    <div className="flex-between-premium mb-3" style={{ gap: '8px', flexWrap: 'wrap' }}>
+                      <div className="admin-subtitle">
+                        Showing active proposals and executed history from the last 7 days.
+                      </div>
+                      <div className="flex-between-premium" style={{ gap: '6px', flexWrap: 'wrap' }}>
+                        <button className="btn-premium btn-premium-sm" onClick={() => setShowExecutedTxs((value) => !value)}>
+                          {showExecutedTxs ? 'Hide old executed' : 'Show all executed'}
+                        </button>
+                        <button className="btn-premium btn-premium-sm" onClick={() => setShowHiddenTxs((value) => !value)}>
+                          {showHiddenTxs ? 'Hide hidden' : `Show hidden (${hiddenTxIds.length})`}
+                        </button>
+                        <button className="btn-premium btn-premium-sm" onClick={handleHideExecutedTxs} disabled={!recentTxs.some((tx) => tx.executed)}>
+                          Hide executed
+                        </button>
+                      </div>
+                    </div>
                     <div className="table-responsive" style={{ maxHeight: '400px', overflowY: 'auto' }}>
                       <table className="premium-table">
                         <thead>
@@ -2045,13 +2113,14 @@ export const AdminPanel = () => {
                           </tr>
                         </thead>
                         <tbody>
-                          {recentTxs.length === 0 &&
+                          {visibleRecentTxs.length === 0 &&
                         <tr><td colSpan={7} style={{ textAlign: 'center', color: 'rgba(255,255,255,0.4)' }}>{adminT("ui.line1674.noTransactionsFound", "No transactions found.")}</td></tr>
                         }
-                          {recentTxs.map((tx) => {
+                          {visibleRecentTxs.map((tx) => {
                           const stage = getStageFromTx(tx);
                           const secs = Math.max(Number(tx.executeAfter || 0) - Number(multisigStats.currentTimestamp || 0), 0);
                           const currentOwnerApproval = tx.approvals?.find((a) => a.owner.toLowerCase() === account?.toLowerCase());
+                          const hidden = hiddenTxIds.includes(String(tx.txId));
                           return (
                             <tr key={tx.txId} className="tx-row-premium">
                                 <td className="fw-bold text-glow">{tx.txId}</td>
@@ -2069,6 +2138,10 @@ export const AdminPanel = () => {
                                     <button className="btn-premium btn-premium-sm" onClick={() => handleApproveTx(tx.txId)} disabled={tx.executed || currentOwnerApproval?.approved}>{adminT("ui.actions.approve", "Approve")}</button>
                                     <button className="btn-premium btn-premium-sm" onClick={() => handleRevokeTx(tx.txId)} disabled={tx.executed || !currentOwnerApproval?.approved}>{adminT("ui.actions.revoke", "Revoke")}</button>
                                     <button className="btn-premium btn-premium-sm" onClick={() => handleExecuteTx(tx.txId)} disabled={tx.executed || stage.variant !== 'primary'}>{adminT("ui.actions.execute", "Execute")}</button>
+                                    {hidden ?
+                                    <button className="btn-premium btn-premium-sm" onClick={() => handleUnhideTx(tx.txId)}>Unhide</button> :
+                                    <button className="btn-premium btn-premium-sm" onClick={() => handleHideTx(tx.txId)}>Hide</button>
+                                    }
                                   </div>
                                 </td>
                               </tr>);

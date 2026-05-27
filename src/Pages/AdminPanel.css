@@ -973,6 +973,13 @@ select.input-premium:focus {
    ========================================================= */
 .table-responsive { -webkit-overflow-scrolling: touch; }
 
+.admin-queue-table-wrap {
+  max-height: 400px;
+  overflow-x: auto;
+  overflow-y: auto;
+  overscroll-behavior: contain;
+}
+
 @media (prefers-reduced-motion: reduce) {
   *, *::before, *::after {
     animation-duration: 0.01ms !important;
@@ -1042,6 +1049,13 @@ select.input-premium:focus {
   .table-responsive { 
     overflow-x: auto !important; 
     overflow-y: hidden !important;
+  }
+
+  .admin-queue-table-wrap {
+    max-height: 65vh !important;
+    overflow-x: auto !important;
+    overflow-y: auto !important;
+    -webkit-overflow-scrolling: touch;
   }
 }
 

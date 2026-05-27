@@ -210,7 +210,8 @@ const formatLaunchCountdown = (nowMs) => {
   const configuredTarget = PUBLIC_LAUNCH_AT ? Date.parse(PUBLIC_LAUNCH_AT) : NaN
   const targetMs = Number.isFinite(configuredTarget)
     ? configuredTarget
-    : Date.UTC(2026, 4, 27, 10, 0, 0, 0)
+    // : Date.UTC(2026, 4, 27, 10, 0, 0, 0)
+    :Date.UTC(2026, 4, 27, 12, 0, 0, 0)
   const remaining = Math.max(0, targetMs - nowMs)
   const hours = Math.floor(remaining / 3600000)
   const minutes = Math.floor((remaining % 3600000) / 60000)

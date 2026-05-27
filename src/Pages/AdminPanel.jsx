@@ -49,6 +49,11 @@ const getRuntimeAdminKey = () => {
   return '';
 };
 
+const clearRuntimeAdminKey = () => {
+  if (typeof window === 'undefined') return;
+  window.sessionStorage.removeItem(ADMIN_SESSION_KEY);
+};
+
 const levelManagerAdminIface = new ethers.Interface([
 'function pause()',
 'function unpause()',
@@ -188,6 +193,9 @@ const adminApi = async (endpoint, options = {}) => {
   });
   const payload = await response.json().catch(() => null);
   if (!response.ok) {
+    if (response.status === 401 || response.status === 403) {
+      clearRuntimeAdminKey();
+    }
     throw new Error(payload?.message || `Request failed: ${response.status}`);
   }
   return payload;
@@ -916,38 +924,37 @@ export const AdminPanel = () => {
   // Community Content API Functions
   // ============================================================
   const fetchAnnouncements = useCallback(async () => {
-    try {
-      const res = await adminApi('/api/admin/community/announcements');
-      setAnnouncements(res.data || []);
-    } catch (err) {console.error('Fetch announcements failed:', err);}
+    const res = await adminApi('/api/admin/community/announcements');
+    setAnnouncements(res.data || []);
   }, []);
 
   const fetchEvents = useCallback(async () => {
-    try {
-      const res = await adminApi('/api/admin/community/events');
-      setEvents(res.data || []);
-    } catch (err) {console.error('Fetch events failed:', err);}
+    const res = await adminApi('/api/admin/community/events');
+    setEvents(res.data || []);
   }, []);
 
   const fetchSocialLinks = useCallback(async () => {
-    try {
-      const res = await adminApi('/api/admin/community/social-links');
-      setSocialLinks(res.data || []);
-    } catch (err) {console.error('Fetch social links failed:', err);}
+    const res = await adminApi('/api/admin/community/social-links');
+    setSocialLinks(res.data || []);
   }, []);
 
   const fetchResources = useCallback(async () => {
-    try {
-      const res = await adminApi('/api/admin/community/resources');
-      setResources(res.data || []);
-    } catch (err) {console.error('Fetch resources failed:', err);}
+    const res = await adminApi('/api/admin/community/resources');
+    setResources(res.data || []);
   }, []);
 
   const fetchAllContent = useCallback(async () => {
     setContentLoading(true);
-    await Promise.all([fetchAnnouncements(), fetchEvents(), fetchSocialLinks(), fetchResources()]);
-    setContentLoading(false);
-  }, [fetchAnnouncements, fetchEvents, fetchSocialLinks, fetchResources]);
+    try {
+      await Promise.all([fetchAnnouncements(), fetchEvents(), fetchSocialLinks(), fetchResources()]);
+    } catch (err) {
+      const message = err?.message || 'Admin API key validation failed';
+      setErrorTx(message);
+      toast.danger(message, { dedupeKey: `admin-api-key-${message}` });
+    } finally {
+      setContentLoading(false);
+    }
+  }, [fetchAnnouncements, fetchEvents, fetchSocialLinks, fetchResources, toast]);
 
   const handleCreateContent = async () => {
     const endpoints = {

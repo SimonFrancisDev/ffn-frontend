@@ -330,13 +330,14 @@ function LaunchGate({ nowMs }) {
   return (
     <main className="launch-gate">
       <section className="launch-gate__card">
+        <div className="launch-gate__brand-mark" aria-hidden="true">F</div>
         <p className="launch-gate__eyebrow">Fin Freedom Network</p>
-        <h1>Coming Soon</h1>
-        <p className="launch-gate__text">Public access opens {launchText}</p>
+        <h1>Launching Soon</h1>
+        <p className="launch-gate__text">A new access experience is being prepared for the community.</p>
         <div className="launch-gate__countdown" aria-label={`Time left: ${countdown}`}>
           {countdown}
         </div>
-        <p className="launch-gate__note">A secure access phase is currently in progress.</p>
+        <p className="launch-gate__note">Public access opens {launchText}</p>
       </section>
     </main>
   )

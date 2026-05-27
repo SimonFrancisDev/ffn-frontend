@@ -3698,6 +3698,39 @@ body {
 }
 
 /* MINI GRAPH: bars spaced, dates under bars */
+.mini-chart-shell {
+  width: 100% !important;
+  min-width: 0 !important;
+  display: grid !important;
+  grid-template-columns: 30px minmax(0, 1fr) !important;
+  align-items: stretch !important;
+  gap: 10px !important;
+  margin-top: 10px !important;
+}
+
+.mini-chart-scale {
+  height: 132px !important;
+  display: flex !important;
+  flex-direction: column !important;
+  justify-content: space-between !important;
+  align-items: flex-end !important;
+  padding: 14px 0 28px !important;
+  border-right: 1px solid rgba(148, 163, 184, 0.22) !important;
+  color: var(--text-secondary) !important;
+  font-size: 9px !important;
+  font-weight: 850 !important;
+  line-height: 1 !important;
+  text-align: right !important;
+}
+
+.metric-card .mini-chart-scale span {
+  width: 100% !important;
+  display: block !important;
+  opacity: 0.74 !important;
+  font-size: 9px !important;
+  text-align: right !important;
+}
+
 .mini-chart {
   width: 100% !important;
   min-height: 150px !important;
@@ -3798,6 +3831,21 @@ body {
 
   .metric-card {
     padding: 16px 10px !important;
+  }
+
+  .mini-chart-shell {
+    grid-template-columns: 26px minmax(0, 1fr) !important;
+    gap: 8px !important;
+  }
+
+  .mini-chart-scale {
+    height: 132px !important;
+    padding: 14px 0 28px !important;
+    font-size: 8px !important;
+  }
+
+  .metric-card .mini-chart-scale span {
+    font-size: 8px !important;
   }
 
   .mini-chart {

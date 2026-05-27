@@ -225,6 +225,17 @@ const getLaunchTargetMs = () => {
   return Number.isFinite(configuredTarget) ? configuredTarget : null
 }
 
+const formatLaunchUtcText = (targetMs) => {
+  if (!targetMs) return 'Opening soon'
+  const date = new Date(targetMs)
+  const month = date.toLocaleString('en-US', { month: 'short', timeZone: 'UTC' })
+  const day = date.getUTCDate()
+  const year = date.getUTCFullYear()
+  const hours = String(date.getUTCHours()).padStart(2, '0')
+  const minutes = String(date.getUTCMinutes()).padStart(2, '0')
+  return `${month} ${day}, ${year}, ${hours}:${minutes} UTC`
+}
+
 const isLaunchGateOpen = (nowMs = Date.now()) => {
   if (LAUNCH_GATE_MODE === 'open') return true
 
@@ -323,16 +334,23 @@ function RouteAccessFallback({ title = 'Page access required', message }) {
 function LaunchGate({ nowMs }) {
   const launchTargetMs = getLaunchTargetMs()
   const countdown = formatLaunchCountdown(nowMs)
-  const launchText = launchTargetMs
-    ? new Date(launchTargetMs).toLocaleString()
-    : 'Opening soon'
+  const launchText = formatLaunchUtcText(launchTargetMs)
 
   return (
     <main className="launch-gate">
       <section className="launch-gate__card">
-        <div className="launch-gate__brand-mark" aria-hidden="true">F</div>
+        <div className="launch-gate__logo-wrap">
+          <img
+            src="/images/official_logo_2.png"
+            alt="Fin Freedom Network"
+            className="launch-gate__logo"
+          />
+        </div>
         <p className="launch-gate__eyebrow">Fin Freedom Network</p>
-        <h1>Launching Soon</h1>
+        <h1 className="launch-gate__title">
+          <span>Launching</span>
+          <strong>Soon</strong>
+        </h1>
         <p className="launch-gate__text">A new access experience is being prepared for the community.</p>
         <div className="launch-gate__countdown" aria-label={`Time left: ${countdown}`}>
           {countdown}

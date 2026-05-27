@@ -39,6 +39,7 @@
     inset 0 0 80px rgba(94, 234, 212, 0.045),
     0 0 120px rgba(59, 130, 246, 0.08);
   pointer-events: none;
+  animation: launchHaloPulse 7s ease-in-out infinite;
 }
 
 .launch-gate__card {
@@ -57,22 +58,33 @@
     inset 0 1px 0 rgba(255, 255, 255, 0.14);
   backdrop-filter: blur(22px);
   -webkit-backdrop-filter: blur(22px);
+  animation: launchCardFloat 8s ease-in-out infinite;
 }
 
-.launch-gate__brand-mark {
-  width: 66px;
-  height: 66px;
-  margin: 0 auto 20px;
+.launch-gate__logo-wrap {
+  width: clamp(130px, 22vw, 210px);
+  height: clamp(96px, 16vw, 150px);
+  margin: 0 auto 18px;
   display: grid;
   place-items: center;
-  border-radius: 22px;
-  color: #02131f;
-  background: linear-gradient(135deg, #fef3c7, #5eead4 54%, #93c5fd);
+  border-radius: 30px;
+  background:
+    radial-gradient(circle at 50% 40%, rgba(255, 255, 255, 0.16), transparent 54%),
+    linear-gradient(135deg, rgba(255, 255, 255, 0.08), rgba(94, 234, 212, 0.05));
+  border: 1px solid rgba(191, 219, 254, 0.18);
   box-shadow:
-    0 16px 42px rgba(94, 234, 212, 0.22),
-    inset 0 1px 0 rgba(255, 255, 255, 0.8);
-  font-size: 2rem;
-  font-weight: 950;
+    0 18px 54px rgba(0, 0, 0, 0.26),
+    0 0 42px rgba(94, 234, 212, 0.12),
+    inset 0 1px 0 rgba(255, 255, 255, 0.12);
+  animation: launchLogoGlow 5s ease-in-out infinite;
+}
+
+.launch-gate__logo {
+  width: 86%;
+  max-height: 118px;
+  display: block;
+  object-fit: contain;
+  filter: drop-shadow(0 18px 26px rgba(0, 0, 0, 0.28));
 }
 
 .launch-gate__eyebrow {
@@ -84,14 +96,36 @@
   text-transform: uppercase;
 }
 
-.launch-gate h1 {
+.launch-gate__title {
   margin: 0;
-  color: #ffffff;
   font-size: clamp(2.8rem, 9vw, 6rem);
   font-weight: 950;
   line-height: 0.94;
   letter-spacing: 0;
   text-shadow: 0 18px 54px rgba(59, 130, 246, 0.2);
+  display: grid;
+  gap: 2px;
+}
+
+.launch-gate__title span,
+.launch-gate__title strong {
+  display: block;
+  animation: launchTitleDrift 4.8s ease-in-out infinite;
+}
+
+.launch-gate__title span {
+  color: #ffffff;
+}
+
+.launch-gate__title strong {
+  color: transparent;
+  background: linear-gradient(90deg, #fef3c7, #5eead4, #93c5fd, #fef3c7);
+  background-size: 260% 100%;
+  -webkit-background-clip: text;
+  background-clip: text;
+  animation:
+    launchGradientText 3.8s linear infinite,
+    launchTitleDrift 4.8s ease-in-out infinite reverse;
 }
 
 .launch-gate__text {
@@ -119,6 +153,7 @@
   font-weight: 950;
   line-height: 1.2;
   letter-spacing: 0;
+  animation: launchCountdownPulse 2.8s ease-in-out infinite;
 }
 
 .launch-gate__note {
@@ -132,9 +167,96 @@
     border-radius: 24px;
   }
 
-  .launch-gate__brand-mark {
-    width: 58px;
-    height: 58px;
-    border-radius: 19px;
+  .launch-gate__logo-wrap {
+    width: 142px;
+    height: 104px;
+    border-radius: 24px;
+  }
+}
+
+@keyframes launchCardFloat {
+  0%,
+  100% {
+    transform: translateY(0);
+  }
+
+  50% {
+    transform: translateY(-8px);
+  }
+}
+
+@keyframes launchHaloPulse {
+  0%,
+  100% {
+    transform: scale(1);
+    opacity: 0.9;
+  }
+
+  50% {
+    transform: scale(1.06);
+    opacity: 0.55;
+  }
+}
+
+@keyframes launchLogoGlow {
+  0%,
+  100% {
+    box-shadow:
+      0 18px 54px rgba(0, 0, 0, 0.26),
+      0 0 42px rgba(94, 234, 212, 0.12),
+      inset 0 1px 0 rgba(255, 255, 255, 0.12);
+  }
+
+  50% {
+    box-shadow:
+      0 20px 64px rgba(0, 0, 0, 0.32),
+      0 0 66px rgba(250, 204, 21, 0.16),
+      0 0 56px rgba(94, 234, 212, 0.16),
+      inset 0 1px 0 rgba(255, 255, 255, 0.18);
+  }
+}
+
+@keyframes launchTitleDrift {
+  0%,
+  100% {
+    transform: translateY(0);
+  }
+
+  50% {
+    transform: translateY(-3px);
+  }
+}
+
+@keyframes launchGradientText {
+  from {
+    background-position: 0% 50%;
+  }
+
+  to {
+    background-position: 260% 50%;
+  }
+}
+
+@keyframes launchCountdownPulse {
+  0%,
+  100% {
+    transform: scale(1);
+    border-color: rgba(253, 224, 71, 0.28);
+  }
+
+  50% {
+    transform: scale(1.018);
+    border-color: rgba(94, 234, 212, 0.38);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .launch-gate::after,
+  .launch-gate__card,
+  .launch-gate__logo-wrap,
+  .launch-gate__title span,
+  .launch-gate__title strong,
+  .launch-gate__countdown {
+    animation: none;
   }
 }

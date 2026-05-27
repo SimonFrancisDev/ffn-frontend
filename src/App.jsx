@@ -41,7 +41,7 @@ import {
   markNotificationRead,
 } from './Services/notificationsApi'
 import { fetchTelegramStatus } from './Services/telegramApi'
-import { DollarSign, TrendingUp, Wrench, Bell, Calendar, M
+import { DollarSign, TrendingUp, Wrench, Bell, Calendar, Megaphone } from 'lucide-react'
 
 // const navItems = [
 //   { label: 'Home', href: 'home', active: false },
@@ -52,6 +52,7 @@ import { DollarSign, TrendingUp, Wrench, Bell, Calendar, M
 //   { label: 'Community', href: 'community', active: false },
 //   { label: 'Support', href: 'support', active: false },
 // ]
+
 
 const navItems = [
   { label: 'Home', href: 'home', active: false },

@@ -321,56 +321,22 @@ function RouteAccessFallback({ title = 'Page access required', message }) {
 }
 
 function LaunchGate({ nowMs }) {
-  const [codeInput, setCodeInput] = useState('')
-  const [error, setError] = useState('')
   const launchTargetMs = getLaunchTargetMs()
   const countdown = formatLaunchCountdown(nowMs)
   const launchText = launchTargetMs
     ? new Date(launchTargetMs).toLocaleString()
     : 'Opening soon'
 
-  const submitAccessCode = (event) => {
-    event.preventDefault()
-    if (!EARLY_ACCESS_CODE || codeInput.trim() !== EARLY_ACCESS_CODE) {
-      setError('Invalid early access code')
-      return
-    }
-
-    window.sessionStorage.setItem(EARLY_ACCESS_STORAGE_KEY, '1')
-    window.location.assign('/home')
-  }
-
   return (
-    <main className="route-access-fallback">
-      <section className="route-access-fallback__card">
-        <p className="route-access-fallback__eyebrow">Fin Freedom Network</p>
+    <main className="launch-gate">
+      <section className="launch-gate__card">
+        <p className="launch-gate__eyebrow">Fin Freedom Network</p>
         <h1>Coming Soon</h1>
-        <p>Public access opens {launchText}. Time left: {countdown}</p>
-        {LAUNCH_GATE_MODE === 'early' ? (
-          <form onSubmit={submitAccessCode} style={{ display: 'grid', gap: '12px', marginTop: '20px' }}>
-            <input
-              value={codeInput}
-              onChange={(event) => {
-                setCodeInput(event.target.value)
-                setError('')
-              }}
-              placeholder="Early access code"
-              aria-label="Early access code"
-              style={{
-                width: '100%',
-                border: '1px solid rgba(255,255,255,0.18)',
-                borderRadius: '8px',
-                padding: '12px 14px',
-                background: 'rgba(255,255,255,0.08)',
-                color: 'inherit',
-              }}
-            />
-            {error ? <p style={{ color: '#fca5a5', margin: 0 }}>{error}</p> : null}
-            <button type="submit" className="route-access-fallback__button">
-              Enter
-            </button>
-          </form>
-        ) : null}
+        <p className="launch-gate__text">Public access opens {launchText}</p>
+        <div className="launch-gate__countdown" aria-label={`Time left: ${countdown}`}>
+          {countdown}
+        </div>
+        <p className="launch-gate__note">A secure access phase is currently in progress.</p>
       </section>
     </main>
   )

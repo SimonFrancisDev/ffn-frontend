@@ -90,7 +90,7 @@ const TELEGRAM_PROMPT_DISMISSED_KEY = 'finfreedom_telegram_prompt_dismissed_v1'
 const TELEGRAM_PROMPT_SESSION_KEY = 'finfreedom_telegram_prompt_seen_v1'
 const TESTNET_REMINDER_SEEN_KEY = 'finfreedom_testnet_reminder_seen_v1'
 const EARLY_ACCESS_STORAGE_KEY = 'finfreedom_early_access_v1'
-const LAUNCH_GATE_MODE = String(import.meta.env.VITE_LAUNCH_GATE_MODE || 'open').toLowerCase()
+const LAUNCH_GATE_MODE = String(import.meta.env.VITE_LAUNCH_GATE_MODE || 'closed').toLowerCase()
 const EARLY_ACCESS_CODE = String(import.meta.env.VITE_EARLY_ACCESS_CODE || '').trim()
 const PUBLIC_LAUNCH_AT = String(import.meta.env.VITE_PUBLIC_LAUNCH_AT || '').trim()
 
@@ -209,16 +209,15 @@ const resolveThemeMode = (theme) => {
 
 const formatLaunchCountdown = (nowMs) => {
   const configuredTarget = PUBLIC_LAUNCH_AT ? Date.parse(PUBLIC_LAUNCH_AT) : NaN
-  const targetMs = Number.isFinite(configuredTarget)
-    ? configuredTarget
-    : Date.UTC(2026, 4, 27, 12, 0, 0, 0)
+  if (!Number.isFinite(configuredTarget)) return '00:00:00'
+
+  const targetMs = configuredTarget
   const remaining = Math.max(0, targetMs - nowMs)
   const hours = Math.floor(remaining / 3600000)
   const minutes = Math.floor((remaining % 3600000) / 60000)
   const seconds = Math.floor((remaining % 60000) / 1000)
-  const milliseconds = remaining % 1000
-  const pad = (value, size = 2) => String(value).padStart(size, '0')
-  return `${pad(hours)}:${pad(minutes)}:${pad(seconds)}:${pad(milliseconds, 3)}`
+  const pad = (value) => String(value).padStart(2, '0')
+  return `${pad(hours)}:${pad(minutes)}:${pad(seconds)}`
 }
 
 const getLaunchTargetMs = () => {
@@ -240,18 +239,20 @@ const formatLaunchUtcText = (targetMs) => {
 const isLaunchGateOpen = (nowMs = Date.now()) => {
   if (LAUNCH_GATE_MODE === 'open') return true
 
-  const launchTargetMs = getLaunchTargetMs()
-  if (launchTargetMs && nowMs >= launchTargetMs) return true
-
   if (LAUNCH_GATE_MODE !== 'early' && LAUNCH_GATE_MODE !== 'closed') return true
 
   if (typeof window === 'undefined') return false
 
   const params = new URLSearchParams(window.location.search)
-  const suppliedCode = params.get('code') || params.get('access') || ''
+  const suppliedCode = params.get('access') || params.get('code') || ''
   if (EARLY_ACCESS_CODE && suppliedCode === EARLY_ACCESS_CODE) {
     window.sessionStorage.setItem(EARLY_ACCESS_STORAGE_KEY, '1')
     return true
+  }
+
+  if (LAUNCH_GATE_MODE === 'early') {
+    const launchTargetMs = getLaunchTargetMs()
+    if (launchTargetMs && nowMs >= launchTargetMs) return true
   }
 
   return window.sessionStorage.getItem(EARLY_ACCESS_STORAGE_KEY) === '1'
@@ -333,9 +334,8 @@ function RouteAccessFallback({ title = 'Page access required', message }) {
 }
 
 function LaunchGate({ nowMs }) {
-  const launchTargetMs = getLaunchTargetMs()
   const countdown = formatLaunchCountdown(nowMs)
-  const launchText = formatLaunchUtcText(launchTargetMs)
+  const launchText = PUBLIC_LAUNCH_AT ? formatLaunchUtcText(getLaunchTargetMs()) : 'Stay tuned'
 
   return (
     <main className="launch-gate">
@@ -352,11 +352,11 @@ function LaunchGate({ nowMs }) {
           <span>Launching</span>
           <strong>Soon</strong>
         </h1>
-        <p className="launch-gate__text">A new access experience is being prepared for the community.</p>
+        <p className="launch-gate__text">Launching soon. Stay tuned.</p>
         <div className="launch-gate__countdown" aria-label={`Time left: ${countdown}`}>
           {countdown}
         </div>
-        <p className="launch-gate__note">Public access opens {launchText}</p>
+        <p className="launch-gate__note">{launchText}</p>
       </section>
     </main>
   )

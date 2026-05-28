@@ -227,7 +227,7 @@ export function clearAddressScopedOrbitsApiCache(address) {
 export async function fetchOrbitLevelsApi(address, options = {}) {
   return apiGet(
     `/api/orbits/${encodeURIComponent(address)}/levels`,
-    null,
+    options.query || null,
     {
       ttlMs: CACHE_TTLS.orbitLevels,
       timeoutMs: FAST_REQUEST_TIMEOUT_MS,
@@ -239,7 +239,7 @@ export async function fetchOrbitLevelsApi(address, options = {}) {
 export async function fetchOrbitLevelSnapshotApi(address, level, options = {}) {
   return apiGet(
     `/api/orbits/${encodeURIComponent(address)}/level/${encodeURIComponent(level)}`,
-    null,
+    options.query || null,
     {
       ttlMs: CACHE_TTLS.orbitLevelSnapshot,
       timeoutMs: FAST_REQUEST_TIMEOUT_MS,
@@ -256,7 +256,7 @@ export async function fetchOrbitPositionDetailsApi(
 ) {
   return apiGet(
     `/api/orbits/${encodeURIComponent(address)}/level/${encodeURIComponent(level)}/position/${encodeURIComponent(position)}`,
-    null,
+    options.query || null,
     {
       ttlMs: CACHE_TTLS.orbitPositionDetails,
       timeoutMs: DEFAULT_REQUEST_TIMEOUT_MS,
@@ -273,7 +273,7 @@ export async function fetchOrbitCycleSnapshotApi(
 ) {
   return apiGet(
     `/api/orbits/${encodeURIComponent(address)}/level/${encodeURIComponent(level)}/cycle/${encodeURIComponent(cycleNumber)}`,
-    null,
+    options.query || null,
     {
       ttlMs: CACHE_TTLS.orbitCycleSnapshot,
       timeoutMs: DEFAULT_REQUEST_TIMEOUT_MS,
@@ -285,7 +285,7 @@ export async function fetchOrbitCycleSnapshotApi(
 export async function fetchAddressReceiptsApi(address, level, options = {}) {
   return apiGet(
     `/api/receipts/address/${encodeURIComponent(address)}`,
-    { level },
+    { level, ...(options.query || {}) },
     {
       ttlMs: CACHE_TTLS.addressReceipts,
       timeoutMs: DEFAULT_REQUEST_TIMEOUT_MS,
@@ -324,7 +324,7 @@ export async function fetchActivationReceiptsApi(activationId, options = {}) {
 export async function fetchUserSummaryApi(address, options = {}) {
   return apiGet(
     `/api/orbits/${encodeURIComponent(address)}/summary`,
-    null,
+    options.query || null,
     {
       ttlMs: 15000,
       timeoutMs: DEFAULT_REQUEST_TIMEOUT_MS,

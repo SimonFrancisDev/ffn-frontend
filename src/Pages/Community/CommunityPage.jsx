@@ -5,6 +5,7 @@ import { useNavigate } from 'react-router-dom'
 import { useWallet } from '../../hooks/useWallet'
 import { useSpace } from '../../context/SpaceContext'
 import { getApiUrl } from '../../Services/apiConfig'
+import { buildProfileReadQueryIfLocked, buildProfileReadUrl } from '../../Services/profilePrivacyApi'
 import { resolveIdentity } from '../../utils/identityResolver'
 import { Modal } from '../../components/overlay'
 import { useToast } from '../../components/feedback'
@@ -106,7 +107,8 @@ function HeroSlide({ slide, active }) {
 }
 
 async function fetchJson(path, options = {}) {
-  const response = await fetch(getApiUrl(path), {
+  const url = /^https?:\/\//i.test(path) ? path : getApiUrl(path)
+  const response = await fetch(url, {
     headers: {
       'Content-Type': 'application/json',
       ...(options.headers || {}),
@@ -282,6 +284,8 @@ const CommunityPage = ({ onNavigate }) => {
   const [isLeaderboardModalOpen, setIsLeaderboardModalOpen] = useState(false)
   const [profileInput, setProfileInput] = useState('')
   const [profileError, setProfileError] = useState('')
+  const [profileLocked, setProfileLocked] = useState(false)
+  const [profileLockedMessage, setProfileLockedMessage] = useState('')
   
 
   const [publicReadStats, setPublicReadStats] = useState({
@@ -495,6 +499,11 @@ const CommunityPage = ({ onNavigate }) => {
     return shortAddress(resolvedAddress)
   }, [resolvedAddress, shortAddress])
 
+  const getProfileReadQuery = useCallback(async () => {
+    if (!resolvedAddress || !isOwnSpace) return null
+    return buildProfileReadQueryIfLocked(resolvedAddress).catch(() => null)
+  }, [resolvedAddress, isOwnSpace])
+
   const leaderboardItems = leaderboardState.items || []
   const announcementItems = announcementState.items || []
   const eventItems = eventState.items || []
@@ -557,12 +566,12 @@ const CommunityPage = ({ onNavigate }) => {
     Boolean(memberSummary?.isRegistered) || isSystemWallet
 
   const shouldShowPrivateMoneyMetrics =
-    !isCheckingRegistration && isRegisteredUser
+    !isCheckingRegistration && isRegisteredUser && !profileLocked
 
   const shouldShowPublicOnlyMetrics =
-    isCheckingRegistration || !isRegisteredUser
+    isCheckingRegistration || !isRegisteredUser || profileLocked
 
-  const canShowJoinPrompt = !isCheckingRegistration && !isRegisteredUser
+  const canShowJoinPrompt = !profileLocked && !isCheckingRegistration && !isRegisteredUser
 
   useEffect(() => {
     const interval = setInterval(() => {
@@ -743,7 +752,22 @@ const CommunityPage = ({ onNavigate }) => {
     setIsCheckingRegistration(true)
 
     try {
-      const payload = await fetchJson(`/api/community/member/${resolvedAddress}/summary`)
+      const readQuery = await getProfileReadQuery()
+      const payload = await fetchJson(buildProfileReadUrl(`/api/community/member/${resolvedAddress}/summary`, readQuery))
+      if (payload?.locked && !isOwnSpace) {
+        const message = payload.message || communityT('profile.lockedMessage', 'This profile is locked. You cannot view this profile.')
+        setProfileLocked(true)
+        setProfileLockedMessage(message)
+        setMemberSummary(null)
+        setUserReferralCount(0)
+        setUserCommission('0.00')
+        setDownlineStats({})
+        setOrbitNetwork({})
+        return
+      }
+
+      setProfileLocked(false)
+      setProfileLockedMessage('')
       const data = payload?.data || {}
 
       setMemberSummary({
@@ -763,17 +787,20 @@ const CommunityPage = ({ onNavigate }) => {
     } finally {
       setIsCheckingRegistration(false)
     }
-  }, [resolvedAddress])
+  }, [resolvedAddress, isOwnSpace, getProfileReadQuery, communityT])
 
   const fetchUserReferralStats = useCallback(async () => {
     if (!resolvedAddress) return
+    if (profileLocked && !isOwnSpace) return
     try {
       if (!isOwnSpace) {
         setUserReferralCount(0)
         setUserCommission('0.00')
         return
       }
-      const payload = await fetchJson(`/api/community/member/${resolvedAddress}/referrals`)
+      const readQuery = await getProfileReadQuery()
+      const payload = await fetchJson(buildProfileReadUrl(`/api/community/member/${resolvedAddress}/referrals`, readQuery))
+      if (payload?.locked && !isOwnSpace) return
       const data = payload?.data || {}
       setUserReferralCount(Number(data.totalReferrals || 0))
       setUserCommission(
@@ -786,12 +813,15 @@ const CommunityPage = ({ onNavigate }) => {
       setUserReferralCount(0)
       setUserCommission('0.00')
     }
-  }, [resolvedAddress, isOwnSpace])
+  }, [resolvedAddress, isOwnSpace, profileLocked, getProfileReadQuery])
 
   const fetchUserDownline = useCallback(async () => {
     if (!resolvedAddress) return
+    if (profileLocked && !isOwnSpace) return
     try {
-      const payload = await fetchJson(`/api/community/member/${resolvedAddress}/orbit-network`)
+      const readQuery = await getProfileReadQuery()
+      const payload = await fetchJson(buildProfileReadUrl(`/api/community/member/${resolvedAddress}/orbit-network`, readQuery))
+      if (payload?.locked && !isOwnSpace) return
       const data = payload?.data || {}
       const levels = data.levels || {}
       setOrbitNetwork(levels)
@@ -815,7 +845,7 @@ const CommunityPage = ({ onNavigate }) => {
       console.error('Error fetching downline:', err)
       setDownlineEarnings({})
     }
-  }, [resolvedAddress])
+  }, [resolvedAddress, isOwnSpace, profileLocked, getProfileReadQuery])
 
   const fetchLeaderboard = useCallback(async () => {
     try {
@@ -1199,6 +1229,30 @@ const CommunityPage = ({ onNavigate }) => {
         >
           <BadgeInfo size={22} />
         </button>
+      ) : null}
+
+      {profileLocked && !isOwnSpace ? (
+        <CommunitySection
+          eyebrow={communityT('profile.lockedEyebrow', 'Private Profile')}
+          title={communityT('profile.lockedTitle', 'Profile locked')}
+          text={profileLockedMessage || communityT('profile.lockedMessage', 'This profile is locked. You cannot view this profile.')}
+          className="community-member-dashboard-section"
+        >
+          <div className="community-panel-empty glass-panel">
+            <ShieldCheck size={18} style={{ color: 'var(--glow-blue)' }} />
+            <div>
+              <strong className="community-panel-empty__title">
+                {communityT('profile.lockedTitle', 'Profile locked')}
+              </strong>
+              <p className="community-panel-empty__text soft-text">
+                {profileLockedMessage || communityT('profile.lockedMessage', 'This profile is locked. You cannot view this profile.')}
+              </p>
+              <button type="button" onClick={handleReturnToMyProfile}>
+                {communityT('profile.actions.return', 'Return to my profile')}
+              </button>
+            </div>
+          </div>
+        </CommunitySection>
       ) : null}
 
       <CommunitySection

@@ -23,6 +23,7 @@ import {
   fetchUserSummaryApi,
   fetchOrbitLevelSnapshotApi,
 } from '../../Services/orbitsApi'
+import { buildProfileReadQueryIfLocked } from '../../Services/profilePrivacyApi'
 
 import {
   FaCoins,
@@ -320,6 +321,11 @@ const ActivationCenterPage = () => {
 
   const canWriteHere = isOwnSpace && canTransact && isViewerConnectedWallet
 
+  const getProfileReadQuery = useCallback(async () => {
+    if (!viewer || !isOwnSpace) return null
+    return buildProfileReadQueryIfLocked(viewer).catch(() => null)
+  }, [viewer, isOwnSpace])
+
   // ==================== SIMPLE REFERRAL HELPERS ====================
   const fetchMyReferralCode = useCallback(async () => {
     const targetAddress = viewer || account
@@ -421,7 +427,9 @@ const ActivationCenterPage = () => {
     }
 
     try {
-      const summary = await fetchUserSummaryApi(viewer)
+      const summary = await fetchUserSummaryApi(viewer, {
+        query: await getProfileReadQuery(),
+      })
       const byLevel = Array.isArray(summary?.earnings?.byLevel)
         ? summary.earnings.byLevel
         : []
@@ -448,7 +456,7 @@ const ActivationCenterPage = () => {
       console.error('Failed to fetch user financial summary:', err)
       setFinancialByLevel({})
     }
-  }, [viewer])
+  }, [viewer, getProfileReadQuery])
 
 
 
@@ -689,7 +697,9 @@ const ActivationCenterPage = () => {
       if (!viewer || !isRegistered) return null
 
       try {
-        const snapshot = await fetchOrbitLevelSnapshotApi(viewer, level)
+        const snapshot = await fetchOrbitLevelSnapshotApi(viewer, level, {
+          query: await getProfileReadQuery(),
+        })
         if (!snapshot) return null
 
         const positions = snapshot.positions || []
@@ -744,7 +754,7 @@ const ActivationCenterPage = () => {
         return null
       }
     },
-    [viewer, isRegistered]
+    [viewer, isRegistered, getProfileReadQuery]
   )
 
 

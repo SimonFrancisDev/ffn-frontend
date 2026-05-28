@@ -8,6 +8,7 @@ import { useSpace } from '../../context/SpaceContext'
 import { ethers } from 'ethers'
 import { fetchUserSummaryApi } from '../../Services/orbitsApi'
 import { getApiUrl } from '../../Services/apiConfig'
+import { buildProfileReadQueryIfLocked, buildProfileReadUrl } from '../../Services/profilePrivacyApi'
 import { resolveIdentity } from '../../utils/identityResolver'
 import { NETWORK_CONFIG } from '../../constants/addresses'
 import { useToast } from '../../components/feedback'
@@ -42,6 +43,8 @@ const AccountPage = () => {
   const [downlineStats, setDownlineStats] = useState(null)
   const [orbitNetwork, setOrbitNetwork] = useState(null)
   const [showAllDirectReferrals, setShowAllDirectReferrals] = useState(false)
+  const [profileLocked, setProfileLocked] = useState(false)
+  const [profileLockedMessage, setProfileLockedMessage] = useState('')
 
   // --- HELPERS ---
   const formatDisplay = useCallback((value) => {
@@ -77,19 +80,54 @@ const AccountPage = () => {
   const fetchData = useCallback(async () => {
     if (!resolvedAddress) return
     try {
+      const readQuery = isOwnSpace
+        ? await buildProfileReadQueryIfLocked(resolvedAddress).catch(() => null)
+        : null
+
       // Production Standard: One single source of truth for growth and tokens
       const [data, referralsPayload, downlinePayload, orbitNetworkPayload] = await Promise.all([
-        fetchUserSummaryApi(resolvedAddress),
-        fetch(getApiUrl(`/api/community/member/${encodeURIComponent(resolvedAddress)}/referrals`))
+        fetchUserSummaryApi(resolvedAddress, { query: readQuery }),
+        fetch(buildProfileReadUrl(`/api/community/member/${encodeURIComponent(resolvedAddress)}/referrals`, readQuery))
           .then((res) => res.json())
           .catch(() => null),
-        fetch(getApiUrl(`/api/community/member/${encodeURIComponent(resolvedAddress)}/downline`))
+        fetch(buildProfileReadUrl(`/api/community/member/${encodeURIComponent(resolvedAddress)}/downline`, readQuery))
           .then((res) => res.json())
           .catch(() => null),
-        fetch(getApiUrl(`/api/community/member/${encodeURIComponent(resolvedAddress)}/orbit-network`))
+        fetch(buildProfileReadUrl(`/api/community/member/${encodeURIComponent(resolvedAddress)}/orbit-network`, readQuery))
           .then((res) => res.json())
           .catch(() => null),
       ])
+
+      const lockedPayload =
+        data?.isLocked ||
+        data?.locked ||
+        referralsPayload?.locked ||
+        downlinePayload?.locked ||
+        orbitNetworkPayload?.locked
+
+      if (lockedPayload && !isOwnSpace) {
+        const message =
+          data?.message ||
+          referralsPayload?.message ||
+          downlinePayload?.message ||
+          orbitNetworkPayload?.message ||
+          accountT('profile.lockedMessage', 'This profile is locked. You cannot view this profile.')
+
+        setProfileLocked(true)
+        setProfileLockedMessage(message)
+        setSummary({ address: resolvedAddress, isLocked: true, earnings: {}, tokens: {} })
+        setDirectReferrals([])
+        setDownlineStats(null)
+        setOrbitNetwork(null)
+        setReferralShortCode('')
+        setReferralLink('')
+        setReferredByCode('')
+        setLastUpdated(new Date().toLocaleTimeString())
+        return
+      }
+
+      setProfileLocked(false)
+      setProfileLockedMessage('')
       setSummary(data)
       setDirectReferrals(referralsPayload?.data?.directReferrals || [])
       setDownlineStats(downlinePayload?.data || null)
@@ -99,7 +137,7 @@ const AccountPage = () => {
       console.error("Dashboard Sync Error:", err)
       toast.warning(accountT('errors.syncFailed', 'Account data could not be refreshed.'), { dedupeKey: 'account-summary-sync-failed' })
     }
-  }, [resolvedAddress, accountT, toast])
+  }, [resolvedAddress, isOwnSpace, accountT, toast])
 
   useEffect(() => {
     if (!resolvedAddress) {
@@ -111,6 +149,16 @@ const AccountPage = () => {
     }
 
     const fetchReferralAccess = async () => {
+      if (profileLocked && !isOwnSpace) {
+        setReferralShortCode('')
+        setReferralLink('')
+        setReferredByCode('')
+        setReferralAccessMessage(
+          accountT('profile.lockedMessage', 'This profile is locked. You cannot view this profile.')
+        )
+        return
+      }
+
       setReferralAccessLoading(true)
 
       try {
@@ -146,7 +194,7 @@ const AccountPage = () => {
     }
 
     fetchReferralAccess()
-  }, [resolvedAddress, accountT])
+  }, [resolvedAddress, profileLocked, isOwnSpace, accountT])
 
   useEffect(() => {
     fetchData()
@@ -308,6 +356,21 @@ const shouldShowUpgradeProgress =
         {profileError && <p className="error-text">{profileError}</p>}
       </div>
 
+      {profileLocked && !isOwnSpace ? (
+        <section className="account-surface account-network">
+          <div className="section-title-group">
+            <FaShieldAlt />
+            <h2>{accountT('profile.lockedTitle', 'Profile Locked')}</h2>
+          </div>
+          <div className="account-network__empty">
+            <p>{profileLockedMessage || accountT('profile.lockedMessage', 'This profile is locked. You cannot view this profile.')}</p>
+          </div>
+          <button type="button" className="nav-action-btn" onClick={switchToSelf}>
+            {accountT('actions.returnToMyAccount', 'Return to My Account')} <FaArrowRight />
+          </button>
+        </section>
+      ) : (
+      <>
       <div className="account-main-grid">
         <div className="account-main-grid__left">
           
@@ -619,6 +682,8 @@ const shouldShowUpgradeProgress =
       <footer className="account-footer">
         {accountT('footer.verifiedSync', 'Verified on-chain synchronization: {{time}}', { time: lastUpdated })}
       </footer>
+      </>
+      )}
     </section>
   )
 }

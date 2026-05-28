@@ -5,6 +5,8 @@ import { useWallet } from '../../hooks/useWallet'
 import { useContracts } from '../../hooks/useContracts'
 import { useSpace } from '../../context/SpaceContext'
 import { web3Service } from '../../Services/web3'
+import { fetchProfilePrivacy, updateProfilePrivacy } from '../../Services/profilePrivacyApi'
+import { clearAddressScopedOrbitsApiCache } from '../../Services/orbitsApi'
 import { useToast } from '../../components/feedback'
 import { CHAIN_ID, NETWORK_CONFIG } from '../../constants/addresses'
 import {
@@ -24,6 +26,9 @@ const SecurityPage = () => {
 
   const [networkWarning, setNetworkWarning] = useState('')
   const [lastUpdated, setLastUpdated] = useState(new Date().toLocaleTimeString())
+  const [profilePrivacy, setProfilePrivacy] = useState({ isLocked: false })
+  const [privacyLoading, setPrivacyLoading] = useState(false)
+  const [privacySaving, setPrivacySaving] = useState(false)
 
   useEffect(() => {
     const checkNetwork = async () => {
@@ -54,6 +59,61 @@ const SecurityPage = () => {
     }, 30000)
     return () => clearInterval(interval)
   }, [])
+
+  useEffect(() => {
+    if (!isConnected || !account || !isOwnSpace) return
+
+    let cancelled = false
+
+    const loadProfilePrivacy = async () => {
+      setPrivacyLoading(true)
+      try {
+        const data = await fetchProfilePrivacy(account)
+        if (!cancelled) setProfilePrivacy(data)
+      } catch (error) {
+        if (!cancelled) {
+          toast.warning(
+            error?.message || securityT('privacy.loadFailed', 'Profile privacy status could not be loaded.'),
+            { dedupeKey: 'security-profile-privacy-load-failed' }
+          )
+        }
+      } finally {
+        if (!cancelled) setPrivacyLoading(false)
+      }
+    }
+
+    loadProfilePrivacy()
+
+    return () => {
+      cancelled = true
+    }
+  }, [account, isConnected, isOwnSpace, toast])
+
+  const handleToggleProfileLock = async () => {
+    if (!account || privacySaving) return
+
+    const nextLocked = !profilePrivacy?.isLocked
+    setPrivacySaving(true)
+
+    try {
+      const data = await updateProfilePrivacy(account, nextLocked)
+      setProfilePrivacy(data)
+      clearAddressScopedOrbitsApiCache(account)
+      toast.success(
+        nextLocked
+          ? securityT('privacy.lockedToast', 'Your public profile is now locked.')
+          : securityT('privacy.unlockedToast', 'Your public profile is now visible.'),
+        { dedupeKey: 'security-profile-privacy-updated' }
+      )
+    } catch (error) {
+      toast.danger(
+        error?.message || securityT('privacy.updateFailed', 'Profile privacy could not be updated.'),
+        { dedupeKey: 'security-profile-privacy-update-failed' }
+      )
+    } finally {
+      setPrivacySaving(false)
+    }
+  }
 
   if (!isConnected) {
     return (
@@ -193,6 +253,49 @@ const SecurityPage = () => {
 
       <div className="security-main-grid">
         <div className="security-main-grid__left">
+          <section className="security-transparency glass-panel security-block">
+            <div className="security-section-heading">
+              <span className="security-section-heading__eyebrow muted-text">
+                <Lock size={12} /> {securityT('privacy.eyebrow', 'Profile Privacy')}
+              </span>
+              <h2 className="security-section-heading__title">{securityT('privacy.title', 'Public Profile Access')}</h2>
+            </div>
+
+            <div className="transparency-list">
+              <div className="transparency-item">
+                {profilePrivacy?.isLocked ? (
+                  <ShieldOff size={18} className="transparency-icon warning" />
+                ) : (
+                  <ShieldCheck size={18} className="transparency-icon success" />
+                )}
+                <div>
+                  <strong>
+                    {profilePrivacy?.isLocked
+                      ? securityT('privacy.lockedTitle', 'Profile locked')
+                      : securityT('privacy.publicTitle', 'Profile visible')}
+                  </strong>
+                  <p className="soft-text">
+                    {profilePrivacy?.isLocked
+                      ? securityT('privacy.lockedText', 'Other users cannot view your account profile, downline, earnings, token totals, or orbit network through the public explorer.')
+                      : securityT('privacy.publicText', 'Other users can view your public account profile from wallet lookup, referral ID lookup, leaderboard, downline, and orbit explorer entry points.')}
+                  </p>
+                </div>
+              </div>
+            </div>
+
+            <button
+              type="button"
+              className="switch-network-btn"
+              onClick={handleToggleProfileLock}
+              disabled={privacyLoading || privacySaving}
+            >
+              {privacySaving ? <RefreshCw size={14} /> : <Lock size={14} />}
+              {profilePrivacy?.isLocked
+                ? securityT('privacy.unlockAction', 'Unlock Public Profile')
+                : securityT('privacy.lockAction', 'Lock Public Profile')}
+            </button>
+          </section>
+
           <section className="security-responsibility glass-panel security-block">
             <div className="security-section-heading">
               <span className="security-section-heading__eyebrow muted-text">

@@ -686,11 +686,11 @@ export const AdminPanel = () => {
   });
 
   // ========== NEW STATE: Founder Vault Viewer ==========
-  const [walletBalances, setWalletBalances] = useState({});
+  const [founderPayouts, setFounderPayouts] = useState({});
   const [id1Wallet, setId1Wallet] = useState('');
   const [isID1Downline, setIsID1Downline] = useState(false);
   const [founderRefreshing, setFounderRefreshing] = useState(false);
-  const [totalFounderBalance, setTotalFounderBalance] = useState('0.00');
+  const [totalFounderPayout, setTotalFounderPayout] = useState('0.00');
   const [skipAutoRefresh, setSkipAutoRefresh] = useState(false);
 
   // ========== NEW STATE: Community Content Management ==========
@@ -1110,33 +1110,35 @@ export const AdminPanel = () => {
   // ============================================================
   // Founder Vault Functions
   // ============================================================
-  const fetchFounderBalances = useCallback(async () => {
-    if (!contracts?.levelManager || !contracts?.usdt) return;
+  const fetchFounderPayouts = useCallback(async () => {
     setFounderRefreshing(true);
     try {
-      const [wallets] = await contracts.levelManager.getFounderWallets();
-      const id1 = await contracts.levelManager.id1Wallet();
-      const isDownline = await contracts.levelManager.isID1Downline(account);
+      const response = await fetch(getApiUrl('/api/community/founders/distribution'));
+      const payload = await response.json().catch(() => null);
+      if (!response.ok) throw new Error(payload?.message || `Request failed: ${response.status}`);
 
-      setId1Wallet(id1);
-      setIsID1Downline(isDownline);
+      const data = payload?.data || {};
+      const founders = Array.isArray(data.founders) ? data.founders : [];
+      const payouts = {};
 
-      const balances = {};
-      let total = 0;
-      for (const wallet of wallets) {
-        try {
-          const balance = await contracts.usdt.balanceOf(wallet);
-          const formatted = ethers.formatUnits(balance, 6);
-          balances[wallet] = formatted;
-          total += parseFloat(formatted);
-        } catch {
-          balances[wallet] = '0.00';
-        }
+      for (const founder of founders) {
+        payouts[founder.wallet] = founder.totalPaid || '0.00';
       }
-      setWalletBalances(balances);
-      setTotalFounderBalance(total.toFixed(2));
+
+      setFounderWallets(founders.map((founder) => founder.wallet));
+      setFounderRatios(founders.map((founder) => String(founder.ratioBps || '0')));
+      setFounderPayouts(payouts);
+      setTotalFounderPayout(data.totalPaid || '0.00');
+
+      if (contracts?.levelManager && account) {
+        const id1 = await contracts.levelManager.id1Wallet();
+        const isDownline = await contracts.levelManager.isID1Downline(account);
+
+        setId1Wallet(id1);
+        setIsID1Downline(isDownline);
+      }
     } catch (err) {
-      console.error('Fetch founder balances failed:', err);
+      console.error('Fetch founder payouts failed:', err);
     } finally {
       setFounderRefreshing(false);
     }
@@ -1227,7 +1229,7 @@ export const AdminPanel = () => {
       }
 
       await Promise.all([
-        fetchFounderBalances(),
+        fetchFounderPayouts(),
         refreshFinancialTruth()
       ]);
     } catch (err) {
@@ -1235,7 +1237,7 @@ export const AdminPanel = () => {
     } finally {
       setOwnerCheckComplete(true);
     }
-  }, [contracts, account, multisigTx?.txId, readTransaction, loadGuardianChecks, levelManagerAddress, fetchFounderBalances, refreshFinancialTruth, skipAutoRefresh]);
+  }, [contracts, account, multisigTx?.txId, readTransaction, loadGuardianChecks, levelManagerAddress, fetchFounderPayouts, refreshFinancialTruth, skipAutoRefresh]);
 
   useEffect(() => {
     if (contracts) {
@@ -2337,7 +2339,7 @@ export const AdminPanel = () => {
                             {isID1Downline ? <Check size={10} /> : <X size={10} />} {isID1Downline ? adminT("ui.line1889.downlineSynced", "Downline Synced") : adminT("ui.line1889.nonID1Node", "Non-ID1 Node")}
                           </span>
                         </div>
-                        <button className="btn-premium btn-premium-sm" onClick={fetchFounderBalances} disabled={founderRefreshing}>
+                        <button className="btn-premium btn-premium-sm" onClick={fetchFounderPayouts} disabled={founderRefreshing}>
                           <RefreshCw size={12} className={founderRefreshing ? 'spin' : ''} />{adminT("ui.line1893.refresh", "Refresh")}
                       </button>
                       </div>
@@ -2345,8 +2347,8 @@ export const AdminPanel = () => {
                       <div className="founder-summary-card">
                         <Row>
                           <Col md={6}>
-                            <div className="small-label-premium">{adminT("ui.line1900.totalTrackedBalance", "Total Tracked Balance")}</div>
-                            <div className="metric-value-premium" style={{ fontSize: '20px' }}>{totalFounderBalance}{adminT("ui.line1901.uSDT", "USDT")}</div>
+                            <div className="small-label-premium">{adminT("ui.line1900.totalFounderPayouts", "Total Founder Payouts")}</div>
+                            <div className="metric-value-premium" style={{ fontSize: '20px' }}>{totalFounderPayout}{adminT("ui.line1901.uSDT", "USDT")}</div>
                           </Col>
                           <Col md={6}>
                             <div className="small-label-premium">{adminT("ui.line1904.distributionRule", "Distribution Rule")}</div>
@@ -2361,7 +2363,7 @@ export const AdminPanel = () => {
                             <tr>
                               <th>{adminT("ui.line1914.walletAddress", "Wallet Address")}</th>
                               <th>{adminT("ui.line1915.ratio", "Ratio")}</th>
-                              <th>{adminT("ui.line1916.uSDTBalance", "USDT Balance")}</th>
+                              <th>{adminT("ui.line1916.totalPaid", "Total Paid")}</th>
                             </tr>
                           </thead>
                           <tbody>
@@ -2381,7 +2383,7 @@ export const AdminPanel = () => {
                                       {(parseInt(founderRatios[index] || '0', 10) / 100).toFixed(2)}%
                                     </span>
                                   </td>
-                                  <td className="fw-bold text-glow">{walletBalances[wallet] || '0.00'} USDT</td>
+                                  <td className="fw-bold text-glow">{founderPayouts[wallet] || '0.00'} USDT</td>
                                 </tr>
                           )
                           }

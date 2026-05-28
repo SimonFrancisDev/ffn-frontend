@@ -1,15 +1,12 @@
 import { getAddress } from 'ethers'
-import { buildApiUrl, getApiUrl } from './apiConfig'
+import { getApiUrl } from './apiConfig'
 import { web3Service } from './web3'
 
-export const PROFILE_PRIVACY_READ_ACTION = 'profile_privacy_read'
 export const PROFILE_PRIVACY_UPDATE_ACTION = 'profile_privacy_update'
 
 const PROOF_CACHE_TTL_MS = Number(import.meta.env.VITE_WALLET_PROOF_CACHE_TTL_MS || 8 * 60 * 1000)
-const PROOF_REJECT_COOLDOWN_MS = Number(import.meta.env.VITE_WALLET_PROOF_REJECT_COOLDOWN_MS || 2 * 60 * 1000)
 const proofCache = new Map()
 const proofInflight = new Map()
-const proofRejectedUntil = new Map()
 
 function buildWalletProofMessage(action, walletAddress, timestamp) {
   return [
@@ -41,11 +38,6 @@ export async function getProfileWalletProof(walletAddress, action, options = {})
   if (cached) return cached
   if (!interactive) return null
 
-  const rejectedUntil = proofRejectedUntil.get(cacheKey) || 0
-  if (Date.now() < rejectedUntil) {
-    throw new Error('Profile read authorization was declined. Try again shortly.')
-  }
-
   if (proofInflight.has(cacheKey)) {
     return proofInflight.get(cacheKey)
   }
@@ -65,7 +57,6 @@ export async function getProfileWalletProof(walletAddress, action, options = {})
 
     const proof = { signature, timestamp, proofWallet: normalizedWallet }
     proofCache.set(cacheKey, proof)
-    proofRejectedUntil.delete(cacheKey)
     return proof
   })()
 
@@ -73,9 +64,6 @@ export async function getProfileWalletProof(walletAddress, action, options = {})
 
   try {
     return await proofPromise
-  } catch (error) {
-    proofRejectedUntil.set(cacheKey, Date.now() + PROOF_REJECT_COOLDOWN_MS)
-    throw error
   } finally {
     proofInflight.delete(cacheKey)
   }
@@ -107,24 +95,4 @@ export async function updateProfilePrivacy(address, isLocked) {
     }),
   }))
   return payload?.data || {}
-}
-
-export async function buildProfileReadQuery(address, options = {}) {
-  const proof = await getProfileWalletProof(address, PROFILE_PRIVACY_READ_ACTION, options)
-  if (!proof) return null
-  return {
-    proofWallet: proof.proofWallet,
-    signature: proof.signature,
-    timestamp: proof.timestamp,
-  }
-}
-
-export async function buildProfileReadQueryIfLocked(address, options = {}) {
-  const privacy = await fetchProfilePrivacy(address)
-  if (!privacy?.isLocked) return null
-  return buildProfileReadQuery(address, options)
-}
-
-export function buildProfileReadUrl(path, query = null) {
-  return buildApiUrl(path, query)
 }

@@ -8,7 +8,6 @@ import { useSpace } from '../../context/SpaceContext'
 import { ethers } from 'ethers'
 import { fetchUserSummaryApi } from '../../Services/orbitsApi'
 import { getApiUrl } from '../../Services/apiConfig'
-import { buildProfileReadQueryIfLocked, buildProfileReadUrl } from '../../Services/profilePrivacyApi'
 import { resolveIdentity } from '../../utils/identityResolver'
 import { NETWORK_CONFIG } from '../../constants/addresses'
 import { useToast } from '../../components/feedback'
@@ -45,7 +44,6 @@ const AccountPage = () => {
   const [showAllDirectReferrals, setShowAllDirectReferrals] = useState(false)
   const [profileLocked, setProfileLocked] = useState(false)
   const [profileLockedMessage, setProfileLockedMessage] = useState('')
-  const [profileReadQuery, setProfileReadQuery] = useState(null)
 
   // --- HELPERS ---
   const formatDisplay = useCallback((value) => {
@@ -81,20 +79,16 @@ const AccountPage = () => {
   const fetchData = useCallback(async () => {
     if (!resolvedAddress) return
     try {
-      const readQuery = isOwnSpace
-        ? profileReadQuery || await buildProfileReadQueryIfLocked(resolvedAddress, { interactive: false }).catch(() => null)
-        : null
-
       // Production Standard: One single source of truth for growth and tokens
       const [data, referralsPayload, downlinePayload, orbitNetworkPayload] = await Promise.all([
-        fetchUserSummaryApi(resolvedAddress, { query: readQuery }),
-        fetch(buildProfileReadUrl(`/api/community/member/${encodeURIComponent(resolvedAddress)}/referrals`, readQuery))
+        fetchUserSummaryApi(resolvedAddress),
+        fetch(getApiUrl(`/api/community/member/${encodeURIComponent(resolvedAddress)}/referrals`))
           .then((res) => res.json())
           .catch(() => null),
-        fetch(buildProfileReadUrl(`/api/community/member/${encodeURIComponent(resolvedAddress)}/downline`, readQuery))
+        fetch(getApiUrl(`/api/community/member/${encodeURIComponent(resolvedAddress)}/downline`))
           .then((res) => res.json())
           .catch(() => null),
-        fetch(buildProfileReadUrl(`/api/community/member/${encodeURIComponent(resolvedAddress)}/orbit-network`, readQuery))
+        fetch(getApiUrl(`/api/community/member/${encodeURIComponent(resolvedAddress)}/orbit-network`))
           .then((res) => res.json())
           .catch(() => null),
       ])
@@ -138,21 +132,7 @@ const AccountPage = () => {
       console.error("Dashboard Sync Error:", err)
       toast.warning(accountT('errors.syncFailed', 'Account data could not be refreshed.'), { dedupeKey: 'account-summary-sync-failed' })
     }
-  }, [resolvedAddress, isOwnSpace, profileReadQuery, accountT, toast])
-
-  const handleAuthorizePrivateProfile = async () => {
-    if (!resolvedAddress || !isOwnSpace) return
-
-    try {
-      const query = await buildProfileReadQueryIfLocked(resolvedAddress, { interactive: true })
-      setProfileReadQuery(query)
-      setProfileLocked(false)
-      setProfileLockedMessage('')
-      toast.success(accountT('profile.authorizedToast', 'Private profile view authorized.'), { dedupeKey: 'account-profile-read-authorized' })
-    } catch (error) {
-      toast.warning(error?.message || accountT('profile.authorizationFailed', 'Profile read authorization was not completed.'), { dedupeKey: 'account-profile-read-rejected' })
-    }
-  }
+  }, [resolvedAddress, isOwnSpace, accountT, toast])
 
   useEffect(() => {
     if (!resolvedAddress) {
@@ -380,11 +360,7 @@ const shouldShowUpgradeProgress =
           <div className="account-network__empty">
             <p>{profileLockedMessage || accountT('profile.lockedMessage', 'This profile is locked. You cannot view this profile.')}</p>
           </div>
-          {isOwnSpace ? (
-            <button type="button" className="nav-action-btn" onClick={handleAuthorizePrivateProfile}>
-              {accountT('profile.authorizePrivateView', 'Authorize Private View')} <FaArrowRight />
-            </button>
-          ) : (
+          {!isOwnSpace && (
             <button type="button" className="nav-action-btn" onClick={switchToSelf}>
               {accountT('actions.returnToMyAccount', 'Return to My Account')} <FaArrowRight />
             </button>

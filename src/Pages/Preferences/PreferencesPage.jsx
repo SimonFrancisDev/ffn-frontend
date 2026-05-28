@@ -12,6 +12,7 @@ import {
   updateTelegramPreferences,
 } from '../../Services/telegramApi'
 import { fetchNotificationPreferences, updateNotificationPreferences } from '../../Services/notificationsApi'
+import { fetchProfilePrivacy, updateProfilePrivacy } from '../../Services/profilePrivacyApi'
 import { useToast } from '../../components/feedback'
 import { web3Service } from '../../Services/web3'
 
@@ -88,6 +89,8 @@ const PreferencesPage = ({
   const [timezone, setTimezone] = useState('Africa/Lagos')
   const [accentStyle, setAccentStyle] = useState('default')
   const [spaceVisibilityPreference, setSpaceVisibilityPreference] = useState('public')
+  const [profilePrivacy, setProfilePrivacy] = useState({ isLocked: false })
+  const [profilePrivacyLoading, setProfilePrivacyLoading] = useState(false)
   const [notifications, setNotifications] = useState(DEFAULT_NOTIFICATIONS)
   const [telegramStatus, setTelegramStatus] = useState({ configured: false, status: 'unlinked' })
   const [telegramCode, setTelegramCode] = useState('')
@@ -137,6 +140,37 @@ const PreferencesPage = ({
       i18n.changeLanguage(appLanguage)
     }
   }, [appLanguage, i18n, language])
+
+  useEffect(() => {
+    if (!isConnected || !account || !isOwnSpace) return
+
+    let cancelled = false
+
+    const loadProfilePrivacy = async () => {
+      setProfilePrivacyLoading(true)
+      try {
+        const data = await fetchProfilePrivacy(account)
+        if (cancelled) return
+        setProfilePrivacy(data)
+        setSpaceVisibilityPreference(data?.isLocked ? 'locked' : 'public')
+      } catch (error) {
+        if (!cancelled) {
+          toast.warning(
+            error?.message || preferencesT('profile.loadFailed', 'Profile visibility could not be loaded.'),
+            { dedupeKey: 'preferences-profile-privacy-load-failed' }
+          )
+        }
+      } finally {
+        if (!cancelled) setProfilePrivacyLoading(false)
+      }
+    }
+
+    loadProfilePrivacy()
+
+    return () => {
+      cancelled = true
+    }
+  }, [account, isConnected, isOwnSpace, preferencesT, toast])
 
   const refreshNotificationPreferences = useCallback(async () => {
     if (!isConnected || !account) return
@@ -272,6 +306,15 @@ const PreferencesPage = ({
         })
       }
 
+      if (account && isOwnSpace) {
+        const nextLocked = spaceVisibilityPreference === 'locked'
+        if (nextLocked !== Boolean(profilePrivacy?.isLocked)) {
+          const privacy = await updateProfilePrivacy(account, nextLocked)
+          setProfilePrivacy(privacy)
+          setSpaceVisibilityPreference(privacy?.isLocked ? 'locked' : 'public')
+        }
+      }
+
       if (account && telegramStatus.status === 'active') {
         const proof = await signTelegramAction(TELEGRAM_ACTIONS.preferencesUpdate)
         const result = await updateTelegramPreferences(account, notifications, proof)
@@ -287,7 +330,7 @@ const PreferencesPage = ({
       toast.danger(error.message || preferencesT('status.saveFailed', 'Preferences could not be saved.'), { dedupeKey: 'preferences-save-failed' })
     }
     window.setTimeout(() => setSaveStatus({ show: false, message: '', type: '' }), 2500)
-  }, [account, theme, language, timezone, accentStyle, spaceVisibilityPreference, notifications, preferencesT, signTelegramAction, toast, telegramStatus.status, i18n, onThemeChange, onLanguageChange])
+  }, [account, isOwnSpace, theme, language, timezone, accentStyle, spaceVisibilityPreference, profilePrivacy?.isLocked, notifications, preferencesT, signTelegramAction, toast, telegramStatus.status, i18n, onThemeChange, onLanguageChange])
 
   const resetPreferences = useCallback(() => {
     setTheme('dark')
@@ -619,6 +662,7 @@ const PreferencesPage = ({
                 type="button" 
                 className={`theme-option ${spaceVisibilityPreference === 'public' ? 'active' : ''}`} 
                 onClick={() => setSpaceVisibilityPreference('public')}
+                disabled={!isConnected || !isOwnSpace || profilePrivacyLoading}
               >
                 {preferencesT('profile.public', 'Public')}
               </button>
@@ -626,12 +670,15 @@ const PreferencesPage = ({
                 type="button" 
                 className={`theme-option ${spaceVisibilityPreference === 'locked' ? 'active' : ''}`} 
                 onClick={() => setSpaceVisibilityPreference('locked')}
+                disabled={!isConnected || !isOwnSpace || profilePrivacyLoading}
               >
                 {preferencesT('profile.locked', 'Locked')}
               </button>
             </div>
             <p className="preferences-card__text soft-text">
-              {preferencesT('profile.visibilityText', 'This prepares your preferred visibility mode for the app experience. Public spaces can be viewed by others; locked spaces require explicit access.')}
+              {profilePrivacyLoading
+                ? preferencesT('profile.loadingVisibility', 'Loading current profile visibility...')
+                : preferencesT('profile.visibilityText', 'Public spaces can be viewed by others. Locked spaces hide your profile, downline, earnings, token totals, and orbit network from other users.')}
             </p>
           </div>
         </section>

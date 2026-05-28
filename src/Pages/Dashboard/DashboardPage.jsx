@@ -3,6 +3,7 @@ import { useEffect, useState, useCallback, useMemo } from 'react'
 import { useTranslation } from 'react-i18next'
 import { useWallet } from '../../hooks/useWallet'
 import { getApiUrl } from '../../Services/apiConfig'
+import { getProfileReadAuthIfLocked } from '../../Services/profilePrivacyApi'
 import { useToast } from '../../components/feedback'
 import { CONTRACT_ADDRESSES, NETWORK_CONFIG } from '../../constants/addresses'
 import {
@@ -581,7 +582,8 @@ const DashboardPage = () => {
     setAccessError('')
 
     try {
-      const payload = await fetchJson(`/api/community/member/${account}/summary`)
+      const profileReadHeaders = await getProfileReadAuthIfLocked(account, account).catch(() => ({}))
+      const payload = await fetchJson(`/api/community/member/${account}/summary`, { headers: profileReadHeaders })
       const data = payload?.data || {}
 
       setMemberSummary({

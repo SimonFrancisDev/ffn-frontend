@@ -1024,20 +1024,7 @@ function App() {
   }, [isConnected, walletAccount])
 
   const notices = useMemo(() => {
-    const nextNotices = [{
-      id: 'launch-countdown',
-      type: 'success',
-      label: t('topNotice.launch.label', 'Launch Countdown'),
-      message: t(
-        'topNotice.launch.message',
-        '🔥 F-Freedom launches May 27, 2026, 12:00 UTC. Time left: {{countdown}}',
-        { countdown: formatLaunchCountdown(launchNowMs) }
-      ),
-      source: 'launch',
-      sticky: true,
-      dismissible: false,
-      dedupeKey: 'launch-countdown',
-    }]
+    const nextNotices = []
 
     if (typeof window !== 'undefined' && !window.ethereum && !hasMobileWalletSupport) {
       nextNotices.push({

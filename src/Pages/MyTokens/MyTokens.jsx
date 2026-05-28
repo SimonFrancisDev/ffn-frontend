@@ -6,6 +6,7 @@ import { ethers } from 'ethers'
 import { useWallet } from '../../hooks/useWallet'
 import { useContracts } from '../../hooks/useContracts'
 import { fetchUserSummaryApi } from '../../Services/orbitsApi' // Use the API instead of manual scraping
+import { getProfileReadAuthIfLocked } from '../../Services/profilePrivacyApi'
 import { useToast } from '../../components/feedback'
 import { NETWORK_CONFIG } from '../../constants/addresses'
 
@@ -107,7 +108,8 @@ export const MyTokens = () => {
     setPageError('')
 
     try {
-      const result = await fetchUserSummaryApi(account, { forceRefresh: force })
+      const profileReadHeaders = await getProfileReadAuthIfLocked(account, account).catch(() => ({}))
+      const result = await fetchUserSummaryApi(account, { forceRefresh: force, headers: profileReadHeaders })
       
       // Update Balances from API
       setBalances({

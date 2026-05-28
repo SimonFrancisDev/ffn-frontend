@@ -5,6 +5,7 @@ import { useWallet } from '../../hooks/useWallet'
 import { useContracts } from '../../hooks/useContracts'
 import { ethers } from 'ethers'
 import { fetchAddressReceiptsApi, fetchOrbitLevelsApi } from '../../Services/orbitsApi'
+import { getProfileReadAuthIfLocked } from '../../Services/profilePrivacyApi'
 import { useToast } from '../../components/feedback'
 import { NETWORK_CONFIG } from '../../constants/addresses'
 
@@ -150,7 +151,8 @@ const ActivityPage = () => {
     if (!account) return
 
     try {
-      const result = await fetchAddressReceiptsApi(account)
+      const profileReadHeaders = await getProfileReadAuthIfLocked(account, account).catch(() => ({}))
+      const result = await fetchAddressReceiptsApi(account, undefined, { headers: profileReadHeaders })
 
       const receiptsData = Array.isArray(result?.receipts)
         ? result.receipts
@@ -217,7 +219,8 @@ const ActivityPage = () => {
     try {
       let orbitLevelsData = [];
       try {
-        const levelsResponse = await fetchOrbitLevelsApi(account);
+        const profileReadHeaders = await getProfileReadAuthIfLocked(account, account).catch(() => ({}))
+        const levelsResponse = await fetchOrbitLevelsApi(account, { headers: profileReadHeaders });
         orbitLevelsData = levelsResponse?.levels || levelsResponse || [];
       } catch (e) {
         console.warn("Could not fetch orbit levels data");

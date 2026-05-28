@@ -23,6 +23,7 @@ import {
   fetchUserSummaryApi,
   fetchOrbitLevelSnapshotApi,
 } from '../../Services/orbitsApi'
+import { getProfileReadAuthIfLocked } from '../../Services/profilePrivacyApi'
 
 import {
   FaCoins,
@@ -421,7 +422,8 @@ const ActivationCenterPage = () => {
     }
 
     try {
-      const summary = await fetchUserSummaryApi(viewer)
+      const profileReadHeaders = await getProfileReadAuthIfLocked(viewer, account).catch(() => ({}))
+      const summary = await fetchUserSummaryApi(viewer, { headers: profileReadHeaders })
       const byLevel = Array.isArray(summary?.earnings?.byLevel)
         ? summary.earnings.byLevel
         : []
@@ -448,7 +450,7 @@ const ActivationCenterPage = () => {
       console.error('Failed to fetch user financial summary:', err)
       setFinancialByLevel({})
     }
-  }, [viewer])
+  }, [viewer, account])
 
 
 
@@ -689,7 +691,8 @@ const ActivationCenterPage = () => {
       if (!viewer || !isRegistered) return null
 
       try {
-        const snapshot = await fetchOrbitLevelSnapshotApi(viewer, level)
+        const profileReadHeaders = await getProfileReadAuthIfLocked(viewer, account).catch(() => ({}))
+        const snapshot = await fetchOrbitLevelSnapshotApi(viewer, level, { headers: profileReadHeaders })
         if (!snapshot) return null
 
         const positions = snapshot.positions || []
@@ -744,7 +747,7 @@ const ActivationCenterPage = () => {
         return null
       }
     },
-    [viewer, isRegistered]
+    [viewer, account, isRegistered]
   )
 
 
@@ -752,7 +755,8 @@ const ActivationCenterPage = () => {
     if (!viewer) return
 
     try {
-      const result = await fetchAddressReceiptsApi(viewer)
+      const profileReadHeaders = await getProfileReadAuthIfLocked(viewer, account).catch(() => ({}))
+      const result = await fetchAddressReceiptsApi(viewer, undefined, { headers: profileReadHeaders })
       const receipts = Array.isArray(result?.receipts) ? result.receipts : []
       setReceiptsSupported(true)
 
@@ -780,7 +784,7 @@ const ActivationCenterPage = () => {
       setLevelEarnings({})
       setEscrowLocked({})
     }
-  }, [viewer])
+  }, [viewer, account])
 
   const fetchUserData = useCallback(async () => {
     if (!contracts || !viewer) return

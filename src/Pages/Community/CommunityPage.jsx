@@ -5,6 +5,7 @@ import { useNavigate } from 'react-router-dom'
 import { useWallet } from '../../hooks/useWallet'
 import { useSpace } from '../../context/SpaceContext'
 import { getApiUrl } from '../../Services/apiConfig'
+import { getProfileReadAuthIfLocked } from '../../Services/profilePrivacyApi'
 import { resolveIdentity } from '../../utils/identityResolver'
 import { Modal } from '../../components/overlay'
 import { useToast } from '../../components/feedback'
@@ -746,7 +747,8 @@ const CommunityPage = ({ onNavigate }) => {
     setIsCheckingRegistration(true)
 
     try {
-      const payload = await fetchJson(`/api/community/member/${resolvedAddress}/summary`)
+      const profileReadHeaders = await getProfileReadAuthIfLocked(resolvedAddress, account).catch(() => ({}))
+      const payload = await fetchJson(`/api/community/member/${resolvedAddress}/summary`, { headers: profileReadHeaders })
       if (payload?.locked) {
         const message = payload.message || communityT('profile.lockedMessage', 'This profile is locked. You cannot view this profile.')
         setProfileLocked(true)
@@ -780,7 +782,7 @@ const CommunityPage = ({ onNavigate }) => {
     } finally {
       setIsCheckingRegistration(false)
     }
-  }, [resolvedAddress, isOwnSpace, communityT])
+  }, [resolvedAddress, account, isOwnSpace, communityT])
 
   const fetchUserReferralStats = useCallback(async () => {
     if (!resolvedAddress) return
@@ -791,7 +793,8 @@ const CommunityPage = ({ onNavigate }) => {
         setUserCommission('0.00')
         return
       }
-      const payload = await fetchJson(`/api/community/member/${resolvedAddress}/referrals`)
+      const profileReadHeaders = await getProfileReadAuthIfLocked(resolvedAddress, account).catch(() => ({}))
+      const payload = await fetchJson(`/api/community/member/${resolvedAddress}/referrals`, { headers: profileReadHeaders })
       if (payload?.locked) return
       const data = payload?.data || {}
       setUserReferralCount(Number(data.totalReferrals || 0))
@@ -805,13 +808,14 @@ const CommunityPage = ({ onNavigate }) => {
       setUserReferralCount(0)
       setUserCommission('0.00')
     }
-  }, [resolvedAddress, isOwnSpace, profileLocked])
+  }, [resolvedAddress, account, isOwnSpace, profileLocked])
 
   const fetchUserDownline = useCallback(async () => {
     if (!resolvedAddress) return
     if (profileLocked) return
     try {
-      const payload = await fetchJson(`/api/community/member/${resolvedAddress}/orbit-network`)
+      const profileReadHeaders = await getProfileReadAuthIfLocked(resolvedAddress, account).catch(() => ({}))
+      const payload = await fetchJson(`/api/community/member/${resolvedAddress}/orbit-network`, { headers: profileReadHeaders })
       if (payload?.locked) return
       const data = payload?.data || {}
       const levels = data.levels || {}
@@ -836,7 +840,7 @@ const CommunityPage = ({ onNavigate }) => {
       console.error('Error fetching downline:', err)
       setDownlineEarnings({})
     }
-  }, [resolvedAddress, isOwnSpace, profileLocked])
+  }, [resolvedAddress, account, isOwnSpace, profileLocked])
 
   const fetchLeaderboard = useCallback(async () => {
     try {

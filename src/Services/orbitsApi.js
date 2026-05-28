@@ -24,8 +24,8 @@ function buildUrl(path, query = null) {
   return buildApiUrl(path, query)
 }
 
-function buildCacheKey(path, query = null) {
-  return buildUrl(path, query)
+function buildCacheKey(path, query = null, suffix = '') {
+  return `${buildUrl(path, query)}${suffix}`
 }
 
 function pruneCacheIfNeeded() {
@@ -107,7 +107,7 @@ async function handleResponse(response) {
   return data.data
 }
 
-async function rawGet(path, query = null, timeoutMs = DEFAULT_REQUEST_TIMEOUT_MS, retryCount = 0) {
+async function rawGet(path, query = null, timeoutMs = DEFAULT_REQUEST_TIMEOUT_MS, retryCount = 0, headers = {}) {
   const controller = new AbortController()
   const timeoutId = setTimeout(() => controller.abort(), timeoutMs)
 
@@ -116,6 +116,7 @@ async function rawGet(path, query = null, timeoutMs = DEFAULT_REQUEST_TIMEOUT_MS
       method: 'GET',
       headers: {
         Accept: 'application/json',
+        ...headers,
       },
       signal: controller.signal,
       cache: 'no-store',
@@ -126,7 +127,7 @@ async function rawGet(path, query = null, timeoutMs = DEFAULT_REQUEST_TIMEOUT_MS
     if (error?.name === 'AbortError') {
       if (retryCount < MAX_RETRIES) {
         await sleep(RETRY_DELAY_MS)
-        return rawGet(path, query, timeoutMs, retryCount + 1)
+        return rawGet(path, query, timeoutMs, retryCount + 1, headers)
       }
       throw new Error('Request timed out')
     }
@@ -134,7 +135,7 @@ async function rawGet(path, query = null, timeoutMs = DEFAULT_REQUEST_TIMEOUT_MS
     if (error instanceof TypeError) {
       if (retryCount < MAX_RETRIES) {
         await sleep(RETRY_DELAY_MS)
-        return rawGet(path, query, timeoutMs, retryCount + 1)
+        return rawGet(path, query, timeoutMs, retryCount + 1, headers)
       }
       throw new Error('Network request failed')
     }
@@ -150,11 +151,13 @@ async function apiGet(path, query = null, options = {}) {
     ttlMs = 0,
     timeoutMs = DEFAULT_REQUEST_TIMEOUT_MS,
     forceRefresh = false,
+    headers = {},
   } = options
 
   clearExpiredCacheEntries()
 
-  const cacheKey = buildCacheKey(path, query)
+  const authSuffix = headers.Authorization ? `::auth:${String(headers.Authorization).slice(-16)}` : ''
+  const cacheKey = buildCacheKey(path, query, authSuffix)
   const inflightKey = forceRefresh ? `${cacheKey}::force` : cacheKey
 
   if (!forceRefresh) {
@@ -170,7 +173,7 @@ async function apiGet(path, query = null, options = {}) {
 
   const promise = (async () => {
     try {
-      const data = await rawGet(path, query, timeoutMs)
+      const data = await rawGet(path, query, timeoutMs, 0, headers)
       setCachedValue(cacheKey, data, ttlMs)
       return data
     } catch (error) {
@@ -232,6 +235,7 @@ export async function fetchOrbitLevelsApi(address, options = {}) {
       ttlMs: CACHE_TTLS.orbitLevels,
       timeoutMs: FAST_REQUEST_TIMEOUT_MS,
       forceRefresh: !!options.forceRefresh,
+      headers: options.headers || {},
     }
   )
 }
@@ -244,6 +248,7 @@ export async function fetchOrbitLevelSnapshotApi(address, level, options = {}) {
       ttlMs: CACHE_TTLS.orbitLevelSnapshot,
       timeoutMs: FAST_REQUEST_TIMEOUT_MS,
       forceRefresh: !!options.forceRefresh,
+      headers: options.headers || {},
     }
   )
 }
@@ -261,6 +266,7 @@ export async function fetchOrbitPositionDetailsApi(
       ttlMs: CACHE_TTLS.orbitPositionDetails,
       timeoutMs: DEFAULT_REQUEST_TIMEOUT_MS,
       forceRefresh: !!options.forceRefresh,
+      headers: options.headers || {},
     }
   )
 }
@@ -278,6 +284,7 @@ export async function fetchOrbitCycleSnapshotApi(
       ttlMs: CACHE_TTLS.orbitCycleSnapshot,
       timeoutMs: DEFAULT_REQUEST_TIMEOUT_MS,
       forceRefresh: !!options.forceRefresh,
+      headers: options.headers || {},
     }
   )
 }
@@ -290,6 +297,7 @@ export async function fetchAddressReceiptsApi(address, level, options = {}) {
       ttlMs: CACHE_TTLS.addressReceipts,
       timeoutMs: DEFAULT_REQUEST_TIMEOUT_MS,
       forceRefresh: !!options.forceRefresh,
+      headers: options.headers || {},
     }
   )
 }
@@ -302,6 +310,7 @@ export async function fetchActivationReceiptsApi(activationId, options = {}) {
       ttlMs: CACHE_TTLS.activationReceipts,
       timeoutMs: DEFAULT_REQUEST_TIMEOUT_MS,
       forceRefresh: !!options.forceRefresh,
+      headers: options.headers || {},
     }
   )
 }
@@ -329,6 +338,7 @@ export async function fetchUserSummaryApi(address, options = {}) {
       ttlMs: 15000,
       timeoutMs: DEFAULT_REQUEST_TIMEOUT_MS,
       forceRefresh: !!options.forceRefresh,
+      headers: options.headers || {},
     }
   )
 }

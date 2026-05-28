@@ -7,6 +7,7 @@ import { useContracts } from '../../hooks/useContracts'
 import { useSpace } from '../../context/SpaceContext'
 import { ethers } from 'ethers'
 import { fetchUserSummaryApi } from '../../Services/orbitsApi'
+import { getProfileReadAuthIfLocked } from '../../Services/profilePrivacyApi'
 import { getApiUrl } from '../../Services/apiConfig'
 import { resolveIdentity } from '../../utils/identityResolver'
 import { NETWORK_CONFIG } from '../../constants/addresses'
@@ -79,16 +80,17 @@ const AccountPage = () => {
   const fetchData = useCallback(async () => {
     if (!resolvedAddress) return
     try {
+      const profileReadHeaders = await getProfileReadAuthIfLocked(resolvedAddress, account).catch(() => ({}))
       // Production Standard: One single source of truth for growth and tokens
       const [data, referralsPayload, downlinePayload, orbitNetworkPayload] = await Promise.all([
-        fetchUserSummaryApi(resolvedAddress),
-        fetch(getApiUrl(`/api/community/member/${encodeURIComponent(resolvedAddress)}/referrals`))
+        fetchUserSummaryApi(resolvedAddress, { headers: profileReadHeaders }),
+        fetch(getApiUrl(`/api/community/member/${encodeURIComponent(resolvedAddress)}/referrals`), { headers: profileReadHeaders })
           .then((res) => res.json())
           .catch(() => null),
-        fetch(getApiUrl(`/api/community/member/${encodeURIComponent(resolvedAddress)}/downline`))
+        fetch(getApiUrl(`/api/community/member/${encodeURIComponent(resolvedAddress)}/downline`), { headers: profileReadHeaders })
           .then((res) => res.json())
           .catch(() => null),
-        fetch(getApiUrl(`/api/community/member/${encodeURIComponent(resolvedAddress)}/orbit-network`))
+        fetch(getApiUrl(`/api/community/member/${encodeURIComponent(resolvedAddress)}/orbit-network`), { headers: profileReadHeaders })
           .then((res) => res.json())
           .catch(() => null),
       ])
@@ -132,7 +134,7 @@ const AccountPage = () => {
       console.error("Dashboard Sync Error:", err)
       toast.warning(accountT('errors.syncFailed', 'Account data could not be refreshed.'), { dedupeKey: 'account-summary-sync-failed' })
     }
-  }, [resolvedAddress, isOwnSpace, accountT, toast])
+  }, [resolvedAddress, account, isOwnSpace, accountT, toast])
 
   useEffect(() => {
     if (!resolvedAddress) {

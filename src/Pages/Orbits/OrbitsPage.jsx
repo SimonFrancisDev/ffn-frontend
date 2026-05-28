@@ -19,6 +19,7 @@ import {
   fetchActivationReceiptsApi,
   clearAddressScopedOrbitsApiCache
 } from '../../Services/orbitsApi'
+import { getProfileReadAuthIfLocked } from '../../Services/profilePrivacyApi'
 // Skeleton Loader Components
 const SkeletonOrbitLevel = () => (
   <div className="skeleton-orbit-level glass-panel">
@@ -642,7 +643,8 @@ const OrbitsPage = () => {
     }
 
     try {
-      const res = await fetch(getApiUrl(`/api/community/member/${encodeURIComponent(address)}/referrals`))
+      const profileReadHeaders = await getProfileReadAuthIfLocked(address, account).catch(() => ({}))
+      const res = await fetch(getApiUrl(`/api/community/member/${encodeURIComponent(address)}/referrals`), { headers: profileReadHeaders })
       const payload = await res.json().catch(() => null)
       const rows = payload?.data?.directReferrals || []
       directDownlineSetRef.current = new Set(
@@ -655,7 +657,7 @@ const OrbitsPage = () => {
     }
 
     return directDownlineSetRef.current
-  }, [])
+  }, [account])
 
   useEffect(() => {
     setShowStructuralPreview(Boolean(orbitDisplayOptions.structureLines))
@@ -1004,7 +1006,8 @@ const OrbitsPage = () => {
       return
     }
     try {
-      const result = await fetchOrbitLevelsApi(viewAddress)
+      const profileReadHeaders = await getProfileReadAuthIfLocked(viewAddress, account).catch(() => ({}))
+      const result = await fetchOrbitLevelsApi(viewAddress, { headers: profileReadHeaders })
       if (result?.isLocked || result?.locked) {
         setOrbitError(result.message || orbitsT('identity.lockedProfile', 'This profile is locked. You cannot view this profile.'))
         setViewedLevels({})
@@ -1019,7 +1022,7 @@ const OrbitsPage = () => {
       console.error('Error fetching viewed levels:', err)
       setViewedLevelsReady(true)
     }
-  }, [viewAddress, orbitsT])
+  }, [viewAddress, account, orbitsT])
 
   const fetchViewedAddressReceipts = useCallback(async (forceRefresh = false) => {
     if (!viewAddress || !ethers.isAddress(viewAddress)) {
@@ -1039,7 +1042,8 @@ const OrbitsPage = () => {
 
     setReceiptsLoading(true)
     try {
-      const result = await fetchAddressReceiptsApi(viewAddress)
+      const profileReadHeaders = await getProfileReadAuthIfLocked(viewAddress, account).catch(() => ({}))
+      const result = await fetchAddressReceiptsApi(viewAddress, undefined, { headers: profileReadHeaders })
       if (result?.isLocked || result?.locked) {
         setOrbitError(result.message || orbitsT('identity.lockedProfile', 'This profile is locked. You cannot view this profile.'))
         setViewAddressReceipts([])
@@ -1057,7 +1061,7 @@ const OrbitsPage = () => {
     } finally {
       setReceiptsLoading(false)
     }
-  }, [viewAddress, orbitsT])
+  }, [viewAddress, account, orbitsT])
 
  const fetchStoredCycleForLevel = useCallback(async (level, cycleNumber, forceRefresh = false) => {
     if (!viewAddress || !ethers.isAddress(viewAddress) || !orbitData[level]) return []
@@ -1071,8 +1075,10 @@ const OrbitsPage = () => {
       }
 
     try {
+      const profileReadHeaders = await getProfileReadAuthIfLocked(viewAddress, account).catch(() => ({}))
       const snapshot = await fetchOrbitCycleSnapshotApi(viewAddress, level, cycleNumber, {
           forceRefresh,
+          headers: profileReadHeaders,
         })
       if (snapshot?.isLocked || snapshot?.locked) {
         throw new Error(snapshot.message || orbitsT('identity.lockedProfile', 'This profile is locked. You cannot view this profile.'))
@@ -1091,7 +1097,7 @@ const OrbitsPage = () => {
       console.error(`Failed to fetch cycle history for level ${level}, cycle ${cycleNumber}:`, err)
       throw err
     }
-  }, [viewAddress, orbitData, mergePositionTruth, orbitsT])
+  }, [viewAddress, account, orbitData, mergePositionTruth, orbitsT])
 
   const loadCycleHistoryForLevel = useCallback(async (level, cycleNumber, forceRefresh = false) => {
     if (!viewAddress || !ethers.isAddress(viewAddress) || !orbitData[level]) return
@@ -1133,8 +1139,10 @@ const OrbitsPage = () => {
     try {
       await refreshDirectDownlineSet(viewAddress)
 
+        const profileReadHeaders = await getProfileReadAuthIfLocked(viewAddress, account).catch(() => ({}))
         const snapshot = await fetchOrbitLevelSnapshotApi(viewAddress, level, {
           forceRefresh,
+          headers: profileReadHeaders,
         })
       if (snapshot?.isLocked || snapshot?.locked) {
         setOrbitError(snapshot.message || orbitsT('identity.lockedProfile', 'This profile is locked. You cannot view this profile.'))
@@ -1245,7 +1253,7 @@ const OrbitsPage = () => {
         setIsLoadingOrbits(false)
       }
     }
-  }, [viewAddress, mergePositionTruth, orbitData, orbitsT, refreshDirectDownlineSet])
+  }, [viewAddress, account, mergePositionTruth, orbitData, orbitsT, refreshDirectDownlineSet])
 
   const fetchAllOrbitData = useCallback(async (forceRefresh = false) => {
     if (!viewAddress || !ethers.isAddress(viewAddress)) return
@@ -1285,8 +1293,10 @@ const OrbitsPage = () => {
     }
 
     const promise = (async () => {
+      const profileReadHeaders = await getProfileReadAuthIfLocked(viewAddress, account).catch(() => ({}))
       const details = await fetchOrbitPositionDetailsApi(viewAddress, level, positionNumber, {
         forceRefresh,
+        headers: profileReadHeaders,
       })
       if (details?.isLocked || details?.locked) {
         throw new Error(details.message || orbitsT('identity.lockedProfile', 'This profile is locked. You cannot view this profile.'))
@@ -1319,7 +1329,7 @@ const OrbitsPage = () => {
     } finally {
       positionHydrationPromisesRef.current.delete(cacheKey)
     }
-  }, [viewAddress, mergePositionTruth, orbitsT])
+  }, [viewAddress, account, mergePositionTruth, orbitsT])
 
   const hydrateHistoricalPositionDetails = useCallback(async (level, cycleNumber, position) => {
     if (!viewAddress || !ethers.isAddress(viewAddress) || !position) return position
@@ -1332,7 +1342,8 @@ const OrbitsPage = () => {
     if (positionDetailsCacheRef.current.has(cacheKey)) return positionDetailsCacheRef.current.get(cacheKey)
 
     try {
-      const cycleSnapshot = await fetchOrbitCycleSnapshotApi(viewAddress, level, cycleNumber)
+      const profileReadHeaders = await getProfileReadAuthIfLocked(viewAddress, account).catch(() => ({}))
+      const cycleSnapshot = await fetchOrbitCycleSnapshotApi(viewAddress, level, cycleNumber, { headers: profileReadHeaders })
       if (cycleSnapshot?.isLocked || cycleSnapshot?.locked) {
         throw new Error(cycleSnapshot.message || orbitsT('identity.lockedProfile', 'This profile is locked. You cannot view this profile.'))
       }
@@ -1354,7 +1365,7 @@ const OrbitsPage = () => {
       console.error('Error hydrating historical position:', err)
       return position
     }
-  }, [viewAddress, mergePositionTruth, orbitsT])
+  }, [viewAddress, account, mergePositionTruth, orbitsT])
 
   const applyViewerAddress = async () => {
     identityAbortRef.current?.abort?.()

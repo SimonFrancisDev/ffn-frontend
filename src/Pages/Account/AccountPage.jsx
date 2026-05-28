@@ -45,6 +45,7 @@ const AccountPage = () => {
   const [showAllDirectReferrals, setShowAllDirectReferrals] = useState(false)
   const [profileLocked, setProfileLocked] = useState(false)
   const [profileLockedMessage, setProfileLockedMessage] = useState('')
+  const [profileReadQuery, setProfileReadQuery] = useState(null)
 
   // --- HELPERS ---
   const formatDisplay = useCallback((value) => {
@@ -81,7 +82,7 @@ const AccountPage = () => {
     if (!resolvedAddress) return
     try {
       const readQuery = isOwnSpace
-        ? await buildProfileReadQueryIfLocked(resolvedAddress).catch(() => null)
+        ? profileReadQuery || await buildProfileReadQueryIfLocked(resolvedAddress, { interactive: false }).catch(() => null)
         : null
 
       // Production Standard: One single source of truth for growth and tokens
@@ -105,7 +106,7 @@ const AccountPage = () => {
         downlinePayload?.locked ||
         orbitNetworkPayload?.locked
 
-      if (lockedPayload && !isOwnSpace) {
+      if (lockedPayload) {
         const message =
           data?.message ||
           referralsPayload?.message ||
@@ -137,7 +138,21 @@ const AccountPage = () => {
       console.error("Dashboard Sync Error:", err)
       toast.warning(accountT('errors.syncFailed', 'Account data could not be refreshed.'), { dedupeKey: 'account-summary-sync-failed' })
     }
-  }, [resolvedAddress, isOwnSpace, accountT, toast])
+  }, [resolvedAddress, isOwnSpace, profileReadQuery, accountT, toast])
+
+  const handleAuthorizePrivateProfile = async () => {
+    if (!resolvedAddress || !isOwnSpace) return
+
+    try {
+      const query = await buildProfileReadQueryIfLocked(resolvedAddress, { interactive: true })
+      setProfileReadQuery(query)
+      setProfileLocked(false)
+      setProfileLockedMessage('')
+      toast.success(accountT('profile.authorizedToast', 'Private profile view authorized.'), { dedupeKey: 'account-profile-read-authorized' })
+    } catch (error) {
+      toast.warning(error?.message || accountT('profile.authorizationFailed', 'Profile read authorization was not completed.'), { dedupeKey: 'account-profile-read-rejected' })
+    }
+  }
 
   useEffect(() => {
     if (!resolvedAddress) {
@@ -356,7 +371,7 @@ const shouldShowUpgradeProgress =
         {profileError && <p className="error-text">{profileError}</p>}
       </div>
 
-      {profileLocked && !isOwnSpace ? (
+      {profileLocked ? (
         <section className="account-surface account-network">
           <div className="section-title-group">
             <FaShieldAlt />
@@ -365,9 +380,15 @@ const shouldShowUpgradeProgress =
           <div className="account-network__empty">
             <p>{profileLockedMessage || accountT('profile.lockedMessage', 'This profile is locked. You cannot view this profile.')}</p>
           </div>
-          <button type="button" className="nav-action-btn" onClick={switchToSelf}>
-            {accountT('actions.returnToMyAccount', 'Return to My Account')} <FaArrowRight />
-          </button>
+          {isOwnSpace ? (
+            <button type="button" className="nav-action-btn" onClick={handleAuthorizePrivateProfile}>
+              {accountT('profile.authorizePrivateView', 'Authorize Private View')} <FaArrowRight />
+            </button>
+          ) : (
+            <button type="button" className="nav-action-btn" onClick={switchToSelf}>
+              {accountT('actions.returnToMyAccount', 'Return to My Account')} <FaArrowRight />
+            </button>
+          )}
         </section>
       ) : (
       <>

@@ -292,7 +292,7 @@ const OrbitsPage = () => {
   const getProfileReadQuery = useCallback(async () => {
     if (!account || !viewAddress) return null
     if (account.toLowerCase() !== viewAddress.toLowerCase()) return null
-    return buildProfileReadQueryIfLocked(viewAddress).catch(() => null)
+    return buildProfileReadQueryIfLocked(viewAddress, { interactive: false }).catch(() => null)
   }, [account, viewAddress])
 
   const galaxyRef = useRef(null)

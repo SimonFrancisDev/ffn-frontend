@@ -286,6 +286,7 @@ const CommunityPage = ({ onNavigate }) => {
   const [profileError, setProfileError] = useState('')
   const [profileLocked, setProfileLocked] = useState(false)
   const [profileLockedMessage, setProfileLockedMessage] = useState('')
+  const [profileReadQuery, setProfileReadQuery] = useState(null)
   
 
   const [publicReadStats, setPublicReadStats] = useState({
@@ -501,8 +502,8 @@ const CommunityPage = ({ onNavigate }) => {
 
   const getProfileReadQuery = useCallback(async () => {
     if (!resolvedAddress || !isOwnSpace) return null
-    return buildProfileReadQueryIfLocked(resolvedAddress).catch(() => null)
-  }, [resolvedAddress, isOwnSpace])
+    return profileReadQuery || buildProfileReadQueryIfLocked(resolvedAddress, { interactive: false }).catch(() => null)
+  }, [resolvedAddress, isOwnSpace, profileReadQuery])
 
   const leaderboardItems = leaderboardState.items || []
   const announcementItems = announcementState.items || []
@@ -670,6 +671,20 @@ const CommunityPage = ({ onNavigate }) => {
     toast.info(communityT('profile.returnedToast', 'Viewing your account again.'), { dedupeKey: 'community-profile-returned' })
   }, [switchToSelf, communityT, toast])
 
+  const handleAuthorizePrivateProfile = useCallback(async () => {
+    if (!resolvedAddress || !isOwnSpace) return
+
+    try {
+      const query = await buildProfileReadQueryIfLocked(resolvedAddress, { interactive: true })
+      setProfileReadQuery(query)
+      setProfileLocked(false)
+      setProfileLockedMessage('')
+      toast.success(communityT('profile.authorizedToast', 'Private profile view authorized.'), { dedupeKey: 'community-profile-read-authorized' })
+    } catch (error) {
+      toast.warning(error?.message || communityT('profile.authorizationFailed', 'Profile read authorization was not completed.'), { dedupeKey: 'community-profile-read-rejected' })
+    }
+  }, [resolvedAddress, isOwnSpace, communityT, toast])
+
   const handleOpenProfileModal = useCallback(() => {
     setProfileModalOpen(true)
   }, [])
@@ -754,7 +769,7 @@ const CommunityPage = ({ onNavigate }) => {
     try {
       const readQuery = await getProfileReadQuery()
       const payload = await fetchJson(buildProfileReadUrl(`/api/community/member/${resolvedAddress}/summary`, readQuery))
-      if (payload?.locked && !isOwnSpace) {
+      if (payload?.locked) {
         const message = payload.message || communityT('profile.lockedMessage', 'This profile is locked. You cannot view this profile.')
         setProfileLocked(true)
         setProfileLockedMessage(message)
@@ -791,7 +806,7 @@ const CommunityPage = ({ onNavigate }) => {
 
   const fetchUserReferralStats = useCallback(async () => {
     if (!resolvedAddress) return
-    if (profileLocked && !isOwnSpace) return
+    if (profileLocked) return
     try {
       if (!isOwnSpace) {
         setUserReferralCount(0)
@@ -800,7 +815,7 @@ const CommunityPage = ({ onNavigate }) => {
       }
       const readQuery = await getProfileReadQuery()
       const payload = await fetchJson(buildProfileReadUrl(`/api/community/member/${resolvedAddress}/referrals`, readQuery))
-      if (payload?.locked && !isOwnSpace) return
+      if (payload?.locked) return
       const data = payload?.data || {}
       setUserReferralCount(Number(data.totalReferrals || 0))
       setUserCommission(
@@ -817,11 +832,11 @@ const CommunityPage = ({ onNavigate }) => {
 
   const fetchUserDownline = useCallback(async () => {
     if (!resolvedAddress) return
-    if (profileLocked && !isOwnSpace) return
+    if (profileLocked) return
     try {
       const readQuery = await getProfileReadQuery()
       const payload = await fetchJson(buildProfileReadUrl(`/api/community/member/${resolvedAddress}/orbit-network`, readQuery))
-      if (payload?.locked && !isOwnSpace) return
+      if (payload?.locked) return
       const data = payload?.data || {}
       const levels = data.levels || {}
       setOrbitNetwork(levels)
@@ -1231,7 +1246,7 @@ const CommunityPage = ({ onNavigate }) => {
         </button>
       ) : null}
 
-      {profileLocked && !isOwnSpace ? (
+      {profileLocked ? (
         <CommunitySection
           eyebrow={communityT('profile.lockedEyebrow', 'Private Profile')}
           title={communityT('profile.lockedTitle', 'Profile locked')}
@@ -1247,9 +1262,15 @@ const CommunityPage = ({ onNavigate }) => {
               <p className="community-panel-empty__text soft-text">
                 {profileLockedMessage || communityT('profile.lockedMessage', 'This profile is locked. You cannot view this profile.')}
               </p>
-              <button type="button" onClick={handleReturnToMyProfile}>
-                {communityT('profile.actions.return', 'Return to my profile')}
-              </button>
+              {isOwnSpace ? (
+                <button type="button" onClick={handleAuthorizePrivateProfile}>
+                  {communityT('profile.actions.authorizePrivateView', 'Authorize Private View')}
+                </button>
+              ) : (
+                <button type="button" onClick={handleReturnToMyProfile}>
+                  {communityT('profile.actions.return', 'Return to my profile')}
+                </button>
+              )}
             </div>
           </div>
         </CommunitySection>

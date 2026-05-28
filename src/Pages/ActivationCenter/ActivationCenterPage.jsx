@@ -323,7 +323,7 @@ const ActivationCenterPage = () => {
 
   const getProfileReadQuery = useCallback(async () => {
     if (!viewer || !isOwnSpace) return null
-    return buildProfileReadQueryIfLocked(viewer).catch(() => null)
+    return buildProfileReadQueryIfLocked(viewer, { interactive: false }).catch(() => null)
   }, [viewer, isOwnSpace])
 
   // ==================== SIMPLE REFERRAL HELPERS ====================

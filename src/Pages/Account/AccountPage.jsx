@@ -7,7 +7,7 @@ import { useContracts } from '../../hooks/useContracts'
 import { useSpace } from '../../context/SpaceContext'
 import { ethers } from 'ethers'
 import { fetchUserSummaryApi } from '../../Services/orbitsApi'
-import { getProfileReadAuthIfLocked } from '../../Services/profilePrivacyApi'
+import { getProfileReadAuthIfLocked, isProfileReadAuthError, ProfileReadAuthError } from '../../Services/profilePrivacyApi'
 import { getApiUrl } from '../../Services/apiConfig'
 import { resolveIdentity } from '../../utils/identityResolver'
 import { NETWORK_CONFIG } from '../../constants/addresses'
@@ -76,11 +76,27 @@ const AccountPage = () => {
     )
   }, [summary])
 
+  const isViewingConnectedWallet = useMemo(() => {
+    try {
+      return Boolean(
+        account &&
+        resolvedAddress &&
+        ethers.isAddress(account) &&
+        ethers.isAddress(resolvedAddress) &&
+        ethers.getAddress(account).toLowerCase() === ethers.getAddress(resolvedAddress).toLowerCase()
+      )
+    } catch {
+      return false
+    }
+  }, [account, resolvedAddress])
+
   // --- DATA FETCHING ---
   const fetchData = useCallback(async () => {
     if (!resolvedAddress) return
     try {
-      const profileReadHeaders = await getProfileReadAuthIfLocked(resolvedAddress, account).catch(() => ({}))
+      const profileReadHeaders = await getProfileReadAuthIfLocked(resolvedAddress, account, {
+        requiredForOwner: isViewingConnectedWallet,
+      })
       // Production Standard: One single source of truth for growth and tokens
       const [data, referralsPayload, downlinePayload, orbitNetworkPayload] = await Promise.all([
         fetchUserSummaryApi(resolvedAddress, { headers: profileReadHeaders }),
@@ -103,6 +119,10 @@ const AccountPage = () => {
         orbitNetworkPayload?.locked
 
       if (lockedPayload) {
+        if (isViewingConnectedWallet) {
+          throw new ProfileReadAuthError(accountT('profile.ownerAuthFailed', 'Your locked profile needs wallet authorization before private data can be shown.'))
+        }
+
         const message =
           data?.message ||
           referralsPayload?.message ||
@@ -132,9 +152,14 @@ const AccountPage = () => {
       setLastUpdated(new Date().toLocaleTimeString())
     } catch (err) {
       console.error("Dashboard Sync Error:", err)
-      toast.warning(accountT('errors.syncFailed', 'Account data could not be refreshed.'), { dedupeKey: 'account-summary-sync-failed' })
+      setProfileLocked(false)
+      if (isProfileReadAuthError(err)) {
+        toast.warning(err.message || accountT('profile.ownerAuthFailed', 'Your locked profile needs wallet authorization before private data can be shown.'), { dedupeKey: 'account-profile-owner-auth-failed' })
+      } else {
+        toast.warning(accountT('errors.syncFailed', 'Account data could not be refreshed.'), { dedupeKey: 'account-summary-sync-failed' })
+      }
     }
-  }, [resolvedAddress, account, isOwnSpace, accountT, toast])
+  }, [resolvedAddress, account, isViewingConnectedWallet, accountT, toast])
 
   useEffect(() => {
     if (!resolvedAddress) {

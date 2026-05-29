@@ -11,6 +11,20 @@ const proofCache = new Map()
 const proofInflight = new Map()
 const sessionInflight = new Map()
 
+export class ProfileReadAuthError extends Error {
+  constructor(message, options = {}) {
+    super(message)
+    this.name = 'ProfileReadAuthError'
+    this.code = 'PROFILE_READ_AUTH_REQUIRED'
+    this.ownerAccess = true
+    this.cause = options.cause
+  }
+}
+
+export function isProfileReadAuthError(error) {
+  return error?.code === 'PROFILE_READ_AUTH_REQUIRED' || error instanceof ProfileReadAuthError
+}
+
 function buildWalletProofMessage(action, walletAddress, timestamp) {
   return [
     'Fin Freedom Network',
@@ -177,15 +191,37 @@ export async function getProfileSessionAuth(address, options = {}) {
   return session?.token ? { Authorization: `Bearer ${session.token}` } : {}
 }
 
-export async function getProfileReadAuthIfLocked(targetAddress, connectedAddress) {
+export async function getProfileReadAuthIfLocked(targetAddress, connectedAddress, options = {}) {
+  const { requiredForOwner = false } = options
   if (!targetAddress || !connectedAddress) return {}
 
   const target = getAddress(String(targetAddress || '').trim())
   const connected = getAddress(String(connectedAddress || '').trim())
   if (target.toLowerCase() !== connected.toLowerCase()) return {}
 
-  const privacy = await fetchProfilePrivacy(target)
+  let privacy
+  try {
+    privacy = await fetchProfilePrivacy(target)
+  } catch (error) {
+    if (requiredForOwner) {
+      throw new ProfileReadAuthError('Profile privacy status could not be verified for your wallet.', { cause: error })
+    }
+    return {}
+  }
+
   if (!privacy?.isLocked) return {}
 
-  return getProfileSessionAuth(connected)
+  try {
+    const headers = await getProfileSessionAuth(connected)
+    if (requiredForOwner && !headers.Authorization) {
+      throw new ProfileReadAuthError('Authorize your wallet to view your locked profile.')
+    }
+    return headers
+  } catch (error) {
+    if (isProfileReadAuthError(error)) throw error
+    if (requiredForOwner) {
+      throw new ProfileReadAuthError('Authorize your wallet to view your locked profile.', { cause: error })
+    }
+    return {}
+  }
 }

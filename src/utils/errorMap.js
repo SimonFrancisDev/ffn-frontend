@@ -78,6 +78,12 @@ const KNOWN_ERROR_PATTERNS = [
     action: 'Contact support before retrying this activation.',
   },
   {
+    test: /-32007|request limit reached|rate limit|too many requests|125\/second|eth_getBlockByNumber/i,
+    title: 'RPC provider is busy',
+    message: 'The blockchain provider is receiving too many requests. No transaction was submitted unless your wallet shows a pending transaction.',
+    action: 'Wait a few seconds, refresh only the selected item, and retry once.',
+  },
+  {
     test: /could not coalesce|coalesce/i,
     title: 'Wallet response needs retry',
     message: 'The wallet or RPC returned an incomplete transaction response. The transaction may not have been submitted.',

@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useMemo, useCallback } from 'react';
+import React, { useState, useEffect, useMemo, useCallback, useRef } from 'react';
 import { HelpCircle } from 'lucide-react';
 import { Container, Row, Col, Form, Button, Alert, Spinner, Table, Accordion, Badge, Modal } from 'react-bootstrap';
 import { useWallet } from '../hooks/useWallet';
@@ -24,7 +24,7 @@ import {
 const ADMIN_API_HEADER = 'x-admin-key';
 const ADMIN_SESSION_KEY = 'ffn_admin_api_key_session';
 const HIDDEN_MULTISIG_TXS_KEY = 'ffn_hidden_multisig_txs';
-const MULTISIG_RECENT_WINDOW_SECONDS = 7 * 24 * 60 * 60;
+const MULTISIG_DEFAULT_SCAN_LIMIT = 15;
 const GAS_BUFFER_BPS = 12000n;
 const GAS_BUFFER_DENOMINATOR = 10000n;
 
@@ -708,6 +708,7 @@ export const AdminPanel = () => {
   const [showChargeModal, setShowChargeModal] = useState(false);
   const [financialTruth, setFinancialTruth] = useState(emptyFinancialTruth);
   const [financialTruthError, setFinancialTruthError] = useState('');
+  const txActionInFlightRef = useRef(false);
 
   const totalRatio = useMemo(
     () => ratioInputs.reduce((sum, r) => sum + parseInt(r || 0, 10), 0),
@@ -771,20 +772,17 @@ export const AdminPanel = () => {
   }, [multisigTx, multisigStats.requiredConfirmations]);
 
   const visibleRecentTxs = useMemo(() => {
-    const now = Number(multisigStats.currentTimestamp || Math.floor(Date.now() / 1000));
     return recentTxs.filter((tx) => {
       const txId = String(tx.txId);
       const hidden = hiddenTxIds.includes(txId);
       if (hidden && !showHiddenTxs) return false;
 
       const executed = Boolean(tx.executed);
-      const submittedAt = Number(tx.submittedAt || 0);
-      const isRecent = submittedAt > 0 && now - submittedAt <= MULTISIG_RECENT_WINDOW_SECONDS;
-      if (executed && !showExecutedTxs && !isRecent) return false;
+      if (executed && !showExecutedTxs) return false;
 
       return true;
     });
-  }, [hiddenTxIds, multisigStats.currentTimestamp, recentTxs, showExecutedTxs, showHiddenTxs]);
+  }, [hiddenTxIds, recentTxs, showExecutedTxs, showHiddenTxs]);
 
   const persistHiddenTxIds = useCallback((nextIds) => {
     const normalized = Array.from(new Set(nextIds.map(String)));
@@ -924,16 +922,26 @@ export const AdminPanel = () => {
     return { label: 'Unknown action', details: tx.data, category: 'Unknown', targetLabel: shortAddress(tx.to) };
   }, []);
 
-  const readTransaction = useCallback(async (txId) => {
+  const readTransaction = useCallback(async (txId, options = {}) => {
     if (!contracts?.simpleMultiSig) return null;
+    const {
+      approvalMode = 'current',
+      ownersOverride = ownerList
+    } = options;
     const tx = await contracts.simpleMultiSig.transactions(Number(txId));
 
-    const approvals = ownerList.length > 0 ?
-    await Promise.all(ownerList.map(async (owner) => ({
-      owner,
-      approved: await contracts.simpleMultiSig.approved(Number(txId), owner)
-    }))) :
-    [];
+    let approvals = [];
+    if (approvalMode === 'all' && ownersOverride.length > 0) {
+      approvals = await Promise.all(ownersOverride.map(async (owner) => ({
+        owner,
+        approved: await contracts.simpleMultiSig.approved(Number(txId), owner)
+      })));
+    } else if (approvalMode === 'current' && account) {
+      approvals = [{
+        owner: account,
+        approved: await contracts.simpleMultiSig.approved(Number(txId), account)
+      }];
+    }
 
     const raw = {
       txId: Number(txId),
@@ -951,7 +959,7 @@ export const AdminPanel = () => {
       ...raw,
       ...decodeTransactionAction(raw)
     };
-  }, [contracts, ownerList, decodeTransactionAction]);
+  }, [contracts, ownerList, account, decodeTransactionAction]);
 
   const loadGuardianChecks = useCallback(async (proxyAddress, implementationAddress) => {
     if (!contracts?.guardian) {
@@ -1200,11 +1208,14 @@ export const AdminPanel = () => {
       }
 
       const count = Number(txCount);
-      const start = Math.max(0, count - 50);
+      const start = Math.max(0, count - MULTISIG_DEFAULT_SCAN_LIMIT);
       const ids = [];
       for (let i = count - 1; i >= start; i -= 1) ids.push(i);
 
-      const txs = await Promise.all(ids.map((id) => readTransaction(id)));
+      const txs = await Promise.all(ids.map((id) => readTransaction(id, {
+        approvalMode: 'current',
+        ownersOverride: owners
+      })));
       const validTxs = txs.filter(Boolean);
       setRecentTxs(txs.filter(Boolean));
 
@@ -1218,7 +1229,10 @@ export const AdminPanel = () => {
       }));
 
       if (multisigTx?.txId !== undefined) {
-        const fresh = await readTransaction(multisigTx.txId);
+        const fresh = await readTransaction(multisigTx.txId, {
+          approvalMode: 'all',
+          ownersOverride: owners
+        });
         setMultisigTx(fresh);
         setSelectedTxApprovals(fresh?.approvals || []);
         if (fresh?.proxyAddress || fresh?.implementationAddress) {
@@ -1268,21 +1282,15 @@ export const AdminPanel = () => {
   }, [contracts, account, refreshGovernanceData, fetchAllContent]);
 
   useEffect(() => {
-    const interval = setInterval(async () => {
-      if (!contracts?.levelManager?.runner?.provider) return;
-      try {
-        const latestBlock = await contracts.levelManager.runner.provider.getBlock('latest');
-        setMultisigStats((prev) => ({
-          ...prev,
-          currentTimestamp: latestBlock?.timestamp || prev.currentTimestamp
-        }));
-      } catch (err) {
-        console.error(err);
-      }
-    }, 30000);
+    const interval = setInterval(() => {
+      setMultisigStats((prev) => ({
+        ...prev,
+        currentTimestamp: Number(prev.currentTimestamp || Math.floor(Date.now() / 1000)) + 1
+      }));
+    }, 1000);
 
     return () => clearInterval(interval);
-  }, [contracts]);
+  }, []);
 
   const getWriteContracts = async () => {
     const { writeContracts } = await web3Service.initWallet({ requestAccounts: false });
@@ -1292,6 +1300,9 @@ export const AdminPanel = () => {
   const setLoadingTx = (hash = null, note = null) => {
     setTxStatus({ loading: true, hash, error: null, note });
     if (hash) toast.info(note || adminT('toast.transactionSubmitted', 'Transaction submitted.'), { dedupeKey: `admin-tx-submitted-${hash}` });
+  };
+  const setCheckingTx = (note = 'Checking transaction...') => {
+    setTxStatus({ loading: true, hash: null, error: null, note });
   };
   const setDoneTx = (hash = null, note = null) => {
     setTxStatus({ loading: false, hash, error: null, note });
@@ -1308,6 +1319,8 @@ export const AdminPanel = () => {
 
   const submitRawProposal = async (target, data, note) => {
     try {
+      ensureActionIdle();
+      setCheckingTx(`Checking proposal: ${note}`);
       const writeContracts = await getWriteContracts();
       const gasEstimate = await writeContracts.simpleMultiSig.submitTransaction.estimateGas(target, 0, data);
       const tx = await writeContracts.simpleMultiSig.submitTransaction(target, 0, data, {
@@ -1321,6 +1334,8 @@ export const AdminPanel = () => {
     } catch (err) {
       setNormalizedErrorTx(err, `${note} failed`);
       throw err;
+    } finally {
+      releaseActionLock();
     }
   };
 
@@ -1365,6 +1380,102 @@ export const AdminPanel = () => {
     return submitRawProposal(target, data, note);
   };
 
+  const refreshTransactionOnly = useCallback(async (txId, options = {}) => {
+    if (txId === null || txId === undefined || txId === '') return null;
+    const mode = options.approvalMode || 'current';
+    const fresh = await readTransaction(Number(txId), { approvalMode: mode });
+    if (!fresh) return null;
+
+    setRecentTxs((current) => {
+      const exists = current.some((item) => Number(item.txId) === Number(txId));
+      const next = exists
+        ? current.map((item) => Number(item.txId) === Number(txId) ? { ...item, ...fresh } : item)
+        : [fresh, ...current];
+      return next
+        .sort((a, b) => Number(b.txId || 0) - Number(a.txId || 0))
+        .slice(0, MULTISIG_DEFAULT_SCAN_LIMIT);
+    });
+
+    if (multisigTx?.txId !== undefined && Number(multisigTx.txId) === Number(txId)) {
+      const detailed = mode === 'all' ? fresh : await readTransaction(Number(txId), { approvalMode: 'all' });
+      setMultisigTx(detailed);
+      setSelectedTxApprovals(detailed?.approvals || []);
+      if (detailed?.proxyAddress || detailed?.implementationAddress) {
+        await loadGuardianChecks(detailed.proxyAddress || levelManagerAddress, detailed.implementationAddress || '');
+      }
+      return detailed;
+    }
+
+    return fresh;
+  }, [readTransaction, multisigTx?.txId, loadGuardianChecks, levelManagerAddress]);
+
+  const ensureActionIdle = () => {
+    if (txActionInFlightRef.current || txStatus.loading) {
+      throw new Error('Another governance action is already in progress. Wait for it to finish before retrying.');
+    }
+    txActionInFlightRef.current = true;
+  };
+
+  const releaseActionLock = () => {
+    txActionInFlightRef.current = false;
+  };
+
+  const preflightMultisigAction = async (txId, action) => {
+    if (!contracts?.simpleMultiSig) throw new Error('Multisig contract is not available.');
+    if (!account) throw new Error('Connect a multisig owner wallet first.');
+    if (!Number.isInteger(Number(txId)) || Number(txId) < 0) throw new Error('Enter a valid multisig transaction ID.');
+
+    const ownerMatch = await contracts.simpleMultiSig.isOwner(account);
+    if (!ownerMatch) throw new Error('This wallet is not a multisig owner.');
+
+    const tx = await readTransaction(Number(txId), { approvalMode: 'all' });
+    if (!tx) throw new Error(`Transaction #${txId} could not be loaded.`);
+    if (tx.executed) throw new Error(`Transaction #${txId} has already been executed.`);
+
+    const ownApproval = tx.approvals?.find((item) => item.owner?.toLowerCase() === account.toLowerCase());
+    if (action === 'approve' && ownApproval?.approved) {
+      throw new Error(`This wallet has already approved transaction #${txId}.`);
+    }
+    if (action === 'revoke' && !ownApproval?.approved) {
+      throw new Error(`This wallet has not approved transaction #${txId}, so there is nothing to revoke.`);
+    }
+
+    if (action === 'execute') {
+      const confirmations = Number(tx.confirmations || 0);
+      const required = Number(multisigStats.requiredConfirmations || 0);
+      const executeAfter = Number(tx.executeAfter || 0);
+      const now = Number(multisigStats.currentTimestamp || Math.floor(Date.now() / 1000));
+      if (confirmations < required) throw new Error(`Transaction #${txId} still needs ${required - confirmations} more approval(s).`);
+      if (now < executeAfter) throw new Error(`Transaction #${txId} is still timelocked for ${formatCountdown(executeAfter - now)}.`);
+
+      const provider = contracts.simpleMultiSig.runner?.provider;
+      if (provider && tx.to && ethers.isAddress(tx.to)) {
+        const targetCode = await provider.getCode(tx.to);
+        if (!targetCode || targetCode === '0x') throw new Error('The target address has no contract code.');
+      }
+
+      if (tx.implementationAddress || tx.proxyAddress) {
+        const proxy = tx.proxyAddress || tx.to;
+        const implementation = tx.implementationAddress;
+        if (!implementation || !ethers.isAddress(implementation)) throw new Error('Upgrade implementation address is missing or invalid.');
+        if (provider) {
+          const implementationCode = await provider.getCode(implementation);
+          if (!implementationCode || implementationCode === '0x') throw new Error('The implementation address has no contract code.');
+        }
+        if (contracts.guardian?.paused && await contracts.guardian.paused()) throw new Error('Guardian is paused. Unpause Guardian before executing upgrade proposals.');
+        if (contracts.guardian?.globalUpgradeFreeze && await contracts.guardian.globalUpgradeFreeze()) throw new Error('Guardian global upgrade freeze is active.');
+        const [proxyApproved, implementationApproved] = await Promise.all([
+          contracts.guardian?.approvedProxies(proxy),
+          contracts.guardian?.approvedImplementations(proxy, implementation)
+        ]);
+        if (!proxyApproved) throw new Error('Guardian has not approved this proxy yet.');
+        if (!implementationApproved) throw new Error('Guardian has not approved this implementation for this proxy yet.');
+      }
+    }
+
+    return tx;
+  };
+
   const loadMultisigTx = async (forcedId = null) => {
     const idToLoad = forcedId ?? txIdInput;
     if (!contracts?.simpleMultiSig || idToLoad === '' || idToLoad === null || idToLoad === undefined) return;
@@ -1376,7 +1487,7 @@ export const AdminPanel = () => {
         currentTimestamp: latestBlock?.timestamp || prev.currentTimestamp
       }));
 
-      const tx = await readTransaction(Number(idToLoad));
+      const tx = await readTransaction(Number(idToLoad), { approvalMode: 'all' });
       setMultisigTx(tx);
       setTxIdInput(String(idToLoad));
       setSelectedTxApprovals(tx?.approvals || []);
@@ -1398,6 +1509,9 @@ export const AdminPanel = () => {
   const handleApproveTx = async (forcedId = null) => {
     const idToUse = Number(forcedId ?? txIdInput);
     try {
+      ensureActionIdle();
+      setCheckingTx(`Checking approval for transaction #${idToUse}`);
+      await preflightMultisigAction(idToUse, 'approve');
       const writeContracts = await getWriteContracts();
       const gasEstimate = await writeContracts.simpleMultiSig.approveTransaction.estimateGas(idToUse);
       const tx = await writeContracts.simpleMultiSig.approveTransaction(idToUse, {
@@ -1406,16 +1520,20 @@ export const AdminPanel = () => {
       setLoadingTx(tx.hash, `Approving transaction #${idToUse}`);
       await tx.wait();
       setDoneTx(tx.hash, `Approved transaction #${idToUse}`);
-      await refreshGovernanceData();
-      await loadMultisigTx(idToUse);
+      await refreshTransactionOnly(idToUse, { approvalMode: 'all' });
     } catch (err) {
       setNormalizedErrorTx(err, 'Approval failed');
+    } finally {
+      releaseActionLock();
     }
   };
 
   const handleRevokeTx = async (forcedId = null) => {
     const idToUse = Number(forcedId ?? txIdInput);
     try {
+      ensureActionIdle();
+      setCheckingTx(`Checking revoke for transaction #${idToUse}`);
+      await preflightMultisigAction(idToUse, 'revoke');
       const writeContracts = await getWriteContracts();
       const gasEstimate = await writeContracts.simpleMultiSig.revokeConfirmation.estimateGas(idToUse);
       const tx = await writeContracts.simpleMultiSig.revokeConfirmation(idToUse, {
@@ -1424,16 +1542,20 @@ export const AdminPanel = () => {
       setLoadingTx(tx.hash, `Revoking approval for transaction #${idToUse}`);
       await tx.wait();
       setDoneTx(tx.hash, `Revoked approval for transaction #${idToUse}`);
-      await refreshGovernanceData();
-      await loadMultisigTx(idToUse);
+      await refreshTransactionOnly(idToUse, { approvalMode: 'all' });
     } catch (err) {
       setNormalizedErrorTx(err, 'Revoke failed');
+    } finally {
+      releaseActionLock();
     }
   };
 
   const handleExecuteTx = async (forcedId = null) => {
     const idToUse = Number(forcedId ?? txIdInput);
     try {
+      ensureActionIdle();
+      setCheckingTx(`Checking execution for transaction #${idToUse}`);
+      await preflightMultisigAction(idToUse, 'execute');
       const writeContracts = await getWriteContracts();
       const gasEstimate = await writeContracts.simpleMultiSig.executeTransaction.estimateGas(idToUse);
       const tx = await writeContracts.simpleMultiSig.executeTransaction(idToUse, {
@@ -1442,10 +1564,11 @@ export const AdminPanel = () => {
       setLoadingTx(tx.hash, `Executing transaction #${idToUse}`);
       await tx.wait();
       setDoneTx(tx.hash, `Executed transaction #${idToUse}`);
-      await refreshGovernanceData();
-      await loadMultisigTx(idToUse);
+      await refreshTransactionOnly(idToUse, { approvalMode: 'all' });
     } catch (err) {
       setNormalizedErrorTx(err, 'Execution failed');
+    } finally {
+      releaseActionLock();
     }
   };
 
@@ -2137,9 +2260,9 @@ export const AdminPanel = () => {
                                 <td>
                                   <div className="flex-between-premium" style={{ gap: '6px', flexWrap: 'wrap' }}>
                                     <button className="btn-premium btn-premium-sm" onClick={() => loadMultisigTx(tx.txId)}>{adminT("ui.actions.view", "View")}</button>
-                                    <button className="btn-premium btn-premium-sm" onClick={() => handleApproveTx(tx.txId)} disabled={tx.executed || currentOwnerApproval?.approved}>{adminT("ui.actions.approve", "Approve")}</button>
-                                    <button className="btn-premium btn-premium-sm" onClick={() => handleRevokeTx(tx.txId)} disabled={tx.executed || !currentOwnerApproval?.approved}>{adminT("ui.actions.revoke", "Revoke")}</button>
-                                    <button className="btn-premium btn-premium-sm" onClick={() => handleExecuteTx(tx.txId)} disabled={tx.executed || stage.variant !== 'primary'}>{adminT("ui.actions.execute", "Execute")}</button>
+                                    <button className="btn-premium btn-premium-sm" onClick={() => handleApproveTx(tx.txId)} disabled={txStatus.loading || tx.executed || currentOwnerApproval?.approved}>{adminT("ui.actions.approve", "Approve")}</button>
+                                    <button className="btn-premium btn-premium-sm" onClick={() => handleRevokeTx(tx.txId)} disabled={txStatus.loading || tx.executed || !currentOwnerApproval?.approved}>{adminT("ui.actions.revoke", "Revoke")}</button>
+                                    <button className="btn-premium btn-premium-sm" onClick={() => handleExecuteTx(tx.txId)} disabled={txStatus.loading || tx.executed || stage.variant !== 'primary'}>{adminT("ui.actions.execute", "Execute")}</button>
                                     {hidden ?
                                     <button className="btn-premium btn-premium-sm" onClick={() => handleUnhideTx(tx.txId)}>Unhide</button> :
                                     <button className="btn-premium btn-premium-sm" onClick={() => handleHideTx(tx.txId)}>Hide</button>
@@ -2176,10 +2299,10 @@ export const AdminPanel = () => {
                       </Col>
                       <Col md={6}>
                         <div className="flex-between-premium" style={{ gap: '6px' }}>
-                          <button className="btn-premium btn-premium-sm" onClick={() => loadMultisigTx()}>{adminT("ui.line1729.load", "Load")}</button>
-                          <button className="btn-premium btn-premium-sm" onClick={() => handleApproveTx()} disabled={!txIdInput}>{adminT("ui.line1730.approve", "Approve")}</button>
-                          <button className="btn-premium btn-premium-sm" onClick={() => handleRevokeTx()} disabled={!txIdInput}>{adminT("ui.line1731.revoke", "Revoke")}</button>
-                          <button className="btn-premium btn-premium-sm" onClick={() => handleExecuteTx()} disabled={!txIdInput}>{adminT("ui.line1732.execute", "Execute")}</button>
+                          <button className="btn-premium btn-premium-sm" onClick={() => loadMultisigTx()} disabled={txStatus.loading}>{adminT("ui.line1729.load", "Load")}</button>
+                          <button className="btn-premium btn-premium-sm" onClick={() => handleApproveTx()} disabled={txStatus.loading || !txIdInput}>{adminT("ui.line1730.approve", "Approve")}</button>
+                          <button className="btn-premium btn-premium-sm" onClick={() => handleRevokeTx()} disabled={txStatus.loading || !txIdInput}>{adminT("ui.line1731.revoke", "Revoke")}</button>
+                          <button className="btn-premium btn-premium-sm" onClick={() => handleExecuteTx()} disabled={txStatus.loading || !txIdInput}>{adminT("ui.line1732.execute", "Execute")}</button>
                         </div>
                       </Col>
                     </Row>

@@ -94,9 +94,7 @@ const AccountPage = () => {
   const fetchData = useCallback(async () => {
     if (!resolvedAddress) return
     try {
-      const profileReadHeaders = await getProfileReadAuthIfLocked(resolvedAddress, account, {
-        requiredForOwner: isViewingConnectedWallet,
-      })
+      const profileReadHeaders = await getProfileReadAuthIfLocked(resolvedAddress, account)
       // Production Standard: One single source of truth for growth and tokens
       const [data, referralsPayload, downlinePayload, orbitNetworkPayload] = await Promise.all([
         fetchUserSummaryApi(resolvedAddress, { headers: profileReadHeaders }),

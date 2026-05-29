@@ -5225,6 +5225,29 @@
   font-weight: 800;
 }
 
+.position-modal--earnings .modal-detail {
+  display: grid !important;
+  grid-template-columns: minmax(112px, 0.42fr) minmax(0, 1fr);
+  gap: 10px;
+  align-items: start;
+}
+
+.position-modal--earnings .modal-detail span:last-child,
+.position-modal--earnings .modal-beneficiary-row__top span {
+  font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", monospace;
+  overflow-wrap: anywhere;
+  word-break: break-word;
+}
+
+.position-modal--earnings .modal-beneficiary-row__amounts {
+  justify-content: flex-end;
+}
+
+.position-modal--earnings .modal-beneficiary-chip:first-child {
+  min-width: 96px;
+  justify-content: center;
+}
+
 .position-modal--earnings .modal-empty-state {
   padding: 12px;
   border: 1px dashed var(--ffn-border);

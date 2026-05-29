@@ -199,6 +199,8 @@ export async function getProfileReadAuthIfLocked(targetAddress, connectedAddress
   const connected = getAddress(String(connectedAddress || '').trim())
   if (target.toLowerCase() !== connected.toLowerCase()) return {}
 
+  const selfViewHeaders = { 'X-Profile-Viewer-Address': connected }
+
   let privacy
   try {
     privacy = await fetchProfilePrivacy(target)
@@ -209,19 +211,7 @@ export async function getProfileReadAuthIfLocked(targetAddress, connectedAddress
     return {}
   }
 
-  if (!privacy?.isLocked) return {}
+  if (!privacy?.isLocked) return selfViewHeaders
 
-  try {
-    const headers = await getProfileSessionAuth(connected)
-    if (requiredForOwner && !headers.Authorization) {
-      throw new ProfileReadAuthError('Authorize your wallet to view your locked profile.')
-    }
-    return headers
-  } catch (error) {
-    if (isProfileReadAuthError(error)) throw error
-    if (requiredForOwner) {
-      throw new ProfileReadAuthError('Authorize your wallet to view your locked profile.', { cause: error })
-    }
-    return {}
-  }
+  return selfViewHeaders
 }

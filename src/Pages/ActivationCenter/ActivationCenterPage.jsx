@@ -422,7 +422,7 @@ const ActivationCenterPage = () => {
     }
 
     try {
-      const profileReadHeaders = await getProfileReadAuthIfLocked(viewer, account, { requiredForOwner: true })
+      const profileReadHeaders = await getProfileReadAuthIfLocked(viewer, account)
       const summary = await fetchUserSummaryApi(viewer, { headers: profileReadHeaders })
       const byLevel = Array.isArray(summary?.earnings?.byLevel)
         ? summary.earnings.byLevel
@@ -691,7 +691,7 @@ const ActivationCenterPage = () => {
       if (!viewer || !isRegistered) return null
 
       try {
-        const profileReadHeaders = await getProfileReadAuthIfLocked(viewer, account, { requiredForOwner: true })
+        const profileReadHeaders = await getProfileReadAuthIfLocked(viewer, account)
         const snapshot = await fetchOrbitLevelSnapshotApi(viewer, level, { headers: profileReadHeaders })
         if (!snapshot) return null
 
@@ -755,7 +755,7 @@ const ActivationCenterPage = () => {
     if (!viewer) return
 
     try {
-      const profileReadHeaders = await getProfileReadAuthIfLocked(viewer, account, { requiredForOwner: true })
+      const profileReadHeaders = await getProfileReadAuthIfLocked(viewer, account)
       const result = await fetchAddressReceiptsApi(viewer, undefined, { headers: profileReadHeaders })
       const receipts = Array.isArray(result?.receipts) ? result.receipts : []
       setReceiptsSupported(true)

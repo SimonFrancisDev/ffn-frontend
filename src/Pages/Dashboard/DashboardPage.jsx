@@ -582,7 +582,7 @@ const DashboardPage = () => {
     setAccessError('')
 
     try {
-      const profileReadHeaders = await getProfileReadAuthIfLocked(account, account, { requiredForOwner: true })
+      const profileReadHeaders = await getProfileReadAuthIfLocked(account, account)
       const payload = await fetchJson(`/api/community/member/${account}/summary`, { headers: profileReadHeaders })
       const data = payload?.data || {}
 

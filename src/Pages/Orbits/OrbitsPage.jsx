@@ -369,17 +369,7 @@ const OrbitsPage = () => {
   }, [])
 
   const getProfileReadHeaders = useCallback(async (address = viewAddress) => {
-    const requiresOwnerAuth = Boolean(
-      account &&
-      address &&
-      ethers.isAddress(account) &&
-      ethers.isAddress(address) &&
-      ethers.getAddress(account).toLowerCase() === ethers.getAddress(address).toLowerCase()
-    )
-
-    return getProfileReadAuthIfLocked(address, account, {
-      requiredForOwner: requiresOwnerAuth,
-    })
+    return getProfileReadAuthIfLocked(address, account)
   }, [account, viewAddress])
 
   const getProfileReadAuthMessage = useCallback((error) => (
@@ -397,9 +387,11 @@ const OrbitsPage = () => {
 
   const formatUsdtDisplay = useCallback((value) => {
     const num = typeof value === 'number' ? value : Number(value || 0)
-    if (!Number.isFinite(num)) return '0'
-    if (Math.abs(num % 1) < 0.000001) return String(num)
-    return num.toFixed(6).replace(/\.?0+$/, '')
+    if (!Number.isFinite(num)) return '0.00'
+    return num.toLocaleString(undefined, {
+      minimumFractionDigits: 2,
+      maximumFractionDigits: 2,
+    })
   }, [])
 
   const getEstimatedNetAmount = useCallback((grossAmount) => {
@@ -510,7 +502,6 @@ const OrbitsPage = () => {
 
   const getBeneficiaryRows = (position) => {
     const receipts = Array.isArray(position?.indexedReceipts) ? position.indexedReceipts : []
-    const hasReceiptRecycle = receipts.some((receipt) => Number(receipt.receiptType || 0) === RECEIPT_TYPES.RECYCLE)
     const rowsByKey = new Map()
 
     const addRow = ({ address, role, walletCredited = 0, escrowLocked = 0, recycled = 0 }) => {
@@ -628,6 +619,7 @@ const OrbitsPage = () => {
     }
 
     const receipts = Array.isArray(position?.indexedReceipts) ? position.indexedReceipts : []
+    const hasReceiptRecycle = receipts.some((receipt) => Number(receipt.receiptType || 0) === RECEIPT_TYPES.RECYCLE)
 
     receipts.forEach((receipt, index) => {
       const type = Number(receipt.receiptType || 0)
@@ -1144,11 +1136,15 @@ const OrbitsPage = () => {
       occupantReferrer: rawPosition?.occupantReferrer || resolvedReferrer
     }
 
-    const occupantType = deriveOccupantType(
+    const derivedOccupantType = deriveOccupantType(
       occupant,
       viewAddress,
       enrichedBase
     )
+    const previousOccupantType = String(rawPosition?.occupantType || '')
+    const occupantType = ['mine', 'downline', 'other', 'empty'].includes(previousOccupantType)
+      ? previousOccupantType
+      : derivedOccupantType
 
     const positionInfo = buildPositionInfoFromRuleView(
       orbitType,
@@ -1731,7 +1727,7 @@ const OrbitsPage = () => {
 
       let enrichedPosition = hydrated
       const currentReceipts = Array.isArray(enrichedPosition?.indexedReceipts) ? enrichedPosition.indexedReceipts : []
-      const activationId = Number(enrichedPosition?.activationId || 0)
+      let activationId = Number(enrichedPosition?.activationId || 0)
 
       if (enrichedPosition?.occupant) {
         const positionNumber = Number(enrichedPosition.number || position.number || 0)
@@ -1761,6 +1757,12 @@ const OrbitsPage = () => {
         addReceipts(receiptBucketsByLevel[level] || [])
         addReceipts(currentReceipts)
 
+        if (!activationId) {
+          activationId = [...receiptMap.values()]
+            .map((receipt) => Number(receipt?.activationId || 0))
+            .find((value) => value > 0) || 0
+        }
+
         let activationFinancialEvents = []
         if (activationId > 0) {
           try {
@@ -1778,6 +1780,7 @@ const OrbitsPage = () => {
             ...enrichedPosition,
             indexedReceipts: recoveredReceipts.length > 0 ? recoveredReceipts : currentReceipts,
             indexedReceiptCount: recoveredReceipts.length > 0 ? recoveredReceipts.length : currentReceipts.length,
+            activationId: activationId || enrichedPosition.activationId,
             activationFinancialEvents,
             receiptsHydrated: true
           }
@@ -1792,6 +1795,7 @@ const OrbitsPage = () => {
           ...prev,
           ...enrichedPosition,
           occupant: enrichedPosition?.occupant || prev.occupant,
+          occupantType: enrichedPosition?.occupantType || prev.occupantType,
           user: enrichedPosition?.user || prev.user,
           referrer: enrichedPosition?.referrer || prev.referrer,
           originalReferrer: enrichedPosition?.originalReferrer || prev.originalReferrer,
@@ -1882,6 +1886,14 @@ const OrbitsPage = () => {
 
     addAddress(selectedPosition.occupant)
     ;(selectedPosition.indexedReceipts || []).forEach((receipt) => addAddress(receipt.receiver))
+    ;(selectedPosition.activationFinancialEvents || []).forEach((event) => {
+      addAddress(event.receiver)
+      addAddress(event.recycleReceiver)
+      addAddress(event.owner)
+      addAddress(event.orbitOwner)
+      addAddress(event.spillover1Recipient)
+      addAddress(event.spillover2Recipient)
+    })
 
     const info = selectedPosition.positionInfo || {}
     ;[

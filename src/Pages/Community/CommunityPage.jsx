@@ -747,7 +747,7 @@ const CommunityPage = ({ onNavigate }) => {
     setIsCheckingRegistration(true)
 
     try {
-      const profileReadHeaders = await getProfileReadAuthIfLocked(resolvedAddress, account, { requiredForOwner: true })
+      const profileReadHeaders = await getProfileReadAuthIfLocked(resolvedAddress, account)
       const payload = await fetchJson(`/api/community/member/${resolvedAddress}/summary`, { headers: profileReadHeaders })
       if (payload?.locked) {
         const message = payload.message || communityT('profile.lockedMessage', 'This profile is locked. You cannot view this profile.')
@@ -793,7 +793,7 @@ const CommunityPage = ({ onNavigate }) => {
         setUserCommission('0.00')
         return
       }
-      const profileReadHeaders = await getProfileReadAuthIfLocked(resolvedAddress, account, { requiredForOwner: true })
+      const profileReadHeaders = await getProfileReadAuthIfLocked(resolvedAddress, account)
       const payload = await fetchJson(`/api/community/member/${resolvedAddress}/referrals`, { headers: profileReadHeaders })
       if (payload?.locked) return
       const data = payload?.data || {}
@@ -814,7 +814,7 @@ const CommunityPage = ({ onNavigate }) => {
     if (!resolvedAddress) return
     if (profileLocked) return
     try {
-      const profileReadHeaders = await getProfileReadAuthIfLocked(resolvedAddress, account, { requiredForOwner: true })
+      const profileReadHeaders = await getProfileReadAuthIfLocked(resolvedAddress, account)
       const payload = await fetchJson(`/api/community/member/${resolvedAddress}/orbit-network`, { headers: profileReadHeaders })
       if (payload?.locked) return
       const data = payload?.data || {}

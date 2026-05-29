@@ -151,7 +151,7 @@ const ActivityPage = () => {
     if (!account) return
 
     try {
-      const profileReadHeaders = await getProfileReadAuthIfLocked(account, account, { requiredForOwner: true })
+      const profileReadHeaders = await getProfileReadAuthIfLocked(account, account)
       const result = await fetchAddressReceiptsApi(account, undefined, { headers: profileReadHeaders })
 
       const receiptsData = Array.isArray(result?.receipts)
@@ -219,7 +219,7 @@ const ActivityPage = () => {
     try {
       let orbitLevelsData = [];
       try {
-        const profileReadHeaders = await getProfileReadAuthIfLocked(account, account, { requiredForOwner: true })
+        const profileReadHeaders = await getProfileReadAuthIfLocked(account, account)
         const levelsResponse = await fetchOrbitLevelsApi(account, { headers: profileReadHeaders });
         orbitLevelsData = levelsResponse?.levels || levelsResponse || [];
       } catch (e) {

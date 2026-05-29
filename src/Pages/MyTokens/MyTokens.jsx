@@ -108,7 +108,7 @@ export const MyTokens = () => {
     setPageError('')
 
     try {
-      const profileReadHeaders = await getProfileReadAuthIfLocked(account, account, { requiredForOwner: true })
+      const profileReadHeaders = await getProfileReadAuthIfLocked(account, account)
       const result = await fetchUserSummaryApi(account, { forceRefresh: force, headers: profileReadHeaders })
       
       // Update Balances from API

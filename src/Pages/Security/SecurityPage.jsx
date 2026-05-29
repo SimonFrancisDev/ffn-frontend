@@ -21,7 +21,7 @@ const SecurityPage = () => {
   const securityT = (key, fallback, options) => t(`securityPage.${key}`, fallback, options)
   const { isConnected, account, connect, switchToAmoy } = useWallet()
   const { isOwnSpace, subjectAddress, switchToSelf } = useSpace()
-  const { contracts, isLoading: contractsLoading } = useContracts()
+  const { isLoading: contractsLoading } = useContracts()
   const toast = useToast()
 
   const [networkWarning, setNetworkWarning] = useState('')
@@ -97,10 +97,11 @@ const SecurityPage = () => {
 
     try {
       const data = await updateProfilePrivacy(account, nextLocked)
-      setProfilePrivacy(data)
+      const confirmed = await fetchProfilePrivacy(account).catch(() => data)
+      setProfilePrivacy(confirmed)
       clearAddressScopedOrbitsApiCache(account)
       toast.success(
-        nextLocked
+        confirmed?.isLocked
           ? securityT('privacy.lockedToast', 'Your public profile is now locked.')
           : securityT('privacy.unlockedToast', 'Your public profile is now visible.'),
         { dedupeKey: 'security-profile-privacy-updated' }

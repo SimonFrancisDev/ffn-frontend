@@ -9,7 +9,6 @@ import {
   fetchTelegramStatus,
   startTelegramLink,
   unsubscribeTelegram,
-  updateTelegramPreferences,
 } from '../../Services/telegramApi'
 import { fetchNotificationPreferences, updateNotificationPreferences } from '../../Services/notificationsApi'
 import { fetchProfilePrivacy, updateProfilePrivacy } from '../../Services/profilePrivacyApi'
@@ -310,16 +309,9 @@ const PreferencesPage = ({
         const nextLocked = spaceVisibilityPreference === 'locked'
         if (nextLocked !== Boolean(profilePrivacy?.isLocked)) {
           const privacy = await updateProfilePrivacy(account, nextLocked)
-          setProfilePrivacy(privacy)
-          setSpaceVisibilityPreference(privacy?.isLocked ? 'locked' : 'public')
-        }
-      }
-
-      if (account && telegramStatus.status === 'active') {
-        const proof = await signTelegramAction(TELEGRAM_ACTIONS.preferencesUpdate)
-        const result = await updateTelegramPreferences(account, notifications, proof)
-        if (result.preferences) {
-          setNotifications((current) => ({ ...DEFAULT_NOTIFICATIONS, ...current, ...result.preferences }))
+          const confirmed = await fetchProfilePrivacy(account).catch(() => privacy)
+          setProfilePrivacy(confirmed)
+          setSpaceVisibilityPreference(confirmed?.isLocked ? 'locked' : 'public')
         }
       }
 
@@ -330,7 +322,7 @@ const PreferencesPage = ({
       toast.danger(error.message || preferencesT('status.saveFailed', 'Preferences could not be saved.'), { dedupeKey: 'preferences-save-failed' })
     }
     window.setTimeout(() => setSaveStatus({ show: false, message: '', type: '' }), 2500)
-  }, [account, isOwnSpace, theme, language, timezone, accentStyle, spaceVisibilityPreference, profilePrivacy?.isLocked, notifications, preferencesT, signTelegramAction, toast, telegramStatus.status, i18n, onThemeChange, onLanguageChange])
+  }, [account, isOwnSpace, theme, language, timezone, accentStyle, spaceVisibilityPreference, profilePrivacy?.isLocked, notifications, preferencesT, toast, telegramStatus.status, i18n, onThemeChange, onLanguageChange])
 
   const resetPreferences = useCallback(() => {
     setTheme('dark')
@@ -362,7 +354,7 @@ const PreferencesPage = ({
 
   const toggleNotification = useCallback((key) => {
     setNotifications((prev) => {
-      const next = { ...DEFAULT_NOTIFICATIONS, ...prev, [key]: !Boolean(prev[key]) }
+      const next = { ...DEFAULT_NOTIFICATIONS, ...prev, [key]: !prev[key] }
       persistNotificationPreferences(next).catch((error) => {
         toast.danger(error.message || preferencesT('status.saveFailed', 'Preferences could not be saved.'), { dedupeKey: 'preferences-notification-save-failed' })
       })

@@ -64,11 +64,17 @@ const toFiniteNumber = (value) => {
   return Number.isFinite(num) ? num : 0
 }
 
+const normalizeUsdtNumber = (value) => {
+  const num = toFiniteNumber(value)
+  if (Math.abs(num) >= 100000) return num / 1_000_000
+  return num
+}
+
 const pickMoneyNumber = (source, keys) => {
   if (!source) return 0
   for (const key of keys) {
     if (source[key] !== undefined && source[key] !== null && source[key] !== '') {
-      return toFiniteNumber(source[key])
+      return normalizeUsdtNumber(source[key])
     }
   }
   return 0
@@ -518,9 +524,9 @@ const OrbitsPage = () => {
         recycled: 0
       }
 
-      existing.walletCredited += toFiniteNumber(walletCredited)
-      existing.escrowLocked += toFiniteNumber(escrowLocked)
-      existing.recycled += toFiniteNumber(recycled)
+      existing.walletCredited += normalizeUsdtNumber(walletCredited)
+      existing.escrowLocked += normalizeUsdtNumber(escrowLocked)
+      existing.recycled += normalizeUsdtNumber(recycled)
       rowsByKey.set(key, existing)
     }
 
@@ -606,7 +612,7 @@ const OrbitsPage = () => {
       detail = '',
       sort = 0
     }) => {
-      const value = toFiniteNumber(amount)
+      const value = normalizeUsdtNumber(amount)
       if (value <= 0) return
       rows.push({
         key: key || `${label}-${address || rows.length}`,

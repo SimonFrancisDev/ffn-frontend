@@ -440,6 +440,18 @@ const OrbitsPage = () => {
     return receipt?.rawEventName || orbitsT('receiptTypes.unknown', 'Receipt')
   }
 
+  const getResponseReceipts = useCallback((result) => {
+    if (Array.isArray(result)) return result
+    if (Array.isArray(result?.receipts)) return result.receipts
+    if (Array.isArray(result?.data)) return result.data
+    return []
+  }, [])
+
+  const getResponseFinancialEvents = useCallback((result) => {
+    if (Array.isArray(result?.financialEvents)) return result.financialEvents
+    return []
+  }, [])
+
   const getMemberLabel = useCallback((address) => {
     if (!address || address === ethers.ZeroAddress) return orbitsT('modal.memberIdUnavailable', 'ID unavailable')
     return resolvedMemberIds[address?.toLowerCase?.()] || shortAddress(address)
@@ -498,6 +510,7 @@ const OrbitsPage = () => {
 
   const getBeneficiaryRows = (position) => {
     const receipts = Array.isArray(position?.indexedReceipts) ? position.indexedReceipts : []
+    const hasReceiptRecycle = receipts.some((receipt) => Number(receipt.receiptType || 0) === RECEIPT_TYPES.RECYCLE)
     const rowsByKey = new Map()
 
     const addRow = ({ address, role, walletCredited = 0, escrowLocked = 0, recycled = 0 }) => {
@@ -590,13 +603,187 @@ const OrbitsPage = () => {
     )
   }
 
+  const getPositionDistributionRows = useCallback((position) => {
+    const rows = []
+    const spilloverCounts = { 1: 0, 2: 0 }
+
+    const addRow = ({
+      key,
+      label,
+      address = '',
+      amount = 0,
+      detail = '',
+      sort = 0
+    }) => {
+      const value = toFiniteNumber(amount)
+      if (value <= 0) return
+      rows.push({
+        key: key || `${label}-${address || rows.length}`,
+        label,
+        address,
+        amount: value,
+        detail,
+        sort
+      })
+    }
+
+    const receipts = Array.isArray(position?.indexedReceipts) ? position.indexedReceipts : []
+
+    receipts.forEach((receipt, index) => {
+      const type = Number(receipt.receiptType || 0)
+      const liquid = getReceiptWalletCredited(receipt)
+      const escrow = getReceiptEscrowLocked(receipt)
+      const gross = getReceiptGeneratedGross(receipt)
+      const fallbackAmount = liquid <= 0 && escrow <= 0 ? gross : liquid
+      const receiver = receipt.receiver || ''
+      const proof = receipt.txHash ? shortTx(receipt.txHash) : ''
+
+      if (type === RECEIPT_TYPES.ROUTED_SPILLOVER) {
+        const role = Number(receipt.routedRole || 0)
+        const spilloverNumber = role === 2 ? 2 : role === 1 ? 1 : (spilloverCounts[1] === 0 ? 1 : 2)
+        spilloverCounts[spilloverNumber] += 1
+        addRow({
+          key: `spillover-${spilloverNumber}-${receipt.txHash || index}-${receipt.logIndex || index}`,
+          label: spilloverNumber === 2 ? orbitsT('modal.toSpillover2', 'To Spillover 2') : orbitsT('modal.toSpillover1', 'To Spillover 1'),
+          address: receiver,
+          amount: fallbackAmount,
+          detail: proof,
+          sort: spilloverNumber === 2 ? 30 : 20
+        })
+      } else if (type === RECEIPT_TYPES.RECYCLE) {
+        addRow({
+          key: `recycle-${receipt.txHash || index}-${receipt.logIndex || index}`,
+          label: orbitsT('modal.toRecycle', 'To Recycle'),
+          address: receiver,
+          amount: getReceiptRecycleLiquid(receipt) + getReceiptRecycleEscrow(receipt) || gross,
+          detail: proof,
+          sort: 50
+        })
+      } else {
+        addRow({
+          key: `direct-${receipt.txHash || index}-${receipt.logIndex || index}`,
+          label: orbitsT('modal.toOwner', 'To Owner'),
+          address: receiver,
+          amount: fallbackAmount,
+          detail: proof,
+          sort: 10
+        })
+      }
+
+      addRow({
+        key: `escrow-${receipt.txHash || index}-${receipt.logIndex || index}`,
+        label: orbitsT('modal.toEscrow', 'To Escrow'),
+        address: receiver,
+        amount: escrow,
+        detail: proof,
+        sort: 40
+      })
+    })
+
+    if (!rows.length && position?.positionInfo) {
+      const info = position.positionInfo
+      addRow({
+        key: 'rule-owner',
+        label: orbitsT('modal.toOwner', 'To Owner'),
+        address: info.orbitOwner || position.occupant || '',
+        amount: info.exactToOwner,
+        detail: orbitsT('modal.storedRuleData', 'Stored Rule Data'),
+        sort: 10
+      })
+      addRow({
+        key: 'rule-spillover-1',
+        label: orbitsT('modal.toSpillover1', 'To Spillover 1'),
+        address: info.spillover1Recipient || '',
+        amount: info.exactToSpillover1,
+        detail: orbitsT('modal.storedRuleData', 'Stored Rule Data'),
+        sort: 20
+      })
+      addRow({
+        key: 'rule-spillover-2',
+        label: orbitsT('modal.toSpillover2', 'To Spillover 2'),
+        address: info.spillover2Recipient || '',
+        amount: info.exactToSpillover2,
+        detail: orbitsT('modal.storedRuleData', 'Stored Rule Data'),
+        sort: 30
+      })
+      addRow({
+        key: 'rule-escrow',
+        label: orbitsT('modal.toEscrow', 'To Escrow'),
+        address: info.orbitOwner || position.occupant || '',
+        amount: info.exactToEscrow,
+        detail: orbitsT('modal.storedRuleData', 'Stored Rule Data'),
+        sort: 40
+      })
+      addRow({
+        key: 'rule-recycle',
+        label: orbitsT('modal.toRecycle', 'To Recycle'),
+        amount: info.exactToRecycle,
+        detail: orbitsT('modal.storedRuleData', 'Stored Rule Data'),
+        sort: 50
+      })
+    }
+
+    const financialEvents = Array.isArray(position?.activationFinancialEvents)
+      ? position.activationFinancialEvents
+      : []
+
+    financialEvents.forEach((event, index) => {
+      if (event.eventName === 'SystemChargeDistributedDetailed') {
+        const total = pickMoneyNumber(event, ['systemChargeTotal'])
+        const nftPool = pickMoneyNumber(event, ['nftPoolAmount'])
+        const operations = pickMoneyNumber(event, ['operationsAmount'])
+        const detailParts = []
+        if (nftPool > 0) detailParts.push(`${orbitsT('modal.nftPool', 'NFT Pool')}: ${formatUsdtDisplay(nftPool)} USDT`)
+        if (operations > 0) detailParts.push(`${orbitsT('modal.operations', 'Operations')}: ${formatUsdtDisplay(operations)} USDT`)
+        addRow({
+          key: `system-charge-${event.txHash || index}-${event.logIndex || index}`,
+          label: orbitsT('modal.systemCharge', 'System Charge'),
+          amount: total,
+          detail: detailParts.join(' / ') || (event.txHash ? shortTx(event.txHash) : ''),
+          sort: 60
+        })
+      }
+
+      if (event.eventName === 'RecycleCompletedDetailed' && !hasReceiptRecycle) {
+        addRow({
+          key: `financial-recycle-${event.txHash || index}-${event.logIndex || index}`,
+          label: orbitsT('modal.toRecycle', 'To Recycle'),
+          address: event.recycleReceiver || '',
+          amount:
+            pickMoneyNumber(event, ['recycleLiquidPaid']) +
+              pickMoneyNumber(event, ['recycleEscrowLocked']) ||
+            pickMoneyNumber(event, ['recycleGross']),
+          detail: event.txHash ? shortTx(event.txHash) : '',
+          sort: 50
+        })
+      }
+    })
+
+    const groupedRows = new Map()
+    rows.forEach((row) => {
+      const key = `${row.label}:${String(row.address || '').toLowerCase() || 'system'}`
+      const existing = groupedRows.get(key)
+      if (!existing) {
+        groupedRows.set(key, { ...row, key })
+        return
+      }
+
+      existing.amount += row.amount
+      if (row.detail && !String(existing.detail || '').includes(row.detail)) {
+        existing.detail = existing.detail ? `${existing.detail} / ${row.detail}` : row.detail
+      }
+    })
+
+    return [...groupedRows.values()].sort((a, b) => a.sort - b.sort)
+  }, [RECEIPT_TYPES.RECYCLE, RECEIPT_TYPES.ROUTED_SPILLOVER, formatUsdtDisplay, orbitsT, shortTx])
+
   const formatTruthLabel = useCallback((truthLabel) => {
     if (!truthLabel) return orbitsT('truth.unknown', 'Unknown')
     return String(truthLabel)
       .replace(/_/g, ' ')
       .toLowerCase()
       .replace(/\b\w/g, (c) => c.toUpperCase())
-  }, [])
+  }, [orbitsT])
 
   const fetchMemberId = useCallback(async (address) => {
     if (!address || !ethers.isAddress(address)) return '—'
@@ -1058,6 +1245,15 @@ const OrbitsPage = () => {
     if (!forceRefresh && receiptCacheRef.current.has(cacheKey)) {
       const cachedReceipts = receiptCacheRef.current.get(cacheKey)
       setViewAddressReceipts(cachedReceipts)
+      setReceiptBucketsByLevel(
+        cachedReceipts.reduce((buckets, receipt) => {
+          const level = Number(receipt?.level || 0)
+          if (!level) return buckets
+          if (!buckets[level]) buckets[level] = []
+          buckets[level].push(receipt)
+          return buckets
+        }, {})
+      )
       setReceiptsSupported(true)
       return
     }
@@ -1073,9 +1269,18 @@ const OrbitsPage = () => {
         setReceiptsSupported(false)
         return
       }
-      const receipts = Array.isArray(result?.receipts) ? result.receipts : []
+      const receipts = getResponseReceipts(result)
       receiptCacheRef.current.set(cacheKey, receipts)
       setViewAddressReceipts(receipts)
+      setReceiptBucketsByLevel(
+        receipts.reduce((buckets, receipt) => {
+          const level = Number(receipt?.level || 0)
+          if (!level) return buckets
+          if (!buckets[level]) buckets[level] = []
+          buckets[level].push(receipt)
+          return buckets
+        }, {})
+      )
       setReceiptsSupported(true)
     } catch (err) {
       console.error('Error fetching receipts:', err)
@@ -1086,7 +1291,7 @@ const OrbitsPage = () => {
     } finally {
       setReceiptsLoading(false)
     }
-  }, [viewAddress, getProfileReadHeaders, getProfileReadAuthMessage, orbitsT])
+  }, [viewAddress, getProfileReadHeaders, getProfileReadAuthMessage, getResponseReceipts, orbitsT])
 
  const fetchStoredCycleForLevel = useCallback(async (level, cycleNumber, forceRefresh = false) => {
     if (!viewAddress || !ethers.isAddress(viewAddress) || !orbitData[level]) return []
@@ -1140,7 +1345,7 @@ const OrbitsPage = () => {
         [level]: { ...(prev[level] || {}), [cycleKey]: positions }
       }))
       setCycleHistorySupportByLevel(prev => ({ ...prev, [level]: true }))
-    } catch (err) {
+    } catch {
       setCycleHistorySupportByLevel(prev => ({ ...prev, [level]: false }))
     } finally {
       setLoadingCycleByLevel(prev => ({ ...prev, [level]: false }))
@@ -1165,7 +1370,9 @@ const OrbitsPage = () => {
     setLoadingLevelsMap(prev => ({ ...prev, [level]: true }))
 
     try {
-      await refreshDirectDownlineSet(viewAddress)
+      refreshDirectDownlineSet(viewAddress).catch((error) => {
+        console.error('Direct downline refresh failed:', error)
+      })
 
         const profileReadHeaders = await getProfileReadHeaders()
         const snapshot = await fetchOrbitLevelSnapshotApi(viewAddress, level, {
@@ -1524,10 +1731,10 @@ const OrbitsPage = () => {
 
       let enrichedPosition = hydrated
       const currentReceipts = Array.isArray(enrichedPosition?.indexedReceipts) ? enrichedPosition.indexedReceipts : []
+      const activationId = Number(enrichedPosition?.activationId || 0)
 
-      if (enrichedPosition?.occupant && currentReceipts.length === 0) {
+      if (enrichedPosition?.occupant) {
         const positionNumber = Number(enrichedPosition.number || position.number || 0)
-        const activationId = Number(enrichedPosition.activationId || 0)
         const matchesPosition = (receipt) => {
           const sourcePosition = Number(receipt?.sourcePosition || receipt?.position || receipt?.positionNumber || 0)
           const receiptActivationId = Number(receipt?.activationId || 0)
@@ -1552,22 +1759,26 @@ const OrbitsPage = () => {
         }
 
         addReceipts(receiptBucketsByLevel[level] || [])
+        addReceipts(currentReceipts)
 
+        let activationFinancialEvents = []
         if (activationId > 0) {
           try {
             const activationResult = await fetchActivationReceiptsApi(activationId, { forceRefresh: true })
-            addReceipts(Array.isArray(activationResult) ? activationResult : activationResult?.receipts)
+            addReceipts(getResponseReceipts(activationResult))
+            activationFinancialEvents = getResponseFinancialEvents(activationResult)
           } catch (err) {
             console.error('Error fetching activation receipts for position modal:', err)
           }
         }
 
         const recoveredReceipts = [...receiptMap.values()]
-        if (recoveredReceipts.length > 0) {
+        if (recoveredReceipts.length > 0 || activationFinancialEvents.length > 0) {
           enrichedPosition = {
             ...enrichedPosition,
-            indexedReceipts: recoveredReceipts,
-            indexedReceiptCount: recoveredReceipts.length,
+            indexedReceipts: recoveredReceipts.length > 0 ? recoveredReceipts : currentReceipts,
+            indexedReceiptCount: recoveredReceipts.length > 0 ? recoveredReceipts.length : currentReceipts.length,
+            activationFinancialEvents,
             receiptsHydrated: true
           }
         }
@@ -1594,7 +1805,7 @@ const OrbitsPage = () => {
       }
       setSelectedPosition(prev => prev ? { ...prev, detailsLoading: false } : prev)
     }
-  }, [activeTab, selectedCycleByLevel, hydrateHistoricalPositionDetails, hydrateLivePositionDetails, receiptBucketsByLevel, getProfileReadAuthMessage])
+  }, [activeTab, selectedCycleByLevel, hydrateHistoricalPositionDetails, hydrateLivePositionDetails, receiptBucketsByLevel, getProfileReadAuthMessage, getResponseFinancialEvents, getResponseReceipts])
 
   const handleStructuralPreview = (position) => {
     if (position.parentPosition) {
@@ -2174,87 +2385,6 @@ const OrbitsPage = () => {
     return 'filled'
   }
 
-  const getOrbitNarration = (position) => {
-    if (!position) {
-      return {
-        tone: 'info',
-        title: orbitsT('narration.emptyTitle', 'No position selected'),
-        message: orbitsT('narration.emptyMessage', 'Choose a position to see routing context.'),
-      }
-    }
-
-    const info = position.positionInfo || {}
-    const truthLabel = String(position.truthLabel || '').toUpperCase()
-    const line = position.line || info.line || 1
-    const gross = formatUsdtDisplay(getPositionGeneratedGross(position))
-    const liquid = formatUsdtDisplay(getPositionWalletCredited(position) || getEstimatedNetAmount(Number(position.amount || 0)))
-    const escrow = formatUsdtDisplay(getExecutedEscrowLocked(position))
-
-    if (!position.occupant) {
-      return {
-        tone: 'info',
-        title: orbitsT('narration.targetTitle', 'Open fill target'),
-        message: orbitsT('narration.targetMessage', 'Position {{position}} on Line {{line}} is empty and ready for the next qualifying placement.', {
-          position: position.number,
-          line,
-        }),
-      }
-    }
-
-    if (Number(info.exactToRecycle || 0) > 0 || truthLabel === 'RECYCLE') {
-      return {
-        tone: 'warning',
-        title: orbitsT('narration.recycleTitle', 'Recycle route recorded'),
-        message: orbitsT('narration.recycleMessage', 'Position {{position}} generated {{gross}} USDT and routed recycle value according to the stored orbit rule.', {
-          position: position.number,
-          gross,
-        }),
-      }
-    }
-
-    if (Number(info.exactToEscrow || 0) > 0 || getExecutedEscrowLocked(position) > 0) {
-      return {
-        tone: 'warning',
-        title: orbitsT('narration.escrowTitle', 'Escrow and auto-upgrade path'),
-        message: orbitsT('narration.escrowMessage', 'Position {{position}} credited {{liquid}} USDT and locked {{escrow}} USDT toward auto-upgrade rules.', {
-          position: position.number,
-          liquid,
-          escrow,
-        }),
-      }
-    }
-
-    if (Number(info.exactToSpillover2 || 0) > 0) {
-      return {
-        tone: 'info',
-        title: orbitsT('narration.spillover2Title', 'Second spillover route'),
-        message: orbitsT('narration.spillover2Message', 'Position {{position}} routed value through spillover recipient 2 because the line rule selected the second upline path.', {
-          position: position.number,
-        }),
-      }
-    }
-
-    if (Number(info.exactToSpillover1 || 0) > 0 || position.occupantType === 'downline') {
-      return {
-        tone: 'info',
-        title: orbitsT('narration.spillover1Title', 'Spillover route'),
-        message: orbitsT('narration.spillover1Message', 'Position {{position}} is connected to spillover routing for this orbit line.', {
-          position: position.number,
-        }),
-      }
-    }
-
-    return {
-      tone: 'success',
-      title: orbitsT('narration.payoutTitle', 'Owner payout route'),
-      message: orbitsT('narration.payoutMessage', 'Position {{position}} generated {{gross}} USDT with {{liquid}} USDT shown as wallet credited or estimated net.', {
-        position: position.number,
-        gross,
-        liquid,
-      }),
-    }
-  }
-
   const toggleOrbitDisplayOption = (key) => {
     setOrbitDisplayOptions((current) => ({
       ...current,
@@ -2534,6 +2664,80 @@ const OrbitsPage = () => {
           <p><strong>{orbitsT('guide.blue', 'Blue')}</strong> {orbitsT('guide.blueText', 'means another participant.')}</p>
           <p><strong>{orbitsT('guide.dashed', 'Dashed')}</strong> {orbitsT('guide.dashedText', 'means empty position.')}</p>
           <p>{orbitsT('guide.clickPlanet', 'Click any planet to open the existing detailed position modal.')}</p>
+        </div>
+      </div>
+    )
+  }
+
+  const renderPositionDistributionContent = () => {
+    if (!selectedPosition) return null
+
+    const distributionRows = getPositionDistributionRows(selectedPosition)
+    const totalDistributed = distributionRows.reduce((sum, row) => sum + toFiniteNumber(row.amount), 0)
+    const holderAddress = selectedPosition.occupant || ''
+    const holderId = holderAddress ? getMemberLabel(holderAddress) : ''
+
+    return (
+      <div className="orbit-earnings-summary orbit-earnings-summary--simple">
+        <div className="modal-subtitle modal-subtitle--visible">
+          {orbitsT('modal.moneyDistributionTitle', 'Money Distribution')}
+        </div>
+
+        {holderAddress ? (
+          <>
+            <div className="modal-detail">
+              <span className="modal-label">{orbitsT('modal.positionHolderId', 'Position Holder ID')}</span>
+              <span>{holderId}</span>
+            </div>
+            <div className="modal-detail">
+              <span className="modal-label">{orbitsT('modal.positionHolderWallet', 'Position Holder Wallet')}</span>
+              <span>{holderAddress}</span>
+            </div>
+          </>
+        ) : (
+          <div className="modal-detail">
+            <span className="modal-label">{orbitsT('modal.status', 'Status')}</span>
+            <span>{orbitsT('status.emptyAvailable', 'Empty - Available')}</span>
+          </div>
+        )}
+
+        {distributionRows.length > 0 ? (
+          <div className="modal-beneficiary-list">
+            {distributionRows.map((row) => (
+              <div className="modal-beneficiary-row" key={row.key}>
+                <div className="modal-beneficiary-row__top">
+                  <strong>{row.label}</strong>
+                  <span>{row.address ? getMemberLabel(row.address) : orbitsT('modal.systemWallet', 'System')}</span>
+                </div>
+                {row.address && (
+                  <div className="modal-detail">
+                    <span className="modal-label">{orbitsT('modal.wallet', 'Wallet')}</span>
+                    <span>{row.address}</span>
+                  </div>
+                )}
+                <div className="modal-beneficiary-row__amounts">
+                  <span className="modal-beneficiary-chip">
+                    {formatUsdtDisplay(row.amount)} USDT
+                  </span>
+                  {row.detail && (
+                    <span className="modal-beneficiary-chip">
+                      {row.detail}
+                    </span>
+                  )}
+                </div>
+              </div>
+            ))}
+          </div>
+        ) : (
+          <div className="modal-empty-state modal-empty-state--syncing">
+            <strong>{orbitsT('modal.noDistributionTitle', 'No distribution recorded')}</strong>
+            <span>{orbitsT('modal.noDistributionText', 'No money movement is recorded for this position yet.')}</span>
+          </div>
+        )}
+
+        <div className="modal-detail">
+          <span className="modal-label">{orbitsT('modal.totalDistributed', 'Total Distributed')}</span>
+          <span>{formatUsdtDisplay(totalDistributed)} USDT</span>
         </div>
       </div>
     )
@@ -2912,12 +3116,6 @@ const OrbitsPage = () => {
                     onPointerCancel={handleOrbitPointerEnd}
                     onPointerLeave={handleOrbitPointerEnd}
                   >
-                   {!isGalaxyMeasured ? (
-                      <div className="galaxy-measure-loader">
-                        <div className="skeleton skeleton-orbit" style={{ width: '200px', height: '200px', margin: '0 auto' }}></div>
-                        <p style={{ marginTop: 20 }}>{orbitsT('states.preparingOrbitView', 'Preparing orbit view...')}</p>
-                      </div>
-                    ) : (
                       <>
                         <div className="star-field">
                           {starConfig.map((star) => (
@@ -3241,7 +3439,6 @@ const OrbitsPage = () => {
                           })()}
                         </div>
                       </>
-                    )}
                   </div>
 
                   {(!focusedOnly || orbitDisplayOptions.legend) && (
@@ -3342,7 +3539,6 @@ const OrbitsPage = () => {
           >
             <div className="position-modal__heading">
               <h3>{orbitsT('position.title', 'Position #{{number}}', { number: selectedPosition.number })}</h3>
-              <p>{getOrbitNarration(selectedPosition).title}</p>
               <button
                 type="button"
                 className="position-modal__close"
@@ -3366,11 +3562,6 @@ const OrbitsPage = () => {
             >
               ×
             </button>
-            <InlineAlert tone={getOrbitNarration(selectedPosition).tone} className="orbit-narration-panel">
-              <strong>{getOrbitNarration(selectedPosition).title}</strong>
-              <p>{getOrbitNarration(selectedPosition).message}</p>
-            </InlineAlert>
-
            {selectedPosition.detailsLoading ? (
           <div className="orbit-modal-skeleton">
             <Skeleton height={14} />
@@ -3380,6 +3571,9 @@ const OrbitsPage = () => {
             <Skeleton height={14} width="60%" />
           </div>
         ) : (
+              <>
+                {renderPositionDistributionContent()}
+                {selectedPosition.__showLegacyDetails === true && (
               <>
                 <div className="orbit-earnings-summary">
                   <div className="modal-subtitle modal-subtitle--visible">{orbitsT('modal.beneficiaryTitle', 'Beneficiary Summary')}</div>
@@ -3741,6 +3935,8 @@ const OrbitsPage = () => {
                       ))}
                     </div>
                   </>
+                )}
+              </>
                 )}
               </>
             )}

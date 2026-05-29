@@ -146,6 +146,58 @@ async function rawGet(path, query = null, timeoutMs = DEFAULT_REQUEST_TIMEOUT_MS
   }
 }
 
+async function rawGetEnvelope(path, query = null, timeoutMs = DEFAULT_REQUEST_TIMEOUT_MS, retryCount = 0, headers = {}) {
+  const controller = new AbortController()
+  const timeoutId = setTimeout(() => controller.abort(), timeoutMs)
+
+  try {
+    const response = await fetch(buildUrl(path, query), {
+      method: 'GET',
+      headers: {
+        Accept: 'application/json',
+        ...headers,
+      },
+      signal: controller.signal,
+      cache: 'no-store',
+    })
+
+    const text = await response.text().catch(() => '')
+    const data = text ? JSON.parse(text) : null
+
+    if (!response.ok || !data?.ok) {
+      throw new Error(
+        data?.message ||
+          data?.error ||
+          `Request failed with status ${response.status}`
+      )
+    }
+
+    const payload = { ...data }
+    delete payload.ok
+    return payload
+  } catch (error) {
+    if (error?.name === 'AbortError') {
+      if (retryCount < MAX_RETRIES) {
+        await sleep(RETRY_DELAY_MS)
+        return rawGetEnvelope(path, query, timeoutMs, retryCount + 1, headers)
+      }
+      throw new Error('Request timed out')
+    }
+
+    if (error instanceof TypeError) {
+      if (retryCount < MAX_RETRIES) {
+        await sleep(RETRY_DELAY_MS)
+        return rawGetEnvelope(path, query, timeoutMs, retryCount + 1, headers)
+      }
+      throw new Error('Network request failed')
+    }
+
+    throw error
+  } finally {
+    clearTimeout(timeoutId)
+  }
+}
+
 async function apiGet(path, query = null, options = {}) {
   const {
     ttlMs = 0,
@@ -303,15 +355,12 @@ export async function fetchAddressReceiptsApi(address, level, options = {}) {
 }
 
 export async function fetchActivationReceiptsApi(activationId, options = {}) {
-  return apiGet(
+  return rawGetEnvelope(
     `/api/receipts/activation/${encodeURIComponent(activationId)}`,
     null,
-    {
-      ttlMs: CACHE_TTLS.activationReceipts,
-      timeoutMs: DEFAULT_REQUEST_TIMEOUT_MS,
-      forceRefresh: !!options.forceRefresh,
-      headers: options.headers || {},
-    }
+    DEFAULT_REQUEST_TIMEOUT_MS,
+    0,
+    options.headers || {}
   )
 }
 

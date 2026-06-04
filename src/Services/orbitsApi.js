@@ -208,7 +208,11 @@ async function apiGet(path, query = null, options = {}) {
 
   clearExpiredCacheEntries()
 
-  const authSuffix = headers.Authorization ? `::auth:${String(headers.Authorization).slice(-16)}` : ''
+  const authParts = [
+    headers.Authorization ? `auth:${String(headers.Authorization).slice(-16)}` : '',
+    headers['X-Profile-Viewer-Address'] ? `viewer:${String(headers['X-Profile-Viewer-Address']).toLowerCase()}` : '',
+  ].filter(Boolean).join('::')
+  const authSuffix = authParts ? `::${authParts}` : ''
   const cacheKey = buildCacheKey(path, query, authSuffix)
   const inflightKey = forceRefresh ? `${cacheKey}::force` : cacheKey
 

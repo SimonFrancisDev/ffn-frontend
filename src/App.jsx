@@ -485,6 +485,18 @@ function App() {
   }, [])
 
   useEffect(() => {
+    if (typeof window === 'undefined') return
+
+    const returnRoute = window.sessionStorage.getItem('ffn_profile_privacy_return_route')
+    if (!returnRoute) return
+
+    const currentRoute = `${location.pathname}${location.search}${location.hash}`
+    if (returnRoute !== currentRoute) {
+      navigate(returnRoute, { replace: true })
+    }
+  }, [location.hash, location.pathname, location.search, navigate])
+
+  useEffect(() => {
     const normalizedLanguage = currentLanguage || 'en'
     i18n.changeLanguage(normalizedLanguage)
   }, [currentLanguage])
@@ -1202,12 +1214,17 @@ function App() {
       )
     }
 
-    if (!hasInternalRouteAccess || !isMultisigOwner) {
-      return <Navigate to="/home" replace />
+    if (!isMultisigOwner) {
+      return (
+        <RouteAccessFallback
+          title="Admin wallet required"
+          message="Connect a verified multisig owner wallet to open the admin panel."
+        />
+      )
     }
 
     return <AdminPanel />
-  }, [adminCheckComplete, hasInternalRouteAccess, isMultisigOwner])
+  }, [adminCheckComplete, isMultisigOwner])
 
   if (!launchGateOpen) {
     return <LaunchGate nowMs={launchNowMs} />

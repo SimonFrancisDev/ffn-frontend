@@ -1124,7 +1124,9 @@ const ActivationCenterPage = () => {
     [activeLevels]
   )
 
-  const isFounderRepFreeLevel = useCallback(
+  const isFounderRepFreeLevel = useCallback(() => false, [])
+
+  const isFounderRepActivationPaused = useCallback(
     (level) => isFounderRepresentative && founderRepLevelsActivated < 10 && !activeLevels[level],
     [activeLevels, founderRepLevelsActivated, isFounderRepresentative]
   )
@@ -1178,6 +1180,13 @@ const ActivationCenterPage = () => {
 
   const handleCombinedRegisterAndActivateLevelOne = useCallback(async (finalRegistrationReferrer = registrationReferrer) => {
     if (!ensureWritableSpace()) return
+
+    if (isFounderRepActivationPaused(1)) {
+      const message = activationT('errors.founderRepPaused', 'Founder representative free activation is paused. This wallet cannot continue this special activation path unless governance approves a new rollout.')
+      setTxStatus({ loading: false, hash: null, error: message })
+      toast.warning(message, { dedupeKey: 'activation-founder-rep-paused' })
+      return
+    }
 
     if (networkWarning) {
       const message = activationT('errors.switchNetworkFirst', 'Please switch to {{network}} first.', { network: NETWORK_CONFIG.chainName })
@@ -1302,6 +1311,7 @@ const ActivationCenterPage = () => {
     refreshAllAfterWrite,
     toast,
     isFounderRepFreeLevel,
+    isFounderRepActivationPaused,
   ])
 
   const handleTransferToSelf = async () => {
@@ -1394,6 +1404,7 @@ const ActivationCenterPage = () => {
     (level) => {
       const price = parseFloat(levelPrices[level] || '0')
       const isFounderRepFree = isFounderRepFreeLevel(level)
+      const founderRepPaused = isFounderRepActivationPaused(level)
       const totalRequired = isFounderRepFree ? 0 : price
 
       return [
@@ -1429,13 +1440,15 @@ const ActivationCenterPage = () => {
         {
           key: 'levelReady',
           label: activationT('eligibility.levelReady.label', 'Level {{level}} ready', { level }),
-          passed: Boolean(canActivateLevel(level)),
+          passed: Boolean(canActivateLevel(level)) && !founderRepPaused,
           hint:
-            level === 1 && !isRegistered
-              ? activationT('eligibility.levelReady.onboarding', 'Level 1 is available as part of onboarding.')
-              : canActivateLevel(level)
-                ? activationT('eligibility.levelReady.available', 'Level {{level}} is available for activation.', { level })
-                : activationT('eligibility.levelReady.activatePrevious', 'Activate Level {{level}} first.', { level: level - 1 }),
+            founderRepPaused
+              ? activationT('eligibility.levelReady.founderRepPaused', 'Founder representative free activation is paused. This wallet cannot continue this special activation path unless governance approves a new rollout.')
+              : level === 1 && !isRegistered
+                ? activationT('eligibility.levelReady.onboarding', 'Level 1 is available as part of onboarding.')
+                : canActivateLevel(level)
+                  ? activationT('eligibility.levelReady.available', 'Level {{level}} is available for activation.', { level })
+                  : activationT('eligibility.levelReady.activatePrevious', 'Activate Level {{level}} first.', { level: level - 1 }),
         },
         {
           key: 'balance',
@@ -1454,7 +1467,7 @@ const ActivationCenterPage = () => {
         },
       ]
     },
-    [activationT, isConnected, networkWarning, isRegistered, canActivateLevel, usdtBalance, isFounderRepFreeLevel]
+    [activationT, isConnected, networkWarning, isRegistered, canActivateLevel, usdtBalance, isFounderRepFreeLevel, isFounderRepActivationPaused]
   )
 
   const executeLevelActivation = async (level) => {
@@ -1483,6 +1496,13 @@ const ActivationCenterPage = () => {
         error: message,
       })
       toast.warning(message, { dedupeKey: `activation-level-${level}-not-ready` })
+      return
+    }
+
+    if (isFounderRepActivationPaused(level)) {
+      const message = activationT('errors.founderRepPaused', 'Founder representative free activation is paused. This wallet cannot continue this special activation path unless governance approves a new rollout.')
+      setTxStatus({ loading: false, hash: null, error: message })
+      toast.warning(message, { dedupeKey: 'activation-founder-rep-paused' })
       return
     }
 
@@ -1718,6 +1738,8 @@ const ActivationCenterPage = () => {
     }
     return null
   }, [activeLevels])
+
+  const nextFounderRepPaused = nextLevel ? isFounderRepActivationPaused(nextLevel) : false
 
   const activatedCount = useMemo(
     () => Object.values(activeLevels).filter(Boolean).length,
@@ -2017,9 +2039,11 @@ const ActivationCenterPage = () => {
             const fgtrEarned = tokenSummary.fgtrByLevel[level] || 0
             const latestTokenEvent = tokenSummary.lastEventByLevel[level] || null
             const isFounderRepFree = isFounderRepFreeLevel(level)
+            const founderRepPaused = isFounderRepActivationPaused(level)
             const combinedRequired = isFounderRepFree ? 0 : level === 1 && !isRegistered ? 10 : price
-            const hasEnoughBalance = isFounderRepFree || parseFloat(usdtBalance) >= combinedRequired
+            const hasEnoughBalance = !founderRepPaused && (isFounderRepFree || parseFloat(usdtBalance) >= combinedRequired)
             const isOpen = !!openLevelDetails[level]
+            const canStartActivation = canActivate && !founderRepPaused
 
             return (
               <div
@@ -2035,12 +2059,20 @@ const ActivationCenterPage = () => {
                   <span className="level-orbit">{orbitTypeForLevel}</span>
                 </div>
 
-                <div className={`compact-level-card__status ${isActive ? 'is-active' : isNext ? 'is-ready' : 'is-locked'}`}>
-                  {isActive ? activationT('levels.status.activated', 'Activated') : isNext ? activationT('levels.status.ready', 'Ready to Activate') : activationT('levels.status.locked', 'Locked')}
+                <div className={`compact-level-card__status ${isActive ? 'is-active' : founderRepPaused ? 'is-locked' : isNext ? 'is-ready' : 'is-locked'}`}>
+                  {isActive
+                    ? activationT('levels.status.activated', 'Activated')
+                    : founderRepPaused
+                      ? activationT('levels.status.paused', 'Paused')
+                      : isNext
+                        ? activationT('levels.status.ready', 'Ready to Activate')
+                        : activationT('levels.status.locked', 'Locked')}
                 </div>
 
                 <div className={`compact-level-card__price ${hasEnoughBalance ? 'is-sufficient' : 'is-insufficient'}`}>
-                  {isFounderRepFree
+                  {founderRepPaused
+                    ? activationT('levels.founderRepPaused', 'Founder Rep Paused')
+                    : isFounderRepFree
                     ? activationT('levels.founderRepFree', 'Founder Rep Free')
                     : level === 1 && !isRegistered
                       ? activationT('levels.onboardingPrice', '10 USDT Onboarding')
@@ -2058,11 +2090,11 @@ const ActivationCenterPage = () => {
                         {activationT('actions.viewOrbit', 'View Orbit')} <GoArrow />
                       </button>
 
-                      {isNext && canActivate && canWriteHere ? (
+                      {isNext && canStartActivation && canWriteHere ? (
                         <button
                           className="activate-btn compact-action-btn"
                           onClick={() => handleApproveAndActivate(level)}
-                          disabled={!canWriteHere || txStatus.loading || !hasEnoughBalance || networkWarning}
+                          disabled={!canWriteHere || txStatus.loading || !hasEnoughBalance || networkWarning || founderRepPaused}
                         >
                           {txStatus.loading
                             ? activationT('states.processing', 'Processing...')
@@ -2072,7 +2104,11 @@ const ActivationCenterPage = () => {
                         </button>
                       ) : (
                         <button className="locked-btn compact-action-btn" disabled>
-                          {canWriteHere ? activationT('levels.status.locked', 'Locked') : activationT('levels.status.readOnly', 'Read-Only')}
+                          {founderRepPaused
+                            ? activationT('levels.status.paused', 'Paused')
+                            : canWriteHere
+                              ? activationT('levels.status.locked', 'Locked')
+                              : activationT('levels.status.readOnly', 'Read-Only')}
                         </button>
                       )}
                     </>
@@ -2208,7 +2244,9 @@ const ActivationCenterPage = () => {
                           <div className="detail-row">
                             <span>{activationT('metrics.requirement', 'Requirement:')}</span>
                             <strong>
-                              {isFounderRepFree
+                              {founderRepPaused
+                                ? activationT('levels.founderRepPaused', 'Founder Rep Paused')
+                                : isFounderRepFree
                                 ? activationT('levels.founderRepFree', 'Founder Rep Free')
                                 : level === 1 && !isRegistered
                                   ? activationT('levels.onboardingTotal', '10 USDT total')
@@ -2218,7 +2256,9 @@ const ActivationCenterPage = () => {
                         </div>
 
                         <p className="level-description">
-                          {level === 1 && !isRegistered
+                          {founderRepPaused
+                            ? activationT('levels.descriptions.founderRepPaused', 'Founder representative free activation is paused for this wallet unless governance approves a new rollout.')
+                            : level === 1 && !isRegistered
                             ? isFounderRepFree
                               ? activationT('levels.descriptions.founderRepLevelOne', 'This founder representative wallet can register and activate Level 1 without USDT.')
                               : activationT('levels.descriptions.levelOne', 'This step registers your wallet and activates Level 1 in one flow.')
@@ -2344,7 +2384,9 @@ const ActivationCenterPage = () => {
                     <div>
                       <h3 className="activation-notices__title">
                         {nextLevel
-                          ? isFounderRepFreeLevel(nextLevel)
+                          ? nextFounderRepPaused
+                            ? activationT('guidance.founderRepPaused', 'Founder representative activation paused')
+                            : isFounderRepFreeLevel(nextLevel)
                             ? activationT('guidance.founderRepFreeRequired', 'Founder representative free activation')
                             : !isRegistered && nextLevel === 1
                               ? activationT('guidance.onboardingRequired', 'Onboarding requires 10 USDT')
@@ -2353,7 +2395,9 @@ const ActivationCenterPage = () => {
                       </h3>
                       <p className="activation-notices__text soft-text">
                         {nextLevel
-                          ? !isRegistered && nextLevel === 1
+                          ? nextFounderRepPaused
+                            ? activationT('guidance.founderRepPausedText', 'This special founder representative activation path is paused. Ordinary paid activations remain unchanged.')
+                            : !isRegistered && nextLevel === 1
                             ? `Balance: ${usdtBalance} USDT. ${
                                 parseFloat(usdtBalance) >= 10
                                   ? activationT('guidance.sufficientOnboarding', 'Sufficient funds available for registration and Level 1.')
@@ -2480,7 +2524,9 @@ const ActivationCenterPage = () => {
                   {!canWriteHere
                     ? activationT('nextAction.readOnlyText', "You are currently viewing another member's space. Progress and orbit state are visible, but wallet actions are disabled.")
                     : nextLevel
-                      ? isFounderRepFreeLevel(nextLevel)
+                      ? nextFounderRepPaused
+                        ? activationT('nextAction.founderRepPausedText', 'Founder representative free activation is paused for this wallet unless governance approves a new rollout. Ordinary paid accounts are not affected.')
+                        : isFounderRepFreeLevel(nextLevel)
                         ? activationT('nextAction.founderRepFreeText', 'This founder representative wallet can activate the next eligible level without USDT.')
                         : !isRegistered && nextLevel === 1
                           ? activationT('nextAction.onboardingText', 'Complete onboarding to register this wallet and activate Level 1 in a single action.')
@@ -2500,6 +2546,7 @@ const ActivationCenterPage = () => {
                       disabled={
                         txStatus.loading ||
                         !canActivateLevel(nextLevel) ||
+                        nextFounderRepPaused ||
                         (!isFounderRepFreeLevel(nextLevel) && parseFloat(usdtBalance) <
                           parseFloat(nextLevel === 1 && !isRegistered ? '10' : levelPrices[nextLevel])) ||
                         networkWarning
@@ -2507,7 +2554,9 @@ const ActivationCenterPage = () => {
                     >
                       {txStatus.loading
                         ? activationT('states.processing', 'Processing...')
-                        : isFounderRepFreeLevel(nextLevel)
+                        : nextFounderRepPaused
+                          ? activationT('actions.founderRepPaused', 'Founder Rep Paused')
+                          : isFounderRepFreeLevel(nextLevel)
                           ? activationT('actions.activateFounderRepFree', 'Activate Founder Rep Free')
                           : nextLevel === 1 && !isRegistered
                             ? activationT('actions.registerAndActivateLevelOne', 'Register & Activate Level 1')
@@ -2690,7 +2739,9 @@ const ActivationCenterPage = () => {
                     <div>
                       {activationT('registration.levelOneCost', 'Registration + Level 1:')}{' '}
                       <strong>
-                        {isFounderRepFreeLevel(1)
+                        {isFounderRepActivationPaused(1)
+                          ? activationT('levels.founderRepPaused', 'Founder Rep Paused')
+                          : isFounderRepFreeLevel(1)
                           ? activationT('levels.founderRepFree', 'Founder Rep Free')
                           : activationT('levels.onboardingTotal', '10 USDT total')}
                       </strong>
@@ -2754,7 +2805,13 @@ const ActivationCenterPage = () => {
                   </p>
                 </div>
 
-                {!isFounderRepFreeLevel(1) && parseFloat(usdtBalance) < 10 && (
+                {isFounderRepActivationPaused(1) && (
+                  <div className="insufficient-funds-warning">
+                    {activationT('registration.founderRepPaused', 'Founder representative free activation is paused. This wallet cannot continue this special activation path unless governance approves a new rollout.')}
+                  </div>
+                )}
+
+                {!isFounderRepActivationPaused(1) && !isFounderRepFreeLevel(1) && parseFloat(usdtBalance) < 10 && (
                   <div className="insufficient-funds-warning">
                     {activationT('registration.insufficientBalance', 'Insufficient USDT balance. Need 10 USDT for onboarding.')}
                   </div>
@@ -2772,7 +2829,7 @@ const ActivationCenterPage = () => {
                     type="button"
                     className="activation-modal__button activation-modal__button--primary"
                     onClick={handleRegisterFromModal}
-                    disabled={txStatus.loading || referrerResolveLoading || (!isFounderRepFreeLevel(1) && parseFloat(usdtBalance) < 10) || networkWarning}
+                    disabled={txStatus.loading || referrerResolveLoading || isFounderRepActivationPaused(1) || (!isFounderRepFreeLevel(1) && parseFloat(usdtBalance) < 10) || networkWarning}
                   >
                     {txStatus.loading || referrerResolveLoading
                       ? activationT('registration.preparing', 'Preparing registration...')

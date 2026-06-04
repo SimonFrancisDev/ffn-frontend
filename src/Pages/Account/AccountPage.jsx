@@ -7,7 +7,7 @@ import { useContracts } from '../../hooks/useContracts'
 import { useSpace } from '../../context/SpaceContext'
 import { ethers } from 'ethers'
 import { fetchUserSummaryApi } from '../../Services/orbitsApi'
-import { getProfileReadAuthIfLocked, isProfileReadAuthError, ProfileReadAuthError } from '../../Services/profilePrivacyApi'
+import { getProfileReadAuthIfLocked, isProfileReadAuthError } from '../../Services/profilePrivacyApi'
 import { getApiUrl } from '../../Services/apiConfig'
 import { resolveIdentity } from '../../utils/identityResolver'
 import { NETWORK_CONFIG } from '../../constants/addresses'
@@ -98,13 +98,13 @@ const AccountPage = () => {
       // Production Standard: One single source of truth for growth and tokens
       const [data, referralsPayload, downlinePayload, orbitNetworkPayload] = await Promise.all([
         fetchUserSummaryApi(resolvedAddress, { headers: profileReadHeaders }),
-        fetch(getApiUrl(`/api/community/member/${encodeURIComponent(resolvedAddress)}/referrals`), { headers: profileReadHeaders })
+        fetch(getApiUrl(`/api/community/member/${encodeURIComponent(resolvedAddress)}/referrals`), { headers: profileReadHeaders, cache: 'no-store' })
           .then((res) => res.json())
           .catch(() => null),
-        fetch(getApiUrl(`/api/community/member/${encodeURIComponent(resolvedAddress)}/downline`), { headers: profileReadHeaders })
+        fetch(getApiUrl(`/api/community/member/${encodeURIComponent(resolvedAddress)}/downline`), { headers: profileReadHeaders, cache: 'no-store' })
           .then((res) => res.json())
           .catch(() => null),
-        fetch(getApiUrl(`/api/community/member/${encodeURIComponent(resolvedAddress)}/orbit-network`), { headers: profileReadHeaders })
+        fetch(getApiUrl(`/api/community/member/${encodeURIComponent(resolvedAddress)}/orbit-network`), { headers: profileReadHeaders, cache: 'no-store' })
           .then((res) => res.json())
           .catch(() => null),
       ])
@@ -116,11 +116,7 @@ const AccountPage = () => {
         downlinePayload?.locked ||
         orbitNetworkPayload?.locked
 
-      if (lockedPayload) {
-        if (isViewingConnectedWallet) {
-          throw new ProfileReadAuthError(accountT('profile.ownerAuthFailed', 'Your locked profile needs wallet authorization before private data can be shown.'))
-        }
-
+      if (lockedPayload && !isViewingConnectedWallet) {
         const message =
           data?.message ||
           referralsPayload?.message ||

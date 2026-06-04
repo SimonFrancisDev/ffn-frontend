@@ -12,6 +12,7 @@ import {
 } from '../../Services/telegramApi'
 import { fetchNotificationPreferences, updateNotificationPreferences } from '../../Services/notificationsApi'
 import { fetchProfilePrivacy, updateProfilePrivacy } from '../../Services/profilePrivacyApi'
+import { clearAddressScopedOrbitsApiCache } from '../../Services/orbitsApi'
 import { useToast } from '../../components/feedback'
 import { web3Service } from '../../Services/web3'
 
@@ -312,6 +313,7 @@ const PreferencesPage = ({
           const confirmed = await fetchProfilePrivacy(account).catch(() => privacy)
           setProfilePrivacy(confirmed)
           setSpaceVisibilityPreference(confirmed?.isLocked ? 'locked' : 'public')
+          clearAddressScopedOrbitsApiCache(account)
         }
       }
 

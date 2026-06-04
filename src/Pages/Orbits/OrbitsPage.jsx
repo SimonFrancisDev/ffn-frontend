@@ -2709,7 +2709,7 @@ const OrbitsPage = () => {
             </div>
             <div className="modal-detail">
               <span className="modal-label">{orbitsT('modal.positionHolderWallet', 'Position Holder Wallet')}</span>
-              <span>{holderAddress}</span>
+              <span title={holderAddress}>{shortAddress(holderAddress)}</span>
             </div>
           </>
         ) : (
@@ -2725,12 +2725,12 @@ const OrbitsPage = () => {
               <div className="modal-beneficiary-row" key={row.key}>
                 <div className="modal-beneficiary-row__top">
                   <strong>{row.label}</strong>
-                  <span>{row.address ? getMemberLabel(row.address) : orbitsT('modal.systemWallet', 'System')}</span>
+                  <span title={row.address || ''}>{row.address ? getMemberLabel(row.address) : orbitsT('modal.systemWallet', 'System')}</span>
                 </div>
                 {row.address && (
                   <div className="modal-detail">
                     <span className="modal-label">{orbitsT('modal.wallet', 'Wallet')}</span>
-                    <span>{row.address}</span>
+                    <span title={row.address}>{shortAddress(row.address)}</span>
                   </div>
                 )}
                 <div className="modal-beneficiary-row__amounts">

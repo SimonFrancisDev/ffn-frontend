@@ -43,6 +43,7 @@ import {
 } from 'react-icons/fa'
 
 const API_BASE = import.meta.env.VITE_API_BASE_URL?.replace(/\/$/, '') || ''
+const ENABLE_DEPLOYER_TOOLS = String(import.meta.env.VITE_ENABLE_DEPLOYER_TOOLS || '').toLowerCase() === 'true'
 
 const GAS_BUFFER_BPS = 12000n
 const ACTIVATION_GAS_BUFFER_BPS = 12500n
@@ -857,7 +858,7 @@ const ActivationCenterPage = () => {
 
   useEffect(() => {
     const checkDeployerStatus = async () => {
-      if (!isOwnSpace) {
+      if (!ENABLE_DEPLOYER_TOOLS || !isOwnSpace) {
         setIsDeployer(false)
         return
       }
@@ -1946,7 +1947,7 @@ const ActivationCenterPage = () => {
                 {activationT('hero.chips.earned', 'Earned: {{amount}} USDT', { amount: totalEarnings })}
               </span>
             )}
-            {isDeployer && canWriteHere && (
+            {ENABLE_DEPLOYER_TOOLS && isDeployer && canWriteHere && (
               <span className="activation-hero__chip glass-panel deployer-chip">{activationT('hero.chips.deployerMode', 'Deployer Mode')}</span>
             )}
             {isId1Wallet && (
@@ -2301,7 +2302,7 @@ const ActivationCenterPage = () => {
             </section>
           )}
 
-          {isDeployer && canWriteHere && (
+          {ENABLE_DEPLOYER_TOOLS && isDeployer && canWriteHere && (
             <section className="deployer-faucet glass-panel">
               <div className="activation-section-heading">
                 <span className="activation-section-heading__eyebrow muted-text">{activationT('deployer.eyebrow', 'Deployer Tools')}</span>

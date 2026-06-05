@@ -198,7 +198,6 @@ const useWalletState = () => {
     hasMobileWalletSupport: hasWalletConnectSupport,
     connect,
     disconnect,
-    switchToAmoy: switchToConfiguredNetwork,
     switchToConfiguredNetwork
   }), [
     account,

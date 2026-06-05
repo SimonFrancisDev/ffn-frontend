@@ -19,7 +19,7 @@ import {
 const SecurityPage = () => {
   const { t } = useTranslation()
   const securityT = (key, fallback, options) => t(`securityPage.${key}`, fallback, options)
-  const { isConnected, account, connect, switchToAmoy } = useWallet()
+  const { isConnected, account, connect, switchToConfiguredNetwork } = useWallet()
   const { isOwnSpace, subjectAddress, switchToSelf } = useSpace()
   const { isLoading: contractsLoading } = useContracts()
   const toast = useToast()
@@ -46,7 +46,7 @@ const SecurityPage = () => {
 
   const handleSwitchNetwork = async () => {
     try {
-      await switchToAmoy?.()
+      await switchToConfiguredNetwork?.()
       toast.info(securityT('network.switchRequested', 'Network switch requested.'), { dedupeKey: 'security-switch-network-requested' })
     } catch (error) {
       toast.danger(error?.message || securityT('network.switchFailed', 'Unable to switch network.'), { dedupeKey: 'security-switch-network-failed' })

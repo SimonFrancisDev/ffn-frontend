@@ -88,7 +88,6 @@ const THEME_STORAGE_KEY = 'finfreedom_theme_v1'
 const APP_USER_ID_STORAGE_KEY = 'finfreedom_app_user_id_v1'
 const TELEGRAM_PROMPT_DISMISSED_KEY = 'finfreedom_telegram_prompt_dismissed_v1'
 const TELEGRAM_PROMPT_SESSION_KEY = 'finfreedom_telegram_prompt_seen_v1'
-const TESTNET_REMINDER_SEEN_KEY = 'finfreedom_testnet_reminder_seen_v1'
 const EARLY_ACCESS_STORAGE_KEY = 'finfreedom_early_access_v1'
 const LAUNCH_GATE_MODE = String(import.meta.env.VITE_LAUNCH_GATE_MODE || 'open').toLowerCase()
 const EARLY_ACCESS_CODE = String(import.meta.env.VITE_EARLY_ACCESS_CODE || '').trim()
@@ -467,7 +466,7 @@ function App() {
     hasMobileWalletSupport,
     connect,
     disconnect,
-    switchToAmoy,
+    switchToConfiguredNetwork,
   } = useWallet()
 
   const { contracts, loadContracts } = useContracts()
@@ -1011,30 +1010,6 @@ function App() {
     return notifications.find((item) => !item.read) || null
   }, [notifications])
 
-  const [showTestnetReminder, setShowTestnetReminder] = useState(false)
-
-  useEffect(() => {
-    if (!isConnected || !walletAccount || typeof window === 'undefined') {
-      setShowTestnetReminder(false)
-      return
-    }
-
-    try {
-      const todayKey = new Date().toISOString().slice(0, 10)
-      const storageKey = scopedStorageKey(TESTNET_REMINDER_SEEN_KEY, walletAccount)
-      const lastSeen = window.localStorage.getItem(storageKey)
-      const shouldShow = lastSeen !== todayKey
-
-      setShowTestnetReminder(shouldShow)
-
-      if (shouldShow) {
-        window.localStorage.setItem(storageKey, todayKey)
-      }
-    } catch {
-      setShowTestnetReminder(true)
-    }
-  }, [isConnected, walletAccount])
-
   const notices = useMemo(() => {
     const nextNotices = []
 
@@ -1075,7 +1050,7 @@ function App() {
         actionLabel: needsNetworkSwitch
           ? t('topNotice.walletError.switchNetwork', 'Switch Network')
           : t('topNotice.walletError.retry', 'Retry'),
-        onAction: needsNetworkSwitch ? switchToAmoy : connect,
+        onAction: needsNetworkSwitch ? switchToConfiguredNetwork : connect,
         dedupeKey: `wallet-error:${walletError}`,
       })
     } else if (isWalletLoading) {
@@ -1125,23 +1100,6 @@ function App() {
         dedupeKey: `wallet-connected:${walletAccount}`,
       })
 
-      if (showTestnetReminder) {
-        nextNotices.push({
-          id: 'testnet-reminder',
-          type: 'warning',
-          label: t('topNotice.testnetNotice.label', 'Testnet Notice'),
-          message: t(
-            'topNotice.testnetNotice.message',
-            'You are connected to {{network}}. Verify transactions and values before confirming.',
-            { network: NETWORK_CONFIG.chainName }
-          ),
-          source: 'network',
-          sticky: false,
-          dismissible: true,
-          autoHideMs: 9000,
-          dedupeKey: `testnet-reminder:${walletAccount}`,
-        })
-      }
     }
 
     if (latestUnreadNotification) {
@@ -1175,10 +1133,8 @@ function App() {
     hasMobileWalletSupport,
     isConnected,
     isWalletLoading,
-    launchNowMs,
     latestUnreadNotification,
-    showTestnetReminder,
-    switchToAmoy,
+    switchToConfiguredNetwork,
     t,
     walletAccount,
     walletError,

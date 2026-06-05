@@ -452,14 +452,62 @@ const OrbitsPage = () => {
     return []
   }, [])
 
+  const isZeroWallet = useCallback((address) => {
+    if (!address || !ethers.isAddress(address)) return false
+    return address.toLowerCase() === ethers.ZeroAddress.toLowerCase()
+  }, [])
+
+  const extractEmbeddedIdentityLabels = useCallback((source) => {
+    const labels = {}
+    const visit = (value) => {
+      if (!value || typeof value !== 'object') return
+
+      if (Array.isArray(value)) {
+        value.forEach(visit)
+        return
+      }
+
+      if (value.identities && typeof value.identities === 'object') {
+        Object.entries(value.identities).forEach(([address, identity]) => {
+          const walletAddress = identity?.walletAddress || address
+          const referralId = identity?.referralId || identity?.shortCode
+
+          if (walletAddress && referralId && ethers.isAddress(walletAddress)) {
+            labels[walletAddress.toLowerCase()] = referralId
+          }
+        })
+      }
+
+      Object.entries(value).forEach(([key, item]) => {
+        if (key.endsWith('Identity') && item && typeof item === 'object') {
+          const walletAddress = item.walletAddress
+          const referralId = item.referralId || item.shortCode
+
+          if (walletAddress && referralId && ethers.isAddress(walletAddress)) {
+            labels[walletAddress.toLowerCase()] = referralId
+          }
+          return
+        }
+
+        if (item && typeof item === 'object') {
+          visit(item)
+        }
+      })
+    }
+
+    visit(source)
+    return labels
+  }, [])
+
   const getMemberLabel = useCallback((address) => {
-    if (!address || address === ethers.ZeroAddress) return orbitsT('modal.memberIdUnavailable', 'ID unavailable')
+    if (!address) return orbitsT('modal.memberIdUnavailable', 'ID unavailable')
     if (!ethers.isAddress(address)) return orbitsT('modal.memberIdUnavailable', 'ID unavailable')
+    if (isZeroWallet(address)) return 'FIN-FREEDOM'
     return resolvedMemberIds[address.toLowerCase()] || orbitsT('identity.resolvingId', 'Resolving ID...')
-  }, [orbitsT, resolvedMemberIds])
+  }, [isZeroWallet, orbitsT, resolvedMemberIds])
 
   const openParticipantAccount = useCallback((address) => {
-    if (!address || !ethers.isAddress(address) || address === ethers.ZeroAddress) return
+    if (!address || !ethers.isAddress(address) || isZeroWallet(address)) return
 
     const checksumAddress = ethers.getAddress(address)
     const referralId = getMemberLabel(checksumAddress)
@@ -477,11 +525,15 @@ const OrbitsPage = () => {
         }
       ),
     })
-  }, [getMemberLabel, navigate, switchToVisitor])
+  }, [getMemberLabel, isZeroWallet, navigate, switchToVisitor])
 
   const ParticipantIdentity = useCallback(({ address, className = '' }) => {
-    if (!address || !ethers.isAddress(address) || address === ethers.ZeroAddress) {
+    if (!address || !ethers.isAddress(address)) {
       return <span>{orbitsT('modal.memberIdUnavailable', 'ID unavailable')}</span>
+    }
+
+    if (isZeroWallet(address)) {
+      return <span>{getMemberLabel(address)}</span>
     }
 
     return (
@@ -497,7 +549,7 @@ const OrbitsPage = () => {
         {getMemberLabel(address)}
       </button>
     )
-  }, [getMemberLabel, openParticipantAccount, orbitsT])
+  }, [getMemberLabel, isZeroWallet, openParticipantAccount, orbitsT])
 
   const handleOrbitPointerDown = useCallback((event) => {
     if (orbitZoom <= 1) return
@@ -828,8 +880,12 @@ const OrbitsPage = () => {
   }, [orbitsT])
 
   const fetchMemberId = useCallback(async (address) => {
-    if (!address || !ethers.isAddress(address) || address === ethers.ZeroAddress) {
+    if (!address || !ethers.isAddress(address)) {
       return orbitsT('modal.memberIdUnavailable', 'ID unavailable')
+    }
+
+    if (isZeroWallet(address)) {
+      return 'FIN-FREEDOM'
     }
 
     const key = address.toLowerCase()
@@ -849,11 +905,9 @@ const OrbitsPage = () => {
       memberIdCacheRef.current.set(key, displayId)
       return displayId
     } catch {
-      const unavailable = orbitsT('modal.memberIdUnavailable', 'ID unavailable')
-      memberIdCacheRef.current.set(key, unavailable)
-      return unavailable
+      return ''
     }
-  }, [orbitsT])
+  }, [isZeroWallet, orbitsT])
 
   const getExecutedEscrowLocked = useCallback((position) => {
     if (!position) return 0
@@ -1906,9 +1960,10 @@ const OrbitsPage = () => {
   // Effect to resolve member IDs for display
   useEffect(() => {
     const run = async () => {
+      const embeddedLabels = extractEmbeddedIdentityLabels(orbitData)
       const addresses = new Set()
       const addAddress = (address) => {
-        if (address && ethers.isAddress(address) && address !== ethers.ZeroAddress) {
+        if (address && ethers.isAddress(address) && !isZeroWallet(address)) {
           addresses.add(address.toLowerCase())
         }
       }
@@ -1942,26 +1997,41 @@ const OrbitsPage = () => {
       })
 
       const next = {}
+      Object.entries(embeddedLabels).forEach(([addr, label]) => {
+        if (label && resolvedMemberIds[addr] !== label) {
+          next[addr] = label
+        }
+      })
+
+      const missing = [...addresses].filter((addr) => (
+        !embeddedLabels[addr] &&
+        !resolvedMemberIds[addr] &&
+        !memberIdCacheRef.current.has(addr)
+      ))
 
       await Promise.all(
-        [...addresses].map(async (addr) => {
-          next[addr] = await fetchMemberId(addr)
+        missing.map(async (addr) => {
+          const label = await fetchMemberId(addr)
+          if (label) next[addr] = label
         })
       )
 
-      setResolvedMemberIds((prev) => ({ ...prev, ...next }))
+      if (Object.keys(next).length) {
+        setResolvedMemberIds((prev) => ({ ...prev, ...next }))
+      }
     }
 
     run()
-  }, [orbitData, fetchMemberId])
+  }, [extractEmbeddedIdentityLabels, fetchMemberId, isZeroWallet, orbitData, resolvedMemberIds])
 
   useEffect(() => {
     if (!selectedPosition) return
 
     let cancelled = false
+    const embeddedLabels = extractEmbeddedIdentityLabels(selectedPosition)
     const addresses = new Set()
     const addAddress = (address) => {
-      if (address && ethers.isAddress(address) && address !== ethers.ZeroAddress) {
+      if (address && ethers.isAddress(address) && !isZeroWallet(address)) {
         addresses.add(address.toLowerCase())
       }
     }
@@ -1987,14 +2057,30 @@ const OrbitsPage = () => {
       info.occupantReferrer
     ].forEach(addAddress)
 
-    const missing = [...addresses].filter((addr) => !resolvedMemberIds[addr])
+    const embeddedUpdates = {}
+    Object.entries(embeddedLabels).forEach(([addr, label]) => {
+      if (label && resolvedMemberIds[addr] !== label) {
+        embeddedUpdates[addr] = label
+      }
+    })
+
+    if (Object.keys(embeddedUpdates).length) {
+      setResolvedMemberIds((prev) => ({ ...prev, ...embeddedUpdates }))
+    }
+
+    const missing = [...addresses].filter((addr) => (
+      !embeddedLabels[addr] &&
+      !resolvedMemberIds[addr] &&
+      !memberIdCacheRef.current.has(addr)
+    ))
     if (!missing.length) return
 
     const run = async () => {
       const next = {}
       await Promise.all(
         missing.map(async (addr) => {
-          next[addr] = await fetchMemberId(addr)
+          const label = await fetchMemberId(addr)
+          if (label) next[addr] = label
         })
       )
 
@@ -2008,7 +2094,7 @@ const OrbitsPage = () => {
     return () => {
       cancelled = true
     }
-  }, [selectedPosition, resolvedMemberIds, fetchMemberId])
+  }, [extractEmbeddedIdentityLabels, fetchMemberId, isZeroWallet, resolvedMemberIds, selectedPosition])
 
   useEffect(() => {
     if (focusedOnly && routedLevel >= 1 && routedLevel <= 10) {

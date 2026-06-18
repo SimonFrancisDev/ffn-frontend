@@ -1350,9 +1350,9 @@ const CommunityPage = ({ onNavigate }) => {
                 <div className="community-metrics__icon">
                   <FaWallet size={18} />
                 </div>
-                <span className="community-metrics__label muted-text">{communityT('metrics.operationsBalance', 'Live Operations Balance')}</span>
+                <span className="community-metrics__label muted-text">{communityT('metrics.operationsAccumulated', 'Total Operations Accumulated')}</span>
                 <strong className="community-metrics__value gradient-text-blue">
-                  ${formatToken(opsBalance)}
+                  ${formatToken(communityGlobalStats.operationsAllocated)}
                 </strong>
               </div>
             </>

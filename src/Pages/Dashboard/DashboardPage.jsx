@@ -1165,9 +1165,9 @@ const DashboardPage = () => {
             <span className="dashboard-stats__icon">
               <Activity size={20} className="text-glow-purple" />
             </span>
-            <span className="dashboard-stats__label soft-text">{dashboardT('stats.operations.label', 'Ecosystem Dev & Operations')}</span>
+            <span className="dashboard-stats__label soft-text">{dashboardT('stats.operations.accumulatedLabel', 'Operations Total Accumulated')}</span>
             <strong className="dashboard-stats__value dashboard-stats__value--animated">
-              <AnimatedNumber value={communityStats.devOperations?.currentBalance || communityStats.operationsLiveBalance} prefix="$" decimals={2} />
+              <AnimatedNumber value={communityStats.devOperations?.totalInflow || communityStats.operationsAllocated} prefix="$" decimals={2} />
             </strong>
             <div className="dashboard-stats__breakdown">
               <span>{dashboardT('stats.operations.totalInflow', 'Total Inflow')}: ${formatNumber(communityStats.devOperations?.totalInflow || communityStats.operationsAllocated, 2)}</span>

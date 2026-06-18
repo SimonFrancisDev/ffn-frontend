@@ -728,6 +728,51 @@ function App() {
     }
   }, [theme])
 
+  useEffect(() => {
+    if (typeof window === 'undefined' || !window.history) return undefined
+
+    const previousRestoration = window.history.scrollRestoration
+    window.history.scrollRestoration = 'manual'
+
+    return () => {
+      window.history.scrollRestoration = previousRestoration
+    }
+  }, [])
+
+  useEffect(() => {
+    if (typeof window === 'undefined') return undefined
+
+    const targetSection = location.hash?.replace('#', '') || location.state?.targetSection
+    const scrollPage = () => {
+      if (targetSection && typeof document !== 'undefined') {
+        const target = document.getElementById(targetSection)
+        if (target) {
+          target.scrollIntoView({
+            behavior: 'smooth',
+            block: 'start',
+          })
+          return
+        }
+      }
+
+      window.scrollTo({
+        top: 0,
+        left: 0,
+        behavior: 'auto',
+      })
+    }
+
+    let timeoutId
+    const frame = window.requestAnimationFrame(() => {
+      timeoutId = window.setTimeout(scrollPage, targetSection ? 120 : 0)
+    })
+
+    return () => {
+      window.cancelAnimationFrame(frame)
+      if (timeoutId) window.clearTimeout(timeoutId)
+    }
+  }, [location.hash, location.key, location.pathname, location.search, location.state])
+
   const closeAllUtilities = useCallback(() => {
     setIsNotificationsOpen(false)
     setIsLanguageOpen(false)
@@ -770,6 +815,7 @@ function App() {
         // fromPage: routeMap[location.pathname] || 'home',
         fromPage: resolveCurrentPage(location.pathname),
         openedAt: Date.now(),
+        targetSection: section,
         ...options,
       }
 
@@ -777,9 +823,14 @@ function App() {
         navigate(nextPath, {
           state: navigationState,
         })
+      } else if (section) {
         scrollToSection()
       } else {
-        scrollToSection()
+        window.scrollTo({
+          top: 0,
+          left: 0,
+          behavior: 'auto',
+        })
       }
 
       setIsDrawerOpen(false)

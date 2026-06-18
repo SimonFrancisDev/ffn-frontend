@@ -2085,7 +2085,7 @@ export const AdminPanel = () => {
                         <div className="metric-box-premium">
                           <div className="metric-label-premium">{adminT("ui.financialTruth.devOperations", "Dev & Operations")}</div>
                           <div className="admin-metric-stack">
-                            <span>{adminT("ui.financialTruth.totalInflow", "Total Inflow")}: ${formatMoney(financialTruth.devOperations.totalInflow)}</span>
+                            <span>{adminT("ui.financialTruth.totalAccumulated", "Total Accumulated")}: ${formatMoney(financialTruth.devOperations.totalInflow)}</span>
                             <span>{adminT("ui.financialTruth.totalUtilized", "Total Utilized")}: ${formatMoney(financialTruth.devOperations.totalUtilized)}</span>
                             <span>{adminT("ui.financialTruth.currentBalance", "Current Balance")}: ${formatMoney(financialTruth.devOperations.currentBalance)}</span>
                           </div>

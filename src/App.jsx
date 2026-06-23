@@ -509,8 +509,13 @@ function App() {
       }
 
       try {
-        const isOwner = await contracts.simpleMultiSig.isOwner(walletAccount)
-        setIsMultisigOwner(Boolean(isOwner))
+        const [isOwner, isProposalSubmitter] = await Promise.all([
+          contracts.simpleMultiSig.isOwner(walletAccount),
+          contracts.simpleMultiSig.isProposalSubmitter
+            ? contracts.simpleMultiSig.isProposalSubmitter(walletAccount).catch(() => false)
+            : false,
+        ])
+        setIsMultisigOwner(Boolean(isOwner || isProposalSubmitter))
       } catch (err) {
         console.error('Error checking multisig owner status:', err)
         setIsMultisigOwner(false)

@@ -84,7 +84,8 @@ const multisigSelfIface = new ethers.Interface([
 'function addOwner(address owner)',
 'function removeOwner(address owner)',
 'function replaceOwner(address oldOwner,address newOwner)',
-'function changeRequirement(uint256 _requiredConfirmations)']
+'function changeRequirement(uint256 _requiredConfirmations)',
+'function setProposalSubmitter(address submitter,bool allowed)']
 );
 
 const operationsVaultIface = new ethers.Interface([
@@ -641,6 +642,7 @@ export const AdminPanel = () => {
 
   const [txStatus, setTxStatus] = useState({ loading: false, hash: null, error: null, note: null });
   const [isOwner, setIsOwner] = useState(false);
+  const [isProposalSubmitter, setIsProposalSubmitter] = useState(false);
   const [ownerCheckComplete, setOwnerCheckComplete] = useState(false);
 
   const [txIdInput, setTxIdInput] = useState('');
@@ -1160,7 +1162,11 @@ export const AdminPanel = () => {
 
     try {
       const ownerMatch = contracts.simpleMultiSig ? await contracts.simpleMultiSig.isOwner(account) : false;
+      const submitterMatch = contracts.simpleMultiSig?.isProposalSubmitter
+        ? await contracts.simpleMultiSig.isProposalSubmitter(account).catch(() => false)
+        : false;
       setIsOwner(ownerMatch);
+      setIsProposalSubmitter(submitterMatch);
 
       const [
       requiredConfirmations,
@@ -1194,7 +1200,7 @@ export const AdminPanel = () => {
       const levelManagerPaused = contracts.levelManager?.paused ? await contracts.levelManager.paused() : false;
       setSystemState({ levelManagerPaused });
 
-      if (ownerMatch && contracts.levelManager) {
+      if ((ownerMatch || submitterMatch) && contracts.levelManager) {
         const [wallets, ratios] = await contracts.levelManager.getFounderWallets();
         setFounderWallets(wallets);
         setFounderRatios(ratios.map((r) => r.toString()));
@@ -1321,6 +1327,34 @@ export const AdminPanel = () => {
     try {
       ensureActionIdle();
       setCheckingTx(`Checking proposal: ${note}`);
+      if (!isOwner) {
+        if (!isProposalSubmitter) {
+          throw new Error('This wallet is not authorized to submit governance proposals.');
+        }
+
+        const selector = String(data || '').slice(0, 10).toLowerCase();
+        const allowedGuardianSelectors = [
+          guardianIface.getFunction('setApprovedProxy').selector.toLowerCase(),
+          guardianIface.getFunction('setApprovedImplementation').selector.toLowerCase(),
+          guardianIface.getFunction('batchSetApprovedImplementations').selector.toLowerCase(),
+        ];
+        const allowedUpgradeSelectors = [
+          levelManagerAdminIface.getFunction('upgradeToAndCall').selector.toLowerCase(),
+          levelManagerAdminIface.getFunction('upgradeTo').selector.toLowerCase(),
+        ];
+        const isGuardianUpgradeProposal =
+          guardianAddress &&
+          target?.toLowerCase?.() === guardianAddress.toLowerCase() &&
+          allowedGuardianSelectors.includes(selector);
+        const isProxyUpgradeProposal =
+          target &&
+          ethers.isAddress(target) &&
+          allowedUpgradeSelectors.includes(selector);
+
+        if (!isGuardianUpgradeProposal && !isProxyUpgradeProposal) {
+          throw new Error('Proposal submitters can submit upgrade-related proposals only.');
+        }
+      }
       const writeContracts = await getWriteContracts();
       const gasEstimate = await writeContracts.simpleMultiSig.submitTransaction.estimateGas(target, 0, data);
       const tx = await writeContracts.simpleMultiSig.submitTransaction(target, 0, data, {
@@ -1881,12 +1915,12 @@ export const AdminPanel = () => {
 
   }
 
-  if (!isOwner) {
+  if (!isOwner && !isProposalSubmitter) {
     return (
       <Container className="admin-shell-premium">
         <div className="glass-panel-premium" style={{ padding: '40px', textAlign: 'center' }}>
           <h5 className="text-glow" style={{ marginBottom: '16px' }}>{adminT("ui.line1439.accessDenied", "Access Denied")}</h5>
-          <p style={{ color: 'rgba(255,255,255,0.6)' }}>{adminT("ui.line1440.thisPanelIsAvailableOnlyTo", "This panel is available only to multisig owners.")}</p>
+          <p style={{ color: 'rgba(255,255,255,0.6)' }}>{adminT("ui.line1440.thisPanelIsAvailableOnlyTo", "This panel is available only to multisig owners or approved proposal submitters.")}</p>
         </div>
       </Container>);
 
@@ -1899,11 +1933,11 @@ export const AdminPanel = () => {
       <div className="admin-hero-premium">
         <div>
           <h1 className="admin-title-premium">{adminT("ui.line1452.adminPanel", "Admin Panel")}</h1>
-          <div className="admin-subtitle">{adminT("ui.line1453.productionGovernanceCockpitForMultisigOwners", "Production governance cockpit for multisig owners")}</div>
+          <div className="admin-subtitle">{adminT("ui.line1453.productionGovernanceCockpitForMultisigOwners", "Production governance cockpit for multisig owners and approved proposal submitters")}</div>
         </div>
         <div className="flex-between-premium" style={{ gap: '12px' }}>
           <span className="admin-badge-premium"><Key size={14} /> {shortAddress(account)}</span>
-          <span className="admin-badge-premium"><Crown size={14} />{adminT("ui.line1457.multisigOwner", "Multisig Owner")}</span>
+          <span className="admin-badge-premium"><Crown size={14} />{isOwner ? adminT("ui.line1457.multisigOwner", "Multisig Owner") : adminT("ui.line1457.proposalSubmitter", "Proposal Submitter")}</span>
           <span className="admin-badge-premium"><BarChart3 size={14} /> {multisigStats.requiredConfirmations}/{ownerList.length || 5}{adminT("ui.line1458.threshold", "Threshold")}</span>
           <span className="admin-badge-premium"><Clock size={14} /> {formatCountdown(Number(multisigStats.timelockDelay || 0))}</span>
         </div>
@@ -2260,9 +2294,9 @@ export const AdminPanel = () => {
                                 <td>
                                   <div className="flex-between-premium" style={{ gap: '6px', flexWrap: 'wrap' }}>
                                     <button className="btn-premium btn-premium-sm" onClick={() => loadMultisigTx(tx.txId)}>{adminT("ui.actions.view", "View")}</button>
-                                    <button className="btn-premium btn-premium-sm" onClick={() => handleApproveTx(tx.txId)} disabled={txStatus.loading || tx.executed || currentOwnerApproval?.approved}>{adminT("ui.actions.approve", "Approve")}</button>
-                                    <button className="btn-premium btn-premium-sm" onClick={() => handleRevokeTx(tx.txId)} disabled={txStatus.loading || tx.executed || !currentOwnerApproval?.approved}>{adminT("ui.actions.revoke", "Revoke")}</button>
-                                    <button className="btn-premium btn-premium-sm" onClick={() => handleExecuteTx(tx.txId)} disabled={txStatus.loading || tx.executed || stage.variant !== 'primary'}>{adminT("ui.actions.execute", "Execute")}</button>
+                                    <button className="btn-premium btn-premium-sm" onClick={() => handleApproveTx(tx.txId)} disabled={!isOwner || txStatus.loading || tx.executed || currentOwnerApproval?.approved}>{adminT("ui.actions.approve", "Approve")}</button>
+                                    <button className="btn-premium btn-premium-sm" onClick={() => handleRevokeTx(tx.txId)} disabled={!isOwner || txStatus.loading || tx.executed || !currentOwnerApproval?.approved}>{adminT("ui.actions.revoke", "Revoke")}</button>
+                                    <button className="btn-premium btn-premium-sm" onClick={() => handleExecuteTx(tx.txId)} disabled={!isOwner || txStatus.loading || tx.executed || stage.variant !== 'primary'}>{adminT("ui.actions.execute", "Execute")}</button>
                                     {hidden ?
                                     <button className="btn-premium btn-premium-sm" onClick={() => handleUnhideTx(tx.txId)}>Unhide</button> :
                                     <button className="btn-premium btn-premium-sm" onClick={() => handleHideTx(tx.txId)}>Hide</button>

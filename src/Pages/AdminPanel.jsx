@@ -3035,7 +3035,7 @@ export const AdminPanel = () => {
         {/* VIEW: GOVERNANCE MIGRATION */}
         {activeTab === 'migration' &&
         <section className="fade-in">
-            <div className="admin-card-premium" style={{ padding: '10px' }}>
+            <div className="admin-card-premium migration-panel-premium" style={{ padding: '10px' }}>
               <div className="admin-header-premium">
                 <div>
                   <div className="header-title" style={{ textAlign: 'center' }}>Governance Migration</div>

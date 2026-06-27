@@ -776,6 +776,128 @@ select.input-premium:focus {
 .content-tab-premium.active { background: linear-gradient(135deg, var(--glow-teal), color-mix(in srgb, var(--glow-teal) 74%, #1a9b7a)); color: #07111f; border-color: transparent; }
 
 /* =========================================================
+   GOVERNANCE MIGRATION
+   ========================================================= */
+.migration-panel-premium {
+  background:
+    linear-gradient(180deg, color-mix(in srgb, var(--surface-2) 80%, transparent), var(--surface-1)),
+    var(--surface-1);
+}
+
+.migration-panel-premium .admin-header-premium {
+  background: color-mix(in srgb, var(--surface-2) 86%, transparent);
+  border-bottom: 1px solid var(--border-soft);
+  border-radius: 18px 18px 0 0;
+  padding: 18px 20px;
+}
+
+.migration-panel-premium .alert {
+  background: color-mix(in srgb, var(--warning) 12%, var(--surface-2)) !important;
+  border: 1px solid color-mix(in srgb, var(--warning) 32%, var(--border-soft)) !important;
+  color: var(--text-primary) !important;
+  border-radius: 16px;
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.04);
+}
+
+.migration-panel-premium .metric-card-premium {
+  height: 100%;
+  min-height: 154px;
+  padding: 16px;
+  background: linear-gradient(180deg, color-mix(in srgb, var(--surface-3) 74%, transparent), var(--surface-2));
+  border: 1px solid var(--border-soft);
+  border-radius: 16px;
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.04);
+}
+
+.migration-panel-premium .metric-label {
+  font-size: 10px;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  color: var(--text-muted);
+  margin-bottom: 8px;
+}
+
+.migration-panel-premium .metric-value {
+  color: var(--text-primary);
+  font-weight: 800;
+  line-height: 1.4;
+  word-break: break-word;
+}
+
+.migration-panel-premium .metric-hint {
+  color: var(--text-secondary);
+  font-size: 11px;
+  line-height: 1.45;
+  margin-top: 10px;
+  word-break: break-word;
+}
+
+.migration-panel-premium .soft-panel-premium {
+  background: color-mix(in srgb, var(--glow-teal) 6%, var(--surface-2));
+  border-color: color-mix(in srgb, var(--glow-teal) 18%, var(--border-soft));
+}
+
+.migration-panel-premium .premium-table-wrapper {
+  background: var(--surface-2);
+  border: 1px solid var(--border-soft);
+  border-radius: 18px;
+  padding: 10px;
+}
+
+.migration-panel-premium .premium-table {
+  color: var(--text-primary);
+  margin-bottom: 0;
+}
+
+.migration-panel-premium .premium-table thead th {
+  background: var(--surface-2) !important;
+  color: var(--text-muted) !important;
+  border-bottom-color: var(--border-soft) !important;
+}
+
+.migration-panel-premium .premium-table tbody tr {
+  background: color-mix(in srgb, var(--surface-1) 88%, transparent);
+  border-radius: 14px;
+}
+
+.migration-panel-premium .premium-table tbody td {
+  background: transparent !important;
+  color: var(--text-primary) !important;
+  border-color: color-mix(in srgb, var(--border-soft) 72%, transparent) !important;
+}
+
+.migration-panel-premium .premium-table tbody tr:hover td {
+  background: color-mix(in srgb, var(--glow-teal) 5%, var(--surface-2)) !important;
+}
+
+.migration-panel-premium .badge {
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.06);
+}
+
+.migration-panel-premium .text-muted {
+  color: var(--text-muted) !important;
+}
+
+.migration-panel-premium .text-danger {
+  color: var(--danger) !important;
+}
+
+@media (max-width: 768px) {
+  .migration-panel-premium .admin-header-premium {
+    align-items: flex-start;
+  }
+
+  .migration-panel-premium .metric-card-premium {
+    min-height: 0;
+  }
+
+  .migration-panel-premium .premium-table-wrapper {
+    padding: 6px;
+  }
+}
+
+/* =========================================================
    MODAL
    ========================================================= */
 .premium-modal .modal-content {

@@ -36,6 +36,8 @@ const withGasBuffer = (estimate) => {
   }
 };
 
+const sameAddress = (a, b) => Boolean(a && b && String(a).toLowerCase() === String(b).toLowerCase());
+
 const getRuntimeAdminKey = () => {
   if (typeof window === 'undefined') return '';
 
@@ -96,6 +98,39 @@ const nftPoolVaultIface = new ethers.Interface([
 'function setDistributionRoot(bytes32 distributionId,bytes32 merkleRoot,string metadataURI,string reason)',
 'function distribute(address recipient,uint256 amount,bytes32 distributionId,string reason)']
 );
+
+const migrationOwnableIface = new ethers.Interface([
+'function transferOwnership(address newOwner)',
+'function acceptOwnership()',
+'function owner() view returns (address)',
+'function pendingOwner() view returns (address)']
+);
+
+const migrationMultisigAbi = [
+'function isOwner(address account) view returns (bool)',
+'function submitTransaction(address to,uint256 value,bytes data) returns (uint256)',
+'event Submit(uint256 indexed txId)'
+];
+
+const PRODUCTION_OLD_MULTISIG = '0xCE38722a72c9099D9237897E18B0cfb6D51c4470';
+const PRODUCTION_NEW_MULTISIG = '0x785cC854ce9e13CE1140cbFD7C08620713E1711d';
+const PRODUCTION_ID1_WALLET = PRODUCTION_OLD_MULTISIG;
+const ZERO_ADDRESS = '0x0000000000000000000000000000000000000000';
+
+const GOVERNANCE_MIGRATION_CONTRACTS = [
+  { key: 'guardian', name: 'Guardian', address: '0x290c2300296379BD0048aFe9099Ed6Fc81BF75fC', twoStep: false },
+  { key: 'levelManager', name: 'LevelManager', address: '0x0E9De0F24eB4774834A2c4A63eaBa8356A4A4B53', twoStep: false },
+  { key: 'registration', name: 'Registration', address: '0x02ECA97e944Ac66b0444fd5F61A716917E83CfF5', twoStep: false },
+  { key: 'escrow', name: 'Escrow', address: '0x8b3db2AC7e30749479f2dbad14105C8eD4a377d4', twoStep: false },
+  { key: 'p4', name: 'P4Orbit', address: '0x1ED0b443c880Ba88F732c3F5915561A07B21F6B4', twoStep: false },
+  { key: 'p12', name: 'P12Orbit', address: '0xCF998d8f7E9DD4f3FacFbA45e656dE07142f824b', twoStep: false },
+  { key: 'p39', name: 'P39Orbit', address: '0xEaD39819B8C4DBb0669320542B6B847D4c31b8Fb', twoStep: false },
+  { key: 'fgt', name: 'FGTToken', address: '0x615201edaddB5CFD839Cc4eE693Dc464F6E2B5E4', twoStep: false },
+  { key: 'fgtr', name: 'FGTrToken', address: '0xAaD41296b6Ec358b9C16dD7161C555fD3a464Bc3', twoStep: false },
+  { key: 'controller', name: 'FreedomTokenController', address: '0x2Ee32EDfE1990408FE70bcADBDBDA8c2f9AdBb62', twoStep: false },
+  { key: 'nftVault', name: 'NFTPoolVault', address: '0xf8F60Da42681b73DFeCa7731E78b29C8707C184b', twoStep: true },
+  { key: 'opsVault', name: 'OperationsVault', address: '0x3ee9B4913e175c15B2Ef76Ac352B6737210248Fb', twoStep: true },
+];
 
 const boolText = (v) => v ? 'Yes' : 'No';
 const readHiddenMultisigTxs = () => {
@@ -231,7 +266,7 @@ const tourSteps = [
 {
   id: 1,
   title: "🎯 Navigation Dock",
-  description: "This sidebar gives you access to all 6 sections of the admin panel. Click any button to switch between Dashboard, Queue, Security, Founders, Community, and Multisig controls.",
+  description: "This sidebar gives you access to all 7 sections of the admin panel. Click any button to switch between Dashboard, Queue, Security, Founders, Community, Multisig controls, and Migration.",
   targetSelector: ".command-dock",
   tab: null, // No tab switching needed
   position: "right"
@@ -710,6 +745,18 @@ export const AdminPanel = () => {
   const [showChargeModal, setShowChargeModal] = useState(false);
   const [financialTruth, setFinancialTruth] = useState(emptyFinancialTruth);
   const [financialTruthError, setFinancialTruthError] = useState('');
+  const [migrationRows, setMigrationRows] = useState({});
+  const [migrationAuthority, setMigrationAuthority] = useState({
+    oldMultisigOwner: false,
+    newMultisigOwner: false
+  });
+  const [migrationId1State, setMigrationId1State] = useState({
+    levelManager: '',
+    registration: '',
+    safe: false
+  });
+  const [migrationLoading, setMigrationLoading] = useState(false);
+  const [migrationTxIds, setMigrationTxIds] = useState({});
   const txActionInFlightRef = useRef(false);
 
   const totalRatio = useMemo(
@@ -827,7 +874,8 @@ export const AdminPanel = () => {
     { iface: guardianIface, name: 'Guardian' },
     { iface: multisigSelfIface, name: 'Multisig' },
     { iface: operationsVaultIface, name: 'OperationsVault' },
-    { iface: nftPoolVaultIface, name: 'NFTPoolVault' }];
+    { iface: nftPoolVaultIface, name: 'NFTPoolVault' },
+    { iface: migrationOwnableIface, name: 'Ownable' }];
 
 
     for (const entry of tries) {
@@ -914,6 +962,17 @@ export const AdminPanel = () => {
               return { label: 'Change requirement', details: `${args[0]?.toString?.() || String(args[0])} confirmations`, category: 'Multisig', targetLabel: 'SimpleMultiSig' };
             default:
               return { label: name, details: JSON.stringify(args), category: 'Multisig', targetLabel: 'SimpleMultiSig' };
+          }
+        }
+
+        if (entry.name === 'Ownable') {
+          switch (name) {
+            case 'transferOwnership':
+              return { label: 'Transfer ownership', details: `New owner ${shortAddress(args[0])}`, category: 'Governance Migration', targetLabel: 'Ownable Contract' };
+            case 'acceptOwnership':
+              return { label: 'Accept ownership', details: 'Finalize two-step ownership transfer', category: 'Governance Migration', targetLabel: 'Ownable Contract' };
+            default:
+              return { label: name, details: JSON.stringify(args), category: 'Governance Migration', targetLabel: 'Ownable Contract' };
           }
         }
       } catch {
@@ -1413,6 +1472,194 @@ export const AdminPanel = () => {
     const data = iface.encodeFunctionData(functionName, args);
     return submitRawProposal(target, data, note);
   };
+
+  const parseSubmitTxId = (receipt, contract) => {
+    for (const log of receipt?.logs || []) {
+      try {
+        const parsed = contract.interface.parseLog(log);
+        if (parsed?.name === 'Submit') return parsed.args?.txId?.toString?.() || String(parsed.args?.[0]);
+      } catch {
+        // Ignore logs emitted by target contracts.
+      }
+    }
+    return '';
+  };
+
+  const refreshMigrationStatus = useCallback(async () => {
+    if (!contracts?.levelManager || !account) return;
+
+    setMigrationLoading(true);
+    try {
+      const provider = contracts.levelManager.runner?.provider || web3Service.getReadProvider();
+      const oldMultisig = new ethers.Contract(PRODUCTION_OLD_MULTISIG, migrationMultisigAbi, provider);
+      const newMultisig = new ethers.Contract(PRODUCTION_NEW_MULTISIG, migrationMultisigAbi, provider);
+
+      const [
+        oldMultisigOwner,
+        newMultisigOwner,
+        levelManagerId1,
+        registrationId1
+      ] = await Promise.all([
+        oldMultisig.isOwner(account).catch(() => false),
+        newMultisig.isOwner(account).catch(() => false),
+        contracts.levelManager.id1Wallet().catch(() => ''),
+        contracts.registration?.id1Wallet ? contracts.registration.id1Wallet().catch(() => '') : Promise.resolve('')
+      ]);
+
+      const id1Safe =
+        sameAddress(levelManagerId1, PRODUCTION_ID1_WALLET) &&
+        (!registrationId1 || sameAddress(registrationId1, PRODUCTION_ID1_WALLET));
+
+      setMigrationAuthority({ oldMultisigOwner, newMultisigOwner });
+      setMigrationId1State({
+        levelManager: levelManagerId1,
+        registration: registrationId1,
+        safe: id1Safe
+      });
+
+      const rows = {};
+      await Promise.all(GOVERNANCE_MIGRATION_CONTRACTS.map(async (item) => {
+        const ownable = new ethers.Contract(item.address, migrationOwnableIface, provider);
+        try {
+          const [owner, pendingOwner] = await Promise.all([
+            ownable.owner(),
+            ownable.pendingOwner().catch(() => ZERO_ADDRESS)
+          ]);
+          rows[item.key] = { owner, pendingOwner, error: '' };
+        } catch (err) {
+          rows[item.key] = { owner: '', pendingOwner: '', error: err?.shortMessage || err?.message || 'Read failed' };
+        }
+      }));
+
+      setMigrationRows(rows);
+    } finally {
+      setMigrationLoading(false);
+    }
+  }, [contracts, account]);
+
+  const getMigrationRowState = useCallback((item) => {
+    const row = migrationRows[item.key] || {};
+    if (row.error) {
+      return { label: 'Read failed', variant: 'danger', canTransfer: false, canAccept: false };
+    }
+
+    const owner = row.owner || '';
+    const pendingOwner = row.pendingOwner || ZERO_ADDRESS;
+    const ownerIsOld = sameAddress(owner, PRODUCTION_OLD_MULTISIG);
+    const ownerIsNew = sameAddress(owner, PRODUCTION_NEW_MULTISIG);
+    const pendingIsEmpty = !pendingOwner || sameAddress(pendingOwner, ZERO_ADDRESS);
+    const pendingIsNew = sameAddress(pendingOwner, PRODUCTION_NEW_MULTISIG);
+    const id1Safe = migrationId1State.safe;
+
+    if (!owner) {
+      return { label: 'Not loaded', variant: 'secondary', canTransfer: false, canAccept: false };
+    }
+    if (ownerIsNew) {
+      return { label: 'Migrated', variant: 'success', canTransfer: false, canAccept: false };
+    }
+    if (!ownerIsOld) {
+      return { label: 'Unexpected owner', variant: 'danger', canTransfer: false, canAccept: false };
+    }
+    if (!id1Safe) {
+      return { label: 'Blocked: ID1 check failed', variant: 'danger', canTransfer: false, canAccept: false };
+    }
+    if (item.twoStep && pendingIsNew) {
+      return {
+        label: 'Accept required',
+        variant: 'warning',
+        canTransfer: false,
+        canAccept: migrationAuthority.newMultisigOwner
+      };
+    }
+    if (item.twoStep && !pendingIsEmpty) {
+      return { label: 'Unexpected pending owner', variant: 'danger', canTransfer: false, canAccept: false };
+    }
+
+    return {
+      label: 'Ready for transfer proposal',
+      variant: 'primary',
+      canTransfer: migrationAuthority.oldMultisigOwner,
+      canAccept: false
+    };
+  }, [migrationAuthority.newMultisigOwner, migrationAuthority.oldMultisigOwner, migrationId1State.safe, migrationRows]);
+
+  const submitMigrationProposal = async (item, mode) => {
+    const state = getMigrationRowState(item);
+    const row = migrationRows[item.key] || {};
+    const isAccept = mode === 'accept';
+    const note = isAccept ? `Submit ${item.name} accept-ownership proposal` : `Submit ${item.name} ownership-transfer proposal`;
+
+    try {
+      ensureActionIdle();
+      setCheckingTx(`Checking migration: ${item.name}`);
+
+      if (!migrationId1State.safe) {
+        throw new Error('Migration is blocked because the ID1 wallet check failed. This tool will not run while ID1 is unsafe.');
+      }
+      if (isAccept && !state.canAccept) {
+        throw new Error('Connect a new multisig owner wallet to submit this accept-ownership proposal.');
+      }
+      if (!isAccept && !state.canTransfer) {
+        throw new Error('Connect a current multisig owner wallet to submit this ownership-transfer proposal.');
+      }
+
+      await web3Service.initWallet({ requestAccounts: false });
+      const signer = web3Service.getSigner();
+      if (!signer) throw new Error('Wallet signer is unavailable.');
+
+      const multisigAddressForMode = isAccept ? PRODUCTION_NEW_MULTISIG : PRODUCTION_OLD_MULTISIG;
+      const multisig = new ethers.Contract(multisigAddressForMode, migrationMultisigAbi, signer);
+      const signerAddress = await signer.getAddress();
+      const signerIsOwner = await multisig.isOwner(signerAddress);
+      if (!signerIsOwner) {
+        throw new Error(isAccept ? 'This wallet is not an owner of the new multisig.' : 'This wallet is not an owner of the current multisig.');
+      }
+
+      if (isAccept) {
+        if (!item.twoStep || !sameAddress(row.owner, PRODUCTION_OLD_MULTISIG) || !sameAddress(row.pendingOwner, PRODUCTION_NEW_MULTISIG)) {
+          throw new Error(`${item.name} is not ready for acceptOwnership.`);
+        }
+      } else if (!sameAddress(row.owner, PRODUCTION_OLD_MULTISIG)) {
+        throw new Error(`${item.name} is not owned by the current production multisig.`);
+      }
+
+      const data = isAccept
+        ? migrationOwnableIface.encodeFunctionData('acceptOwnership', [])
+        : migrationOwnableIface.encodeFunctionData('transferOwnership', [PRODUCTION_NEW_MULTISIG]);
+
+      const gasEstimate = await multisig.submitTransaction.estimateGas(item.address, 0, data);
+      const tx = await multisig.submitTransaction(item.address, 0, data, {
+        gasLimit: withGasBuffer(gasEstimate)
+      });
+      setLoadingTx(tx.hash, note);
+      const receipt = await tx.wait();
+      const txId = parseSubmitTxId(receipt, multisig);
+      setMigrationTxIds((current) => ({
+        ...current,
+        [item.key]: {
+          ...(current[item.key] || {}),
+          [isAccept ? 'accept' : 'transfer']: txId
+        }
+      }));
+      setDoneTx(tx.hash, txId ? `${note}. Multisig tx #${txId}` : note);
+      await Promise.all([
+        refreshMigrationStatus(),
+        refreshGovernanceData()
+      ]);
+      return tx;
+    } catch (err) {
+      setNormalizedErrorTx(err, `${note} failed`);
+      throw err;
+    } finally {
+      releaseActionLock();
+    }
+  };
+
+  useEffect(() => {
+    if (contracts && account && activeTab === 'migration') {
+      refreshMigrationStatus().catch(console.error);
+    }
+  }, [contracts, account, activeTab, refreshMigrationStatus]);
 
   const refreshTransactionOnly = useCallback(async (txId, options = {}) => {
     if (txId === null || txId === undefined || txId === '') return null;
@@ -1968,6 +2215,10 @@ export const AdminPanel = () => {
         <button className={activeTab === 'multisig' ? 'active' : ''} onClick={() => setActiveTab('multisig')} title={adminT("ui.line1485.multisigSettings", "Multisig Settings")}>
           <Settings size={20} />
           <span>{adminT("ui.line1487.multisig", "Multisig")}</span>
+        </button>
+        <button className={activeTab === 'migration' ? 'active' : ''} onClick={() => setActiveTab('migration')} title="Governance Migration">
+          <Key size={20} />
+          <span>Migration</span>
         </button>
 
         <button
@@ -2775,6 +3026,141 @@ export const AdminPanel = () => {
                     }
                     </tbody>
                   </table>
+                </div>
+              </div>
+            </div>
+          </section>
+        }
+
+        {/* VIEW: GOVERNANCE MIGRATION */}
+        {activeTab === 'migration' &&
+        <section className="fade-in">
+            <div className="admin-card-premium" style={{ padding: '10px' }}>
+              <div className="admin-header-premium">
+                <div>
+                  <div className="header-title" style={{ textAlign: 'center' }}>Governance Migration</div>
+                  <div className="admin-subtitle mt-1">Submit ownership-transfer proposals from the current multisig to the new multisig. Founders still approve and execute through multisig.</div>
+                </div>
+                <button className="btn-premium btn-premium-sm" onClick={refreshMigrationStatus} disabled={migrationLoading || txStatus.loading}>
+                  {migrationLoading ? <Spinner size="sm" /> : <RefreshCw size={14} />} Refresh
+                </button>
+              </div>
+
+              <div className="admin-body-premium">
+                <Alert variant="warning" className="mb-4">
+                  This tool does not change ID1 and does not execute any proposal directly. It only submits prepared multisig transactions. Do not continue if the ID1 safety check is not green.
+                </Alert>
+
+                <Row className="g-3 mb-4">
+                  <Col xl={3} md={6}>
+                    <div className="metric-card-premium">
+                      <div className="metric-label">Current multisig</div>
+                      <div className="metric-value mono" style={{ fontSize: '0.95rem' }}>{shortAddress(PRODUCTION_OLD_MULTISIG)}</div>
+                      <div className="metric-hint mono">{PRODUCTION_OLD_MULTISIG}</div>
+                    </div>
+                  </Col>
+                  <Col xl={3} md={6}>
+                    <div className="metric-card-premium">
+                      <div className="metric-label">New multisig</div>
+                      <div className="metric-value mono" style={{ fontSize: '0.95rem' }}>{shortAddress(PRODUCTION_NEW_MULTISIG)}</div>
+                      <div className="metric-hint mono">{PRODUCTION_NEW_MULTISIG}</div>
+                    </div>
+                  </Col>
+                  <Col xl={3} md={6}>
+                    <div className="metric-card-premium">
+                      <div className="metric-label">Connected wallet authority</div>
+                      <div className="metric-value" style={{ fontSize: '0.95rem' }}>
+                        <Badge bg={migrationAuthority.oldMultisigOwner ? 'success' : 'secondary'} className="me-2">Old owner</Badge>
+                        <Badge bg={migrationAuthority.newMultisigOwner ? 'success' : 'secondary'}>New owner</Badge>
+                      </div>
+                      <div className="metric-hint">Transfer proposals need old-owner authority. Accept proposals need new-owner authority.</div>
+                    </div>
+                  </Col>
+                  <Col xl={3} md={6}>
+                    <div className="metric-card-premium">
+                      <div className="metric-label">ID1 safety</div>
+                      <div className="metric-value" style={{ fontSize: '0.95rem' }}>
+                        <Badge bg={migrationId1State.safe ? 'success' : 'danger'}>
+                          {migrationId1State.safe ? 'ID1 unchanged' : 'Blocked'}
+                        </Badge>
+                      </div>
+                      <div className="metric-hint">
+                        LevelManager: <span className="mono">{shortAddress(migrationId1State.levelManager)}</span><br />
+                        Registration: <span className="mono">{shortAddress(migrationId1State.registration)}</span>
+                      </div>
+                    </div>
+                  </Col>
+                </Row>
+
+                <div className="soft-panel-premium mb-4">
+                  <div className="small-label-premium mb-2">How founders should use this</div>
+                  <p className="admin-subtitle mb-2">
+                    First submit transfer proposals for each contract still owned by the current multisig. NFTPoolVault and OperationsVault use two-step ownership: after founders approve and execute the transfer proposal, return here and submit the accept-ownership proposal from a new multisig owner wallet.
+                  </p>
+                  <p className="admin-subtitle mb-0">
+                    The generated transaction IDs appear in this session after each submission. Founders then approve and execute those IDs from the normal transaction queue.
+                  </p>
+                </div>
+
+                <div className="table-responsive premium-table-wrapper">
+                  <Table hover className="premium-table align-middle">
+                    <thead>
+                      <tr>
+                        <th>Contract</th>
+                        <th>Owner</th>
+                        <th>Pending owner</th>
+                        <th>Flow</th>
+                        <th>Status</th>
+                        <th>Submitted IDs</th>
+                        <th>Action</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {GOVERNANCE_MIGRATION_CONTRACTS.map((item) => {
+                        const row = migrationRows[item.key] || {};
+                        const state = getMigrationRowState(item);
+                        const txIds = migrationTxIds[item.key] || {};
+                        const transferDisabled = txStatus.loading || migrationLoading || !state.canTransfer || Boolean(txIds.transfer);
+                        const acceptDisabled = txStatus.loading || migrationLoading || !state.canAccept || Boolean(txIds.accept);
+
+                        return (
+                          <tr key={item.key}>
+                            <td>
+                              <div className="fw-semibold">{item.name}</div>
+                              <div className="mono small">{item.address}</div>
+                            </td>
+                            <td className="mono">{shortAddress(row.owner)}</td>
+                            <td className="mono">{shortAddress(row.pendingOwner)}</td>
+                            <td>{item.twoStep ? 'Two-step' : 'One-step'}</td>
+                            <td><Badge bg={state.variant}>{state.label}</Badge>{row.error ? <div className="text-danger small mt-1">{row.error}</div> : null}</td>
+                            <td>
+                              {txIds.transfer ? <div>Transfer: <span className="mono">#{txIds.transfer}</span></div> : null}
+                              {txIds.accept ? <div>Accept: <span className="mono">#{txIds.accept}</span></div> : null}
+                              {!txIds.transfer && !txIds.accept ? <span className="text-muted">None this session</span> : null}
+                            </td>
+                            <td>
+                              <div className="d-flex gap-2 flex-wrap">
+                                <button
+                                  className="btn-premium btn-premium-sm"
+                                  onClick={() => submitMigrationProposal(item, 'transfer')}
+                                  disabled={transferDisabled}>
+                                  Submit transfer
+                                </button>
+                                {item.twoStep &&
+                                <button
+                                  className="btn-premium btn-premium-sm"
+                                  onClick={() => submitMigrationProposal(item, 'accept')}
+                                  disabled={acceptDisabled}>
+                                    Submit accept
+                                  </button>
+                                }
+                              </div>
+                            </td>
+                          </tr>
+                        );
+                      })}
+                    </tbody>
+                  </Table>
                 </div>
               </div>
             </div>

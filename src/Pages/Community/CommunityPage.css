@@ -1505,7 +1505,7 @@
   display: flex;
   flex-direction: column;
   border-radius: 24px;
-  background: var(--glass-bg-strong);
+  background: color-mix(in srgb, var(--bg-primary) 94%, #07111f);
   border: 1px solid var(--glass-border);
   box-shadow: 0 24px 80px rgba(0, 0, 0, 0.28);
 }
@@ -1537,6 +1537,12 @@
   display: flex;
   flex-direction: column;
   gap: 12px;
+  background: color-mix(in srgb, var(--bg-primary) 90%, #07111f);
+}
+
+.leaderboard-modal .leaderboard-item {
+  background: color-mix(in srgb, var(--surface-1) 88%, #07111f);
+  border-color: var(--border-soft);
 }
 
 .community-page a.view-all-btn {

@@ -1833,3 +1833,35 @@ body.modal-open .fab-premium {
 [data-theme="light"] .command-dock button:last-child {
   border-top: 1px solid rgba(0, 0, 0, 0.15);
 }
+
+.migration-accept-queue,
+.migration-accept-details .metric-card-premium {
+  background: color-mix(in srgb, var(--surface-1, #111827) 90%, #07111f);
+  border: 1px solid var(--border-soft, rgba(255, 255, 255, 0.12));
+  box-shadow: 0 18px 40px rgba(0, 0, 0, 0.18);
+}
+
+.migration-accept-queue .premium-input {
+  background: var(--surface-2, rgba(255, 255, 255, 0.08));
+  border: 1px solid var(--border-soft, rgba(255, 255, 255, 0.14));
+  color: var(--text-primary, #f8fafc);
+}
+
+.migration-accept-queue .premium-input:focus {
+  background: var(--surface-2, rgba(255, 255, 255, 0.1));
+  border-color: var(--glow-teal, #14f1c7);
+  color: var(--text-primary, #f8fafc);
+  box-shadow: 0 0 0 0.2rem rgba(20, 241, 199, 0.16);
+}
+
+[data-theme="light"] .migration-accept-queue,
+[data-theme="light"] .migration-accept-details .metric-card-premium {
+  background: rgba(255, 255, 255, 0.96);
+  border-color: rgba(100, 120, 150, 0.28);
+}
+
+[data-theme="light"] .migration-accept-queue .premium-input {
+  background: #ffffff;
+  border-color: rgba(100, 120, 150, 0.3);
+  color: #0f172a;
+}

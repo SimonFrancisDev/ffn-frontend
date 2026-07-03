@@ -1050,6 +1050,45 @@
   overflow-y: auto;
 }
 
+.leaderboard-item--modal-row {
+  grid-template-columns: auto minmax(0, 1fr) auto auto;
+  align-items: center;
+  gap: 12px;
+}
+
+.leaderboard-modal__identity {
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.leaderboard-address-wrap--modal {
+  min-width: 0;
+}
+
+.leaderboard-address-wrap--modal .leaderboard-address-full-inline {
+  display: block;
+  max-width: 100%;
+  overflow-wrap: anywhere;
+  word-break: break-word;
+  line-height: 1.35;
+}
+
+.leaderboard-modal__value {
+  min-width: 92px;
+  text-align: right;
+}
+
+.leaderboard-referrals--modal {
+  text-align: left;
+  min-width: 0;
+}
+
+.leaderboard-copy-btn--modal {
+  flex: 0 0 auto;
+}
+
 .resources-grid {
   display: grid;
   grid-template-columns: repeat(2, minmax(0, 1fr));
@@ -1635,6 +1674,52 @@
 
   .leaderboard-item {
     gap: 10px;
+  }
+
+  .leaderboard-item--modal-row {
+    display: grid;
+    grid-template-columns: auto minmax(0, 1fr) auto;
+    grid-template-areas:
+      "rank value copy"
+      "identity identity identity";
+    align-items: center;
+    row-gap: 8px;
+    column-gap: 10px;
+    padding: 12px;
+  }
+
+  .leaderboard-item--modal-row .rank-badge {
+    grid-area: rank;
+  }
+
+  .leaderboard-item--modal-row .leaderboard-modal__value {
+    grid-area: value;
+    min-width: 0;
+    text-align: left;
+  }
+
+  .leaderboard-item--modal-row .leaderboard-earnings {
+    text-align: left;
+    min-width: 0;
+    font-size: 14px;
+  }
+
+  .leaderboard-item--modal-row .leaderboard-modal__identity {
+    grid-area: identity;
+    width: 100%;
+  }
+
+  .leaderboard-item--modal-row .leaderboard-address-full-inline {
+    font-size: 11px;
+  }
+
+  .leaderboard-item--modal-row .leaderboard-referrals--modal {
+    font-size: 11px;
+  }
+
+  .leaderboard-item--modal-row .leaderboard-copy-btn--modal {
+    grid-area: copy;
+    justify-self: end;
   }
 }
 

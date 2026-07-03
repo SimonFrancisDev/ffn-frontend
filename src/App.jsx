@@ -1304,7 +1304,7 @@ function App() {
               />
 
               <Route path="/about" element={<AboutPage onNavigate={handleNavigate} />} />
-              <Route path="/community" element={<CommunityPage />} />
+              <Route path="/community" element={<CommunityPage hasAdminReadAccess={isMultisigOwner} />} />
               <Route path="/support" element={<SupportPage />} />
               <Route path="/ref/:refCode" element={<ActivationCenterPage />} />
 

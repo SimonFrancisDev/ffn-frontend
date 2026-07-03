@@ -236,7 +236,7 @@ function CommunitySection({ eyebrow, title, text, children, className = '' }) {
   )
 }
 
-const CommunityPage = ({ onNavigate }) => {
+const CommunityPage = ({ onNavigate, hasAdminReadAccess = false }) => {
   const { t } = useTranslation()
   const communityT = useCallback((key, fallback, options) => t(`communityPage.${key}`, fallback, options), [t])
   const navigate = useNavigate()
@@ -558,7 +558,7 @@ const CommunityPage = ({ onNavigate }) => {
     SYSTEM_WALLETS.includes(resolvedAddress.toLowerCase())
 
   const isRegisteredUser =
-    Boolean(memberSummary?.isRegistered) || isSystemWallet
+    Boolean(memberSummary?.isRegistered) || isSystemWallet || hasAdminReadAccess
 
   const shouldShowPrivateMoneyMetrics =
     !isCheckingRegistration && isRegisteredUser && !profileLocked
@@ -650,13 +650,14 @@ const CommunityPage = ({ onNavigate }) => {
       switchToVisitor?.(identity.walletAddress)
       setProfileInput('')
       setProfileModalOpen(false)
+      navigate('/account')
       toast.success(communityT('profile.loadedToast', 'Community profile loaded.'), { dedupeKey: 'community-profile-loaded' })
     } catch (error) {
       const message = communityT('profile.errors.invalid', 'Enter a valid wallet address or Referral ID.')
       setProfileError(message)
       toast.danger(message, { dedupeKey: 'community-profile-resolve-failed' })
     }
-  }, [profileInput, switchToVisitor, communityT, toast])
+  }, [profileInput, switchToVisitor, navigate, communityT, toast])
 
   const handleReturnToMyProfile = useCallback(() => {
     setProfileError('')
@@ -1683,22 +1684,26 @@ const CommunityPage = ({ onNavigate }) => {
                 const fullAddress = entry.address || ''
                 const isViewer = currentUserLower && currentUserLower === String(fullAddress).toLowerCase()
                 return (
-                  <div key={`modal-${activeLeaderboardTab}-${entry.rank}-${fullAddress}`} className={`leaderboard-item ${isViewer ? 'leaderboard-item--viewer' : ''}`}>
+                  <div key={`modal-${activeLeaderboardTab}-${entry.rank}-${fullAddress}`} className={`leaderboard-item leaderboard-item--modal-row ${isViewer ? 'leaderboard-item--viewer' : ''}`}>
                     <div className={`rank-badge rank-${entry.rank}`}>
                       <RankMedal rank={entry.rank} />
                     </div>
-                    <div className="leaderboard-address-wrap leaderboard-address-wrap--modal">
-                      <div className="leaderboard-address-full-inline">{fullAddress}</div>
+                    <div className="leaderboard-modal__identity">
+                      <div className="leaderboard-address-wrap leaderboard-address-wrap--modal">
+                        <div className="leaderboard-address-full-inline">{fullAddress}</div>
+                      </div>
+                      <div className="leaderboard-referrals leaderboard-referrals--modal">
+                        {activeLeaderboardTab === 'topEarners' && communityT('leaderboard.receiptsLabel', '{{count}} receipts', { count: entry.receiptCount || 0 })}
+                        {activeLeaderboardTab === 'topReferrers' && communityT('leaderboard.earnedAmount', '${{amount}}', { amount: formatToken(entry.commissionEarned || 0) })}
+                        {activeLeaderboardTab === 'mostActive' && communityT('leaderboard.volumeAmount', '${{amount}}', { amount: formatToken(entry.totalVolume || entry.totalEarned || 0) })}
+                      </div>
                     </div>
-                    <div className="leaderboard-earnings">
-                      {activeLeaderboardTab === 'topEarners' && `$${formatToken(entry.totalEarned || 0)}`}
-                      {activeLeaderboardTab === 'topReferrers' && formatWhole(entry.totalReferrals || 0)}
-                      {activeLeaderboardTab === 'mostActive' && formatWhole(entry.receiptCount || 0)}
-                    </div>
-                    <div className="leaderboard-referrals">
-                      {activeLeaderboardTab === 'topEarners' && communityT('leaderboard.receiptsLabel', '{{count}} receipts', { count: entry.receiptCount || 0 })}
-                      {activeLeaderboardTab === 'topReferrers' && communityT('leaderboard.earnedAmount', '${{amount}}', { amount: formatToken(entry.commissionEarned || 0) })}
-                      {activeLeaderboardTab === 'mostActive' && communityT('leaderboard.volumeAmount', '${{amount}}', { amount: formatToken(entry.totalVolume || entry.totalEarned || 0) })}
+                    <div className="leaderboard-modal__value">
+                      <div className="leaderboard-earnings">
+                        {activeLeaderboardTab === 'topEarners' && `$${formatToken(entry.totalEarned || 0)}`}
+                        {activeLeaderboardTab === 'topReferrers' && formatWhole(entry.totalReferrals || 0)}
+                        {activeLeaderboardTab === 'mostActive' && formatWhole(entry.receiptCount || 0)}
+                      </div>
                     </div>
                     <button
                       type="button"

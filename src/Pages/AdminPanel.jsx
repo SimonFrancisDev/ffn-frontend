@@ -1912,12 +1912,14 @@ export const AdminPanel = () => {
         }
         if (contracts.guardian?.paused && await contracts.guardian.paused()) throw new Error('Guardian is paused. Unpause Guardian before executing upgrade proposals.');
         if (contracts.guardian?.globalUpgradeFreeze && await contracts.guardian.globalUpgradeFreeze()) throw new Error('Guardian global upgrade freeze is active.');
-        const [proxyApproved, implementationApprovals] = await Promise.all([
-          contracts.guardian?.approvedProxies(proxy),
-          Promise.all(implementations.map((implementation) => contracts.guardian?.approvedImplementations(proxy, implementation)))
-        ]);
-        if (!proxyApproved) throw new Error('Guardian has not approved this proxy yet.');
-        if (implementationApprovals.some((approved) => !approved)) throw new Error('Guardian has not approved every implementation for this proxy yet.');
+        if (tx.category === 'Upgrade') {
+          const [proxyApproved, implementationApprovals] = await Promise.all([
+            contracts.guardian?.approvedProxies(proxy),
+            Promise.all(implementations.map((implementation) => contracts.guardian?.approvedImplementations(proxy, implementation)))
+          ]);
+          if (!proxyApproved) throw new Error('Guardian has not approved this proxy yet.');
+          if (implementationApprovals.some((approved) => !approved)) throw new Error('Guardian has not approved every implementation for this proxy yet.');
+        }
       }
     }
 

@@ -12,7 +12,7 @@ const KNOWN_ERROR_PATTERNS = [
     action: 'Add the required token balance and try again.',
   },
   {
-    test: /allowance|approve/i,
+    test: /allowance|token approval|erc-?20.*approve/i,
     title: 'Approval required',
     message: 'The contract needs token approval before this action can continue.',
     action: 'Approve the required amount, then submit the action again.',

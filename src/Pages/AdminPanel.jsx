@@ -932,7 +932,7 @@ export const AdminPanel = () => {
             case 'setApprovedImplementation':
               return { label: 'Set approved implementation', details: `Proxy ${shortAddress(args[0])} • Impl ${shortAddress(args[1])} • ${boolLabel(args[2])}`, category: 'Guardian', targetLabel: 'Guardian', proxyAddress: args[0], implementationAddress: args[1] };
             case 'batchSetApprovedImplementations':
-              return { label: 'Batch implementation approvals', details: `Proxy ${shortAddress(args[0])} • ${args[1]?.length || 0} implementation(s) • ${boolLabel(args[2])}`, category: 'Guardian', targetLabel: 'Guardian', proxyAddress: args[0] };
+              return { label: 'Batch implementation approvals', details: `Proxy ${shortAddress(args[0])} • ${args[1]?.length || 0} implementation(s) • ${boolLabel(args[2])}`, category: 'Guardian', targetLabel: 'Guardian', proxyAddress: args[0], implementationAddresses: Array.from(args[1] || []) };
             case 'setGlobalUpgradeFreeze':
               return { label: args[0] ? 'Freeze upgrades' : 'Unfreeze upgrades', details: `Global upgrade freeze → ${boolLabel(args[0])}`, category: 'Guardian', targetLabel: 'Guardian' };
             case 'pause':
@@ -1902,22 +1902,22 @@ export const AdminPanel = () => {
         if (!targetCode || targetCode === '0x') throw new Error('The target address has no contract code.');
       }
 
-      if (tx.implementationAddress || tx.proxyAddress) {
+      if (tx.implementationAddress || tx.proxyAddress || tx.implementationAddresses?.length) {
         const proxy = tx.proxyAddress || tx.to;
-        const implementation = tx.implementationAddress;
-        if (!implementation || !ethers.isAddress(implementation)) throw new Error('Upgrade implementation address is missing or invalid.');
+        const implementations = tx.implementationAddresses?.length ? tx.implementationAddresses : [tx.implementationAddress];
+        if (!implementations.length || implementations.some((implementation) => !ethers.isAddress(implementation))) throw new Error('Upgrade implementation address is missing or invalid.');
         if (provider) {
-          const implementationCode = await provider.getCode(implementation);
-          if (!implementationCode || implementationCode === '0x') throw new Error('The implementation address has no contract code.');
+          const implementationCodes = await Promise.all(implementations.map((implementation) => provider.getCode(implementation)));
+          if (implementationCodes.some((code) => !code || code === '0x')) throw new Error('An implementation address has no contract code.');
         }
         if (contracts.guardian?.paused && await contracts.guardian.paused()) throw new Error('Guardian is paused. Unpause Guardian before executing upgrade proposals.');
         if (contracts.guardian?.globalUpgradeFreeze && await contracts.guardian.globalUpgradeFreeze()) throw new Error('Guardian global upgrade freeze is active.');
-        const [proxyApproved, implementationApproved] = await Promise.all([
+        const [proxyApproved, implementationApprovals] = await Promise.all([
           contracts.guardian?.approvedProxies(proxy),
-          contracts.guardian?.approvedImplementations(proxy, implementation)
+          Promise.all(implementations.map((implementation) => contracts.guardian?.approvedImplementations(proxy, implementation)))
         ]);
         if (!proxyApproved) throw new Error('Guardian has not approved this proxy yet.');
-        if (!implementationApproved) throw new Error('Guardian has not approved this implementation for this proxy yet.');
+        if (implementationApprovals.some((approved) => !approved)) throw new Error('Guardian has not approved every implementation for this proxy yet.');
       }
     }
 

@@ -28,9 +28,9 @@ const MULTISIG_DEFAULT_SCAN_LIMIT = 15;
 const GAS_BUFFER_BPS = 12000n;
 const GAS_BUFFER_DENOMINATOR = 10000n;
 
-const withGasBuffer = (estimate) => {
+const withGasBuffer = (estimate, bufferBps = GAS_BUFFER_BPS) => {
   try {
-    return (BigInt(estimate) * GAS_BUFFER_BPS) / GAS_BUFFER_DENOMINATOR;
+    return (BigInt(estimate) * bufferBps) / GAS_BUFFER_DENOMINATOR;
   } catch {
     return estimate;
   }
@@ -104,6 +104,12 @@ const migrationOwnableIface = new ethers.Interface([
 'function acceptOwnership()',
 'function owner() view returns (address)',
 'function pendingOwner() view returns (address)']
+);
+
+const productionMigrationIface = new ethers.Interface([
+'function seedMatrixParents(address[] occupants,uint8[] levels,address[] parents)',
+'function configureLegacyP12Transitions(address[] owners,uint8[] levels,uint256[] expectedPositions,uint256[] remainingQualifyingPayments)',
+'function setSettlementRouter(address router)']
 );
 
 const migrationMultisigAbi = [
@@ -884,6 +890,7 @@ export const AdminPanel = () => {
     { iface: multisigSelfIface, name: 'Multisig' },
     { iface: operationsVaultIface, name: 'OperationsVault' },
     { iface: nftPoolVaultIface, name: 'NFTPoolVault' },
+    { iface: productionMigrationIface, name: 'ProductionMigration' },
     { iface: migrationOwnableIface, name: 'Ownable' }];
 
 
@@ -956,6 +963,34 @@ export const AdminPanel = () => {
           }
           if (name === 'distribute') {
             return { label: 'NFT pool distribution', details: `${formatMoney(ethers.formatUnits(args[1], 6))} USDT to ${shortAddress(args[0])} - ${args[3] || 'No reason'}`, category: 'Treasury', targetLabel: 'NFTPoolVault' };
+          }
+        }
+
+        if (entry.name === 'ProductionMigration') {
+          switch (name) {
+            case 'seedMatrixParents':
+              return {
+                label: 'Seed matrix parents',
+                details: `${args[0]?.length || 0} preserved parent record(s)`,
+                category: 'Migration',
+                targetLabel: 'Orbit migration'
+              };
+            case 'configureLegacyP12Transitions':
+              return {
+                label: 'Configure legacy P12 transitions',
+                details: `${args[0]?.length || 0} approved transition record(s)`,
+                category: 'Migration',
+                targetLabel: 'LevelManager'
+              };
+            case 'setSettlementRouter':
+              return {
+                label: 'Set settlement router',
+                details: shortAddress(args[0]),
+                category: 'Migration',
+                targetLabel: 'LevelManager'
+              };
+            default:
+              break;
           }
         }
 
@@ -2009,7 +2044,7 @@ export const AdminPanel = () => {
       const writeContracts = await getWriteContracts();
       const gasEstimate = await writeContracts.simpleMultiSig.executeTransaction.estimateGas(idToUse);
       const tx = await writeContracts.simpleMultiSig.executeTransaction(idToUse, {
-        gasLimit: withGasBuffer(gasEstimate),
+        gasLimit: withGasBuffer(gasEstimate, 15000n),
       });
       setLoadingTx(tx.hash, `Executing transaction #${idToUse}`);
       await tx.wait();

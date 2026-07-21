@@ -44,8 +44,7 @@ import {
 
 const API_BASE = import.meta.env.VITE_API_BASE_URL?.replace(/\/$/, '') || ''
 const ENABLE_DEPLOYER_TOOLS = String(import.meta.env.VITE_ENABLE_DEPLOYER_TOOLS || '').toLowerCase() === 'true'
-const TRANSACTION_GATE_ENABLED =
-  String(import.meta.env.VITE_TRANSACTION_GATE_ENABLED ?? 'true').toLowerCase() !== 'false'
+const TRANSACTION_GATE_ENABLED = false
 
 const GAS_BUFFER_BPS = 12000n
 const ACTIVATION_GAS_BUFFER_BPS = 12500n

@@ -44,6 +44,8 @@ import {
 
 const API_BASE = import.meta.env.VITE_API_BASE_URL?.replace(/\/$/, '') || ''
 const ENABLE_DEPLOYER_TOOLS = String(import.meta.env.VITE_ENABLE_DEPLOYER_TOOLS || '').toLowerCase() === 'true'
+const TRANSACTION_GATE_ENABLED =
+  String(import.meta.env.VITE_TRANSACTION_GATE_ENABLED ?? 'true').toLowerCase() !== 'false'
 
 const GAS_BUFFER_BPS = 12000n
 const ACTIVATION_GAS_BUFFER_BPS = 12500n
@@ -283,7 +285,8 @@ const ActivationCenterPage = () => {
   const [isNextActionModalOpen, setIsNextActionModalOpen] = useState(false)
   const [openLevelDetails, setOpenLevelDetails] = useState({})
   const [isRegistrationModalOpen, setIsRegistrationModalOpen] = useState(false)
-  
+  const [showTransactionGateNotice, setShowTransactionGateNotice] = useState(false)
+
   const [showSecurityNotice, setShowSecurityNotice] = useState(false)
 
   const [isDeployer, setIsDeployer] = useState(false)
@@ -296,6 +299,10 @@ const ActivationCenterPage = () => {
   const [registrationReferrer, setRegistrationReferrer] = useState('')
   const [isFounderRepresentative, setIsFounderRepresentative] = useState(false)
   const [founderRepLevelsActivated, setFounderRepLevelsActivated] = useState(0)
+
+  const showTransactionGate = useCallback(() => {
+    setShowTransactionGateNotice(true)
+  }, [])
 
   const [orbitLevelData, setOrbitLevelData] = useState({})
   const [downlineData, setDownlineData] = useState({})
@@ -512,6 +519,11 @@ const ActivationCenterPage = () => {
 
   // ==================== HANDLE REGISTER FROM MODAL ====================
   const handleRegisterFromModal = async () => {
+    if (TRANSACTION_GATE_ENABLED) {
+      showTransactionGate()
+      return
+    }
+
     try {
       const finalReferral = await resolveFinalRegistrationReferrer()
 
@@ -1053,6 +1065,7 @@ const ActivationCenterPage = () => {
       isEligibilityModalOpen ||
       isNextActionModalOpen ||
       isRegistrationModalOpen ||
+      showTransactionGateNotice ||
       showSecurityNotice
 
     const previousHtmlOverflow = document.documentElement.style.overflow
@@ -1069,7 +1082,7 @@ const ActivationCenterPage = () => {
       document.documentElement.style.overflow = previousHtmlOverflow
       document.documentElement.style.scrollBehavior = previousHtmlScrollBehavior
     }
-  }, [isEligibilityModalOpen, isNextActionModalOpen, isRegistrationModalOpen, showSecurityNotice])
+  }, [isEligibilityModalOpen, isNextActionModalOpen, isRegistrationModalOpen, showTransactionGateNotice, showSecurityNotice])
 
   useEffect(() => {
     const shouldShowOnboarding =
@@ -1180,6 +1193,11 @@ const ActivationCenterPage = () => {
   }, [fetchUserData, fetchAllOrbitLevelData, fetchTokenSummary, fetchMyReferralCode, fetchUserFinancialSummary])
 
   const handleCombinedRegisterAndActivateLevelOne = useCallback(async (finalRegistrationReferrer = registrationReferrer) => {
+    if (TRANSACTION_GATE_ENABLED) {
+      showTransactionGate()
+      return
+    }
+
     if (!ensureWritableSpace()) return
 
     if (isFounderRepActivationPaused(1)) {
@@ -1313,6 +1331,7 @@ const ActivationCenterPage = () => {
     toast,
     isFounderRepFreeLevel,
     isFounderRepActivationPaused,
+    showTransactionGate,
   ])
 
   const handleTransferToSelf = async () => {
@@ -1472,6 +1491,11 @@ const ActivationCenterPage = () => {
   )
 
   const executeLevelActivation = async (level) => {
+    if (TRANSACTION_GATE_ENABLED) {
+      showTransactionGate()
+      return
+    }
+
     if (!ensureWritableSpace()) return
     if (networkWarning) {
       const message = activationT('errors.switchNetworkFirst', 'Please switch to {{network}} first.', { network: NETWORK_CONFIG.chainName })
@@ -1561,6 +1585,11 @@ const ActivationCenterPage = () => {
   }
 
   const handleApproveAndActivate = async (level) => {
+    if (TRANSACTION_GATE_ENABLED) {
+      showTransactionGate()
+      return
+    }
+
     const checksForLevel = buildEligibilityChecks(level)
 
     setPendingActivationLevel(level)
@@ -2639,6 +2668,49 @@ const ActivationCenterPage = () => {
                     </button>
                   </div>
                 ) : null}
+              </div>
+            </div>
+          )}
+
+          {showTransactionGateNotice && (
+            <div className="activation-overlay" role="dialog" aria-modal="true" aria-labelledby="transaction-gate-title">
+              <div className="activation-modal activation-modal--security">
+                <div className="activation-modal__top">
+                  <div className="security-notice-badge">
+                    <FaExclamationTriangle size={18} />
+                    <span>Transaction Notice</span>
+                  </div>
+                  <button
+                    type="button"
+                    className="activation-modal__close"
+                    onClick={() => setShowTransactionGateNotice(false)}
+                    aria-label="Close transaction notice"
+                  >
+                    <FaTimesCircle />
+                  </button>
+                </div>
+
+                <h3 id="transaction-gate-title" className="activation-modal__title security-notice-title">
+                  Gas Above Configuration
+                </h3>
+
+                <div className="security-notice-acknowledgment">
+                  <p>
+                    Current network fees exceed the amount configured for registration and level activation.
+                    Please try again shortly.
+                  </p>
+                  <p>No transaction has been submitted.</p>
+                </div>
+
+                <div className="activation-modal__actions">
+                  <button
+                    type="button"
+                    className="activation-modal__button activation-modal__button--primary"
+                    onClick={() => setShowTransactionGateNotice(false)}
+                  >
+                    Close
+                  </button>
+                </div>
               </div>
             </div>
           )}

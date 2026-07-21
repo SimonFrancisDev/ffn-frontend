@@ -2122,8 +2122,14 @@ const ActivationCenterPage = () => {
                       {isNext && canStartActivation && canWriteHere ? (
                         <button
                           className="activate-btn compact-action-btn"
-                          onClick={() => handleApproveAndActivate(level)}
-                          disabled={!TRANSACTION_GATE_ENABLED && (!canWriteHere || txStatus.loading || !hasEnoughBalance || networkWarning || founderRepPaused)}
+                          onClick={() => {
+                            if (level === 1 && !isRegistered) {
+                              setShowSecurityNotice(true)
+                              return
+                            }
+                            handleApproveAndActivate(level)
+                          }}
+                          disabled={txStatus.loading || founderRepPaused}
                         >
                           {txStatus.loading
                             ? activationT('states.processing', 'Processing...')
@@ -2570,6 +2576,10 @@ const ActivationCenterPage = () => {
                       className="activation-modal__button activation-modal__button--primary"
                       onClick={() => {
                         setIsNextActionModalOpen(false)
+                        if (nextLevel === 1 && !isRegistered) {
+                          setShowSecurityNotice(true)
+                          return
+                        }
                         handleApproveAndActivate(nextLevel)
                       }}
                       disabled={

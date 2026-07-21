@@ -1142,6 +1142,10 @@
   overscroll-behavior: contain;
 }
 
+.activation-overlay--transaction-gate {
+  z-index: 130001;
+}
+
 .activation-modal {
   position: relative;
   z-index: 100000;

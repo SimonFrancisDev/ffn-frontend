@@ -2124,7 +2124,7 @@ const ActivationCenterPage = () => {
                         <button
                           className="activate-btn compact-action-btn"
                           onClick={() => handleApproveAndActivate(level)}
-                          disabled={!canWriteHere || txStatus.loading || !hasEnoughBalance || networkWarning || founderRepPaused}
+                          disabled={!TRANSACTION_GATE_ENABLED && (!canWriteHere || txStatus.loading || !hasEnoughBalance || networkWarning || founderRepPaused)}
                         >
                           {txStatus.loading
                             ? activationT('states.processing', 'Processing...')
@@ -2574,12 +2574,14 @@ const ActivationCenterPage = () => {
                         handleApproveAndActivate(nextLevel)
                       }}
                       disabled={
-                        txStatus.loading ||
-                        !canActivateLevel(nextLevel) ||
-                        nextFounderRepPaused ||
-                        (!isFounderRepFreeLevel(nextLevel) && parseFloat(usdtBalance) <
-                          parseFloat(nextLevel === 1 && !isRegistered ? '10' : levelPrices[nextLevel])) ||
-                        networkWarning
+                        !TRANSACTION_GATE_ENABLED && (
+                          txStatus.loading ||
+                          !canActivateLevel(nextLevel) ||
+                          nextFounderRepPaused ||
+                          (!isFounderRepFreeLevel(nextLevel) && parseFloat(usdtBalance) <
+                            parseFloat(nextLevel === 1 && !isRegistered ? '10' : levelPrices[nextLevel])) ||
+                          networkWarning
+                        )
                       }
                     >
                       {txStatus.loading
@@ -2673,7 +2675,7 @@ const ActivationCenterPage = () => {
           )}
 
           {showTransactionGateNotice && (
-            <div className="activation-overlay" role="dialog" aria-modal="true" aria-labelledby="transaction-gate-title">
+            <div className="activation-overlay activation-overlay--transaction-gate" role="dialog" aria-modal="true" aria-labelledby="transaction-gate-title">
               <div className="activation-modal activation-modal--security">
                 <div className="activation-modal__top">
                   <div className="security-notice-badge">
@@ -2902,7 +2904,7 @@ const ActivationCenterPage = () => {
                     type="button"
                     className="activation-modal__button activation-modal__button--primary"
                     onClick={handleRegisterFromModal}
-                    disabled={txStatus.loading || referrerResolveLoading || isFounderRepActivationPaused(1) || (!isFounderRepFreeLevel(1) && parseFloat(usdtBalance) < 10) || networkWarning}
+                    disabled={!TRANSACTION_GATE_ENABLED && (txStatus.loading || referrerResolveLoading || isFounderRepActivationPaused(1) || (!isFounderRepFreeLevel(1) && parseFloat(usdtBalance) < 10) || networkWarning)}
                   >
                     {txStatus.loading || referrerResolveLoading
                       ? activationT('registration.preparing', 'Preparing registration...')

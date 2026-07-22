@@ -2071,6 +2071,7 @@ const ActivationCenterPage = () => {
             const founderRepPaused = isFounderRepActivationPaused(level)
             const combinedRequired = isFounderRepFree ? 0 : level === 1 && !isRegistered ? 10 : price
             const hasEnoughBalance = !founderRepPaused && (isFounderRepFree || parseFloat(usdtBalance) >= combinedRequired)
+            const showInsufficientBalance = !isActive && isNext && !founderRepPaused && !isFounderRepFree && !hasEnoughBalance
             const isOpen = !!openLevelDetails[level]
             const canStartActivation = canActivate && !founderRepPaused
 
@@ -2098,7 +2099,7 @@ const ActivationCenterPage = () => {
                         : activationT('levels.status.locked', 'Locked')}
                 </div>
 
-                <div className={`compact-level-card__price ${hasEnoughBalance ? 'is-sufficient' : 'is-insufficient'}`}>
+                <div className={`compact-level-card__price ${showInsufficientBalance ? 'is-insufficient' : ''}`}>
                   {founderRepPaused
                     ? activationT('levels.founderRepPaused', 'Founder Rep Paused')
                     : isFounderRepFree
@@ -2272,7 +2273,7 @@ const ActivationCenterPage = () => {
                         <div className="level-details">
                           <div className="detail-row">
                             <span>{activationT('metrics.balance', 'Balance:')}</span>
-                            <strong className={hasEnoughBalance ? 'sufficient' : 'insufficient'}>
+                            <strong className={showInsufficientBalance ? 'insufficient' : ''}>
                               {usdtBalance} USDT
                             </strong>
                           </div>

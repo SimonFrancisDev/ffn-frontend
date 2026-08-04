@@ -1428,9 +1428,9 @@ export const AdminPanel = () => {
     const interval = setInterval(() => {
       setMultisigStats((prev) => ({
         ...prev,
-        currentTimestamp: Number(prev.currentTimestamp || Math.floor(Date.now() / 1000)) + 1
+        currentTimestamp: Math.floor(Date.now() / 1000)
       }));
-    }, 1000);
+    }, 15000);
 
     return () => clearInterval(interval);
   }, []);
@@ -2043,8 +2043,12 @@ export const AdminPanel = () => {
       await preflightMultisigAction(idToUse, 'execute');
       const writeContracts = await getWriteContracts();
       const gasEstimate = await writeContracts.simpleMultiSig.executeTransaction.estimateGas(idToUse);
+      const signer = writeContracts.simpleMultiSig.runner;
+      const signerAddress = await signer.getAddress();
+      const nonce = await signer.provider.getTransactionCount(signerAddress, 'pending');
       const tx = await writeContracts.simpleMultiSig.executeTransaction(idToUse, {
-        gasLimit: withGasBuffer(gasEstimate, 15000n),
+        gasLimit: withGasBuffer(gasEstimate, 11000n),
+        nonce,
       });
       setLoadingTx(tx.hash, `Executing transaction #${idToUse}`);
       await tx.wait();

@@ -1,0 +1,125 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1600" height="2200" viewBox="0 0 1600 2200">
+  <defs>
+    <style>
+      .bg { fill:#07111f; }
+      .panel { fill:#0b1730; stroke:#294564; stroke-width:2; }
+      .ring { fill:none; stroke:#345778; stroke-width:3; stroke-dasharray:8 8; }
+      .ray { stroke:#294564; stroke-width:2; }
+      .title { fill:#fff; font:700 42px Inter,Arial,sans-serif; }
+      .heading { fill:#fff; font:700 32px Inter,Arial,sans-serif; }
+      .sub { fill:#b7c8d9; font:400 20px Inter,Arial,sans-serif; }
+      .nodeText { fill:#fff; font:700 16px Inter,Arial,sans-serif; text-anchor:middle; }
+      .smallText { fill:#fff; font:700 13px Inter,Arial,sans-serif; text-anchor:middle; }
+      .owner { fill:#1de9b6; stroke:#c9fff2; stroke-width:3; }
+      .l1 { fill:#4da3ff; stroke:#d9ecff; stroke-width:2; }
+      .l2 { fill:#8b5cf6; stroke:#e7ddff; stroke-width:2; }
+      .l3 { fill:#22c55e; stroke:#d8fbe3; stroke-width:2; }
+    </style>
+  </defs>
+  <rect class="bg" width="1600" height="2200"/>
+  <text class="title" x="800" y="70" text-anchor="middle">Fin Freedom Network Radial Orbit View</text>
+  <text class="sub" x="800" y="108" text-anchor="middle">The orbit owner is at the center; positions expand outward by line</text>
+
+  <!-- P4 radial -->
+  <rect class="panel" x="70" y="145" width="1460" height="430" rx="8"/>
+  <text class="heading" x="120" y="205">P4</text>
+  <text class="sub" x="120" y="238">Levels 1, 4, 7 and 10 · four positions on one ring</text>
+  <circle class="ring" cx="800" cy="370" r="135"/>
+  <circle class="owner" cx="800" cy="370" r="58"/><text class="nodeText" x="800" y="376">OWNER</text>
+  <g transform="rotate(0 800 370)"><circle class="l1" cx="800" cy="235" r="31"/><text class="nodeText" x="800" y="241" transform="rotate(0 800 235)">1</text></g>
+  <g transform="rotate(90 800 370)"><circle class="l1" cx="800" cy="235" r="31"/><text class="nodeText" x="800" y="241" transform="rotate(-90 800 235)">2</text></g>
+  <g transform="rotate(180 800 370)"><circle class="l1" cx="800" cy="235" r="31"/><text class="nodeText" x="800" y="241" transform="rotate(-180 800 235)">3</text></g>
+  <g transform="rotate(270 800 370)"><circle class="l1" cx="800" cy="235" r="31"/><text class="nodeText" x="800" y="241" transform="rotate(-270 800 235)">4</text></g>
+  <text class="sub" x="800" y="548" text-anchor="middle">Positions fill sequentially; position 4 completes the cycle</text>
+
+  <!-- P12 radial -->
+  <rect class="panel" x="70" y="615" width="1460" height="620" rx="8"/>
+  <text class="heading" x="120" y="675">P12</text>
+  <text class="sub" x="120" y="708">Levels 2, 5 and 8 · 3 positions on line 1 · 9 positions on line 2</text>
+  <circle class="ring" cx="800" cy="940" r="110"/>
+  <circle class="ring" cx="800" cy="940" r="225"/>
+  <circle class="owner" cx="800" cy="940" r="54"/><text class="nodeText" x="800" y="946">OWNER</text>
+  <!-- Evenly spaced nodes, grouped into three 120-degree parent sectors -->
+  <g transform="rotate(40 800 940)"><path class="ray" d="M800 830 L655.4 767.6 M800 830 L800 715 M800 830 L944.6 767.6"/></g>
+  <g transform="rotate(160 800 940)"><path class="ray" d="M800 830 L655.4 767.6 M800 830 L800 715 M800 830 L944.6 767.6"/></g>
+  <g transform="rotate(280 800 940)"><path class="ray" d="M800 830 L655.4 767.6 M800 830 L800 715 M800 830 L944.6 767.6"/></g>
+  <g transform="rotate(40 800 940)"><circle class="l1" cx="800" cy="830" r="28"/><text class="nodeText" x="800" y="836" transform="rotate(-40 800 830)">1</text></g>
+  <g transform="rotate(160 800 940)"><circle class="l1" cx="800" cy="830" r="28"/><text class="nodeText" x="800" y="836" transform="rotate(-160 800 830)">2</text></g>
+  <g transform="rotate(280 800 940)"><circle class="l1" cx="800" cy="830" r="28"/><text class="nodeText" x="800" y="836" transform="rotate(-280 800 830)">3</text></g>
+  <g transform="rotate(0 800 940)"><circle class="l2" cx="800" cy="715" r="25"/><text class="nodeText" x="800" y="721">4</text></g>
+  <g transform="rotate(40 800 940)"><circle class="l2" cx="800" cy="715" r="25"/><text class="nodeText" x="800" y="721" transform="rotate(-40 800 715)">7</text></g>
+  <g transform="rotate(80 800 940)"><circle class="l2" cx="800" cy="715" r="25"/><text class="nodeText" x="800" y="721" transform="rotate(-80 800 715)">10</text></g>
+  <g transform="rotate(120 800 940)"><circle class="l2" cx="800" cy="715" r="25"/><text class="nodeText" x="800" y="721" transform="rotate(-120 800 715)">5</text></g>
+  <g transform="rotate(160 800 940)"><circle class="l2" cx="800" cy="715" r="25"/><text class="nodeText" x="800" y="721" transform="rotate(-160 800 715)">8</text></g>
+  <g transform="rotate(200 800 940)"><circle class="l2" cx="800" cy="715" r="25"/><text class="nodeText" x="800" y="721" transform="rotate(-200 800 715)">11</text></g>
+  <g transform="rotate(240 800 940)"><circle class="l2" cx="800" cy="715" r="25"/><text class="nodeText" x="800" y="721" transform="rotate(-240 800 715)">6</text></g>
+  <g transform="rotate(280 800 940)"><circle class="l2" cx="800" cy="715" r="25"/><text class="nodeText" x="800" y="721" transform="rotate(-280 800 715)">9</text></g>
+  <g transform="rotate(320 800 940)"><circle class="l2" cx="800" cy="715" r="25"/><text class="nodeText" x="800" y="721" transform="rotate(-320 800 715)">12</text></g>
+  <text class="sub" x="800" y="1200" text-anchor="middle">Blue: line 1 · Purple: line 2</text>
+
+  <!-- P39 radial -->
+  <rect class="panel" x="70" y="1275" width="1460" height="820" rx="8"/>
+  <text class="heading" x="120" y="1335">P39</text>
+  <text class="sub" x="120" y="1368">Levels 3, 6 and 9 · 3 concentric lines containing 3, 9 and 27 positions</text>
+  <circle class="ring" cx="800" cy="1700" r="100"/>
+  <circle class="ring" cx="800" cy="1700" r="205"/>
+  <circle class="ring" cx="800" cy="1700" r="335"/>
+  <circle class="owner" cx="800" cy="1700" r="52"/><text class="nodeText" x="800" y="1706">OWNER</text>
+  <!-- Parent links remain explicit while all nodes stay evenly spaced -->
+  <g transform="rotate(53.333 800 1700)"><path class="ray" d="M800 1600 L668.2 1543 M800 1600 L800 1495 M800 1600 L931.8 1543"/></g>
+  <g transform="rotate(173.333 800 1700)"><path class="ray" d="M800 1600 L668.2 1543 M800 1600 L800 1495 M800 1600 L931.8 1543"/></g>
+  <g transform="rotate(293.333 800 1700)"><path class="ray" d="M800 1600 L668.2 1543 M800 1600 L800 1495 M800 1600 L931.8 1543"/></g>
+  <g transform="rotate(13.333 800 1700)"><path class="ray" d="M800 1495 L722.8 1374 M800 1495 L800 1365 M800 1495 L877.2 1374"/></g>
+  <g transform="rotate(53.333 800 1700)"><path class="ray" d="M800 1495 L722.8 1374 M800 1495 L800 1365 M800 1495 L877.2 1374"/></g>
+  <g transform="rotate(93.333 800 1700)"><path class="ray" d="M800 1495 L722.8 1374 M800 1495 L800 1365 M800 1495 L877.2 1374"/></g>
+  <g transform="rotate(133.333 800 1700)"><path class="ray" d="M800 1495 L722.8 1374 M800 1495 L800 1365 M800 1495 L877.2 1374"/></g>
+  <g transform="rotate(173.333 800 1700)"><path class="ray" d="M800 1495 L722.8 1374 M800 1495 L800 1365 M800 1495 L877.2 1374"/></g>
+  <g transform="rotate(213.333 800 1700)"><path class="ray" d="M800 1495 L722.8 1374 M800 1495 L800 1365 M800 1495 L877.2 1374"/></g>
+  <g transform="rotate(253.333 800 1700)"><path class="ray" d="M800 1495 L722.8 1374 M800 1495 L800 1365 M800 1495 L877.2 1374"/></g>
+  <g transform="rotate(293.333 800 1700)"><path class="ray" d="M800 1495 L722.8 1374 M800 1495 L800 1365 M800 1495 L877.2 1374"/></g>
+  <g transform="rotate(333.333 800 1700)"><path class="ray" d="M800 1495 L722.8 1374 M800 1495 L800 1365 M800 1495 L877.2 1374"/></g>
+  <g transform="rotate(53.333 800 1700)"><circle class="l1" cx="800" cy="1600" r="26"/><text class="nodeText" x="800" y="1606" transform="rotate(-53.333 800 1600)">1</text></g>
+  <g transform="rotate(173.333 800 1700)"><circle class="l1" cx="800" cy="1600" r="26"/><text class="nodeText" x="800" y="1606" transform="rotate(-173.333 800 1600)">2</text></g>
+  <g transform="rotate(293.333 800 1700)"><circle class="l1" cx="800" cy="1600" r="26"/><text class="nodeText" x="800" y="1606" transform="rotate(-293.333 800 1600)">3</text></g>
+  <g transform="rotate(13.333 800 1700)"><circle class="l2" cx="800" cy="1495" r="23"/><text class="nodeText" x="800" y="1501" transform="rotate(-13.333 800 1495)">4</text></g>
+  <g transform="rotate(53.333 800 1700)"><circle class="l2" cx="800" cy="1495" r="23"/><text class="nodeText" x="800" y="1501" transform="rotate(-53.333 800 1495)">7</text></g>
+  <g transform="rotate(93.333 800 1700)"><circle class="l2" cx="800" cy="1495" r="23"/><text class="nodeText" x="800" y="1501" transform="rotate(-93.333 800 1495)">10</text></g>
+  <g transform="rotate(133.333 800 1700)"><circle class="l2" cx="800" cy="1495" r="23"/><text class="nodeText" x="800" y="1501" transform="rotate(-133.333 800 1495)">5</text></g>
+  <g transform="rotate(173.333 800 1700)"><circle class="l2" cx="800" cy="1495" r="23"/><text class="nodeText" x="800" y="1501" transform="rotate(-173.333 800 1495)">8</text></g>
+  <g transform="rotate(213.333 800 1700)"><circle class="l2" cx="800" cy="1495" r="23"/><text class="nodeText" x="800" y="1501" transform="rotate(-213.333 800 1495)">11</text></g>
+  <g transform="rotate(253.333 800 1700)"><circle class="l2" cx="800" cy="1495" r="23"/><text class="nodeText" x="800" y="1501" transform="rotate(-253.333 800 1495)">6</text></g>
+  <g transform="rotate(293.333 800 1700)"><circle class="l2" cx="800" cy="1495" r="23"/><text class="nodeText" x="800" y="1501" transform="rotate(-293.333 800 1495)">9</text></g>
+  <g transform="rotate(333.333 800 1700)"><circle class="l2" cx="800" cy="1495" r="23"/><text class="nodeText" x="800" y="1501" transform="rotate(-333.333 800 1495)">12</text></g>
+
+  <!-- P39 line 3, positions 13-39 -->
+  <g transform="rotate(0 800 1700)"><circle class="l3" cx="800" cy="1365" r="19"/><text class="smallText" x="800" y="1370">13</text></g>
+  <g transform="rotate(13.333 800 1700)"><circle class="l3" cx="800" cy="1365" r="19"/><text class="smallText" x="800" y="1370" transform="rotate(-13.333 800 1365)">22</text></g>
+  <g transform="rotate(26.666 800 1700)"><circle class="l3" cx="800" cy="1365" r="19"/><text class="smallText" x="800" y="1370" transform="rotate(-26.666 800 1365)">31</text></g>
+  <g transform="rotate(40 800 1700)"><circle class="l3" cx="800" cy="1365" r="19"/><text class="smallText" x="800" y="1370" transform="rotate(-40 800 1365)">16</text></g>
+  <g transform="rotate(53.333 800 1700)"><circle class="l3" cx="800" cy="1365" r="19"/><text class="smallText" x="800" y="1370" transform="rotate(-53.333 800 1365)">25</text></g>
+  <g transform="rotate(66.666 800 1700)"><circle class="l3" cx="800" cy="1365" r="19"/><text class="smallText" x="800" y="1370" transform="rotate(-66.666 800 1365)">34</text></g>
+  <g transform="rotate(80 800 1700)"><circle class="l3" cx="800" cy="1365" r="19"/><text class="smallText" x="800" y="1370" transform="rotate(-80 800 1365)">19</text></g>
+  <g transform="rotate(93.333 800 1700)"><circle class="l3" cx="800" cy="1365" r="19"/><text class="smallText" x="800" y="1370" transform="rotate(-93.333 800 1365)">28</text></g>
+  <g transform="rotate(106.666 800 1700)"><circle class="l3" cx="800" cy="1365" r="19"/><text class="smallText" x="800" y="1370" transform="rotate(-106.666 800 1365)">37</text></g>
+  <g transform="rotate(120 800 1700)"><circle class="l3" cx="800" cy="1365" r="19"/><text class="smallText" x="800" y="1370" transform="rotate(-120 800 1365)">14</text></g>
+  <g transform="rotate(133.333 800 1700)"><circle class="l3" cx="800" cy="1365" r="19"/><text class="smallText" x="800" y="1370" transform="rotate(-133.333 800 1365)">23</text></g>
+  <g transform="rotate(146.666 800 1700)"><circle class="l3" cx="800" cy="1365" r="19"/><text class="smallText" x="800" y="1370" transform="rotate(-146.666 800 1365)">32</text></g>
+  <g transform="rotate(160 800 1700)"><circle class="l3" cx="800" cy="1365" r="19"/><text class="smallText" x="800" y="1370" transform="rotate(-160 800 1365)">17</text></g>
+  <g transform="rotate(173.333 800 1700)"><circle class="l3" cx="800" cy="1365" r="19"/><text class="smallText" x="800" y="1370" transform="rotate(-173.333 800 1365)">26</text></g>
+  <g transform="rotate(186.666 800 1700)"><circle class="l3" cx="800" cy="1365" r="19"/><text class="smallText" x="800" y="1370" transform="rotate(-186.666 800 1365)">35</text></g>
+  <g transform="rotate(200 800 1700)"><circle class="l3" cx="800" cy="1365" r="19"/><text class="smallText" x="800" y="1370" transform="rotate(-200 800 1365)">20</text></g>
+  <g transform="rotate(213.333 800 1700)"><circle class="l3" cx="800" cy="1365" r="19"/><text class="smallText" x="800" y="1370" transform="rotate(-213.333 800 1365)">29</text></g>
+  <g transform="rotate(226.666 800 1700)"><circle class="l3" cx="800" cy="1365" r="19"/><text class="smallText" x="800" y="1370" transform="rotate(-226.666 800 1365)">38</text></g>
+  <g transform="rotate(240 800 1700)"><circle class="l3" cx="800" cy="1365" r="19"/><text class="smallText" x="800" y="1370" transform="rotate(-240 800 1365)">15</text></g>
+  <g transform="rotate(253.333 800 1700)"><circle class="l3" cx="800" cy="1365" r="19"/><text class="smallText" x="800" y="1370" transform="rotate(-253.333 800 1365)">24</text></g>
+  <g transform="rotate(266.666 800 1700)"><circle class="l3" cx="800" cy="1365" r="19"/><text class="smallText" x="800" y="1370" transform="rotate(-266.666 800 1365)">33</text></g>
+  <g transform="rotate(280 800 1700)"><circle class="l3" cx="800" cy="1365" r="19"/><text class="smallText" x="800" y="1370" transform="rotate(-280 800 1365)">18</text></g>
+  <g transform="rotate(293.333 800 1700)"><circle class="l3" cx="800" cy="1365" r="19"/><text class="smallText" x="800" y="1370" transform="rotate(-293.333 800 1365)">27</text></g>
+  <g transform="rotate(306.666 800 1700)"><circle class="l3" cx="800" cy="1365" r="19"/><text class="smallText" x="800" y="1370" transform="rotate(-306.666 800 1365)">36</text></g>
+  <g transform="rotate(320 800 1700)"><circle class="l3" cx="800" cy="1365" r="19"/><text class="smallText" x="800" y="1370" transform="rotate(-320 800 1365)">21</text></g>
+  <g transform="rotate(333.333 800 1700)"><circle class="l3" cx="800" cy="1365" r="19"/><text class="smallText" x="800" y="1370" transform="rotate(-333.333 800 1365)">30</text></g>
+  <g transform="rotate(346.666 800 1700)"><circle class="l3" cx="800" cy="1365" r="19"/><text class="smallText" x="800" y="1370" transform="rotate(-346.666 800 1365)">39</text></g>
+
+  <text class="sub" x="800" y="2070" text-anchor="middle">Blue: line 1 · Purple: line 2 · Green: line 3</text>
+  <text class="sub" x="800" y="2165" text-anchor="middle">Radial visual reference · use ORBIT_DIAGRAMS.svg for exact parent mapping</text>
+</svg>

@@ -1,0 +1,144 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1600" height="2300" viewBox="0 0 1600 2300">
+  <defs>
+    <style>
+      .bg { fill: #07111f; }
+      .panel { fill: #0b1730; stroke: #294564; stroke-width: 2; }
+      .title { fill: #ffffff; font: 700 42px Inter, Arial, sans-serif; }
+      .subtitle { fill: #b7c8d9; font: 400 22px Inter, Arial, sans-serif; }
+      .label { fill: #ffffff; font: 700 21px Inter, Arial, sans-serif; text-anchor: middle; }
+      .small { fill: #c7d6e5; font: 500 17px Inter, Arial, sans-serif; text-anchor: middle; }
+      .tiny { fill: #c7d6e5; font: 500 15px Inter, Arial, sans-serif; text-anchor: middle; }
+      .owner { fill: #1de9b6; stroke: #b9fff0; stroke-width: 3; }
+      .line1 { fill: #4da3ff; stroke: #cce5ff; stroke-width: 2; }
+      .line2 { fill: #8b5cf6; stroke: #e0d5ff; stroke-width: 2; }
+      .line3 { fill: #22c55e; stroke: #c9f8d8; stroke-width: 2; }
+      .branch { fill: #0f1f3d; stroke: #345778; stroke-width: 2; }
+      .link { fill: none; stroke: #4da3ff; stroke-width: 3; }
+      .subLink { fill: none; stroke: #8b5cf6; stroke-width: 2; }
+      .legend { fill: #0f1f3d; stroke: #294564; stroke-width: 1; }
+    </style>
+  </defs>
+
+  <rect class="bg" width="1600" height="2300"/>
+  <text class="title" x="800" y="70" text-anchor="middle">Fin Freedom Network Orbit Diagrams</text>
+  <text class="subtitle" x="800" y="108" text-anchor="middle">Canonical P4, P12 and P39 position topology</text>
+
+  <!-- P4 -->
+  <rect class="panel" x="70" y="150" width="1460" height="390" rx="8"/>
+  <text class="title" x="120" y="210">P4</text>
+  <text class="subtitle" x="120" y="246">Levels 1, 4, 7 and 10 · one line · four sequential positions</text>
+  <rect class="owner" x="690" y="270" width="220" height="62" rx="8"/>
+  <text class="label" x="800" y="309">ORBIT OWNER</text>
+  <path class="link" d="M800 332 V375 M250 375 H1350"/>
+  <path class="link" d="M250 375 V405 M615 375 V405 M985 375 V405 M1350 375 V405"/>
+  <g>
+    <circle class="line1" cx="250" cy="445" r="40"/><text class="label" x="250" y="453">1</text>
+    <circle class="line1" cx="615" cy="445" r="40"/><text class="label" x="615" y="453">2</text>
+    <circle class="line1" cx="985" cy="445" r="40"/><text class="label" x="985" y="453">3</text>
+    <circle class="line1" cx="1350" cy="445" r="40"/><text class="label" x="1350" y="453">4</text>
+  </g>
+  <text class="small" x="800" y="510">Position 4 completes the cycle and begins recycle re-entry</text>
+
+  <!-- P12 -->
+  <rect class="panel" x="70" y="580" width="1460" height="630" rx="8"/>
+  <text class="title" x="120" y="640">P12</text>
+  <text class="subtitle" x="120" y="676">Levels 2, 5 and 8 · line 1 has 3 positions · line 2 has 9 positions</text>
+  <rect class="owner" x="690" y="705" width="220" height="62" rx="8"/>
+  <text class="label" x="800" y="744">ORBIT OWNER</text>
+  <path class="link" d="M800 767 V805 M300 805 H1300"/>
+  <path class="link" d="M300 805 V835 M800 805 V835 M1300 805 V835"/>
+
+  <circle class="line1" cx="300" cy="875" r="40"/><text class="label" x="300" y="883">1</text>
+  <circle class="line1" cx="800" cy="875" r="40"/><text class="label" x="800" y="883">2</text>
+  <circle class="line1" cx="1300" cy="875" r="40"/><text class="label" x="1300" y="883">3</text>
+
+  <path class="subLink" d="M300 915 V955"/>
+  <path class="subLink" d="M800 915 V955"/>
+  <path class="subLink" d="M1300 915 V955"/>
+  <rect class="branch" x="125" y="955" width="350" height="170" rx="8"/>
+  <rect class="branch" x="625" y="955" width="350" height="170" rx="8"/>
+  <rect class="branch" x="1125" y="955" width="350" height="170" rx="8"/>
+  <text class="small" x="300" y="990">Line 2 under position 1</text>
+  <text class="small" x="800" y="990">Line 2 under position 2</text>
+  <text class="small" x="1300" y="990">Line 2 under position 3</text>
+  <g>
+    <circle class="line2" cx="205" cy="1050" r="32"/><text class="label" x="205" y="1057">4</text>
+    <circle class="line2" cx="300" cy="1050" r="32"/><text class="label" x="300" y="1057">7</text>
+    <circle class="line2" cx="395" cy="1050" r="32"/><text class="label" x="395" y="1057">10</text>
+    <circle class="line2" cx="705" cy="1050" r="32"/><text class="label" x="705" y="1057">5</text>
+    <circle class="line2" cx="800" cy="1050" r="32"/><text class="label" x="800" y="1057">8</text>
+    <circle class="line2" cx="895" cy="1050" r="32"/><text class="label" x="895" y="1057">11</text>
+    <circle class="line2" cx="1205" cy="1050" r="32"/><text class="label" x="1205" y="1057">6</text>
+    <circle class="line2" cx="1300" cy="1050" r="32"/><text class="label" x="1300" y="1057">9</text>
+    <circle class="line2" cx="1395" cy="1050" r="32"/><text class="label" x="1395" y="1057">12</text>
+  </g>
+  <text class="small" x="800" y="1170">The final two qualifying line-2 arrivals build the recycle reserve</text>
+
+  <!-- P39 -->
+  <rect class="panel" x="70" y="1250" width="1460" height="920" rx="8"/>
+  <text class="title" x="120" y="1310">P39</text>
+  <text class="subtitle" x="120" y="1346">Levels 3, 6 and 9 · each card shows one complete line-1 branch</text>
+
+  <rect class="owner" x="690" y="1370" width="220" height="62" rx="8"/>
+  <text class="label" x="800" y="1409">ORBIT OWNER</text>
+  <path class="link" d="M800 1432 V1470 M280 1470 H1320"/>
+  <path class="link" d="M280 1470 V1500 M800 1470 V1500 M1320 1470 V1500"/>
+
+  <!-- Branch 1 -->
+  <rect class="branch" x="105" y="1500" width="350" height="500" rx="8"/>
+  <circle class="line1" cx="280" cy="1550" r="37"/><text class="label" x="280" y="1558">1</text>
+  <text class="small" x="280" y="1612">Line 2 under position 1</text>
+  <g>
+    <rect class="line2" x="130" y="1640" width="90" height="50" rx="7"/><text class="label" x="175" y="1673">4</text>
+    <rect class="line2" x="235" y="1640" width="90" height="50" rx="7"/><text class="label" x="280" y="1673">7</text>
+    <rect class="line2" x="340" y="1640" width="90" height="50" rx="7"/><text class="label" x="385" y="1673">10</text>
+  </g>
+  <text class="tiny" x="175" y="1735">under 4</text><text class="tiny" x="175" y="1762">13 · 22 · 31</text>
+  <text class="tiny" x="280" y="1735">under 7</text><text class="tiny" x="280" y="1762">16 · 25 · 34</text>
+  <text class="tiny" x="385" y="1735">under 10</text><text class="tiny" x="385" y="1762">19 · 28 · 37</text>
+  <path class="subLink" d="M175 1690 V1712 M280 1690 V1712 M385 1690 V1712"/>
+  <rect class="line3" x="128" y="1795" width="94" height="52" rx="7"/><text class="tiny" x="175" y="1817">13 · 22</text><text class="tiny" x="175" y="1837">31</text>
+  <rect class="line3" x="233" y="1795" width="94" height="52" rx="7"/><text class="tiny" x="280" y="1817">16 · 25</text><text class="tiny" x="280" y="1837">34</text>
+  <rect class="line3" x="338" y="1795" width="94" height="52" rx="7"/><text class="tiny" x="385" y="1817">19 · 28</text><text class="tiny" x="385" y="1837">37</text>
+
+  <!-- Branch 2 -->
+  <rect class="branch" x="625" y="1500" width="350" height="500" rx="8"/>
+  <circle class="line1" cx="800" cy="1550" r="37"/><text class="label" x="800" y="1558">2</text>
+  <text class="small" x="800" y="1612">Line 2 under position 2</text>
+  <g>
+    <rect class="line2" x="650" y="1640" width="90" height="50" rx="7"/><text class="label" x="695" y="1673">5</text>
+    <rect class="line2" x="755" y="1640" width="90" height="50" rx="7"/><text class="label" x="800" y="1673">8</text>
+    <rect class="line2" x="860" y="1640" width="90" height="50" rx="7"/><text class="label" x="905" y="1673">11</text>
+  </g>
+  <text class="tiny" x="695" y="1735">under 5</text><text class="tiny" x="695" y="1762">14 · 23 · 32</text>
+  <text class="tiny" x="800" y="1735">under 8</text><text class="tiny" x="800" y="1762">17 · 26 · 35</text>
+  <text class="tiny" x="905" y="1735">under 11</text><text class="tiny" x="905" y="1762">20 · 29 · 38</text>
+  <path class="subLink" d="M695 1690 V1712 M800 1690 V1712 M905 1690 V1712"/>
+  <rect class="line3" x="648" y="1795" width="94" height="52" rx="7"/><text class="tiny" x="695" y="1817">14 · 23</text><text class="tiny" x="695" y="1837">32</text>
+  <rect class="line3" x="753" y="1795" width="94" height="52" rx="7"/><text class="tiny" x="800" y="1817">17 · 26</text><text class="tiny" x="800" y="1837">35</text>
+  <rect class="line3" x="858" y="1795" width="94" height="52" rx="7"/><text class="tiny" x="905" y="1817">20 · 29</text><text class="tiny" x="905" y="1837">38</text>
+
+  <!-- Branch 3 -->
+  <rect class="branch" x="1145" y="1500" width="350" height="500" rx="8"/>
+  <circle class="line1" cx="1320" cy="1550" r="37"/><text class="label" x="1320" y="1558">3</text>
+  <text class="small" x="1320" y="1612">Line 2 under position 3</text>
+  <g>
+    <rect class="line2" x="1170" y="1640" width="90" height="50" rx="7"/><text class="label" x="1215" y="1673">6</text>
+    <rect class="line2" x="1275" y="1640" width="90" height="50" rx="7"/><text class="label" x="1320" y="1673">9</text>
+    <rect class="line2" x="1380" y="1640" width="90" height="50" rx="7"/><text class="label" x="1425" y="1673">12</text>
+  </g>
+  <text class="tiny" x="1215" y="1735">under 6</text><text class="tiny" x="1215" y="1762">15 · 24 · 33</text>
+  <text class="tiny" x="1320" y="1735">under 9</text><text class="tiny" x="1320" y="1762">18 · 27 · 36</text>
+  <text class="tiny" x="1425" y="1735">under 12</text><text class="tiny" x="1425" y="1762">21 · 30 · 39</text>
+  <path class="subLink" d="M1215 1690 V1712 M1320 1690 V1712 M1425 1690 V1712"/>
+  <rect class="line3" x="1168" y="1795" width="94" height="52" rx="7"/><text class="tiny" x="1215" y="1817">15 · 24</text><text class="tiny" x="1215" y="1837">33</text>
+  <rect class="line3" x="1273" y="1795" width="94" height="52" rx="7"/><text class="tiny" x="1320" y="1817">18 · 27</text><text class="tiny" x="1320" y="1837">36</text>
+  <rect class="line3" x="1378" y="1795" width="94" height="52" rx="7"/><text class="tiny" x="1425" y="1817">21 · 30</text><text class="tiny" x="1425" y="1837">39</text>
+
+  <text class="small" x="800" y="2030">Line 3 contains 27 positions. The final two qualifying line-3 arrivals build the recycle reserve.</text>
+  <rect class="legend" x="335" y="2060" width="930" height="90" rx="8"/>
+  <circle class="line1" cx="430" cy="2105" r="23"/><text class="small" x="515" y="2112">Line 1</text>
+  <circle class="line2" cx="690" cy="2105" r="23"/><text class="small" x="775" y="2112">Line 2</text>
+  <circle class="line3" cx="950" cy="2105" r="23"/><text class="small" x="1035" y="2112">Line 3</text>
+  <text class="subtitle" x="800" y="2250" text-anchor="middle">Official topology reference · Fin Freedom Network</text>
+</svg>

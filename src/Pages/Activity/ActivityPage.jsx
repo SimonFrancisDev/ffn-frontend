@@ -4,7 +4,7 @@ import { useTranslation } from 'react-i18next'
 import { useWallet } from '../../hooks/useWallet'
 import { useContracts } from '../../hooks/useContracts'
 import { ethers } from 'ethers'
-import { fetchAddressReceiptsApi, fetchOrbitLevelsApi } from '../../Services/orbitsApi'
+import { fetchAddressReceiptsApi, fetchOrbitLevelsApi, fetchUserSummaryApi } from '../../Services/orbitsApi'
 import { getProfileReadAuthIfLocked } from '../../Services/profilePrivacyApi'
 import { useToast } from '../../components/feedback'
 import { NETWORK_CONFIG } from '../../constants/addresses'
@@ -152,7 +152,14 @@ const ActivityPage = () => {
 
     try {
       const profileReadHeaders = await getProfileReadAuthIfLocked(account, account)
-      const result = await fetchAddressReceiptsApi(account, undefined, { headers: profileReadHeaders })
+      const [result, payoutResult, summaryResult] = await Promise.all([
+        fetchAddressReceiptsApi(account, undefined, { headers: profileReadHeaders }),
+        fetchAddressReceiptsApi(account, undefined, {
+          headers: profileReadHeaders,
+          query: { receiptType: 2, limit: 1 },
+        }),
+        fetchUserSummaryApi(account, { headers: profileReadHeaders }),
+      ])
 
       const receiptsData = Array.isArray(result?.receipts)
         ? result.receipts
@@ -198,12 +205,19 @@ const ActivityPage = () => {
         return [...nonReceiptActivities, ...receiptActivities].sort((a, b) => (b.timestamp || 0) - (a.timestamp || 0))
       })
 
-      const totalPayouts = receiptActivities.filter((a) => a.type === 'payout').length
-      const totalAmount = receiptActivities.reduce((sum, a) => sum + (a.amount || 0), 0)
+      const totalReceipts = Number(result?.pagination?.total ?? receiptActivities.length)
+      const totalPayouts = Number(
+        payoutResult?.pagination?.total ?? receiptActivities.filter((a) => a.type === 'payout').length
+      )
+      const totalAmount = normalizeUsdtAmount(
+        summaryResult?.earnings?.walletCreditedLiquid ??
+        summaryResult?.earnings?.totalLiquid ??
+        0
+      )
 
       setStats((prev) => ({
         ...prev,
-        totalRecords: receiptActivities.length + (levelActivations?.length || 0),
+        totalRecords: totalReceipts + (levelActivations?.length || 0),
         totalPayouts,
         totalAmount,
       }))
@@ -617,7 +631,7 @@ const ActivityPage = () => {
                 <strong className="activity-summary__value">{stats.activationCount}</strong>
               </div>
               <div className="activity-summary__card glass-panel">
-                <span className="activity-summary__label muted-text">{activityT('summary.totalEarned', 'Total Earned')}</span>
+                <span className="activity-summary__label muted-text">{activityT('summary.walletCredited', 'Wallet Credited')}</span>
                 <strong className="activity-summary__value">${formatMoney(stats.totalAmount)}</strong>
               </div>
             </div>

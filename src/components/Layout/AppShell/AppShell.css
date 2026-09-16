@@ -10,18 +10,12 @@
   isolation: isolate;
 }
 
-.app-shell__topbar,
 .app-shell__navbar,
 .app-shell__content,
 .app-shell__footer {
   width: 100%;
   max-width: 100%;
   margin: 0;
-}
-
-.app-shell__topbar {
-  position: relative;
-  z-index: 30;
 }
 
 .app-shell__navbar {

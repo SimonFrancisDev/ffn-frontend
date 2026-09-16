@@ -2,7 +2,6 @@ import './AppShell.css'
 
 const AppShell = ({
   children,
-  topbar = null,
   navbar = null,
   footer = null,
   contentClassName = '',
@@ -10,8 +9,6 @@ const AppShell = ({
 }) => {
   return (
     <div className={`app-shell ${fullWidth ? 'app-shell--full' : ''}`}>
-      {topbar ? <div className="app-shell__topbar">{topbar}</div> : null}
-
       {navbar ? <div className="app-shell__navbar">{navbar}</div> : null}
 
       <main

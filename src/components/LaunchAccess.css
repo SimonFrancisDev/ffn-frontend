@@ -1,0 +1,9 @@
+.ffn-launch-banner { display:flex; align-items:center; justify-content:center; flex-wrap:wrap; gap:12px; padding:14px 20px; background:#063e35; color:#fff; border-bottom:2px solid #d5b85b; }
+.ffn-launch-banner svg { color:#d5b85b; flex-shrink:0; }
+.ffn-launch-banner time { font-variant-numeric:tabular-nums; display:inline-block; min-width:8ch; }
+.ffn-launch-banner a { color:#fff; text-decoration:underline; }
+.ffn-launch-access { display:flex; flex-direction:column; align-items:center; gap:16px; padding:64px 20px; text-align:center; }
+.ffn-launch-access h1 { font-size:28px; margin:0; }
+.ffn-launch-access p { max-width:480px; margin:0; }
+.ffn-launch-access button { display:flex; align-items:center; gap:8px; padding:10px 16px; border-radius:6px; }
+@media(max-width:480px) { .ffn-launch-banner { gap:8px; font-size:14px; } .ffn-launch-banner strong { flex-basis:80%; } }

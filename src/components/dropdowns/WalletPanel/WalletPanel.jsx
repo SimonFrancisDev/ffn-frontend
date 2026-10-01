@@ -4,6 +4,7 @@ import { useEffect, useRef, useState } from 'react'
 import { createPortal } from 'react-dom'
 import { useTranslation } from 'react-i18next'
 import { lockBodyScroll } from '../../../utils/bodyScrollLock'
+import { QrCode, WalletCards } from 'lucide-react'
 
 function ModalPortal({ children }) {
   if (typeof document === 'undefined') return null
@@ -15,6 +16,8 @@ const WalletPanel = ({
   wallet = null,
   onClose,
   onConnect,
+  onConnectWalletConnect,
+  hasWalletConnectSupport = false,
   onDisconnect,
   onSwitchNetwork,
   onOpenWalletSettings,
@@ -176,6 +179,11 @@ const WalletPanel = ({
     if (onClose) onClose()
   }
 
+  const handleWalletConnect = () => {
+    if (onConnectWalletConnect) onConnectWalletConnect()
+    if (onClose) onClose()
+  }
+
   const handleOpenWalletSettings = () => {
     if (onOpenWalletSettings) onOpenWalletSettings()
     if (onClose) onClose()
@@ -302,16 +310,29 @@ const WalletPanel = ({
 
           <div className="wallet-panel__actions">
             {!isConnected ? (
-              <button
-                type="button"
-                className="wallet-panel__action-btn wallet-panel__action-btn--primary"
-                onClick={handleConnect}
-                disabled={isLoading}
-              >
-                {isLoading
-                  ? t('walletPanel.actions.connecting', 'Connecting...')
-                  : t('walletPanel.actions.connectWallet', 'Connect Wallet')}
-              </button>
+              <>
+                <button
+                  type="button"
+                  className="wallet-panel__action-btn wallet-panel__action-btn--primary"
+                  onClick={handleConnect}
+                  disabled={isLoading}
+                >
+                  <WalletCards size={18} aria-hidden="true" />
+                  {isLoading
+                    ? t('walletPanel.actions.connecting', 'Connecting...')
+                    : t('walletPanel.actions.browserWallet', 'Browser Wallet')}
+                </button>
+                <button
+                  type="button"
+                  className="wallet-panel__action-btn"
+                  onClick={handleWalletConnect}
+                  disabled={isLoading || !hasWalletConnectSupport}
+                  title={!hasWalletConnectSupport ? t('walletPanel.walletConnectUnavailable', 'WalletConnect is not configured for this deployment.') : undefined}
+                >
+                  <QrCode size={18} aria-hidden="true" />
+                  {t('walletPanel.actions.walletConnect', 'Scan with WalletConnect')}
+                </button>
+              </>
             ) : (
               <>
                 <button

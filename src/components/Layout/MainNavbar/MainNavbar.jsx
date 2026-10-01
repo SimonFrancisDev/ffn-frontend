@@ -54,26 +54,17 @@ const SERVICES = [
       {
         label: 'Freedom-Plus Overview',
         labelKey: 'navbar.menus.services.freedomPlusProgram.links.overview',
-        target: 'home',
-        section: 'programs',
+        target: 'freedomPlus',
       },
       {
         label: 'Freedom-Plus Activations & Level Manager',
         labelKey: 'navbar.menus.services.freedomPlusProgram.links.activation',
-        target: 'home',
-        section: 'programs',
+        target: 'freedomPlusActivation',
       },
       {
         label: 'My Freedom-Plus Tokens',
         labelKey: 'navbar.menus.services.freedomPlusProgram.links.tokens',
-        target: 'home',
-        section: 'programs',
-      },
-      {
-        label: 'Freedom-Plus Program Dashboard',
-        labelKey: 'navbar.menus.services.freedomPlusProgram.links.dashboard',
-        target: 'home',
-        section: 'programs',
+        target: 'freedomPlusTokens',
       },
     ],
   },
@@ -84,40 +75,19 @@ const SERVICES = [
     descriptionKey: 'navbar.menus.services.freedomNftProgram.description',
     links: [
       {
-        label: 'NFT Overview',
+        label: 'Overview',
         labelKey: 'navbar.menus.services.freedomNftProgram.links.overview',
-        target: 'home',
-        section: 'programs',
+        target: 'freedomNft',
       },
       {
-        label: 'NFT Foundation',
-        labelKey: 'navbar.menus.services.freedomNftProgram.links.foundation',
-        target: 'home',
-        section: 'programs',
+        label: 'Rewards',
+        labelKey: 'navbar.menus.services.freedomNftProgram.links.rewards',
+        target: 'freedomNftRewards',
       },
       {
-        label: 'NFT Intermediate',
-        labelKey: 'navbar.menus.services.freedomNftProgram.links.intermediate',
-        target: 'home',
-        section: 'programs',
-      },
-      {
-        label: 'NFT Advanced',
-        labelKey: 'navbar.menus.services.freedomNftProgram.links.advanced',
-        target: 'home',
-        section: 'programs',
-      },
-      {
-        label: 'Utility Role',
-        labelKey: 'navbar.menus.services.freedomNftProgram.links.utilityRole',
-        target: 'home',
-        section: 'programs',
-      },
-      {
-        label: 'NFT Program Dashboard',
-        labelKey: 'navbar.menus.services.freedomNftProgram.links.dashboard',
-        target: 'home',
-        section: 'programs',
+        label: 'Membership',
+        labelKey: 'navbar.menus.services.freedomNftProgram.links.membership',
+        target: 'freedomNftMembership',
       },
     ],
   },
@@ -278,6 +248,8 @@ const MainNavbar = ({
   account = null,
 
   onConnectWallet,
+  onConnectWalletConnect,
+  hasWalletConnectSupport = false,
   onDisconnectWallet,
   onOpenAdminPanel,
   isAdmin,
@@ -574,7 +546,7 @@ const MainNavbar = ({
             </div>
 
             {navItems
-              .filter((item) => item.href === 'community' || item.href === 'support')
+              .filter((item) => ['community', 'tasks', 'support'].includes(item.href))
               .map((item) => (
                 <button
                   key={item.href}
@@ -647,10 +619,6 @@ const MainNavbar = ({
                 ref={walletButtonRef}
                 className="main-navbar__wallet"
                 onClick={() => {
-                  if (walletStatus === 'Disconnected') {
-                    onConnectWallet?.()
-                    return
-                  }
                   onToggleWallet?.()
                 }}
               >
@@ -664,6 +632,8 @@ const MainNavbar = ({
                 wallet={wallet}
                 onClose={onCloseWallet}
                 onConnect={onConnectWallet}
+                onConnectWalletConnect={onConnectWalletConnect}
+                hasWalletConnectSupport={hasWalletConnectSupport}
                 onDisconnect={onDisconnectWallet}
               />
             </div>

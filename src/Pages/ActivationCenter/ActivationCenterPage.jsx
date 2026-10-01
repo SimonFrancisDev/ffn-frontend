@@ -10,6 +10,7 @@ import { useToast } from '../../components/feedback'
 import { normalizeError } from '../../utils/errorMap'
 import { buildTxOptions } from '../../utils/txOptions'
 import { lockBodyScroll } from '../../utils/bodyScrollLock'
+import { copyText } from '../../utils/clipboard'
 import { CHAIN_ID, NETWORK_CONFIG } from '../../constants/addresses'
 import { ethers } from 'ethers'
 // import { fetchAddressReceiptsApi } from '../../Services/orbitsApi'
@@ -19,11 +20,14 @@ import { ethers } from 'ethers'
 // } from '../../Services/orbitsApi'
 
 import {
+  clearAddressScopedOrbitsApiCache,
   fetchAddressReceiptsApi,
+  fetchOrbitLevelsApi,
   fetchUserSummaryApi,
   fetchOrbitLevelSnapshotApi,
 } from '../../Services/orbitsApi'
 import { getProfileReadAuthIfLocked } from '../../Services/profilePrivacyApi'
+import { ProgressionLineChart } from '../../components/charts/InstitutionalCharts'
 
 import {
   FaCoins,
@@ -43,13 +47,29 @@ import {
 } from 'react-icons/fa'
 
 const API_BASE = import.meta.env.VITE_API_BASE_URL?.replace(/\/$/, '') || ''
-const ENABLE_DEPLOYER_TOOLS = String(import.meta.env.VITE_ENABLE_DEPLOYER_TOOLS || '').toLowerCase() === 'true'
-const TRANSACTION_GATE_ENABLED = false
 
 const GAS_BUFFER_BPS = 12000n
 const ACTIVATION_GAS_BUFFER_BPS = 12500n
 const GAS_BUFFER_DENOMINATOR = 10000n
 const PENDING_REFERRAL_STORAGE_KEY = 'ffn_pending_registration_referral'
+
+const estimateActivationGas = async (registrationWithSigner, signer, level) => {
+  try {
+    return await registrationWithSigner.activateLevel.estimateGas(level)
+  } catch (walletEstimateError) {
+    const readProvider = web3Service.getReadProvider()
+    if (!readProvider) throw walletEstimateError
+
+    const transaction = await registrationWithSigner.activateLevel.populateTransaction(level)
+    const from = await signer.getAddress()
+
+    try {
+      return await readProvider.estimateGas({ ...transaction, from })
+    } catch {
+      throw walletEstimateError
+    }
+  }
+}
 
 const levelPrices = {
   1: '10',
@@ -81,6 +101,49 @@ const orbitTypeConfig = {
   P4: { positions: 4, lines: 1, levels: [1, 4, 7, 10], image: 'p4-image.png' },
   P12: { positions: 12, lines: 2, levels: [2, 5, 8], image: 'p12-image.png' },
   P39: { positions: 39, lines: 3, levels: [3, 6, 9], image: 'p39-image.png' },
+}
+
+const levelProgramNames = {
+  1: 'Entry',
+  2: 'Growth',
+  3: 'Expansion',
+  4: 'Momentum',
+  5: 'Elevation',
+  6: 'Scale',
+  7: 'Influence',
+  8: 'Leadership',
+  9: 'Mastery',
+  10: 'Zenith',
+}
+
+const orbitStructureCopy = {
+  P4: {
+    headline: 'Single-line orbit',
+    positions: '4 positions',
+    linePattern: 'Line 1',
+    lines: [
+      { line: 1, label: 'Line 1', positions: '4 positions', payout: '90%', note: 'Position 4 recycles' },
+    ],
+  },
+  P12: {
+    headline: 'Two-line orbit',
+    positions: '12 positions',
+    linePattern: '3 + 9',
+    lines: [
+      { line: 1, label: 'Line 1', positions: '3 positions', payout: '40%', note: 'First receiver layer' },
+      { line: 2, label: 'Line 2', positions: '9 positions', payout: '50%', note: 'Second receiver layer' },
+    ],
+  },
+  P39: {
+    headline: 'Three-line orbit',
+    positions: '39 positions',
+    linePattern: '3 + 9 + 27',
+    lines: [
+      { line: 1, label: 'Line 1', positions: '3 positions', payout: '20%', note: 'First receiver layer' },
+      { line: 2, label: 'Line 2', positions: '9 positions', payout: '20%', note: 'Second receiver layer' },
+      { line: 3, label: 'Line 3', positions: '27 positions', payout: '50%', note: 'Third receiver layer' },
+    ],
+  },
 }
 
 const upgradeRequirements = {
@@ -205,6 +268,96 @@ const getPositionOnAngle = (angle, radiusPx, centerX, centerY) => {
   }
 }
 
+const getMiniOrbitParentPosition = (orbitType, line, position) => {
+  if (line <= 1) return null
+
+  const numericPosition = Number(position)
+
+  if (orbitType === 'P12') {
+    const parentMap = {
+      4: 1, 7: 1, 10: 1,
+      5: 2, 8: 2, 11: 2,
+      6: 3, 9: 3, 12: 3,
+    }
+    return parentMap[numericPosition] || null
+  }
+
+  if (orbitType === 'P39') {
+    const parentMap = {
+      4: 1, 7: 1, 10: 1,
+      5: 2, 8: 2, 11: 2,
+      6: 3, 9: 3, 12: 3,
+      13: 4, 22: 4, 31: 4,
+      14: 5, 23: 5, 32: 5,
+      15: 6, 24: 6, 33: 6,
+      16: 7, 25: 7, 34: 7,
+      17: 8, 26: 8, 35: 8,
+      18: 9, 27: 9, 36: 9,
+      19: 10, 28: 10, 37: 10,
+      20: 11, 29: 11, 38: 11,
+      21: 12, 30: 12, 39: 12,
+    }
+    return parentMap[numericPosition] || null
+  }
+
+  return null
+}
+
+const getMiniOrbitAngle = (orbitType, line, position, index, totalPositions) => {
+  const numericPosition = Number(position)
+
+  if (orbitType === 'P12' || orbitType === 'P39') {
+    if (line === 1) return -90 + index * 120
+
+    if (line === 2) {
+      const line2ChildGroups = {
+        1: [4, 7, 10],
+        2: [5, 8, 11],
+        3: [6, 9, 12],
+      }
+      const parentPosition = getMiniOrbitParentPosition(orbitType, line, numericPosition)
+      const siblings = line2ChildGroups[parentPosition] || []
+      const parentIndex = parentPosition - 1
+      const childIndex = Math.max(siblings.indexOf(numericPosition), 0)
+      const parentAngle = -90 + parentIndex * 120
+      const ringStep = 360 / 9
+
+      return parentAngle + (childIndex - 1) * ringStep
+    }
+  }
+
+  if (orbitType === 'P39' && line === 3) {
+    const line2ChildGroups = {
+      1: [4, 7, 10],
+      2: [5, 8, 11],
+      3: [6, 9, 12],
+    }
+    const line3ChildGroups = {
+      4: [13, 22, 31],
+      5: [14, 23, 32],
+      6: [15, 24, 33],
+      7: [16, 25, 34],
+      8: [17, 26, 35],
+      9: [18, 27, 36],
+      10: [19, 28, 37],
+      11: [20, 29, 38],
+      12: [21, 30, 39],
+    }
+    const parentPosition = getMiniOrbitParentPosition(orbitType, line, numericPosition)
+    const grandParentPosition = getMiniOrbitParentPosition(orbitType, 2, parentPosition)
+    const line2Siblings = line2ChildGroups[grandParentPosition] || []
+    const parentIndex = grandParentPosition - 1
+    const parentChildIndex = Math.max(line2Siblings.indexOf(parentPosition), 0)
+    const parentAngle = (-90 + parentIndex * 120) + (parentChildIndex - 1) * (360 / 9)
+    const childIndex = Math.max((line3ChildGroups[parentPosition] || []).indexOf(numericPosition), 0)
+    const ringStep = 360 / 27
+
+    return parentAngle + (childIndex - 1) * ringStep
+  }
+
+  return -90 + (index * 360) / Math.max(totalPositions, 1)
+}
+
 const withGasBuffer = (estimate, bufferBps = GAS_BUFFER_BPS) => {
   try {
     return (BigInt(estimate) * bufferBps) / GAS_BUFFER_DENOMINATOR
@@ -230,6 +383,196 @@ const getActivationOrbitNodeType = (position, viewer) => {
 
   if (viewer && ref?.toLowerCase?.() === viewer.toLowerCase()) return 'downline'
   return 'other'
+}
+
+const getMiniOrbitRadius = (orbitType, line) => {
+  const radii = {
+    P4: { 1: 82 },
+    P12: { 1: 52, 2: 88 },
+    P39: { 1: 42, 2: 72, 3: 100 },
+  }
+
+  return radii[orbitType]?.[line] || 34
+}
+
+const getMiniOrbitNodeSize = (orbitType, line) => {
+  if (orbitType === 'P39' && line === 3) return 'tiny'
+  if (orbitType === 'P39') return 'small'
+  return 'standard'
+}
+
+const ActivationLevelOrbitPreview = ({ level, orbitType, levelName, price, status, filledPositions = [], totalPositions = 0, isLocked, activationT }) => {
+  const [isRuleInfoOpen, setIsRuleInfoOpen] = useState(false)
+  const structure = getOrbitStructure(orbitType)
+  const copy = orbitStructureCopy[orbitType]
+  const center = 110
+  const filledSet = new Set(filledPositions.map(Number))
+  const normalizedTotalPositions = totalPositions || orbitTypeConfig[orbitType]?.positions || 0
+  const hasCurrentCycleFills = filledSet.size > 0
+  const nextPosition = !isLocked && hasCurrentCycleFills && filledSet.size < normalizedTotalPositions
+    ? Array.from({ length: normalizedTotalPositions }, (_, index) => index + 1).find((position) => !filledSet.has(position))
+    : null
+
+  if (!structure || !copy) return null
+
+  const nodes = structure.lines.flatMap((line) => {
+    const radius = getMiniOrbitRadius(orbitType, line)
+    const positions = structure.positions[line] || []
+
+    return positions.map((position, index) => {
+      const angle = getMiniOrbitAngle(orbitType, line, position, index, positions.length)
+      const point = getPositionOnAngle(angle, radius, center, center)
+      return {
+        line,
+        position,
+        parentPosition: getMiniOrbitParentPosition(orbitType, line, position),
+        x: point.x,
+        y: point.y,
+        isFilled: filledSet.has(Number(position)),
+        isNext: Number(position) === Number(nextPosition),
+      }
+    })
+  })
+
+  const nodeByPosition = new Map(nodes.map((node) => [Number(node.position), node]))
+  const connectors = nodes.map((node) => {
+    const parentNode = node.parentPosition ? nodeByPosition.get(Number(node.parentPosition)) : null
+
+    return {
+      ...node,
+      x1: parentNode?.x ?? center,
+      y1: parentNode?.y ?? center,
+      x2: node.x,
+      y2: node.y,
+    }
+  })
+
+  return (
+    <div className={`level-orbit-preview level-orbit-preview--${orbitType.toLowerCase()} ${hasCurrentCycleFills ? 'has-current-cycle-fills' : 'is-empty-cycle'}`}>
+      <div className="level-orbit-preview__stage" aria-hidden="true">
+        <svg className="level-orbit-preview__svg" viewBox="0 0 220 220" role="img">
+          <defs>
+            <radialGradient id={`activation-core-${level}`} cx="30%" cy="28%" r="75%">
+              <stop offset="0%" stopColor="#ffffff" stopOpacity="0.95" />
+              <stop offset="28%" stopColor="#4da3ff" />
+              <stop offset="72%" stopColor="#163f99" />
+              <stop offset="100%" stopColor="#061733" />
+            </radialGradient>
+            <filter id={`activation-glow-${level}`} x="-60%" y="-60%" width="220%" height="220%">
+              <feGaussianBlur stdDeviation="4" result="blur" />
+              <feMerge>
+                <feMergeNode in="blur" />
+                <feMergeNode in="SourceGraphic" />
+              </feMerge>
+            </filter>
+          </defs>
+
+          <g className="level-orbit-preview__particles">
+            <circle cx="38" cy="42" r="1.4" />
+            <circle cx="180" cy="44" r="1.1" />
+            <circle cx="190" cy="166" r="1.3" />
+            <circle cx="48" cy="178" r="1" />
+          </g>
+
+          {structure.lines.map((line) => (
+            <circle
+              key={`svg-ring-${line}`}
+              className={`level-orbit-preview__svg-ring line-${line}`}
+              cx={center}
+              cy={center}
+              r={getMiniOrbitRadius(orbitType, line)}
+            />
+          ))}
+
+          <g className="level-orbit-preview__connectors">
+            {connectors.map((node) => (
+              <line
+                key={`connector-${node.line}-${node.position}`}
+                className={`line-${node.line} ${node.isFilled ? 'is-filled' : node.isNext ? 'is-next' : hasCurrentCycleFills ? 'is-empty' : 'is-neutral'}`}
+                x1={node.x1}
+                y1={node.y1}
+                x2={node.x2}
+                y2={node.y2}
+              />
+            ))}
+          </g>
+
+          <g className="level-orbit-preview__nodes">
+            {nodes.map((node) => {
+              const nodeSize = getMiniOrbitNodeSize(orbitType, node.line)
+              const radius = nodeSize === 'tiny' ? 5 : nodeSize === 'small' ? 7 : 9
+              return (
+                <g
+                  key={`node-${node.line}-${node.position}`}
+                  className={`level-orbit-preview__svg-node line-${node.line} ${nodeSize} ${node.isFilled ? 'is-filled' : node.isNext ? 'is-next' : hasCurrentCycleFills ? 'is-empty' : 'is-neutral'} ${isLocked ? 'is-locked' : ''}`}
+                >
+                  <circle cx={node.x} cy={node.y} r={radius} />
+                  {node.isFilled && (
+                    <circle
+                      className="level-orbit-preview__node-thread"
+                      cx={node.x}
+                      cy={node.y}
+                      r={radius + 4}
+                    />
+                  )}
+                  {nodeSize !== 'tiny' && (
+                    <text x={node.x} y={node.y + 3}>{node.position}</text>
+                  )}
+                </g>
+              )
+            })}
+          </g>
+
+          <g className="level-orbit-preview__svg-core" filter={`url(#activation-glow-${level})`}>
+            <circle cx={center} cy={center} r="25" fill={`url(#activation-core-${level})`} />
+            <circle cx={center} cy={center} r="29" />
+            <text className="level-orbit-preview__svg-core-you" x={center} y={center + 4}>{activationT('levels.preview.coreUser', 'You')}</text>
+          </g>
+        </svg>
+      </div>
+
+      <div className="level-orbit-preview__content">
+        <div className="level-orbit-preview__headline">
+          <span className="level-orbit-preview__kicker">{status}</span>
+          <strong>{levelName} · {copy.headline}</strong>
+          <span>{copy.positions} · {copy.linePattern} · {price} USDT</span>
+        </div>
+
+        <div className="level-orbit-preview__info-row">
+          <button
+            type="button"
+            className="level-orbit-preview__info-button"
+            onClick={() => setIsRuleInfoOpen((current) => !current)}
+            aria-expanded={isRuleInfoOpen}
+            aria-label={activationT('levels.preview.toggleRules', 'Show orbit payout distribution')}
+          >
+            <FaInfoCircle />
+            <span>{activationT('levels.preview.infoButton', 'Orbit info')}</span>
+          </button>
+        </div>
+
+        {isRuleInfoOpen && (
+          <div className="level-orbit-preview__info-panel">
+            <div className="level-orbit-preview__headline">
+              <strong>{levelName} · {copy.headline}</strong>
+              <span>{copy.positions} · {copy.linePattern} · {price} USDT</span>
+            </div>
+
+            <div className="level-orbit-preview__rules">
+              {copy.lines.map((line) => (
+                <div key={line.label} className={`level-orbit-preview__rule line-${line.line}`}>
+                  <span>{line.label}</span>
+                  <strong>{line.payout}</strong>
+                  <em>{line.positions}</em>
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
+
+      </div>
+    </div>
+  )
 }
 
 const ActivationCenterPage = () => {
@@ -284,8 +627,7 @@ const ActivationCenterPage = () => {
   const [isNextActionModalOpen, setIsNextActionModalOpen] = useState(false)
   const [openLevelDetails, setOpenLevelDetails] = useState({})
   const [isRegistrationModalOpen, setIsRegistrationModalOpen] = useState(false)
-  const [showTransactionGateNotice, setShowTransactionGateNotice] = useState(false)
-
+  
   const [showSecurityNotice, setShowSecurityNotice] = useState(false)
 
   const [isDeployer, setIsDeployer] = useState(false)
@@ -298,10 +640,6 @@ const ActivationCenterPage = () => {
   const [registrationReferrer, setRegistrationReferrer] = useState('')
   const [isFounderRepresentative, setIsFounderRepresentative] = useState(false)
   const [founderRepLevelsActivated, setFounderRepLevelsActivated] = useState(0)
-
-  const showTransactionGate = useCallback(() => {
-    setShowTransactionGateNotice(true)
-  }, [])
 
   const [orbitLevelData, setOrbitLevelData] = useState({})
   const [downlineData, setDownlineData] = useState({})
@@ -380,11 +718,18 @@ const ActivationCenterPage = () => {
   const copyReferralLink = async () => {
     if (!myReferralLink) return
     try {
-      await navigator.clipboard.writeText(myReferralLink)
+      if (!(await copyText(myReferralLink))) throw new Error('Clipboard unavailable')
       alert('✅ Referral link copied successfully!')
     } catch (err) {
       alert('Failed to copy')
     }
+  }
+
+  const copyReferralId = async () => {
+    if (!myShortCode) return
+    const copied = await copyText(myShortCode)
+    if (copied) toast.success('FFN ID copied.', { dedupeKey: 'activation-referral-id-copied' })
+    else toast.danger('Copy failed. Press and hold the ID to copy it.', { dedupeKey: 'activation-referral-copy-failed' })
   }
 
   // ==================== WALLET-CHANGE EFFECT ====================
@@ -422,7 +767,7 @@ const ActivationCenterPage = () => {
   }, [location.pathname, location.search, refCode, isRegistered])
 
 
-   const fetchUserFinancialSummary = useCallback(async () => {
+   const fetchUserFinancialSummary = useCallback(async (forceRefresh = false) => {
     if (!viewer) {
       setFinancialByLevel({})
       return
@@ -430,7 +775,10 @@ const ActivationCenterPage = () => {
 
     try {
       const profileReadHeaders = await getProfileReadAuthIfLocked(viewer, account)
-      const summary = await fetchUserSummaryApi(viewer, { headers: profileReadHeaders })
+      const summary = await fetchUserSummaryApi(viewer, {
+        forceRefresh,
+        headers: profileReadHeaders,
+      })
       const byLevel = Array.isArray(summary?.earnings?.byLevel)
         ? summary.earnings.byLevel
         : []
@@ -518,11 +866,6 @@ const ActivationCenterPage = () => {
 
   // ==================== HANDLE REGISTER FROM MODAL ====================
   const handleRegisterFromModal = async () => {
-    if (TRANSACTION_GATE_ENABLED) {
-      showTransactionGate()
-      return
-    }
-
     try {
       const finalReferral = await resolveFinalRegistrationReferrer()
 
@@ -699,12 +1042,15 @@ const ActivationCenterPage = () => {
   }
 
   const fetchFullOrbitData = useCallback(
-    async (level) => {
+    async (level, sharedProfileReadHeaders = null, forceRefresh = false) => {
       if (!viewer || !isRegistered) return null
 
       try {
-        const profileReadHeaders = await getProfileReadAuthIfLocked(viewer, account)
-        const snapshot = await fetchOrbitLevelSnapshotApi(viewer, level, { headers: profileReadHeaders })
+        const profileReadHeaders = sharedProfileReadHeaders || await getProfileReadAuthIfLocked(viewer, account)
+        const snapshot = await fetchOrbitLevelSnapshotApi(viewer, level, {
+          forceRefresh,
+          headers: profileReadHeaders,
+        })
         if (!snapshot) return null
 
         const positions = snapshot.positions || []
@@ -752,6 +1098,10 @@ const ActivationCenterPage = () => {
           lockedForNextLevel: snapshot.lockedForNextLevel || '0',
           viewerRole,
           positionsFilled: positions.filter((p) => p.occupant).length,
+          filledPositions: positions
+            .filter((p) => p.occupant && p.occupant !== ethers.ZeroAddress)
+            .map((p) => Number(p.number || p.position || p.positionNumber || p.positionIndex || p.slot || p.slotIndex || 0))
+            .filter(Boolean),
           totalPositions: orbitTypeConfig[levelToOrbitType[level]]?.positions || 4,
         }
       } catch (err) {
@@ -763,12 +1113,15 @@ const ActivationCenterPage = () => {
   )
 
 
-  const fetchUserEarnings = useCallback(async () => {
+  const fetchUserEarnings = useCallback(async (forceRefresh = false) => {
     if (!viewer) return
 
     try {
       const profileReadHeaders = await getProfileReadAuthIfLocked(viewer, account)
-      const result = await fetchAddressReceiptsApi(viewer, undefined, { headers: profileReadHeaders })
+      const result = await fetchAddressReceiptsApi(viewer, undefined, {
+        forceRefresh,
+        headers: profileReadHeaders,
+      })
       const receipts = Array.isArray(result?.receipts) ? result.receipts : []
       setReceiptsSupported(true)
 
@@ -841,6 +1194,24 @@ const ActivationCenterPage = () => {
             levels[i] = false
           }
         }
+
+        try {
+          const profileReadHeaders = await getProfileReadAuthIfLocked(viewer, account)
+          const indexedLevels = await fetchOrbitLevelsApi(viewer, {
+            forceRefresh: true,
+            headers: profileReadHeaders,
+          })
+
+          ;(indexedLevels?.levels || []).forEach((item) => {
+            const level = Number(item?.level || 0)
+            if (level && item?.isActive) {
+              levels[level] = true
+              registered = true
+            }
+          })
+        } catch (error) {
+          console.error('Indexed activation level check failed:', error)
+        }
       }
 
       setIsRegistered(registered)
@@ -854,7 +1225,7 @@ const ActivationCenterPage = () => {
       setAllowance(formatUsdt(currentAllowance).toString())
 
       if (registered) {
-        await fetchUserEarnings()
+        await fetchUserEarnings(true)
       } else {
         setTotalEarnings('0')
         setLevelEarnings({})
@@ -865,11 +1236,11 @@ const ActivationCenterPage = () => {
     } finally {
       setRegistrationCheckComplete(true)
     }
-  }, [contracts, viewer, formatUsdt, fetchUserEarnings])
+  }, [contracts, viewer, account, formatUsdt, fetchUserEarnings])
 
   useEffect(() => {
     const checkDeployerStatus = async () => {
-      if (!ENABLE_DEPLOYER_TOOLS || !isOwnSpace) {
+      if (!isOwnSpace) {
         setIsDeployer(false)
         return
       }
@@ -894,11 +1265,22 @@ const ActivationCenterPage = () => {
     checkDeployerStatus()
   }, [contracts, account, formatUsdt, isOwnSpace])
 
-  const fetchAllOrbitLevelData = useCallback(async () => {
+  const fetchAllOrbitLevelData = useCallback(async (forceRefresh = false) => {
     if (!viewer || !isRegistered) return
 
     setOrbitDataLoading(true)
     try {
+      const profileReadHeaders = await getProfileReadAuthIfLocked(viewer, account)
+      const activeLevelNumbers = Array.from({ length: 10 }, (_, index) => index + 1)
+        .filter((level) => activeLevels[level])
+
+      const activeLevelResults = await Promise.all(
+        activeLevelNumbers.map(async (level) => ({
+          level,
+          data: await fetchFullOrbitData(level, profileReadHeaders, forceRefresh),
+        }))
+      )
+
       const levelDataPromises = {}
       const downlinePromises = {}
       const spilloverPromises = {}
@@ -907,20 +1289,17 @@ const ActivationCenterPage = () => {
       const rolePromises = {}
       const cyclePromises = {}
 
-      for (let level = 1; level <= 10; level += 1) {
-        if (activeLevels[level]) {
-          const data = await fetchFullOrbitData(level)
-          if (data) {
-            levelDataPromises[level] = data
-            downlinePromises[level] = data.downlinePositions
-            spilloverPromises[level] = data.otherOccupants
-            lineCountPromises[level] = data.lineCounts
-            lockPromises[level] = data.lockedForNextLevel
-            rolePromises[level] = data.viewerRole
-            cyclePromises[level] = { total: data.totalCycles, current: data.currentCycle }
-          }
-        }
-      }
+      activeLevelResults.forEach(({ level, data }) => {
+        if (!data) return
+
+        levelDataPromises[level] = data
+        downlinePromises[level] = data.downlinePositions
+        spilloverPromises[level] = data.otherOccupants
+        lineCountPromises[level] = data.lineCounts
+        lockPromises[level] = data.lockedForNextLevel
+        rolePromises[level] = data.viewerRole
+        cyclePromises[level] = { total: data.totalCycles, current: data.currentCycle }
+      })
 
       setOrbitLevelData(levelDataPromises)
       setDownlineData(downlinePromises)
@@ -1064,7 +1443,6 @@ const ActivationCenterPage = () => {
       isEligibilityModalOpen ||
       isNextActionModalOpen ||
       isRegistrationModalOpen ||
-      showTransactionGateNotice ||
       showSecurityNotice
 
     const previousHtmlOverflow = document.documentElement.style.overflow
@@ -1081,7 +1459,7 @@ const ActivationCenterPage = () => {
       document.documentElement.style.overflow = previousHtmlOverflow
       document.documentElement.style.scrollBehavior = previousHtmlScrollBehavior
     }
-  }, [isEligibilityModalOpen, isNextActionModalOpen, isRegistrationModalOpen, showTransactionGateNotice, showSecurityNotice])
+  }, [isEligibilityModalOpen, isNextActionModalOpen, isRegistrationModalOpen, showSecurityNotice])
 
   useEffect(() => {
     const shouldShowOnboarding =
@@ -1098,9 +1476,7 @@ const ActivationCenterPage = () => {
       return
     }
 
-    if (shouldShowOnboarding) {
-      setShowSecurityNotice(true)
-    }
+    if (shouldShowOnboarding) setIsRegistrationModalOpen(true)
   }, [
     isConnected,
     contractsLoading,
@@ -1137,9 +1513,7 @@ const ActivationCenterPage = () => {
     [activeLevels]
   )
 
-  const isFounderRepFreeLevel = useCallback(() => false, [])
-
-  const isFounderRepActivationPaused = useCallback(
+  const isFounderRepFreeLevel = useCallback(
     (level) => isFounderRepresentative && founderRepLevelsActivated < 10 && !activeLevels[level],
     [activeLevels, founderRepLevelsActivated, isFounderRepresentative]
   )
@@ -1183,28 +1557,19 @@ const ActivationCenterPage = () => {
   )
 
   const refreshAllAfterWrite = useCallback(async () => {
+    if (viewer) {
+      clearAddressScopedOrbitsApiCache(viewer)
+    }
     await fetchUserData()
-    await fetchAllOrbitLevelData()
+    await fetchAllOrbitLevelData(true)
     await fetchTokenSummary()
     await fetchMyReferralCode()
-    await fetchUserFinancialSummary()
+    await fetchUserFinancialSummary(true)
     setLastUpdated(new Date().toLocaleTimeString())
-  }, [fetchUserData, fetchAllOrbitLevelData, fetchTokenSummary, fetchMyReferralCode, fetchUserFinancialSummary])
+  }, [viewer, fetchUserData, fetchAllOrbitLevelData, fetchTokenSummary, fetchMyReferralCode, fetchUserFinancialSummary])
 
   const handleCombinedRegisterAndActivateLevelOne = useCallback(async (finalRegistrationReferrer = registrationReferrer) => {
-    if (TRANSACTION_GATE_ENABLED) {
-      showTransactionGate()
-      return
-    }
-
     if (!ensureWritableSpace()) return
-
-    if (isFounderRepActivationPaused(1)) {
-      const message = activationT('errors.founderRepPaused', 'Founder representative free activation is paused. This wallet cannot continue this special activation path unless governance approves a new rollout.')
-      setTxStatus({ loading: false, hash: null, error: message })
-      toast.warning(message, { dedupeKey: 'activation-founder-rep-paused' })
-      return
-    }
 
     if (networkWarning) {
       const message = activationT('errors.switchNetworkFirst', 'Please switch to {{network}} first.', { network: NETWORK_CONFIG.chainName })
@@ -1260,7 +1625,7 @@ const ActivationCenterPage = () => {
         const level1AlreadyActive = await contracts.registration.isLevelActivated(account, 1)
 
         if (!level1AlreadyActive) {
-          const activationGas = await registrationWithSigner.activateLevel.estimateGas(1)
+          const activationGas = await estimateActivationGas(registrationWithSigner, signer, 1)
           const activateTx = await registrationWithSigner.activateLevel(
             1,
             await buildTxOptions({
@@ -1329,8 +1694,6 @@ const ActivationCenterPage = () => {
     refreshAllAfterWrite,
     toast,
     isFounderRepFreeLevel,
-    isFounderRepActivationPaused,
-    showTransactionGate,
   ])
 
   const handleTransferToSelf = async () => {
@@ -1423,7 +1786,6 @@ const ActivationCenterPage = () => {
     (level) => {
       const price = parseFloat(levelPrices[level] || '0')
       const isFounderRepFree = isFounderRepFreeLevel(level)
-      const founderRepPaused = isFounderRepActivationPaused(level)
       const totalRequired = isFounderRepFree ? 0 : price
 
       return [
@@ -1459,15 +1821,13 @@ const ActivationCenterPage = () => {
         {
           key: 'levelReady',
           label: activationT('eligibility.levelReady.label', 'Level {{level}} ready', { level }),
-          passed: Boolean(canActivateLevel(level)) && !founderRepPaused,
+          passed: Boolean(canActivateLevel(level)),
           hint:
-            founderRepPaused
-              ? activationT('eligibility.levelReady.founderRepPaused', 'Founder representative free activation is paused. This wallet cannot continue this special activation path unless governance approves a new rollout.')
-              : level === 1 && !isRegistered
-                ? activationT('eligibility.levelReady.onboarding', 'Level 1 is available as part of onboarding.')
-                : canActivateLevel(level)
-                  ? activationT('eligibility.levelReady.available', 'Level {{level}} is available for activation.', { level })
-                  : activationT('eligibility.levelReady.activatePrevious', 'Activate Level {{level}} first.', { level: level - 1 }),
+            level === 1 && !isRegistered
+              ? activationT('eligibility.levelReady.onboarding', 'Level 1 is available as part of onboarding.')
+              : canActivateLevel(level)
+                ? activationT('eligibility.levelReady.available', 'Level {{level}} is available for activation.', { level })
+                : activationT('eligibility.levelReady.activatePrevious', 'Activate Level {{level}} first.', { level: level - 1 }),
         },
         {
           key: 'balance',
@@ -1486,15 +1846,10 @@ const ActivationCenterPage = () => {
         },
       ]
     },
-    [activationT, isConnected, networkWarning, isRegistered, canActivateLevel, usdtBalance, isFounderRepFreeLevel, isFounderRepActivationPaused]
+    [activationT, isConnected, networkWarning, isRegistered, canActivateLevel, usdtBalance, isFounderRepFreeLevel]
   )
 
   const executeLevelActivation = async (level) => {
-    if (TRANSACTION_GATE_ENABLED) {
-      showTransactionGate()
-      return
-    }
-
     if (!ensureWritableSpace()) return
     if (networkWarning) {
       const message = activationT('errors.switchNetworkFirst', 'Please switch to {{network}} first.', { network: NETWORK_CONFIG.chainName })
@@ -1523,13 +1878,6 @@ const ActivationCenterPage = () => {
       return
     }
 
-    if (isFounderRepActivationPaused(level)) {
-      const message = activationT('errors.founderRepPaused', 'Founder representative free activation is paused. This wallet cannot continue this special activation path unless governance approves a new rollout.')
-      setTxStatus({ loading: false, hash: null, error: message })
-      toast.warning(message, { dedupeKey: 'activation-founder-rep-paused' })
-      return
-    }
-
     setTxStatus({ loading: true, hash: null, error: null })
     toast.info(activationT('toast.activationPreparing', 'Preparing level activation.'), { dedupeKey: `activation-level-${level}-preparing` })
 
@@ -1548,7 +1896,7 @@ const ActivationCenterPage = () => {
 
       const signer = await getSigner()
       const registrationWithSigner = contracts.registration.connect(signer)
-      const gasEstimate = await registrationWithSigner.activateLevel.estimateGas(level)
+      const gasEstimate = await estimateActivationGas(registrationWithSigner, signer, level)
       const tx = await registrationWithSigner.activateLevel(
         level,
         await buildTxOptions({
@@ -1584,11 +1932,6 @@ const ActivationCenterPage = () => {
   }
 
   const handleApproveAndActivate = async (level) => {
-    if (TRANSACTION_GATE_ENABLED) {
-      showTransactionGate()
-      return
-    }
-
     const checksForLevel = buildEligibilityChecks(level)
 
     setPendingActivationLevel(level)
@@ -1675,6 +2018,7 @@ const ActivationCenterPage = () => {
               <div className="activation-referral-card__mini">
                 <span>{activationT('referral.yourReferralId', 'Your Referral ID')}</span>
                 <strong>{myShortCode}</strong>
+                <button type="button" onClick={copyReferralId} className="activation-referral-card__copy-id" aria-label="Copy FFN ID"><FaCopy /> Copy ID</button>
               </div>
 
               <div className="activation-referral-card__mini">
@@ -1768,8 +2112,6 @@ const ActivationCenterPage = () => {
     return null
   }, [activeLevels])
 
-  const nextFounderRepPaused = nextLevel ? isFounderRepActivationPaused(nextLevel) : false
-
   const activatedCount = useMemo(
     () => Object.values(activeLevels).filter(Boolean).length,
     [activeLevels]
@@ -1788,13 +2130,6 @@ const ActivationCenterPage = () => {
   )
 
   const maxCumulative = Math.max(...lineChartData.map((d) => d.cumulative), 1)
-  const chartPoints = lineChartData
-    .map((d, i) => {
-      const x = (i / 9) * 100
-      const y = 100 - (d.cumulative / maxCumulative) * 80 - 10
-      return `${x},${y}`
-    })
-    .join(' ')
 
   const getRoleBadge = (role) => {
     switch (role) {
@@ -1975,7 +2310,7 @@ const ActivationCenterPage = () => {
                 {activationT('hero.chips.earned', 'Earned: {{amount}} USDT', { amount: totalEarnings })}
               </span>
             )}
-            {ENABLE_DEPLOYER_TOOLS && isDeployer && canWriteHere && (
+            {isDeployer && canWriteHere && (
               <span className="activation-hero__chip glass-panel deployer-chip">{activationT('hero.chips.deployerMode', 'Deployer Mode')}</span>
             )}
             {isId1Wallet && (
@@ -1990,41 +2325,15 @@ const ActivationCenterPage = () => {
             <span className="activation-hero__visual-status">{activationT('progress.activated', '{{count}}/10 Activated', { count: activatedCount })}</span>
           </div>
 
-          <div className="line-chart-container">
-            <svg className="line-chart" viewBox="0 0 100 100" preserveAspectRatio="none">
-              <polyline
-                className="chart-line"
-                points={chartPoints}
-                fill="none"
-                stroke="var(--glow-teal)"
-                strokeWidth="2.5"
-                strokeLinecap="round"
-                strokeLinejoin="round"
-              />
-              {lineChartData.map((d, i) => {
-                const x = (i / 9) * 100
-                const y = 100 - (d.cumulative / maxCumulative) * 80 - 10
-                return (
-                  <circle
-                    key={i}
-                    cx={x}
-                    cy={y}
-                    r="3"
-                    fill={d.activated ? 'var(--glow-teal)' : 'rgba(255,255,255,0.2)'}
-                    stroke={d.activated ? 'white' : 'none'}
-                    strokeWidth="1"
-                  />
-                )
-              })}
-            </svg>
-
-            <div className="chart-labels">
-              {[1, 2, 3, 4, 5, 6, 7, 8, 9, 10].map((level) => (
-                <span key={level} className={`chart-label ${activeLevels[level] ? 'active' : ''}`}>
-                  {level}
-                </span>
-              ))}
-            </div>
+          <div className="line-chart-container line-chart-container--institutional">
+            <ProgressionLineChart
+              data={lineChartData}
+              valueKey="cumulative"
+              activeKey="activated"
+              labelKey="level"
+              maxValue={maxCumulative}
+              ariaLabel={activationT('progress.chartAriaLabel', 'Level activation progression chart')}
+            />
           </div>
 
           <p className="activation-hero__visual-note muted-text">
@@ -2047,6 +2356,7 @@ const ActivationCenterPage = () => {
             const canActivate = canActivateLevel(level)
             const price = Number(levelPrices[level] || 0)
             const orbitTypeForLevel = levelToOrbitType[level]
+            const levelProgramName = levelProgramNames[level]
             const orbitData = orbitLevelData[level]
             // const earned = Number(
             //   orbitData?.totalEarned ??
@@ -2064,50 +2374,93 @@ const ActivationCenterPage = () => {
             const lockedForUpgrade = parseFloat(userLocks[level] || '0')
             const upgradeRequired = upgradeRequirements[level]
             const upgradeProgress = (lockedForUpgrade / upgradeRequired) * 100
+            const autoUpgradeLockedForThisLevel = level > 1 ? parseFloat(userLocks[level - 1] || '0') : 0
+            const autoUpgradeRequiredForThisLevel = level > 1 ? upgradeRequirements[level - 1] : 0
+            const autoUpgradeProgressForThisLevel = autoUpgradeRequiredForThisLevel
+              ? (autoUpgradeLockedForThisLevel / autoUpgradeRequiredForThisLevel) * 100
+              : 0
+            const hasAutoUpgradeProgress = !isActive && isNext && autoUpgradeLockedForThisLevel > 0
             const fgtEarned = tokenSummary.fgtByLevel[level] || 0
             const fgtrEarned = tokenSummary.fgtrByLevel[level] || 0
             const latestTokenEvent = tokenSummary.lastEventByLevel[level] || null
             const isFounderRepFree = isFounderRepFreeLevel(level)
-            const founderRepPaused = isFounderRepActivationPaused(level)
             const combinedRequired = isFounderRepFree ? 0 : level === 1 && !isRegistered ? 10 : price
-            const hasEnoughBalance = !founderRepPaused && (isFounderRepFree || parseFloat(usdtBalance) >= combinedRequired)
-            const showInsufficientBalance = !isActive && isNext && !founderRepPaused && !isFounderRepFree && !hasEnoughBalance
+            const hasEnoughBalance = isFounderRepFree || parseFloat(usdtBalance) >= combinedRequired
             const isOpen = !!openLevelDetails[level]
-            const canStartActivation = canActivate && !founderRepPaused
+            const levelStatusLabel = isActive
+              ? activationT('levels.status.activated', 'Activated')
+              : hasAutoUpgradeProgress
+                ? activationT('levels.status.autoUpgradeProgress', 'Auto-upgrade progress')
+              : isNext
+                ? activationT('levels.status.ready', 'Ready to Activate')
+                : activationT('levels.status.locked', 'Locked')
+            const priceLabel = isFounderRepFree
+              ? activationT('levels.founderRepFree', 'Founder Rep Free')
+              : level === 1 && !isRegistered
+                ? activationT('levels.onboardingPrice', '10 USDT Onboarding')
+                : activationT('levels.price', '{{price}} USDT', { price })
 
             return (
               <div
                 key={level}
-                className={`activation-levels__card premium-card compact-level-card ${isActive ? 'activated' : ''} ${isNext ? 'next' : ''}`}
+                className={`activation-levels__card premium-card compact-level-card ${isActive ? 'activated' : ''} ${isNext ? 'next' : ''} ${hasAutoUpgradeProgress ? 'has-auto-progress' : ''} ${!isActive && !isNext ? 'is-locked-level' : ''}`}
                 style={{ background: getLevelBackground(level) }}
               >
-                <div className="compact-level-card__header">
-                  <div className="compact-level-card__header-left">
-                    <span className={`status-dot ${isActive ? 'green' : isNext ? 'orange' : 'gray'}`}></span>
-                    <span className="compact-level-card__level">{activationT('levels.levelNumber', 'Level {{level}}', { level })}</span>
+                {!isActive && !isNext && (
+                  <div className="activation-level-locked-glass" aria-hidden="true">
+                    <FaLock />
                   </div>
-                  <span className="level-orbit">{orbitTypeForLevel}</span>
+                )}
+
+                <div className="activation-level-info-grid">
+                  <div className="activation-level-info-cell">
+                    <span>{activationT('levels.info.level', 'Level')}</span>
+                    <strong>{level}</strong>
+                  </div>
+
+                  <div className="activation-level-info-cell activation-level-info-cell--right">
+                    <span>{activationT('levels.info.name', 'Stage')}</span>
+                    <strong>{levelProgramName}</strong>
+                  </div>
+
+                  <div className="activation-level-info-cell">
+                    <span>{activationT('levels.info.engine', 'Payout Engine')}</span>
+                    <strong>{orbitTypeForLevel} Orbit</strong>
+                  </div>
+
+                  <div className="activation-level-info-cell activation-level-info-cell--right">
+                    <span>{activationT('levels.info.status', 'Status')}</span>
+                    <strong className={`activation-level-status-inline ${isActive ? 'is-active' : hasAutoUpgradeProgress ? 'is-progress' : isNext ? 'is-ready' : 'is-locked'}`}>
+                      {isActive ? <FaCheckCircle /> : hasAutoUpgradeProgress || isNext ? <FaInfoCircle /> : <FaLock />}
+                      {levelStatusLabel}
+                    </strong>
+                  </div>
+
+                  <div className="activation-level-info-cell">
+                    <span>{activationT('levels.info.price', 'Price')}</span>
+                    <strong>{activationT('levels.info.priceLabel', 'Level Price')}</strong>
+                  </div>
+
+                  <div className="activation-level-info-cell activation-level-info-cell--right">
+                    <span>{activationT('levels.info.amount', 'Activation Amount')}</span>
+                    <strong className={`activation-level-price-token ${hasEnoughBalance ? 'is-sufficient' : 'is-insufficient'}`}>
+                      {!isFounderRepFree && <i aria-hidden="true">T</i>}
+                      {priceLabel}
+                    </strong>
+                  </div>
                 </div>
 
-                <div className={`compact-level-card__status ${isActive ? 'is-active' : founderRepPaused ? 'is-locked' : isNext ? 'is-ready' : 'is-locked'}`}>
-                  {isActive
-                    ? activationT('levels.status.activated', 'Activated')
-                    : founderRepPaused
-                      ? activationT('levels.status.paused', 'Paused')
-                      : isNext
-                        ? activationT('levels.status.ready', 'Ready to Activate')
-                        : activationT('levels.status.locked', 'Locked')}
-                </div>
-
-                <div className={`compact-level-card__price ${showInsufficientBalance ? 'is-insufficient' : ''}`}>
-                  {founderRepPaused
-                    ? activationT('levels.founderRepPaused', 'Founder Rep Paused')
-                    : isFounderRepFree
-                    ? activationT('levels.founderRepFree', 'Founder Rep Free')
-                    : level === 1 && !isRegistered
-                      ? activationT('levels.onboardingPrice', '10 USDT Onboarding')
-                      : activationT('levels.price', '{{price}} USDT', { price })}
-                </div>
+                <ActivationLevelOrbitPreview
+                  level={level}
+                  orbitType={orbitTypeForLevel}
+                  levelName={levelProgramName}
+                  price={price}
+                  status={levelStatusLabel}
+                  filledPositions={orbitData?.filledPositions || []}
+                  totalPositions={orbitData?.totalPositions || orbitTypeConfig[orbitTypeForLevel]?.positions || 0}
+                  isLocked={!isActive && !isNext}
+                  activationT={activationT}
+                />
 
                 <div className="compact-level-card__actions">
                   {isActive ? (
@@ -2120,17 +2473,11 @@ const ActivationCenterPage = () => {
                         {activationT('actions.viewOrbit', 'View Orbit')} <GoArrow />
                       </button>
 
-                      {isNext && canStartActivation && canWriteHere ? (
+                      {isNext && canActivate && canWriteHere ? (
                         <button
                           className="activate-btn compact-action-btn"
-                          onClick={() => {
-                            if (level === 1 && !isRegistered) {
-                              setShowSecurityNotice(true)
-                              return
-                            }
-                            handleApproveAndActivate(level)
-                          }}
-                          disabled={txStatus.loading || founderRepPaused}
+                          onClick={() => handleApproveAndActivate(level)}
+                          disabled={!canWriteHere || txStatus.loading || !hasEnoughBalance || networkWarning}
                         >
                           {txStatus.loading
                             ? activationT('states.processing', 'Processing...')
@@ -2140,11 +2487,7 @@ const ActivationCenterPage = () => {
                         </button>
                       ) : (
                         <button className="locked-btn compact-action-btn" disabled>
-                          {founderRepPaused
-                            ? activationT('levels.status.paused', 'Paused')
-                            : canWriteHere
-                              ? activationT('levels.status.locked', 'Locked')
-                              : activationT('levels.status.readOnly', 'Read-Only')}
+                          {canWriteHere ? activationT('levels.status.locked', 'Locked') : activationT('levels.status.readOnly', 'Read-Only')}
                         </button>
                       )}
                     </>
@@ -2271,18 +2614,35 @@ const ActivationCenterPage = () => {
                     ) : (
                       <>
                         <div className="level-details">
+                          {hasAutoUpgradeProgress && (
+                            <div className="auto-upgrade-progress-card">
+                              <div className="escrow-header">
+                                <span><FaSyncAlt /> {activationT('metrics.autoUpgradeProgressForLevel', 'Auto-upgrade toward Level {{level}}', { level })}</span>
+                                <span>{autoUpgradeLockedForThisLevel.toFixed(2)} / {autoUpgradeRequiredForThisLevel} USDT</span>
+                              </div>
+                              <div className="escrow-track">
+                                <div className="escrow-fill escrow-fill--warning" style={{ width: `${Math.min(autoUpgradeProgressForThisLevel, 100)}%` }} />
+                              </div>
+                              <p className="auto-upgrade-progress-card__note">
+                                {activationT(
+                                  'metrics.autoUpgradeNotActiveYet',
+                                  'This level is not activated yet. It will activate automatically after the escrow reaches {{amount}} USDT.',
+                                  { amount: autoUpgradeRequiredForThisLevel }
+                                )}
+                              </p>
+                            </div>
+                          )}
+
                           <div className="detail-row">
                             <span>{activationT('metrics.balance', 'Balance:')}</span>
-                            <strong className={showInsufficientBalance ? 'insufficient' : ''}>
+                            <strong className={hasEnoughBalance ? 'sufficient' : 'insufficient'}>
                               {usdtBalance} USDT
                             </strong>
                           </div>
                           <div className="detail-row">
                             <span>{activationT('metrics.requirement', 'Requirement:')}</span>
                             <strong>
-                              {founderRepPaused
-                                ? activationT('levels.founderRepPaused', 'Founder Rep Paused')
-                                : isFounderRepFree
+                              {isFounderRepFree
                                 ? activationT('levels.founderRepFree', 'Founder Rep Free')
                                 : level === 1 && !isRegistered
                                   ? activationT('levels.onboardingTotal', '10 USDT total')
@@ -2292,9 +2652,7 @@ const ActivationCenterPage = () => {
                         </div>
 
                         <p className="level-description">
-                          {founderRepPaused
-                            ? activationT('levels.descriptions.founderRepPaused', 'Founder representative free activation is paused for this wallet unless governance approves a new rollout.')
-                            : level === 1 && !isRegistered
+                          {level === 1 && !isRegistered
                             ? isFounderRepFree
                               ? activationT('levels.descriptions.founderRepLevelOne', 'This founder representative wallet can register and activate Level 1 without USDT.')
                               : activationT('levels.descriptions.levelOne', 'This step registers your wallet and activates Level 1 in one flow.')
@@ -2337,7 +2695,7 @@ const ActivationCenterPage = () => {
             </section>
           )}
 
-          {ENABLE_DEPLOYER_TOOLS && isDeployer && canWriteHere && (
+          {isDeployer && canWriteHere && (
             <section className="deployer-faucet glass-panel">
               <div className="activation-section-heading">
                 <span className="activation-section-heading__eyebrow muted-text">{activationT('deployer.eyebrow', 'Deployer Tools')}</span>
@@ -2420,9 +2778,7 @@ const ActivationCenterPage = () => {
                     <div>
                       <h3 className="activation-notices__title">
                         {nextLevel
-                          ? nextFounderRepPaused
-                            ? activationT('guidance.founderRepPaused', 'Founder representative activation paused')
-                            : isFounderRepFreeLevel(nextLevel)
+                          ? isFounderRepFreeLevel(nextLevel)
                             ? activationT('guidance.founderRepFreeRequired', 'Founder representative free activation')
                             : !isRegistered && nextLevel === 1
                               ? activationT('guidance.onboardingRequired', 'Onboarding requires 10 USDT')
@@ -2431,9 +2787,7 @@ const ActivationCenterPage = () => {
                       </h3>
                       <p className="activation-notices__text soft-text">
                         {nextLevel
-                          ? nextFounderRepPaused
-                            ? activationT('guidance.founderRepPausedText', 'This special founder representative activation path is paused. Ordinary paid activations remain unchanged.')
-                            : !isRegistered && nextLevel === 1
+                          ? !isRegistered && nextLevel === 1
                             ? `Balance: ${usdtBalance} USDT. ${
                                 parseFloat(usdtBalance) >= 10
                                   ? activationT('guidance.sufficientOnboarding', 'Sufficient funds available for registration and Level 1.')
@@ -2560,9 +2914,7 @@ const ActivationCenterPage = () => {
                   {!canWriteHere
                     ? activationT('nextAction.readOnlyText', "You are currently viewing another member's space. Progress and orbit state are visible, but wallet actions are disabled.")
                     : nextLevel
-                      ? nextFounderRepPaused
-                        ? activationT('nextAction.founderRepPausedText', 'Founder representative free activation is paused for this wallet unless governance approves a new rollout. Ordinary paid accounts are not affected.')
-                        : isFounderRepFreeLevel(nextLevel)
+                      ? isFounderRepFreeLevel(nextLevel)
                         ? activationT('nextAction.founderRepFreeText', 'This founder representative wallet can activate the next eligible level without USDT.')
                         : !isRegistered && nextLevel === 1
                           ? activationT('nextAction.onboardingText', 'Complete onboarding to register this wallet and activate Level 1 in a single action.')
@@ -2577,28 +2929,19 @@ const ActivationCenterPage = () => {
                       className="activation-modal__button activation-modal__button--primary"
                       onClick={() => {
                         setIsNextActionModalOpen(false)
-                        if (nextLevel === 1 && !isRegistered) {
-                          setShowSecurityNotice(true)
-                          return
-                        }
                         handleApproveAndActivate(nextLevel)
                       }}
                       disabled={
-                        !TRANSACTION_GATE_ENABLED && (
-                          txStatus.loading ||
-                          !canActivateLevel(nextLevel) ||
-                          nextFounderRepPaused ||
-                          (!isFounderRepFreeLevel(nextLevel) && parseFloat(usdtBalance) <
-                            parseFloat(nextLevel === 1 && !isRegistered ? '10' : levelPrices[nextLevel])) ||
-                          networkWarning
-                        )
+                        txStatus.loading ||
+                        !canActivateLevel(nextLevel) ||
+                        (!isFounderRepFreeLevel(nextLevel) && parseFloat(usdtBalance) <
+                          parseFloat(nextLevel === 1 && !isRegistered ? '10' : levelPrices[nextLevel])) ||
+                        networkWarning
                       }
                     >
                       {txStatus.loading
                         ? activationT('states.processing', 'Processing...')
-                        : nextFounderRepPaused
-                          ? activationT('actions.founderRepPaused', 'Founder Rep Paused')
-                          : isFounderRepFreeLevel(nextLevel)
+                        : isFounderRepFreeLevel(nextLevel)
                           ? activationT('actions.activateFounderRepFree', 'Activate Founder Rep Free')
                           : nextLevel === 1 && !isRegistered
                             ? activationT('actions.registerAndActivateLevelOne', 'Register & Activate Level 1')
@@ -2680,49 +3023,6 @@ const ActivationCenterPage = () => {
                     </button>
                   </div>
                 ) : null}
-              </div>
-            </div>
-          )}
-
-          {showTransactionGateNotice && (
-            <div className="activation-overlay activation-overlay--transaction-gate" role="dialog" aria-modal="true" aria-labelledby="transaction-gate-title">
-              <div className="activation-modal activation-modal--security">
-                <div className="activation-modal__top">
-                  <div className="security-notice-badge">
-                    <FaExclamationTriangle size={18} />
-                    <span>Transaction Notice</span>
-                  </div>
-                  <button
-                    type="button"
-                    className="activation-modal__close"
-                    onClick={() => setShowTransactionGateNotice(false)}
-                    aria-label="Close transaction notice"
-                  >
-                    <FaTimesCircle />
-                  </button>
-                </div>
-
-                <h3 id="transaction-gate-title" className="activation-modal__title security-notice-title">
-                  Gas Above Configuration
-                </h3>
-
-                <div className="security-notice-acknowledgment">
-                  <p>
-                    Current network fees exceed the amount configured for registration and level activation.
-                    Please try again shortly.
-                  </p>
-                  <p>No transaction has been submitted.</p>
-                </div>
-
-                <div className="activation-modal__actions">
-                  <button
-                    type="button"
-                    className="activation-modal__button activation-modal__button--primary"
-                    onClick={() => setShowTransactionGateNotice(false)}
-                  >
-                    Close
-                  </button>
-                </div>
               </div>
             </div>
           )}
@@ -2824,9 +3124,7 @@ const ActivationCenterPage = () => {
                     <div>
                       {activationT('registration.levelOneCost', 'Registration + Level 1:')}{' '}
                       <strong>
-                        {isFounderRepActivationPaused(1)
-                          ? activationT('levels.founderRepPaused', 'Founder Rep Paused')
-                          : isFounderRepFreeLevel(1)
+                        {isFounderRepFreeLevel(1)
                           ? activationT('levels.founderRepFree', 'Founder Rep Free')
                           : activationT('levels.onboardingTotal', '10 USDT total')}
                       </strong>
@@ -2890,13 +3188,7 @@ const ActivationCenterPage = () => {
                   </p>
                 </div>
 
-                {isFounderRepActivationPaused(1) && (
-                  <div className="insufficient-funds-warning">
-                    {activationT('registration.founderRepPaused', 'Founder representative free activation is paused. This wallet cannot continue this special activation path unless governance approves a new rollout.')}
-                  </div>
-                )}
-
-                {!isFounderRepActivationPaused(1) && !isFounderRepFreeLevel(1) && parseFloat(usdtBalance) < 10 && (
+                {!isFounderRepFreeLevel(1) && parseFloat(usdtBalance) < 10 && (
                   <div className="insufficient-funds-warning">
                     {activationT('registration.insufficientBalance', 'Insufficient USDT balance. Need 10 USDT for onboarding.')}
                   </div>
@@ -2914,7 +3206,7 @@ const ActivationCenterPage = () => {
                     type="button"
                     className="activation-modal__button activation-modal__button--primary"
                     onClick={handleRegisterFromModal}
-                    disabled={!TRANSACTION_GATE_ENABLED && (txStatus.loading || referrerResolveLoading || isFounderRepActivationPaused(1) || (!isFounderRepFreeLevel(1) && parseFloat(usdtBalance) < 10) || networkWarning)}
+                    disabled={txStatus.loading || referrerResolveLoading || (!isFounderRepFreeLevel(1) && parseFloat(usdtBalance) < 10) || networkWarning}
                   >
                     {txStatus.loading || referrerResolveLoading
                       ? activationT('registration.preparing', 'Preparing registration...')

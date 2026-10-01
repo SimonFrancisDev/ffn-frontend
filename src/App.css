@@ -1,5 +1,99 @@
 /* App-level styles are intentionally kept in shared style modules. */
 
+.staging-access {
+  min-height: 100dvh;
+  display: grid;
+  place-items: center;
+  padding: 24px;
+  color: #f8fafc;
+  background:
+    radial-gradient(circle at 20% 20%, rgba(34, 197, 94, 0.18), transparent 30%),
+    radial-gradient(circle at 80% 8%, rgba(59, 130, 246, 0.18), transparent 28%),
+    linear-gradient(135deg, #020617, #0f172a 54%, #04111f);
+}
+
+.staging-access__panel {
+  width: min(420px, 100%);
+  padding: 28px;
+  border: 1px solid rgba(148, 163, 184, 0.32);
+  border-radius: 18px;
+  background: rgba(15, 23, 42, 0.86);
+  box-shadow: 0 26px 80px rgba(0, 0, 0, 0.34);
+}
+
+.staging-access__badge {
+  width: fit-content;
+  margin-bottom: 18px;
+  padding: 6px 10px;
+  border: 1px solid rgba(45, 212, 191, 0.3);
+  border-radius: 999px;
+  color: #99f6e4;
+  background: rgba(13, 148, 136, 0.14);
+  font-size: 0.76rem;
+  font-weight: 800;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.staging-access__title {
+  margin: 0;
+  font-size: clamp(1.7rem, 8vw, 2.4rem);
+  line-height: 1.08;
+  letter-spacing: 0;
+}
+
+.staging-access__text {
+  margin: 12px 0 22px;
+  color: rgba(226, 232, 240, 0.78);
+  line-height: 1.5;
+}
+
+.staging-access__label {
+  display: block;
+  margin-bottom: 8px;
+  color: #cbd5e1;
+  font-size: 0.9rem;
+  font-weight: 700;
+}
+
+.staging-access__input {
+  width: 100%;
+  height: 48px;
+  padding: 0 14px;
+  border: 1px solid rgba(148, 163, 184, 0.38);
+  border-radius: 10px;
+  color: #f8fafc;
+  background: rgba(2, 6, 23, 0.78);
+  outline: none;
+}
+
+.staging-access__input:focus {
+  border-color: #5eead4;
+  box-shadow: 0 0 0 3px rgba(94, 234, 212, 0.16);
+}
+
+.staging-access__error {
+  margin: 10px 0 0;
+  color: #fecaca;
+  font-size: 0.9rem;
+}
+
+.staging-access__button {
+  width: 100%;
+  min-height: 48px;
+  margin-top: 18px;
+  border: 0;
+  border-radius: 10px;
+  color: #04111f;
+  background: #5eead4;
+  font-weight: 900;
+}
+
+.staging-access__button:disabled {
+  cursor: wait;
+  opacity: 0.72;
+}
+
 .launch-gate {
   min-height: 100dvh;
   display: grid;

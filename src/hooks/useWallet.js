@@ -9,6 +9,16 @@ import {
 } from '../Services/walletOnboard'
 
 const WalletContext = createContext(null)
+const normalizeChainId = (chainId) => {
+  if (chainId === null || chainId === undefined) return ''
+
+  if (typeof chainId === 'object') {
+    const value = chainId.chainId ?? chainId.id ?? chainId.value
+    return value === undefined ? '' : String(value).toLowerCase()
+  }
+
+  return String(chainId).toLowerCase()
+}
 
 const useWalletState = () => {
   const [account, setAccount] = useState(null)
@@ -67,8 +77,8 @@ const useWalletState = () => {
     [refreshBalance, resetWalletState]
   )
 
-  const switchToConfiguredNetwork = useCallback(async () => {
-    const provider = activeProvider || web3Service.getEip1193Provider() || window.ethereum
+  const switchToConfiguredNetwork = useCallback(async (providerOverride = null) => {
+    const provider = providerOverride || activeProvider || web3Service.getEip1193Provider() || window.ethereum
     if (!provider?.request) return false
 
     try {
@@ -103,7 +113,7 @@ const useWalletState = () => {
     }
   }, [activeProvider])
 
-  const connect = useCallback(async () => {
+  const connect = useCallback(async (connectionType = 'auto') => {
     if (!hasWalletConnectSupport && !window.ethereum) {
       setError('No browser wallet detected. Configure WalletConnect to support mobile browser connections.')
       return
@@ -113,9 +123,16 @@ const useWalletState = () => {
     setError(null)
 
     try {
-      const connectedWallets = window.ethereum
-        ? await walletOnboard.connectWallet()
-        : [await connectWalletConnectProvider()]
+      if (connectionType === 'walletconnect' && !hasWalletConnectSupport) {
+        throw new Error('WalletConnect is not configured for this deployment.')
+      }
+
+      const useWalletConnect =
+        connectionType === 'walletconnect' ||
+        (connectionType === 'auto' && !window.ethereum)
+      const connectedWallets = useWalletConnect
+        ? [await connectWalletConnectProvider()]
+        : await walletOnboard.connectWallet()
       const wallet = connectedWallets?.[0]
 
       if (!wallet?.provider) {
@@ -124,9 +141,9 @@ const useWalletState = () => {
 
       const chainId = await wallet.provider.request({ method: 'eth_chainId' })
 
-      if (chainId?.toLowerCase() !== AMOY_CHAIN_ID.toLowerCase()) {
+      if (normalizeChainId(chainId) !== normalizeChainId(AMOY_CHAIN_ID)) {
         setActiveProvider(wallet.provider)
-        const switched = await switchToConfiguredNetwork()
+        const switched = await switchToConfiguredNetwork(wallet.provider)
         if (!switched) {
           throw new Error(`Please switch to ${NETWORK_CONFIG.chainName} manually`)
         }
@@ -149,6 +166,8 @@ const useWalletState = () => {
     }
   }, [activateWallet, switchToConfiguredNetwork])
 
+  const connectBrowserWallet = useCallback(() => connect('browser'), [connect])
+  const connectWalletConnect = useCallback(() => connect('walletconnect'), [connect])
   const disconnect = useCallback(async () => {
     const connectedWallets = walletOnboard.state.get().wallets || []
     await Promise.all(
@@ -188,6 +207,36 @@ const useWalletState = () => {
     return () => subscription.unsubscribe()
   }, [activateWallet, resetWalletState])
 
+  useEffect(() => {
+    if (!activeProvider?.on) return undefined
+
+    const handleAccountsChanged = (accounts = []) => {
+      const nextAddress = accounts[0]
+      if (!nextAddress) {
+        resetWalletState()
+        return
+      }
+
+      const address = ethers.getAddress(nextAddress)
+      setAccount(address)
+      setIsConnected(true)
+      refreshBalance(address)
+    }
+
+    const handleDisconnect = () => {
+      resetWalletState()
+      setError(null)
+    }
+
+    activeProvider.on('accountsChanged', handleAccountsChanged)
+    activeProvider.on('disconnect', handleDisconnect)
+
+    return () => {
+      activeProvider.removeListener?.('accountsChanged', handleAccountsChanged)
+      activeProvider.removeListener?.('disconnect', handleDisconnect)
+    }
+  }, [activeProvider, refreshBalance, resetWalletState])
+
   return useMemo(() => ({
     account,
     balance,
@@ -197,7 +246,10 @@ const useWalletState = () => {
     walletLabel,
     hasMobileWalletSupport: hasWalletConnectSupport,
     connect,
+    connectBrowserWallet,
+    connectWalletConnect,
     disconnect,
+    switchToAmoy: switchToConfiguredNetwork,
     switchToConfiguredNetwork
   }), [
     account,
@@ -207,6 +259,8 @@ const useWalletState = () => {
     error,
     walletLabel,
     connect,
+    connectBrowserWallet,
+    connectWalletConnect,
     disconnect,
     switchToConfiguredNetwork
   ])

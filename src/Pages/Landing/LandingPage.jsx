@@ -59,6 +59,7 @@ import { useWallet } from '../../hooks/useWallet'
 import { useSession } from '../../context/SessionContext'
 import { getApiUrl } from '../../Services/apiConfig'
 import { useToast } from '../../components/feedback'
+import { MetricSparkline } from '../../components/charts/InstitutionalCharts'
 import { LANGUAGES } from '../../constants/languages'
 import { lockBodyScroll } from '../../utils/bodyScrollLock'
 import './LandingPage.css'
@@ -1427,51 +1428,15 @@ function ProgramDetails({ program }) {
 
 function MiniGrowthChart({ data = [] }) {
   const { t } = useTranslation()
-  if (!Array.isArray(data) || data.length === 0) {
-    return <div className="mini-chart-empty">{t('landingPage.metrics.chartSyncing', 'Chart syncing')}</div>
-  }
-
-  const points = data.slice(-14)
-  const values = points.map((item) => Number(item.registrations || item.count || 0))
-  const max = Math.max(...values, 1)
-
-  // const scaleNumbers = Array.from({ length: max }, (_, index) => max - index)
-  const step = Math.max(1, Math.ceil(max / 5))
-
-    const scaleNumbers = []
-    for (let value = max; value >= 0; value -= step) {
-      scaleNumbers.push(value)
-    }
-
-    if (!scaleNumbers.includes(0)) {
-      scaleNumbers.push(0)
-    }
-
   return (
-    <div className="mini-chart-shell">
-      <div className="mini-chart-scale" aria-hidden="true">
-        {scaleNumbers.map((number) => (
-          <span key={number}>{number}</span>
-        ))}
-      </div>
-
-      <div className="mini-chart" aria-label={t('landingPage.metrics.chartAriaLabel', 'Registration growth chart')}>
-        {points.map((item, index) => {
-          const value = Number(item.registrations || item.count || 0)
-          const height = Math.max((value / max) * 100, value > 0 ? 16 : 8)
-          const label = item.date ? item.date.slice(5).replace('-', '/') : ''
-
-          return (
-            <div key={`${item.date || index}-${index}`} className="mini-chart-item">
-              <div className="mini-chart-track">
-                <span className="mini-chart-bar" style={{ height: `${height}%` }} />
-              </div>
-              <span className="mini-chart-date">{label}</span>
-            </div>
-          )
-        })}
-      </div>
-    </div>
+    <MetricSparkline
+      data={Array.isArray(data) ? data.slice(-14) : []}
+      valueKey="registrations"
+      labelKey="date"
+      emptyLabel={t('landingPage.metrics.chartSyncing', 'Chart syncing')}
+      ariaLabel={t('landingPage.metrics.chartAriaLabel', 'Registration growth chart')}
+      compact
+    />
   )
 }
 

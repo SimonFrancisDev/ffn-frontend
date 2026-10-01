@@ -7,6 +7,7 @@ const STAGE_CONFIG = {
   preflight: { icon: ShieldCheck, tone: 'info', label: 'Checking requirements' },
   signing: { icon: Loader2, tone: 'info', label: 'Waiting for signature' },
   pending: { icon: Loader2, tone: 'warning', label: 'Confirming transaction' },
+  indexing: { icon: Loader2, tone: 'info', label: 'Synchronizing account' },
   submitted: { icon: CheckCircle2, tone: 'success', label: 'Submitted' },
   complete: { icon: CheckCircle2, tone: 'success', label: 'Confirmed' },
   error: { icon: XCircle, tone: 'danger', label: 'Action needed' },

@@ -66,6 +66,7 @@ export function NotificationCenter({
                   <time dateTime={item.createdAt}>{formatNotificationTime(item.createdAt)}</time>
                 </div>
                 <h3>{item.title}</h3>
+                {item.imageUrl ? <img className="ffn-notification-item__image" src={item.imageUrl} alt="" /> : null}
                 {item.message ? <p>{item.message}</p> : null}
                 {item.detail ? <p>{item.detail}</p> : null}
                 <div className="ffn-notification-item__controls">

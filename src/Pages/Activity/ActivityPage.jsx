@@ -2,30 +2,31 @@ import './ActivityPage.css'
 import { useEffect, useState, useCallback, useMemo } from 'react'
 import { useTranslation } from 'react-i18next'
 import { useWallet } from '../../hooks/useWallet'
-import { useContracts } from '../../hooks/useContracts'
 import { ethers } from 'ethers'
 import { fetchAddressReceiptsApi, fetchOrbitLevelsApi, fetchUserSummaryApi } from '../../Services/orbitsApi'
 import { getProfileReadAuthIfLocked } from '../../Services/profilePrivacyApi'
 import { useToast } from '../../components/feedback'
 import { NETWORK_CONFIG } from '../../constants/addresses'
+import { FREEDOM_PLUS_ENABLED, freedomPlusApi } from '../../Services/freedomPlus'
+import { useSpace } from '../../context/SpaceContext'
 
 const ACTIVITY_PAGE_SIZE = 8
 const RECEIPTS_PAGE_SIZE = 6
 
-const ActivityPage = () => {
+const ActivityPage = ({ program = 'f-freedom' }) => {
   const { t } = useTranslation()
   const activityT = useCallback((key, fallback, options) => t(`activityPage.${key}`, fallback, options), [t])
   const { isConnected, account, connect } = useWallet()
-  const { contracts, isLoading: contractsLoading, error: contractsError, loadContracts } = useContracts()
+  const { subjectAddress } = useSpace()
   const toast = useToast()
 
   const [activities, setActivities] = useState([])
   const [receipts, setReceipts] = useState([])
   const [levelActivations, setLevelActivations] = useState([])
-  const [registrationInfo, setRegistrationInfo] = useState(null)
   const [filter, setFilter] = useState('all')
   const [timeRange, setTimeRange] = useState('all')
   const [loading, setLoading] = useState(true)
+  const [activityError, setActivityError] = useState('')
   const [stats, setStats] = useState({
     totalRecords: 0,
     totalPayouts: 0,
@@ -35,6 +36,9 @@ const ActivityPage = () => {
   const [lastUpdated, setLastUpdated] = useState(new Date().toLocaleTimeString())
   const [activityVisibleCount, setActivityVisibleCount] = useState(ACTIVITY_PAGE_SIZE)
   const [receiptsVisibleCount, setReceiptsVisibleCount] = useState(RECEIPTS_PAGE_SIZE)
+
+  const isFreedomPlus = program === 'freedom-plus'
+  const targetWallet = subjectAddress || account || ''
 
   const normalizeUsdtAmount = useCallback((value) => {
     if (value === null || value === undefined || value === '') return 0
@@ -126,170 +130,209 @@ const ActivityPage = () => {
     }
   }
 
-  const fetchRegistrationInfo = useCallback(async () => {
-    if (!contracts || !account) return
+
+  const fetchSelectedProgramActivity = useCallback(async () => {
+    const targetWallet = subjectAddress || account
+    if (!targetWallet) return
+
+    setLoading(true)
+    setActivityError('')
 
     try {
-      const registered = await contracts.registration.isRegistered(account)
-      if (registered) {
-        const referrer = await contracts.registration.getReferrer(account)
-        setRegistrationInfo({
-          registered: true,
-          referrer: referrer !== ethers.ZeroAddress ? referrer : null,
-          timestamp: null,
+      const headers = await getProfileReadAuthIfLocked(targetWallet, account)
+
+      if (isFreedomPlus) {
+        if (!FREEDOM_PLUS_ENABLED) {
+          throw new Error('Freedom-Plus is not enabled in this environment.')
+        }
+
+        const result = await freedomPlusApi.participant(targetWallet, { headers })
+        const payments = result?.payments || []
+        const ledger = (result?.ledger || []).filter(
+          (entry) => !String(entry.category || '').toLowerCase().startsWith('nft_')
+        )
+        const activeLevels = (result?.levels || []).filter((item) => item.active)
+        const paymentActivities = payments.map((payment, index) => ({
+          id: 'freedom-plus-payment-' + (payment._id || payment.txHash + '-' + index),
+          type: 'payout',
+          title: 'Payment Received',
+          description: 'Level ' + payment.level + ', payout role ' + payment.role + (payment.id1Fallback ? ', ID1 fallback' : ''),
+          amount: normalizeUsdtAmount(payment.amount),
+          timestamp: normalizeTimestamp(payment.timestamp || payment.createdAt),
+          level: Number(payment.level || 0),
+          position: payment.sourcePosition,
+          cycle: payment.sourceCycle,
+          hash: payment.txHash,
+          status: 'completed',
+          program: 'freedom-plus',
+          raw: payment,
+        }))
+        const ledgerActivities = ledger.map((entry, index) => {
+          const category = String(entry.category || '').toLowerCase()
+          const type = category === 'fpt' || category === 'fptr'
+            ? 'receipt'
+            : category.includes('recycl') || category === 'cycle_close'
+              ? 'cycle'
+              : 'receipt'
+          return {
+            id: 'freedom-plus-ledger-' + (entry._id || entry.txHash + '-' + (entry.logIndex || index)),
+            type,
+            title: String(entry.eventName || 'Freedom-Plus Record').replaceAll('_', ' '),
+            description: (entry.level ? 'Level ' + entry.level + ' ' : '') + (category.replaceAll('_', ' ') || 'ledger record'),
+            amount: category === 'fpt' || category === 'fptr'
+              ? null
+              : normalizeUsdtAmount(entry.amount),
+            timestamp: normalizeTimestamp(entry.timestamp || entry.createdAt),
+            level: Number(entry.level || 0),
+            hash: entry.txHash,
+            status: 'completed',
+            program: 'freedom-plus',
+            raw: entry,
+          }
         })
-      } else {
-        setRegistrationInfo({ registered: false, referrer: null, timestamp: null })
-      }
-    } catch (err) {
-      console.error('Error fetching registration info:', err)
-      toast.warning(activityT('errors.registrationInfoFailed', 'Registration activity could not be refreshed.'), { dedupeKey: 'activity-registration-info-failed' })
-    }
-  }, [contracts, account, activityT, toast])
-
-  const fetchReceiptsAndActivities = useCallback(async () => {
-    if (!account) return
-
-    try {
-      const profileReadHeaders = await getProfileReadAuthIfLocked(account, account)
-      const [result, payoutResult, summaryResult] = await Promise.all([
-        fetchAddressReceiptsApi(account, undefined, { headers: profileReadHeaders }),
-        fetchAddressReceiptsApi(account, undefined, {
-          headers: profileReadHeaders,
-          query: { receiptType: 2, limit: 1 },
-        }),
-        fetchUserSummaryApi(account, { headers: profileReadHeaders }),
-      ])
-
-      const receiptsData = Array.isArray(result?.receipts)
-        ? result.receipts
-        : Array.isArray(result) ? result : []
-
-      const receiptActivities = receiptsData.map((receipt, index) => {
-        const normalizedAmount = normalizeUsdtAmount(
-          receipt.walletCreditedLiquid ??
-          receipt.liquidPaid ??
+        const activationActivities = activeLevels.map((item) => {
+          const timestamp = normalizeTimestamp(item.activatedAt || item.timestamp || item.updatedAt || item.createdAt)
+          return {
+            id: 'freedom-plus-activation-' + item.level,
+            type: 'activation',
+            title: 'Level ' + item.level + ' Activated',
+            description: 'Successfully activated Freedom-Plus Level ' + item.level,
+            amount: null,
+            level: Number(item.level),
+            timestamp,
+            pendingTimestamp: !timestamp,
+            hash: item.txHash || null,
+            status: 'completed',
+            program: 'freedom-plus',
+            raw: item,
+          }
+        })
+        const normalizedReceipts = payments.map((payment) => ({
+          ...payment,
+          receiptType: 2,
+          walletCreditedLiquid: payment.amount,
+          timestamp: payment.timestamp || payment.createdAt,
+          program: 'freedom-plus',
+        }))
+        const nextActivities = [...paymentActivities, ...activationActivities, ...ledgerActivities]
+          .sort((a, b) => (b.timestamp || 0) - (a.timestamp || 0))
+        const totalAmount = payments.reduce(
+          (sum, payment) => sum + normalizeUsdtAmount(payment.amount),
           0
         )
-        const normalizedTimestamp = normalizeTimestamp(receipt.timestamp || receipt.createdAt)
 
-        return {
-          id: `receipt-${receipt.activationId || 'x'}-${index}`,
-          type: receipt.receiptType === 2 ? 'payout' : 'receipt',
-          title: receipt.receiptType === 2 ? activityT('activity.payoutReceived', 'Payout Received') : activityT('activity.receiptRecorded', 'Receipt Recorded'),
-          description: receipt.sourcePosition
-            ? activityT(receipt.receiptType === 2 ? 'activity.earnedFromLevelPosition' : 'activity.recordedFromLevelPosition', '{{action}} from Level {{level}}, Position {{position}}', {
-              action: receipt.receiptType === 2 ? activityT('activity.earned', 'Earned') : activityT('activity.recorded', 'Recorded'),
-              level: receipt.level,
-              position: receipt.sourcePosition,
-            })
-            : activityT(receipt.receiptType === 2 ? 'activity.earnedFromLevel' : 'activity.recordedFromLevel', '{{action}} from Level {{level}}', {
-              action: receipt.receiptType === 2 ? activityT('activity.earned', 'Earned') : activityT('activity.recorded', 'Recorded'),
-              level: receipt.level,
-            }),
-          amount: normalizedAmount,
-          timestamp: normalizedTimestamp,
-          level: receipt.level,
-          position: receipt.sourcePosition,
-          cycle: receipt.sourceCycle,
-          hash: receipt.txHash || receipt.transactionHash || null,
-          status: 'completed',
-          raw: receipt,
-        }
-      })
-
-      setReceipts(receiptsData)
-
-      setActivities((prev) => {
-        const nonReceiptActivities = prev.filter((a) => a.type !== 'payout' && a.type !== 'receipt')
-        return [...nonReceiptActivities, ...receiptActivities].sort((a, b) => (b.timestamp || 0) - (a.timestamp || 0))
-      })
-
-      const totalReceipts = Number(result?.pagination?.total ?? receiptActivities.length)
-      const totalPayouts = Number(
-        payoutResult?.pagination?.total ?? receiptActivities.filter((a) => a.type === 'payout').length
-      )
-      const totalAmount = normalizeUsdtAmount(
-        summaryResult?.earnings?.walletCreditedLiquid ??
-        summaryResult?.earnings?.totalLiquid ??
-        0
-      )
-
-      setStats((prev) => ({
-        ...prev,
-        totalRecords: totalReceipts + (levelActivations?.length || 0),
-        totalPayouts,
-        totalAmount,
-      }))
-    } catch (err) {
-      console.error('Error fetching receipts:', err)
-      toast.warning(activityT('errors.receiptsFailed', 'Receipt activity could not be refreshed.'), { dedupeKey: 'activity-receipts-failed' })
-    }
-  }, [account, activityT, levelActivations?.length, normalizeTimestamp, normalizeUsdtAmount, toast])
-
-  const fetchLevelActivations = useCallback(async () => {
-    if (!contracts || !account) return;
-
-    try {
-      let orbitLevelsData = [];
-      try {
-        const profileReadHeaders = await getProfileReadAuthIfLocked(account, account)
-        const levelsResponse = await fetchOrbitLevelsApi(account, { headers: profileReadHeaders });
-        orbitLevelsData = levelsResponse?.levels || levelsResponse || [];
-      } catch (e) {
-        console.warn("Could not fetch orbit levels data");
-      }
-
-      const activations = [];
-      const activationActivities = [];
-
-      for (let level = 1; level <= 10; level += 1) {
-        const isActive = await contracts.registration.isLevelActivated(account, level);
-        
-        if (isActive) {
-          const levelData = orbitLevelsData.find(l => l.level === level);
-          
-          let realTimestamp = null;
-          if (levelData?.activatedAt || levelData?.timestamp || levelData?.createdAt) {
-            realTimestamp = normalizeTimestamp(
-              levelData.activatedAt || levelData.timestamp || levelData.createdAt
-            );
+        setActivities(nextActivities)
+        setReceipts(normalizedReceipts)
+        setLevelActivations(activeLevels.map((item) => ({
+          level: Number(item.level),
+          activated: true,
+        })))
+        setStats({
+          totalRecords: nextActivities.length,
+          totalPayouts: payments.length,
+          totalAmount,
+          activationCount: activeLevels.length,
+        })
+      } else {
+        const [result, payoutResult, summaryResult, levelsResponse] = await Promise.all([
+          fetchAddressReceiptsApi(targetWallet, undefined, { headers }),
+          fetchAddressReceiptsApi(targetWallet, undefined, {
+            headers,
+            query: { receiptType: 2, limit: 1 },
+          }),
+          fetchUserSummaryApi(targetWallet, { headers }),
+          fetchOrbitLevelsApi(targetWallet, { headers }),
+        ])
+        const receiptsData = Array.isArray(result?.receipts)
+          ? result.receipts
+          : Array.isArray(result) ? result : []
+        const indexedLevels = Array.isArray(levelsResponse?.levels)
+          ? levelsResponse.levels
+          : Array.isArray(levelsResponse) ? levelsResponse : []
+        const activeLevels = indexedLevels
+          .map((item) => Number(typeof item === 'object' ? item.level : item))
+          .filter((level) => Number.isInteger(level) && level >= 1 && level <= 10)
+        const receiptActivities = receiptsData.map((receipt, index) => {
+          const isPayout = Number(receipt.receiptType) === 2
+          return {
+            id: 'receipt-' + (receipt.activationId || 'x') + '-' + index,
+            type: isPayout ? 'payout' : 'receipt',
+            title: isPayout
+              ? activityT('activity.payoutReceived', 'Payout Received')
+              : activityT('activity.receiptRecorded', 'Receipt Recorded'),
+            description: receipt.sourcePosition
+              ? activityT('activity.fromLevelPosition', 'Level {{level}}, Position {{position}}', {
+                  level: receipt.level,
+                  position: receipt.sourcePosition,
+                })
+              : activityT('activity.fromLevel', 'Level {{level}} record', { level: receipt.level }),
+            amount: normalizeUsdtAmount(receipt.walletCreditedLiquid ?? receipt.liquidPaid ?? 0),
+            timestamp: normalizeTimestamp(receipt.timestamp || receipt.createdAt),
+            level: receipt.level,
+            position: receipt.sourcePosition,
+            cycle: receipt.sourceCycle,
+            hash: receipt.txHash || receipt.transactionHash || null,
+            status: 'completed',
+            program: 'f-freedom',
+            raw: receipt,
           }
-
-          activations.push({ 
-            level, 
-            activated: true, 
-            timestamp: realTimestamp 
-          });
-
-          activationActivities.push({
-            id: `activation-${level}`,
+        })
+        const activationActivities = activeLevels.map((level) => {
+          const levelData = indexedLevels.find((item) => Number(item?.level || item) === level)
+          const timestamp = normalizeTimestamp(
+            levelData?.activatedAt || levelData?.timestamp || levelData?.createdAt
+          )
+          return {
+            id: 'activation-' + level,
             type: 'activation',
             title: activityT('activity.levelActivated', 'Level {{level}} Activated', { level }),
             description: activityT('activity.levelActivatedDescription', 'Successfully activated Level {{level}}', { level }),
             amount: null,
-            level: level,
-            timestamp: realTimestamp,
-            pendingTimestamp: !realTimestamp,
+            level,
+            timestamp,
+            pendingTimestamp: !timestamp,
             status: 'completed',
-          });
-        }
+            program: 'f-freedom',
+          }
+        })
+        const nextActivities = [...receiptActivities, ...activationActivities]
+          .sort((a, b) => (b.timestamp || 0) - (a.timestamp || 0))
+
+        setActivities(nextActivities)
+        setReceipts(receiptsData.map((receipt) => ({ ...receipt, program: 'f-freedom' })))
+        setLevelActivations(activeLevels.map((level) => ({ level, activated: true })))
+        setStats({
+          totalRecords: Number(result?.pagination?.total ?? receiptsData.length) + activeLevels.length,
+          totalPayouts: Number(
+            payoutResult?.pagination?.total ?? receiptActivities.filter((item) => item.type === 'payout').length
+          ),
+          totalAmount: normalizeUsdtAmount(
+            summaryResult?.earnings?.walletCreditedLiquid ??
+            summaryResult?.earnings?.totalLiquid ??
+            0
+          ),
+          activationCount: activeLevels.length,
+        })
       }
 
-      setLevelActivations(activations);
-
-      setActivities((prev) => {
-        const nonActivation = prev.filter(a => a.type !== 'activation');
-        return [...nonActivation, ...activationActivities]
-          .sort((a, b) => (b.timestamp || 0) - (a.timestamp || 0));
-      });
-
-      setStats(prev => ({ ...prev, activationCount: activations.length }));
-    } catch (err) {
-      console.error('Error fetching level activations:', err);
-      toast.warning(activityT('errors.levelsFailed', 'Level activation history could not be refreshed.'), { dedupeKey: 'activity-levels-failed' })
+      setLastUpdated(new Date().toLocaleTimeString())
+    } catch (error) {
+      console.error('Error fetching activity:', error)
+      const message = error?.message || activityT('errors.historyFailed', 'Activity history could not be refreshed.')
+      setActivityError(message)
+      toast.warning(message, { dedupeKey: 'activity-selected-program-failed' })
+    } finally {
+      setLoading(false)
     }
-  }, [contracts, account, activityT, normalizeTimestamp, toast]);
+  }, [
+    subjectAddress,
+    account,
+    isFreedomPlus,
+    activityT,
+    normalizeTimestamp,
+    normalizeUsdtAmount,
+    toast,
+  ])
 
   const getFilteredActivities = useCallback(() => {
     let filtered = [...activities]
@@ -311,35 +354,11 @@ const ActivityPage = () => {
   }, [activities, filter, timeRange, normalizeTimestamp])
 
   useEffect(() => {
-    if (isConnected) {
-      loadContracts().catch(console.error)
-    }
-  }, [isConnected, loadContracts])
-
-  useEffect(() => {
-    if (contracts && account) {
-      const loadData = async () => {
-        setLoading(true)
-        await Promise.all([
-          fetchRegistrationInfo(),
-          fetchReceiptsAndActivities(),
-          fetchLevelActivations(),
-        ])
-        setLoading(false)
-        setLastUpdated(new Date().toLocaleTimeString())
-      }
-      loadData()
-    }
-  }, [contracts, account, fetchRegistrationInfo, fetchReceiptsAndActivities, fetchLevelActivations])
-
-  useEffect(() => {
-    if (!contracts || !account) return
-    const interval = setInterval(() => {
-      fetchReceiptsAndActivities()
-      setLastUpdated(new Date().toLocaleTimeString())
-    }, 30000)
+    if (!isConnected || !targetWallet) return undefined
+    fetchSelectedProgramActivity()
+    const interval = setInterval(fetchSelectedProgramActivity, 60000)
     return () => clearInterval(interval)
-  }, [contracts, account, fetchReceiptsAndActivities])
+  }, [isConnected, targetWallet, fetchSelectedProgramActivity])
 
   const filteredActivities = useMemo(() => getFilteredActivities(), [getFilteredActivities])
   const visibleActivities = filteredActivities.slice(0, activityVisibleCount)
@@ -349,7 +368,8 @@ const ActivityPage = () => {
 
   useEffect(() => {
     setActivityVisibleCount(ACTIVITY_PAGE_SIZE)
-  }, [filter, timeRange])
+    setReceiptsVisibleCount(RECEIPTS_PAGE_SIZE)
+  }, [filter, timeRange, program, targetWallet])
 
   const exportJson = () => {
     const data = JSON.stringify(activities, null, 2)
@@ -357,7 +377,7 @@ const ActivityPage = () => {
     const url = URL.createObjectURL(blob)
     const a = document.createElement('a')
     a.href = url
-    a.download = `ffn-activity-${new Date().toISOString().split('T')[0]}.json`
+    a.download = `ffn-${program}-activity-${new Date().toISOString().split('T')[0]}.json`
     a.click()
     URL.revokeObjectURL(url)
     toast.success(activityT('export.jsonReady', 'JSON activity export downloaded.'), { dedupeKey: 'activity-export-json' })
@@ -387,7 +407,7 @@ const ActivityPage = () => {
     const url = URL.createObjectURL(blob)
     const a = document.createElement('a')
     a.href = url
-    a.download = `ffn-activity-${new Date().toISOString().split('T')[0]}.csv`
+    a.download = `ffn-${program}-activity-${new Date().toISOString().split('T')[0]}.csv`
     a.click()
     URL.revokeObjectURL(url)
     toast.success(activityT('export.csvReady', 'CSV activity export downloaded.'), { dedupeKey: 'activity-export-csv' })
@@ -423,7 +443,7 @@ const ActivityPage = () => {
     )
   }
 
-  if (contractsLoading || loading) {
+  if (loading) {
     return (
       <section className="activity-page">
         <div className="loading-container">
@@ -451,8 +471,13 @@ const ActivityPage = () => {
               {activityT('hero.description', 'Review your recent actions, transaction history, payouts, activation records, and timeline events from one organized log.')}
             </p>
             <div className="small muted-text">{activityT('hero.lastUpdated', 'Last updated: {{time}}', { time: lastUpdated })}</div>
-            <div className="small muted-text">{activityT('hero.wallet', 'Wallet: {{address}}', { address: `${account.slice(0, 8)}...${account.slice(-6)}` })}</div>
-            {contractsError ? <div className="activity-inline-error">{contractsError}</div> : null}
+            <div className="small muted-text">{activityT('hero.wallet', 'Wallet: {{address}}', { address: `${targetWallet.slice(0, 8)}...${targetWallet.slice(-6)}` })}</div>
+            {activityError ? (
+              <div className="activity-inline-error" role="alert">
+                <span>{activityError}</span>
+                <button type="button" onClick={fetchSelectedProgramActivity}>Retry</button>
+              </div>
+            ) : null}
           </div>
 
           <div className="activity-hero__chips">
@@ -519,6 +544,7 @@ const ActivityPage = () => {
                   <div key={activity.id || idx} className="activity-feed__item glass-panel">
                     <div className={`activity-feed__icon ${getActivityTone(activity.type)}`}>{getActivityIcon(activity.type)}</div>
                     <div className="activity-feed__content">
+                      <span className={`activity-program-badge activity-program-badge--${activity.program || 'f-freedom'}`}>{activity.program === 'freedom-plus' ? 'Freedom-Plus' : 'F-Freedom'}</span>
                       <h3 className="activity-feed__title">{activity.title}</h3>
                       <p className="activity-feed__text soft-text">
                         {activity.description}
@@ -649,7 +675,7 @@ const ActivityPage = () => {
               <div className="merged-levels">
                 <div className="merged-subheading">{activityT('progress.activationProgress', 'Your Activation Progress')}</div>
                 <div className="levels-grid">
-                  {[1, 2, 3, 4, 5, 6, 7, 8, 9, 10].map((level) => {
+                  {Array.from({ length: isFreedomPlus ? 7 : 10 }, (_, index) => index + 1).map((level) => {
                     const isActive = levelActivations.some((a) => a.level === level);
                     return (
                       <div key={level} className={`level-badge ${isActive ? 'active' : 'inactive'}`}>

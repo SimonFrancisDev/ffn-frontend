@@ -102,3 +102,14 @@
     flex-direction: column;
   }
 }
+
+.ffn-notification-item__image {
+  display: block;
+  width: min(100%, 520px);
+  max-height: 280px;
+  margin: 10px 0;
+  border: 1px solid var(--border-subtle);
+  border-radius: 6px;
+  object-fit: contain;
+  background: var(--surface-muted);
+}

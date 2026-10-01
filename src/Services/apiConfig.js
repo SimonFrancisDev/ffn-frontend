@@ -2,7 +2,7 @@ const rawApiBaseUrl = import.meta.env.VITE_API_BASE_URL || ''
 
 export const API_BASE_URL = rawApiBaseUrl.replace(/\/$/, '')
 
-if (!API_BASE_URL) {
+if (!API_BASE_URL && import.meta.env.PROD) {
   console.error('[API] Missing VITE_API_BASE_URL environment variable')
 }
 

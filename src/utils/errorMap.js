@@ -1,5 +1,29 @@
 const KNOWN_ERROR_PATTERNS = [
   {
+    test: /endpoint not found|endpoint.*unavailable|ssl protocol|failed to fetch|network detection|could not detect network/i,
+    title: 'Blockchain connection unavailable',
+    message: 'The configured blockchain connection could not submit or verify this request.',
+    action: 'Do not submit again until the connection recovers. Refresh once and check your wallet activity for a pending transaction.',
+  },
+  {
+    test: /PermanentSponsorMismatch|permanent sponsor/i,
+    title: 'Permanent sponsor mismatch',
+    message: 'The sponsor does not match the permanent sponsor inherited from F-Freedom.',
+    action: 'Refresh your FFN identity and retry without changing the sponsor.',
+  },
+  {
+    test: /AlreadyRegistered/i,
+    title: 'Already registered',
+    message: 'This wallet is already registered in Freedom-Plus.',
+    action: 'Refresh the page to load the confirmed registration and active levels.',
+  },
+  {
+    test: /NotRegistered|FFreedomLevelOneInactive|FFreedomGatewayNotConfigured/i,
+    title: 'F-Freedom gateway required',
+    message: 'This wallet must be registered with F-Freedom Level 1 active before joining Freedom-Plus.',
+    action: 'Complete or refresh the F-Freedom Level 1 gateway state, then retry.',
+  },
+  {
     test: /user rejected|user denied|rejected transaction/i,
     title: 'Action cancelled',
     message: 'The wallet request was cancelled before it was submitted.',
@@ -64,6 +88,18 @@ const KNOWN_ERROR_PATTERNS = [
     title: 'Orbit position unavailable',
     message: 'The selected orbit position cannot accept this activation.',
     action: 'Refresh orbit data and try again.',
+  },
+  {
+    test: /InvalidLinePayment|0x039a7cf2/i,
+    title: 'Founder representative activation needs upgrade',
+    message: 'This free activation reached an older orbit rule that cannot process the founder representative placement.',
+    action: 'Use the staged contract upgrade flow before retrying this activation.',
+  },
+  {
+    test: /Tx failed/i,
+    title: 'Governance target rejected execution',
+    message: 'The multisig was ready, but the target contract rejected the call.',
+    action: 'Check Guardian approval, timelock, proxy, implementation, and target contract state before executing again.',
   },
   {
     test: /SettlementRouterCallFailed|TokenRewardFailed/i,

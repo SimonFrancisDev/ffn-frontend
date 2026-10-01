@@ -1,10 +1,13 @@
 import './DashboardPage.css'
-import { useEffect, useState, useCallback, useMemo } from 'react'
+import { useEffect, useState, useCallback, useMemo, useRef } from 'react'
 import { useTranslation } from 'react-i18next'
 import { useWallet } from '../../hooks/useWallet'
 import { getApiUrl } from '../../Services/apiConfig'
 import { getProfileReadAuthIfLocked } from '../../Services/profilePrivacyApi'
 import { useToast } from '../../components/feedback'
+import { useSpace } from '../../context/SpaceContext'
+import { MetricSparkline } from '../../components/charts/InstitutionalCharts'
+import { FREEDOM_PLUS_ADDRESSES, freedomPlusApi } from '../../Services/freedomPlus'
 import { CONTRACT_ADDRESSES, NETWORK_CONFIG } from '../../constants/addresses'
 import {
   Activity,
@@ -29,24 +32,6 @@ const formatNumber = (value, decimals = 2) => {
   return num.toLocaleString(undefined, {
     minimumFractionDigits: decimals,
     maximumFractionDigits: decimals,
-  })
-}
-
-const shortenAddress = (value) => {
-  if (!value) return 'Unavailable'
-  return `${value.slice(0, 6)}...${value.slice(-4)}`
-}
-
-const formatDisplayDate = (value) => {
-  if (!value) return '-'
-
-  const date = new Date(value)
-  if (Number.isNaN(date.getTime())) return String(value)
-
-  return date.toLocaleDateString(undefined, {
-    year: 'numeric',
-    month: 'short',
-    day: 'numeric',
   })
 }
 
@@ -398,86 +383,35 @@ const AnimatedNumber = ({ value = 0, decimals = 0, prefix = '', suffix = '' }) =
 const DashboardLineChart = ({ series = [] }) => {
   const { t } = useTranslation()
 
-  if (!Array.isArray(series) || series.length === 0) {
-    return (
-      <div className="dashboard-progress__placeholder">
-        <span className="soft-text">{t('dashboardPage.chart.initializing', 'Growth data initializing...')}</span>
-      </div>
-    )
-  }
-
-  const points = series.slice(-7)
-  const values = points.map((item) => Number(item.registrations || 0))
-  const max = Math.max(...values, 1)
-  const width = 100
-  const height = 84
-  const stepX = points.length > 1 ? width / (points.length - 1) : width
-
-  const coordinates = points.map((item, index) => {
-    const value = Number(item.registrations || 0)
-    const x = points.length === 1 ? width / 2 : index * stepX
-    const y = height - (value / max) * (height - 10)
-    return { x, y, value, date: item.date }
-  })
-
-  const polylinePoints = coordinates.map((point) => `${point.x},${point.y}`).join(' ')
-
   return (
-    <div className="dashboard-line-chart">
-      <div className="dashboard-line-chart__svg-wrap">
-        <svg
-          viewBox={`0 0 ${width} ${height}`}
-          preserveAspectRatio="none"
-          className="dashboard-line-chart__svg"
-          aria-hidden="true"
-        >
-          <line x1="0" y1={height} x2={width} y2={height} className="dashboard-line-chart__axis" />
-          <polyline
-            fill="none"
-            stroke="var(--glow-blue)"
-            strokeWidth="5"
-            opacity="0.12"
-            points={polylinePoints}
-            className="dashboard-line-chart__pulse-glow"
-          />
-          <polyline
-            fill="none"
-            stroke="var(--glow-blue)"
-            strokeWidth="1.6"
-            strokeLinejoin="round"
-            strokeLinecap="round"
-            points={polylinePoints}
-            className="dashboard-line-chart__pulse-line"
-          />
-        </svg>
-      </div>
-
-      <div className="dashboard-line-chart__labels">
-        {points.map((item, index) => (
-          <div key={`${item.date || index}-${index}`} className="dashboard-line-chart__label-item">
-            <span className="dashboard-line-chart__label-text">
-              {item.date ? item.date.slice(5) : `#${index + 1}`}
-            </span>
-            <span className="dashboard-line-chart__label-value">
-              {Number(item.registrations || 0)}
-            </span>
-          </div>
-        ))}
-      </div>
-    </div>
+    <MetricSparkline
+      data={Array.isArray(series) ? series.slice(-7) : []}
+      valueKey="registrations"
+      labelKey="date"
+      emptyLabel={t('dashboardPage.chart.initializing', 'Growth data initializing...')}
+      ariaLabel={t('dashboardPage.chart.ariaLabel', 'Seven day registration trend')}
+    />
   )
 }
 
-const DashboardPage = () => {
+const DashboardPage = ({ program = 'f-freedom' }) => {
   const { t } = useTranslation()
   const dashboardT = useCallback((key, fallback, options) => t(`dashboardPage.${key}`, fallback, options), [t])
   const { isConnected, account } = useWallet()
+  const { subjectAddress } = useSpace()
   const toast = useToast()
+  const toastRef = useRef(toast)
+  toastRef.current = toast
+  const isFreedomPlus = program === 'freedom-plus'
+  const targetWallet = subjectAddress || account || ''
+  const programName = isFreedomPlus ? 'Freedom-Plus' : 'F-Freedom'
+  const activationPath = isFreedomPlus ? '/freedom-plus/activation' : '/activation'
+  const programInfoPath = isFreedomPlus ? '/freedom-plus' : '/f-freedom-program'
 
   const [loading, setLoading] = useState(true)
   const [isRefreshing, setIsRefreshing] = useState(false)
   const [lastUpdated, setLastUpdated] = useState(new Date())
-  const [error, setError] = useState(null)
+  const [, setError] = useState(null)
   const [accessError, setAccessError] = useState('')
 
   const [isCheckingRegistration, setIsCheckingRegistration] = useState(true)
@@ -522,6 +456,23 @@ const DashboardPage = () => {
   const [announcements, setAnnouncements] = useState([])
 
   const contractDirectory = useMemo(() => {
+    if (isFreedomPlus) {
+      return [
+        ['registration', 'Registration Contract', FREEDOM_PLUS_ADDRESSES.registration, 'Manages Freedom-Plus registration and inherited sponsor identity.'],
+        ['level-manager', 'Level Manager', FREEDOM_PLUS_ADDRESSES.levelManager, 'Controls seven-level sequential activation and settlement.'],
+        ['p39', 'P39 Orbit', FREEDOM_PLUS_ADDRESSES.p39Orbit, 'Freedom-Plus P39 placement engine.'],
+        ['p14', 'P14 Orbit', FREEDOM_PLUS_ADDRESSES.p14Orbit, 'Freedom-Plus P14 placement engine.'],
+        ['p12', 'P12 Orbit', FREEDOM_PLUS_ADDRESSES.p12Orbit, 'Freedom-Plus P12 placement engine.'],
+        ['p6', 'P6 Orbit', FREEDOM_PLUS_ADDRESSES.p6Orbit, 'Freedom-Plus P6 placement engine.'],
+        ['p4', 'P4 Orbit', FREEDOM_PLUS_ADDRESSES.p4Orbit, 'Freedom-Plus P4 placement engine.'],
+        ['p3', 'P3 Orbit', FREEDOM_PLUS_ADDRESSES.p3Orbit, 'Freedom-Plus P3 placement engine.'],
+        ['fpt', 'FPT Token', FREEDOM_PLUS_ADDRESSES.fpt, 'Freedom-Plus first-activation token.'],
+        ['fptr', 'FPTr Token', FREEDOM_PLUS_ADDRESSES.fptr, 'Freedom-Plus recycle token.'],
+      ].filter((item) => item[2]).map(([key, label, address, note]) => ({
+        key, label, address, note, href: `${EXPLORER_ADDRESS_BASE}/${address}`,
+      }))
+    }
+
     return [
       {
         key: 'registration',
@@ -563,7 +514,7 @@ const DashboardPage = () => {
       ...item,
       href: item.address ? `${EXPLORER_ADDRESS_BASE}/${item.address}` : '#',
     }))
-  }, [dashboardT])
+  }, [dashboardT, isFreedomPlus])
 
   const statusT = useCallback((status) => {
     const statusKey = SYSTEM_STATUS_KEYS[status]
@@ -571,7 +522,7 @@ const DashboardPage = () => {
   }, [dashboardT])
 
   const fetchMemberSummary = useCallback(async () => {
-    if (!account) {
+    if (!targetWallet) {
       setIsCheckingRegistration(false)
       setMemberSummary((prev) => ({ ...prev, isRegistered: false }))
       setAccessError('')
@@ -582,8 +533,8 @@ const DashboardPage = () => {
     setAccessError('')
 
     try {
-      const profileReadHeaders = await getProfileReadAuthIfLocked(account, account)
-      const payload = await fetchJson(`/api/community/member/${account}/summary`, { headers: profileReadHeaders })
+      const profileReadHeaders = await getProfileReadAuthIfLocked(targetWallet, account)
+      const payload = await fetchJson(`/api/community/member/${targetWallet}/summary`, { headers: profileReadHeaders })
       const data = payload?.data || {}
 
       setMemberSummary({
@@ -603,12 +554,12 @@ const DashboardPage = () => {
       console.error('Failed to verify dashboard access:', err)
       const message = err?.message || dashboardT('errors.accessFailed', 'Dashboard access could not be verified.')
       setAccessError(message)
-      toast.warning(message, { dedupeKey: 'dashboard-access-check-failed' })
+      toastRef.current.warning(message, { dedupeKey: 'dashboard-access-check-failed' })
       setMemberSummary((prev) => ({ ...prev, isRegistered: false }))
     } finally {
       setIsCheckingRegistration(false)
     }
-  }, [account, dashboardT, toast])
+  }, [targetWallet, account, dashboardT])
 
   const fetchCommunityStats = useCallback(async () => {
     const payload = await fetchJson('/api/community/stats')
@@ -754,13 +705,101 @@ const DashboardPage = () => {
     }
   }, [])
 
+
+  const fetchFreedomPlusDashboard = useCallback(async () => {
+    if (!targetWallet) return
+    const headers = await getProfileReadAuthIfLocked(targetWallet, account)
+    const data = await freedomPlusApi.dashboard(targetWallet, { headers })
+    const profile = data?.profile || {}
+    const participant = profile?.participant || {}
+    const levels = (profile?.levels || []).filter((item) => item.active)
+    const totals = data?.totals || {}
+    const toUnits = (raw) => Number(raw || 0) / 1_000_000
+    const walletCredited = toUnits(totals.walletCreditedRaw)
+    const systemCharges = toUnits(totals.systemChargesRaw)
+    const nftInflow = toUnits(totals.nftInflowRaw)
+    const nftDistributed = toUnits(totals.nftDistributedRaw)
+    const sync = data?.sync || []
+    const hasSyncError = sync.some((item) => item.status === 'error')
+    const latestBlock = sync.reduce((max, item) => Math.max(max, Number(item.lastProcessedBlock || 0)), 0)
+
+    setMemberSummary({
+      isRegistered: Boolean(participant.registered),
+      isProtocolId1Wallet: Boolean(profile?.gateway?.isId1),
+      referrer: participant.sponsor || '',
+      highestActiveLevel: levels.reduce((max, item) => Math.max(max, Number(item.level || 0)), 0),
+      activeLevelsCount: levels.length,
+      totalReceiptEarnings: String(toUnits((profile?.payments || []).reduce(
+        (sum, item) => sum + BigInt(item.amount || 0), 0n
+      ))),
+      fgtTotal: '0.00',
+      fgtrTotal: '0.00',
+    })
+    setTotalParticipants(Number(totals.participants || 0))
+    setCommunityStats({
+      ...emptyCommunityStats,
+      totalUsers: Number(totals.participants || 0),
+      totalReceipts: Number(totals.paymentComponents || 0),
+      totalWalletCreditedPayouts: String(walletCredited),
+      walletCreditedLiquid: String(walletCredited),
+      totalGeneratedVolume: String(walletCredited + systemCharges),
+      totalProtocolDistributedValue: String(walletCredited + systemCharges),
+      currentEscrowLocked: '0.00',
+      nftPoolAllocated: String(nftInflow),
+      nftPoolDistributed: String(nftDistributed),
+      nftPoolLiveBalance: String(Math.max(0, nftInflow - nftDistributed)),
+      operationsAllocated: String(systemCharges),
+      operationsLiveBalance: String(systemCharges),
+      nftRewardPool: {
+        totalInflow: String(nftInflow),
+        totalDistributed: String(nftDistributed),
+        currentBalance: String(Math.max(0, nftInflow - nftDistributed)),
+      },
+      devOperations: {
+        totalInflow: String(systemCharges),
+        totalUtilized: '0.00',
+        currentBalance: String(systemCharges),
+      },
+    })
+    setIndexedTreasury((prev) => ({
+      ...prev,
+      totalWalletCreditedPayouts: String(walletCredited),
+      totalGeneratedVolume: String(walletCredited + systemCharges),
+      totalProtocolDistributedValue: String(walletCredited + systemCharges),
+      currentEscrowLocked: '0.00',
+      nftPool: String(Math.max(0, nftInflow - nftDistributed)),
+      operations: String(systemCharges),
+    }))
+    setPublicSummary({
+      totalParticipants: Number(totals.participants || 0),
+      visibleCoreBalanceUsdt: String(walletCredited + systemCharges),
+      readLayerStatus: hasSyncError ? 'Degraded' : 'Live',
+    })
+    setGrowthData({ series: data?.growth || [], rangeDays: 7 })
+    setAnnouncements((data?.recentEvents || []).map((item) => ({
+      _id: item._id || item.txHash + '-' + item.blockNumber,
+      title: String(item.eventName || 'Freedom-Plus event').replaceAll('_', ' '),
+      content: 'Freedom-Plus indexed event at block ' + item.blockNumber,
+      createdAt: item.timestamp,
+      txHash: item.txHash,
+    })))
+    setSystemHealth({
+      contracts: data?.enabled ? 'Healthy' : 'Degraded',
+      network: 'Connected',
+      sync: hasSyncError ? 'Degraded' : 'Live',
+      indexerStatus: hasSyncError ? 'error' : 'idle',
+      latestBlock,
+      lastSyncedBlock: latestBlock,
+    })
+  }, [targetWallet, account])
+
   const refreshAllData = useCallback(async ({ silent = false } = {}) => {
     if (!silent) {
       setIsRefreshing(true)
     }
 
     setError(null)
-    if (!account) {
+    if (!targetWallet) {
       setLoading(false)
       setIsCheckingRegistration(false)
       setIsRefreshing(false)
@@ -768,6 +807,12 @@ const DashboardPage = () => {
     }
 
     try {
+      if (isFreedomPlus) {
+        await fetchFreedomPlusDashboard()
+        if (!silent) toastRef.current.success('Freedom-Plus dashboard refreshed.', { dedupeKey: 'dashboard-refresh-success' })
+        setLastUpdated(new Date())
+        return
+      }
       const results = await Promise.allSettled([
         fetchMemberSummary(),
         fetchCommunityStats(),
@@ -783,9 +828,9 @@ const DashboardPage = () => {
         console.error('One or more dashboard requests failed:', results)
         const message = dashboardT('errors.refreshFailed', 'Some dashboard data could not be refreshed.')
         setError(message)
-        if (!silent) toast.warning(message, { dedupeKey: 'dashboard-refresh-partial-failed' })
+        if (!silent) toastRef.current.warning(message, { dedupeKey: 'dashboard-refresh-partial-failed' })
       } else if (!silent) {
-        toast.success(dashboardT('status.refreshed', 'Dashboard refreshed.'), { dedupeKey: 'dashboard-refresh-success' })
+        toastRef.current.success(dashboardT('status.refreshed', 'Dashboard refreshed.'), { dedupeKey: 'dashboard-refresh-success' })
       }
 
       setLastUpdated(new Date())
@@ -793,7 +838,7 @@ const DashboardPage = () => {
       console.error('Dashboard refresh failed:', err)
       const message = err?.message || dashboardT('errors.refreshFailed', 'Some dashboard data could not be refreshed.')
       setError(message)
-      if (!silent) toast.danger(message, { dedupeKey: 'dashboard-refresh-failed' })
+      if (!silent) toastRef.current.danger(message, { dedupeKey: 'dashboard-refresh-failed' })
     } finally {
       setLoading(false)
       setIsCheckingRegistration(false)
@@ -802,7 +847,9 @@ const DashboardPage = () => {
       }
     }
   }, [
-    account,
+    targetWallet,
+    isFreedomPlus,
+    fetchFreedomPlusDashboard,
     fetchAnnouncements,
     fetchCommunityStats,
     fetchCommunitySummary,
@@ -810,7 +857,6 @@ const DashboardPage = () => {
     fetchMemberSummary,
     fetchSystemHealth,
     dashboardT,
-    toast,
   ])
 
   const generateActivityFeed = useCallback(() => {
@@ -872,13 +918,13 @@ const DashboardPage = () => {
     setLoading(true)
     setAccessError('')
 
-    // Only run ONCE — no auto refresh
+    // Only run once - no auto refresh
     refreshAllData({ silent: false })
-  }, [isConnected, account])
+  }, [isConnected, account, targetWallet, program, refreshAllData])
 
   const activityFeed = useMemo(() => generateActivityFeed(), [generateActivityFeed])
   const timeSinceUpdate = useMemo(() => {
-    if (!lastUpdated) return '—'
+    if (!lastUpdated) return '-'
     const diffMs = new Date() - lastUpdated
     const diffMins = Math.floor(diffMs / 60000)
     if (diffMins < 1) return dashboardT('time.justNow', 'Just now')
@@ -895,18 +941,18 @@ const DashboardPage = () => {
         <div className="dashboard-access__card dashboard-surface">
           <span className="dashboard-access__eyebrow">{dashboardT('access.walletRequired.eyebrow', 'Wallet required')}</span>
 
-          <h1>{dashboardT('access.walletRequired.title', 'Connect your wallet to access the F-Freedom dashboard.')}</h1>
+          <h1>{dashboardT('access.walletRequired.title', 'Connect your wallet to access the ' + programName + ' dashboard.')}</h1>
 
           <p className="soft-text">
-            {dashboardT('access.walletRequired.text', 'This dashboard is reserved for registered F-Freedom Program participants. Connect your wallet first, then join or learn more about the program.')}
+            {dashboardT('access.walletRequired.text', 'This dashboard is reserved for registered ' + programName + ' participants. Connect your wallet first, then join or learn more about the program.')}
           </p>
 
           <div className="dashboard-access__actions">
-            <a href="/activation" className="dashboard-access__btn dashboard-access__btn--primary">
-              {dashboardT('access.actions.join', 'Join F-Freedom Program')}
+            <a href={activationPath} className="dashboard-access__btn dashboard-access__btn--primary">
+              {dashboardT('access.actions.join', 'Join ' + programName + ' Program')}
             </a>
 
-            <a href="/f-freedom-program" className="dashboard-access__btn dashboard-access__btn--ghost">
+            <a href={programInfoPath} className="dashboard-access__btn dashboard-access__btn--ghost">
               {dashboardT('access.actions.learn', 'Learn About the Program')}
             </a>
           </div>
@@ -920,7 +966,7 @@ const DashboardPage = () => {
       <section className="dashboard-page dashboard-access">
         <div className="dashboard-access__card dashboard-surface">
           <span className="dashboard-access__eyebrow">{dashboardT('access.checking.eyebrow', 'Checking access')}</span>
-          <h1>{dashboardT('access.checking.title', 'Verifying your F-Freedom registration...')}</h1>
+          <h1>{dashboardT('access.checking.title', 'Verifying your ' + programName + ' registration...')}</h1>
           <p className="soft-text">
             {dashboardT('access.checking.text', 'Reading your indexed member profile securely.')}
           </p>
@@ -956,7 +1002,7 @@ const DashboardPage = () => {
               {dashboardT('access.actions.retry', 'Retry Access Check')}
             </button>
 
-            <a href="/activation" className="dashboard-access__btn dashboard-access__btn--ghost">
+            <a href={activationPath} className="dashboard-access__btn dashboard-access__btn--ghost">
               {dashboardT('access.actions.openActivation', 'Open Activation Center')}
             </a>
           </div>
@@ -971,18 +1017,18 @@ const DashboardPage = () => {
         <div className="dashboard-access__card dashboard-surface">
           <span className="dashboard-access__eyebrow">{dashboardT('access.membersOnly.eyebrow', 'Registered members only')}</span>
 
-          <h1>{dashboardT('access.membersOnly.title', 'This dashboard is reserved for F-Freedom participants.')}</h1>
+          <h1>{dashboardT('access.membersOnly.title', 'This dashboard is reserved for ' + programName + ' participants.')}</h1>
 
           <p className="soft-text">
-            {dashboardT('access.membersOnly.text', 'Join the F-Freedom Program to unlock indexed dashboard insights, growth activity, treasury signals, participant visibility, and program-level intelligence.')}
+            {dashboardT('access.membersOnly.text', 'Join the ' + programName + ' Program to unlock indexed dashboard insights, growth activity, treasury signals, participant visibility, and program-level intelligence.')}
           </p>
 
           <div className="dashboard-access__actions">
-            <a href="/activation" className="dashboard-access__btn dashboard-access__btn--primary">
-              {dashboardT('access.actions.join', 'Join F-Freedom Program')}
+            <a href={activationPath} className="dashboard-access__btn dashboard-access__btn--primary">
+              {dashboardT('access.actions.join', 'Join ' + programName + ' Program')}
             </a>
 
-            <a href="/f-freedom-program" className="dashboard-access__btn dashboard-access__btn--ghost">
+            <a href={programInfoPath} className="dashboard-access__btn dashboard-access__btn--ghost">
               {dashboardT('access.actions.learn', 'Learn About the Program')}
             </a>
           </div>
@@ -997,13 +1043,13 @@ const DashboardPage = () => {
         <div className="dashboard-hero__content">
           <div className="dashboard-hero__eyebrow dashboard-surface dashboard-surface--chip">
             <span className="dashboard-hero__eyebrow-dot" />
-            <span className="dashboard-hero__eyebrow-text">{dashboardT('hero.eyebrow', 'F-Freedom Program Dashboard')}</span>
+            <span className="dashboard-hero__eyebrow-text">{isFreedomPlus ? 'Freedom-Plus Program Dashboard' : dashboardT('hero.eyebrow', 'F-Freedom Program Dashboard')}</span>
           </div>
 
           <div className="dashboard-hero__text-block">
-            <h1 className="dashboard-hero__title">{dashboardT('hero.title', 'F-Freedom Program Intelligence')}</h1>
+            <h1 className="dashboard-hero__title">{isFreedomPlus ? 'Freedom-Plus Program Intelligence' : dashboardT('hero.title', 'F-Freedom Program Intelligence')}</h1>
             <p className="dashboard-hero__description soft-text">
-              {dashboardT('hero.description', 'Indexed visibility into F-Freedom participation, receipts, growth activity, treasury signals, and ecosystem movement - without querying the blockchain from the frontend.')}
+              {isFreedomPlus ? 'Indexed visibility into Freedom-Plus participation, payments, growth, system charges, and ecosystem movement - without querying the blockchain from the frontend.' : dashboardT('hero.description', 'Indexed visibility into F-Freedom participation, receipts, growth activity, treasury signals, and ecosystem movement - without querying the blockchain from the frontend.')}
             </p>
           </div>
 
@@ -1077,7 +1123,7 @@ const DashboardPage = () => {
 
             <div className="dashboard-hero__mini-card dashboard-surface dashboard-surface--inner">
               <span className="dashboard-hero__mini-label soft-text">
-                <PiggyBank size={12} /> {dashboardT('overview.currentEscrow', 'Current Escrow')}
+                <PiggyBank size={12} /> {isFreedomPlus ? 'System Charges' : dashboardT('overview.currentEscrow', 'Current Escrow')}
               </span>
               <strong className="dashboard-hero__mini-value">
                 ${formatNumber(indexedTreasury.currentEscrowLocked)}
@@ -1105,7 +1151,7 @@ const DashboardPage = () => {
               <AnimatedNumber value={totalParticipants} decimals={0} suffix="+" />
             </strong>
             <small className="dashboard-stats__note soft-text">
-              {dashboardT('stats.registeredMembers.note', 'Indexed F-Freedom participants.')}
+              {isFreedomPlus ? 'Indexed Freedom-Plus participants.' : dashboardT('stats.registeredMembers.note', 'Indexed F-Freedom participants.')}
             </small>
           </div>
 
@@ -1130,12 +1176,12 @@ const DashboardPage = () => {
             <span className="dashboard-stats__icon">
               <PiggyBank size={20} className="text-glow-purple" />
             </span>
-            <span className="dashboard-stats__label soft-text">{dashboardT('stats.currentEscrow.label', 'Current Escrow Locked')}</span>
+            <span className="dashboard-stats__label soft-text">{isFreedomPlus ? 'Manual Progression' : dashboardT('stats.currentEscrow.label', 'Current Escrow Locked')}</span>
             <strong className="dashboard-stats__value dashboard-stats__value--animated">
               <AnimatedNumber value={communityStats.currentEscrowLocked} prefix="$" decimals={2} />
             </strong>
             <small className="dashboard-stats__note soft-text">
-              {dashboardT('stats.currentEscrow.note', 'Live indexed escrow still waiting for upgrade.')}
+              {isFreedomPlus ? 'Freedom-Plus levels use manual sequential activation.' : dashboardT('stats.currentEscrow.note', 'Live indexed escrow still waiting for upgrade.')}
             </small>
           </div>
 
@@ -1165,9 +1211,9 @@ const DashboardPage = () => {
             <span className="dashboard-stats__icon">
               <Activity size={20} className="text-glow-purple" />
             </span>
-            <span className="dashboard-stats__label soft-text">{dashboardT('stats.operations.accumulatedLabel', 'Operations Total Accumulated')}</span>
+            <span className="dashboard-stats__label soft-text">{isFreedomPlus ? 'Indexed System Charges' : dashboardT('stats.operations.label', 'Ecosystem Dev & Operations')}</span>
             <strong className="dashboard-stats__value dashboard-stats__value--animated">
-              <AnimatedNumber value={communityStats.devOperations?.totalInflow || communityStats.operationsAllocated} prefix="$" decimals={2} />
+              <AnimatedNumber value={communityStats.devOperations?.currentBalance || communityStats.operationsLiveBalance} prefix="$" decimals={2} />
             </strong>
             <div className="dashboard-stats__breakdown">
               <span>{dashboardT('stats.operations.totalInflow', 'Total Inflow')}: ${formatNumber(communityStats.devOperations?.totalInflow || communityStats.operationsAllocated, 2)}</span>
@@ -1175,7 +1221,7 @@ const DashboardPage = () => {
               <span>{dashboardT('stats.operations.currentBalance', 'Current Balance')}: ${formatNumber(communityStats.devOperations?.currentBalance || communityStats.operationsLiveBalance, 2)}</span>
             </div>
             <small className="dashboard-stats__note soft-text">
-              {dashboardT('stats.operations.note', 'Indexed Dev & Operations truth from the backend.')}
+              {isFreedomPlus ? 'Gross Freedom-Plus system charges recorded by the indexer.' : dashboardT('stats.operations.note', 'Indexed Dev & Operations truth from the backend.')}
             </small>
           </div>
         </div>
@@ -1209,7 +1255,7 @@ const DashboardPage = () => {
 
         <div className="dashboard-activity__list">
           {activityFeed.length > 0 ? (
-            activityFeed.map((item, index) => {
+            activityFeed.map((item) => {
               const Icon = item.icon
 
               return (
@@ -1260,7 +1306,7 @@ const DashboardPage = () => {
             </div>
 
             <div className="dashboard-contracts__grid">
-              {contractDirectory.map((item, index) => (
+              {contractDirectory.map((item) => (
                 <article
                   key={item.key}
                   className="dashboard-contracts__card dashboard-surface dashboard-surface--inner"

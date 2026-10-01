@@ -12,7 +12,6 @@ import {
 } from '../../Services/telegramApi'
 import { fetchNotificationPreferences, updateNotificationPreferences } from '../../Services/notificationsApi'
 import { fetchProfilePrivacy, updateProfilePrivacy } from '../../Services/profilePrivacyApi'
-import { clearAddressScopedOrbitsApiCache } from '../../Services/orbitsApi'
 import { useToast } from '../../components/feedback'
 import { web3Service } from '../../Services/web3'
 
@@ -58,6 +57,32 @@ const TIMEZONES = [
   'Asia/Kolkata',
   'Australia/Sydney',
 ]
+
+const WALLET_RETURN_ROUTE_KEY = 'finfreedom_wallet_return_route_v1'
+
+const setWalletReturnRoute = (action) => {
+  if (typeof window === 'undefined') return
+
+  try {
+    window.sessionStorage.setItem(WALLET_RETURN_ROUTE_KEY, JSON.stringify({
+      action,
+      path: '/preferences',
+      expiresAt: Date.now() + 2 * 60 * 1000,
+    }))
+  } catch {
+    // Session restoration is best-effort only.
+  }
+}
+
+const clearWalletReturnRoute = () => {
+  if (typeof window === 'undefined') return
+
+  try {
+    window.sessionStorage.removeItem(WALLET_RETURN_ROUTE_KEY)
+  } catch {
+    // Ignore storage failures.
+  }
+}
 
 const applyTheme = (theme) => {
   const resolved = theme === 'system'
@@ -222,6 +247,7 @@ const PreferencesPage = ({
     }
     const timestamp = Date.now()
     const message = buildTelegramWalletMessage(action, account, timestamp)
+    setWalletReturnRoute(action)
     const signature = await provider.request({
       method: 'personal_sign',
       params: [message, account],
@@ -262,6 +288,8 @@ const PreferencesPage = ({
     } catch (error) {
       setSaveStatus({ show: true, message: error.message, type: 'error' })
       toast.danger(error.message || preferencesT('notifications.telegramLinkFailed', 'Unable to start Telegram linking.'), { dedupeKey: 'preferences-telegram-link-failed' })
+    } finally {
+      clearWalletReturnRoute()
     }
   }, [account, language, preferencesT, signTelegramAction, toast])
 
@@ -277,6 +305,8 @@ const PreferencesPage = ({
     } catch (error) {
       setSaveStatus({ show: true, message: error.message, type: 'error' })
       toast.danger(error.message || preferencesT('notifications.telegramUnsubscribeFailed', 'Unable to unsubscribe Telegram alerts.'), { dedupeKey: 'preferences-telegram-unsubscribe-failed' })
+    } finally {
+      clearWalletReturnRoute()
     }
   }, [account, preferencesT, signTelegramAction, toast])
 
@@ -313,7 +343,6 @@ const PreferencesPage = ({
           const confirmed = await fetchProfilePrivacy(account).catch(() => privacy)
           setProfilePrivacy(confirmed)
           setSpaceVisibilityPreference(confirmed?.isLocked ? 'locked' : 'public')
-          clearAddressScopedOrbitsApiCache(account)
         }
       }
 

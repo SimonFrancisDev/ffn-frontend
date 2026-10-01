@@ -47,10 +47,10 @@ export function getCachedProfileWalletProof(walletAddress, action) {
 }
 
 export async function getProfileWalletProof(walletAddress, action, options = {}) {
-  const { interactive = true, forceFresh = false } = options
+  const { interactive = true } = options
   const normalizedWallet = getAddress(String(walletAddress || '').trim())
   const cacheKey = `${normalizedWallet.toLowerCase()}:${action}`
-  const cached = forceFresh ? null : getCachedProfileWalletProof(normalizedWallet, action)
+  const cached = getCachedProfileWalletProof(normalizedWallet, action)
 
   if (cached) return cached
   if (!interactive) return null
@@ -95,43 +95,23 @@ async function parseResponse(response) {
 }
 
 export async function fetchProfilePrivacy(address) {
-  const payload = await parseResponse(await fetch(getApiUrl(`/api/profile-privacy/${encodeURIComponent(address)}`), { cache: 'no-store' }))
+  const payload = await parseResponse(await fetch(getApiUrl(`/api/profile-privacy/${encodeURIComponent(address)}`)))
   return payload?.data || {}
 }
 
 export async function updateProfilePrivacy(address, isLocked) {
-  const routeBeforeSign =
-    typeof window !== 'undefined'
-      ? `${window.location.pathname}${window.location.search}${window.location.hash}`
-      : ''
-
-  if (typeof window !== 'undefined' && routeBeforeSign) {
-    window.sessionStorage.setItem('ffn_profile_privacy_return_route', routeBeforeSign)
-  }
-
-  try {
-    const proof = await getProfileWalletProof(address, PROFILE_PRIVACY_UPDATE_ACTION, { interactive: true, forceFresh: true })
-    const payload = await parseResponse(await fetch(getApiUrl(`/api/profile-privacy/${encodeURIComponent(address)}`), {
-      method: 'PATCH',
-      headers: { 'Content-Type': 'application/json' },
-      cache: 'no-store',
-      body: JSON.stringify({
-        isLocked,
-        walletAddress: address,
-        signature: proof.signature,
-        timestamp: proof.timestamp,
-      }),
-    }))
-    return payload?.data || {}
-  } finally {
-    if (typeof window !== 'undefined') {
-      const returnRoute = window.sessionStorage.getItem('ffn_profile_privacy_return_route')
-      if (returnRoute && `${window.location.pathname}${window.location.search}${window.location.hash}` !== returnRoute) {
-        window.history.replaceState(window.history.state, '', returnRoute)
-      }
-      window.sessionStorage.removeItem('ffn_profile_privacy_return_route')
-    }
-  }
+  const proof = await getProfileWalletProof(address, PROFILE_PRIVACY_UPDATE_ACTION, { interactive: true })
+  const payload = await parseResponse(await fetch(getApiUrl(`/api/profile-privacy/${encodeURIComponent(address)}`), {
+    method: 'PATCH',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({
+      isLocked,
+      walletAddress: address,
+      signature: proof.signature,
+      timestamp: proof.timestamp,
+    }),
+  }))
+  return payload?.data || {}
 }
 
 function getSessionStorageKey(walletAddress) {

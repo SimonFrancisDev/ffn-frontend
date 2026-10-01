@@ -3,26 +3,58 @@ import { useEffect, useState, useCallback, useMemo } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { useTranslation } from 'react-i18next'
 import { useWallet } from '../../hooks/useWallet'
-import { useContracts } from '../../hooks/useContracts'
 import { useSpace } from '../../context/SpaceContext'
 import { ethers } from 'ethers'
 import { fetchUserSummaryApi } from '../../Services/orbitsApi'
-import { getProfileReadAuthIfLocked, isProfileReadAuthError } from '../../Services/profilePrivacyApi'
+import { getProfileReadAuthIfLocked, isProfileReadAuthError, ProfileReadAuthError } from '../../Services/profilePrivacyApi'
 import { getApiUrl } from '../../Services/apiConfig'
 import { resolveIdentity } from '../../utils/identityResolver'
 import { NETWORK_CONFIG } from '../../constants/addresses'
 import { useToast } from '../../components/feedback'
+import { copyText } from '../../utils/clipboard'
+import { FREEDOM_PLUS_LEVELS, freedomPlusApi } from '../../Services/freedomPlus'
 import { 
   FaUserFriends, FaCoins, FaArrowRight, FaTelegram, 
   FaWhatsapp, FaWallet, FaShieldAlt, FaExternalLinkAlt, FaCopy 
 } from 'react-icons/fa'
 
-const AccountPage = () => {
+const AccountProfileSwitcher = ({
+  accountT,
+  isOwnSpace,
+  switchToSelf,
+  profileInput,
+  setProfileInput,
+  handleViewProfile,
+  profileError,
+}) => (
+  <div className="account-surface profile-switcher-box">
+    <div className="switcher-header">
+      <h3>{accountT('switcher.title', 'Explore Network Accounts')}</h3>
+      {!isOwnSpace && (
+        <button type="button" className="return-btn" onClick={switchToSelf}>
+          {accountT('actions.returnToMyAccount', 'Return to My Account')}
+        </button>
+      )}
+    </div>
+    <div className="switcher-input-group">
+      <input
+        value={profileInput}
+        onChange={(event) => setProfileInput(event.target.value)}
+        placeholder={accountT('switcher.placeholder', 'Wallet address or Referral ID')}
+      />
+      <button type="button" onClick={handleViewProfile}>
+        {accountT('actions.viewAccount', 'View Account')}
+      </button>
+    </div>
+    {profileError && <p className="error-text">{profileError}</p>}
+  </div>
+)
+
+const AccountPage = ({ program = 'f-freedom' }) => {
   const navigate = useNavigate()
   const { t } = useTranslation()
   const accountT = useCallback((key, fallback, options) => t(`accountPage.${key}`, fallback, options), [t])
-  const { isConnected, account, balance: polBalance, connect } = useWallet()
-  const { contracts, isLoading: contractsLoading } = useContracts()
+  const { isConnected, account, balance: polBalance } = useWallet()
   const { viewedAddress, isOwnSpace, switchToSelf, switchToVisitor } = useSpace()
   const toast = useToast()
 
@@ -45,6 +77,10 @@ const AccountPage = () => {
   const [showAllDirectReferrals, setShowAllDirectReferrals] = useState(false)
   const [profileLocked, setProfileLocked] = useState(false)
   const [profileLockedMessage, setProfileLockedMessage] = useState('')
+  const [freedomPlusData, setFreedomPlusData] = useState(null)
+  const [freedomPlusActivation, setFreedomPlusActivation] = useState(null)
+  const [freedomPlusLoading, setFreedomPlusLoading] = useState(false)
+  const [freedomPlusError, setFreedomPlusError] = useState('')
 
   // --- HELPERS ---
   const formatDisplay = useCallback((value) => {
@@ -67,14 +103,16 @@ const AccountPage = () => {
     return `${addr.slice(0, 8)}...${addr.slice(-6)}`
   }
 
+  const isFreedomPlus = program === 'freedom-plus'
   const isRegisteredAccount = useMemo(() => {
+    if (isFreedomPlus) return Boolean(freedomPlusData?.participant?.registered)
     return Boolean(
       summary?.isRegistered ||
       summary?.registration?.isRegistered ||
       summary?.earnings?.highestLevel > 0 ||
       summary?.activeLevels?.length > 0
     )
-  }, [summary])
+  }, [isFreedomPlus, freedomPlusData, summary])
 
   const isViewingConnectedWallet = useMemo(() => {
     try {
@@ -98,13 +136,13 @@ const AccountPage = () => {
       // Production Standard: One single source of truth for growth and tokens
       const [data, referralsPayload, downlinePayload, orbitNetworkPayload] = await Promise.all([
         fetchUserSummaryApi(resolvedAddress, { headers: profileReadHeaders }),
-        fetch(getApiUrl(`/api/community/member/${encodeURIComponent(resolvedAddress)}/referrals`), { headers: profileReadHeaders, cache: 'no-store' })
+        fetch(getApiUrl(`/api/community/member/${encodeURIComponent(resolvedAddress)}/referrals`), { headers: profileReadHeaders })
           .then((res) => res.json())
           .catch(() => null),
-        fetch(getApiUrl(`/api/community/member/${encodeURIComponent(resolvedAddress)}/downline`), { headers: profileReadHeaders, cache: 'no-store' })
+        fetch(getApiUrl(`/api/community/member/${encodeURIComponent(resolvedAddress)}/downline`), { headers: profileReadHeaders })
           .then((res) => res.json())
           .catch(() => null),
-        fetch(getApiUrl(`/api/community/member/${encodeURIComponent(resolvedAddress)}/orbit-network`), { headers: profileReadHeaders, cache: 'no-store' })
+        fetch(getApiUrl(`/api/community/member/${encodeURIComponent(resolvedAddress)}/orbit-network`), { headers: profileReadHeaders })
           .then((res) => res.json())
           .catch(() => null),
       ])
@@ -116,7 +154,11 @@ const AccountPage = () => {
         downlinePayload?.locked ||
         orbitNetworkPayload?.locked
 
-      if (lockedPayload && !isViewingConnectedWallet) {
+      if (lockedPayload) {
+        if (isViewingConnectedWallet) {
+          throw new ProfileReadAuthError(accountT('profile.ownerAuthFailed', 'Your locked profile needs wallet authorization before private data can be shown.'))
+        }
+
         const message =
           data?.message ||
           referralsPayload?.message ||
@@ -197,7 +239,7 @@ const AccountPage = () => {
         setReferralLink(data.fullLink || '')
         setReferredByCode(data.referredByCode || 'FIN-FREEDOM')
         setReferralAccessMessage('')
-      } catch (err) {
+      } catch {
         setReferralShortCode('')
         setReferralLink('')
         setReferredByCode('')
@@ -217,14 +259,54 @@ const AccountPage = () => {
     const interval = setInterval(fetchData, 60000) // 60s for performance
     return () => clearInterval(interval)
   }, [fetchData])
+  const fetchFreedomPlusData = useCallback(async () => {
+    if (!isFreedomPlus || !resolvedAddress) return
+    setFreedomPlusLoading(true)
+    setFreedomPlusError('')
+    try {
+      const headers = await getProfileReadAuthIfLocked(resolvedAddress, account)
+      const [participantData, activationData] = await Promise.all([
+        freedomPlusApi.participant(resolvedAddress, { headers }),
+        freedomPlusApi.activationSummary(resolvedAddress, { headers }),
+      ])
+      setFreedomPlusData(participantData)
+      setFreedomPlusActivation(activationData)
+      setLastUpdated(new Date().toLocaleTimeString())
+    } catch (err) {
+      const message = err?.message || accountT('errors.syncFailed', 'Account data could not be refreshed.')
+      setFreedomPlusError(message)
+      toast.warning(message, {
+        dedupeKey: 'account-freedom-plus-sync-failed',
+      })
+    } finally {
+      setFreedomPlusLoading(false)
+    }
+  }, [isFreedomPlus, resolvedAddress, account, accountT, toast])
 
-  const handleCopyLink = () => {
+  useEffect(() => {
+    fetchFreedomPlusData()
+    if (!isFreedomPlus) return undefined
+    const interval = setInterval(fetchFreedomPlusData, 60000)
+    return () => clearInterval(interval)
+  }, [fetchFreedomPlusData, isFreedomPlus])
+
+  const handleCopyLink = async () => {
     if (!referralLink) return
-
-    navigator.clipboard.writeText(referralLink)
+    const copied = await copyText(referralLink)
+    if (!copied) {
+      toast.danger(accountT('clipboard.copyFailed', 'Copy failed. Press and hold the link to copy it.'), { dedupeKey: 'account-referral-copy-failed' })
+      return
+    }
     setCopySuccess(true)
     toast.success(accountT('clipboard.referralCopied', 'Invitation link copied.'), { dedupeKey: 'account-referral-copied' })
     setTimeout(() => setCopySuccess(false), 2000)
+  }
+
+  const handleCopyId = async () => {
+    if (!referralShortCode) return
+    const copied = await copyText(referralShortCode)
+    if (copied) toast.success(accountT('clipboard.idCopied', 'FFN ID copied.'), { dedupeKey: 'account-referral-id-copied' })
+    else toast.danger(accountT('clipboard.copyFailed', 'Copy failed. Press and hold the ID to copy it.'), { dedupeKey: 'account-referral-copy-failed' })
   }
 
   const handleShare = (platform) => {
@@ -260,7 +342,7 @@ const AccountPage = () => {
       switchToVisitor?.(identity.walletAddress)
       setProfileInput('')
       toast.success(accountT('profile.viewingAccount', 'Viewing another account.'), { dedupeKey: 'account-profile-loaded' })
-    } catch (err) {
+    } catch {
       const message = accountT('errors.enterValidWalletOrReferral', 'Enter a valid wallet address or Referral ID')
       setProfileError(message)
       toast.danger(message, { dedupeKey: 'account-profile-invalid' })
@@ -273,13 +355,55 @@ const AccountPage = () => {
     toast.success(accountT('profile.viewingAccount', 'Viewing another account.'), { dedupeKey: `account-profile-loaded-${walletAddress}` })
   }, [accountT, switchToVisitor, toast])
 
+  const freedomPlusLevels = (freedomPlusData?.levels || []).filter((item) => item.active)
+  const freedomPlusPayments = freedomPlusData?.payments || []
+  const freedomPlusLedger = freedomPlusData?.ledger || []
+  const freedomPlusNumber = (value) => Number(ethers.formatUnits(value || 0, 6))
+  const freedomPlusLedgerTotal = (category) => freedomPlusLedger
+    .filter((item) => String(item.category || '').toLowerCase() === category)
+    .reduce((sum, item) => sum + freedomPlusNumber(item.amount), 0)
+  const freedomPlusPaymentTotal = freedomPlusPayments
+    .reduce((sum, item) => sum + freedomPlusNumber(item.amount), 0)
+  const freedomPlusActivationValue = freedomPlusLevels.reduce((sum, item) => {
+    const definition = FREEDOM_PLUS_LEVELS.find((level) => level.level === Number(item.level))
+    return sum + Number(definition?.price || 0)
+  }, 0)
+  const freedomPlusNextLevel = Math.min(freedomPlusLevels.length + 1, 7)
+  const freedomPlusNextDefinition = FREEDOM_PLUS_LEVELS.find((item) => (
+    item.level === freedomPlusNextLevel && freedomPlusLevels.length < 7
+  ))
+  const freedomPlusPaymentByLevel = new Map()
+  for (const payment of freedomPlusPayments) {
+    const level = Number(payment.level || 0)
+    const current = freedomPlusPaymentByLevel.get(level) || { amount: 0, count: 0 }
+    current.amount += freedomPlusNumber(payment.amount)
+    current.count += 1
+    freedomPlusPaymentByLevel.set(level, current)
+  }
+
+  const freedomPlusNetwork = freedomPlusData?.network || {}
+  const accountDirectReferrals = isFreedomPlus
+    ? (freedomPlusNetwork.directParticipants || []).map((item) => ({
+        user: item.wallet,
+        referralId: item.referralId || (item.participantNumber ? 'FP-' + item.participantNumber : ''),
+        shortCode: item.referralId || '',
+        blockNumber: item.registeredAtBlock,
+      }))
+    : directReferrals
   const visibleDirectReferrals = showAllDirectReferrals
-    ? directReferrals
-    : directReferrals.slice(0, 6)
+    ? accountDirectReferrals
+    : accountDirectReferrals.slice(0, 6)
+  const accountDownlineTotal = isFreedomPlus
+    ? Number(freedomPlusNetwork.totalTeam || 0)
+    : Number(downlineStats?.total || 0)
+  const orbitLevels = isFreedomPlus
+    ? Object.fromEntries((freedomPlusActivation?.orbitSummaries || []).map((item) => [
+        'level' + item.level,
+        { totalMembersAcrossCycles: item.filledPositions || 0 },
+      ]))
+    : (orbitNetwork?.levels || {})
 
-  const orbitLevels = orbitNetwork?.levels || {}
-
-  if (contractsLoading || (!summary && isConnected)) {
+  if ((!summary && isConnected) || (isFreedomPlus && freedomPlusLoading && !freedomPlusData)) {
     return (
       <div className="account-loading-gate">
         <div className="spinner" />
@@ -288,39 +412,73 @@ const AccountPage = () => {
     )
   }
 
+  const baseEarnings = summary?.earnings || {}
+  const earnings = isFreedomPlus ? {
+    highestLevel: freedomPlusLevels.length
+      ? Math.max(...freedomPlusLevels.map((item) => Number(item.level)))
+      : 0,
+    receiptCount: freedomPlusPayments.length,
+    generatedGross: freedomPlusPaymentTotal,
+    walletCreditedLiquid: freedomPlusPaymentTotal,
+    escrowLockedLifetime: 0,
+    autoUpgradeUsed: 0,
+    currentEscrowLocked: 0,
+    remainingToNextUpgrade: freedomPlusNextDefinition?.price || 0,
+    highestActiveLock: null,
+    byLevel: FREEDOM_PLUS_LEVELS.map((definition) => {
+      const payment = freedomPlusPaymentByLevel.get(definition.level) || { amount: 0, count: 0 }
+      return {
+        level: definition.level,
+        orbitType: definition.orbit,
+        receiptCount: payment.count,
+        generatedGross: payment.amount,
+        walletCreditedLiquid: payment.amount,
+        escrowLockedLifetime: 0,
+        autoUpgradeUsed: 0,
+        currentEscrowLocked: 0,
+        active: freedomPlusLevels.some((item) => Number(item.level) === definition.level),
+      }
+    }),
+  } : baseEarnings
+  const highestActiveLock = earnings?.highestActiveLock || null
+  const financialByLevel = Array.isArray(earnings?.byLevel)
+    ? earnings.byLevel.filter((item) => !isFreedomPlus || item.active || item.receiptCount > 0)
+    : []
 
-const earnings = summary?.earnings || {}
-const highestActiveLock = earnings?.highestActiveLock || null
-const financialByLevel = Array.isArray(earnings?.byLevel) ? earnings.byLevel : []
-
-const totalGenerated =
-  earnings.generatedGross ||
-  earnings.totalGenerated ||
-  earnings.totalGross ||
-  0
-const walletCredited =
-  earnings.walletCreditedLiquid ||
-  earnings.totalLiquid ||
-  0
-
-const escrowLockedLifetime =
-  earnings.escrowLockedLifetime ||
-  earnings.totalEscrow ||
-  earnings.receiptEscrowLocked ||
-  0
-
-const autoUpgradeUsed =
-  earnings.autoUpgradeUsed ||
-  earnings.totalEscrowUsed ||
-  0
-
-const currentEscrowLocked = earnings.currentEscrowLocked || 0
-const remainingToNextUpgrade = earnings.remainingToNextUpgrade || 0
-
-const shouldShowUpgradeProgress =
-  highestActiveLock &&
-  highestActiveLock.shouldShowAutoUpgrade !== false &&
-  Number(highestActiveLock.upgradeRequired || 0) > 0
+  const totalGenerated =
+    earnings.generatedGross ||
+    earnings.totalGenerated ||
+    earnings.totalGross ||
+    0
+  const walletCredited =
+    earnings.walletCreditedLiquid ||
+    earnings.totalLiquid ||
+    0
+  const escrowLockedLifetime =
+    earnings.escrowLockedLifetime ||
+    earnings.totalEscrow ||
+    earnings.receiptEscrowLocked ||
+    0
+  const autoUpgradeUsed =
+    earnings.autoUpgradeUsed ||
+    earnings.totalEscrowUsed ||
+    0
+  const currentEscrowLocked = earnings.currentEscrowLocked || 0
+  const remainingToNextUpgrade = earnings.remainingToNextUpgrade || 0
+  const shouldShowUpgradeProgress =
+    !isFreedomPlus &&
+    highestActiveLock &&
+    highestActiveLock.shouldShowAutoUpgrade !== false &&
+    Number(highestActiveLock.upgradeRequired || 0) > 0
+  const activationPath = isFreedomPlus ? '/freedom-plus/activation' : '/activation'
+  const tokenHistoryPath = isFreedomPlus ? '/freedom-plus/tokens' : '/my-tokens'
+  const orbitEarningsPath = isFreedomPlus ? '/freedom-plus/activation' : '/orbits'
+  const rewardTokens = isFreedomPlus
+    ? { primary: freedomPlusLedgerTotal('fpt'), recycle: freedomPlusLedgerTotal('fptr') }
+    : {
+        primary: summary?.tokens?.FGT?.total || 0,
+        recycle: summary?.tokens?.FGTr?.total || 0,
+      }
 
   return (
     <section className="account-page">
@@ -337,40 +495,37 @@ const shouldShowUpgradeProgress =
         </div>
         <h1 className="hero-display-address">{shortAddress(resolvedAddress)}</h1>
         <p className="hero-member-type">
-          {/* {isOwnSpace ? 'Your F-Freedom account space' : 'Viewed F-Freedom account space'} */}
-          {isOwnSpace ? accountT('hero.ownAccount', 'Your F-Freedom account') : accountT('hero.viewedAccount', 'Viewed F-Freedom account')}
+          {isFreedomPlus
+            ? isOwnSpace ? 'Your Freedom-Plus account' : 'Viewed Freedom-Plus account'
+            : isOwnSpace
+              ? accountT('hero.ownAccount', 'Your F-Freedom account')
+              : accountT('hero.viewedAccount', 'Viewed F-Freedom account')}
         </p>
         <div className="hero-stats-row">
           <span className="hero-stat-chip">{accountT('hero.level', 'Level {{level}}', { level: earnings?.highestLevel || 0 })}</span>
           <span className="hero-stat-chip">{accountT('hero.receipts', '{{count}} Receipts', { count: earnings?.receiptCount || earnings?.count || 0 })}</span>
           <span className="hero-stat-chip">{accountT('hero.amoyNetwork', '{{network}}', { network: NETWORK_CONFIG.chainName })}</span>
         </div>
-        <button type="button" className="account-hero-action" onClick={() => navigate('/activation')}>
-          {accountT('actions.goToActivationCenter', 'Go to Activation Center')} <FaArrowRight />
+        <button type="button" className="account-hero-action" onClick={() => navigate(activationPath)}>
+          {isFreedomPlus ? 'Go to Freedom-Plus Activation' : accountT('actions.goToActivationCenter', 'Go to Activation Center')} <FaArrowRight />
         </button>
       </header>
-
-      {/* 2. PROFILE SWITCHER (CENTERED & CLEAN) */}
-      <div className="account-surface profile-switcher-box">
-        <div className="switcher-header">
-          {/* <h3>Explore Network Spaces</h3> */}
-          <h3>{accountT('switcher.title', 'Explore Network Accounts')}</h3>
-          {!isOwnSpace && (
-            // <button className="return-btn" onClick={switchToSelf}>Return to My Profile</button>
-            <button className="return-btn" onClick={switchToSelf}>{accountT('actions.returnToMyAccount', 'Return to My Account')}</button>
-          )}
+      {freedomPlusError && (
+        <div className="account-sync-error" role="alert">
+          <strong>Freedom-Plus data is temporarily unavailable.</strong>
+          <span>{freedomPlusError}</span>
+          <button type="button" onClick={fetchFreedomPlusData}>Retry</button>
         </div>
-        <div className="switcher-input-group">
-          <input 
-            value={profileInput} 
-            onChange={(e) => setProfileInput(e.target.value)} 
-            // placeholder="Paste wallet address (0x...)"
-            placeholder={accountT('switcher.placeholder', 'Wallet address or Referral ID')}
-          />
-          <button onClick={handleViewProfile}>{accountT('actions.viewAccount', 'View Account')}</button>
-        </div>
-        {profileError && <p className="error-text">{profileError}</p>}
-      </div>
+      )}
+      <AccountProfileSwitcher
+        accountT={accountT}
+        isOwnSpace={isOwnSpace}
+        switchToSelf={switchToSelf}
+        profileInput={profileInput}
+        setProfileInput={setProfileInput}
+        handleViewProfile={handleViewProfile}
+        profileError={profileError}
+      />
 
       {profileLocked ? (
         <section className="account-surface account-network">
@@ -410,6 +565,7 @@ const shouldShowUpgradeProgress =
                   <div className="referral-id-tile inner-surface">
                     <span>{accountT('referral.yourReferralId', 'Your Referral ID')}</span>
                     <strong>{referralShortCode}</strong>
+                    <button type="button" onClick={handleCopyId} aria-label={accountT('actions.copyId', 'Copy FFN ID')}><FaCopy /> {accountT('actions.copyId', 'Copy ID')}</button>
                   </div>
 
                   <div className="referral-id-tile inner-surface">
@@ -449,9 +605,9 @@ const shouldShowUpgradeProgress =
                   <button
                     type="button"
                     className="nav-action-btn"
-                    onClick={() => navigate('/activation')}
+                    onClick={() => navigate(activationPath)}
                   >
-                    {accountT('actions.goToActivationCenter', 'Go to Activation Center')} <FaArrowRight />
+                    {isFreedomPlus ? 'Go to Freedom-Plus Activation' : accountT('actions.goToActivationCenter', 'Go to Activation Center')} <FaArrowRight />
                   </button>
                 )}
               </div>
@@ -467,17 +623,17 @@ const shouldShowUpgradeProgress =
             <div className="account-network__summary">
               <div className="account-network__metric inner-surface">
                 <span>{accountT('network.direct', 'Direct Downlines')}</span>
-                <strong>{directReferrals.length}</strong>
+                <strong>{accountDirectReferrals.length}</strong>
               </div>
               <div className="account-network__metric inner-surface">
                 <span>{accountT('network.totalTeam', 'Total Team')}</span>
-                <strong>{downlineStats?.total || 0}</strong>
+                <strong>{accountDownlineTotal}</strong>
                 <small>{accountT('network.referralTree', 'Referral tree')}</small>
               </div>
             </div>
 
             <div className="account-network__levels">
-              {Array.from({ length: 10 }, (_, index) => {
+              {Array.from({ length: isFreedomPlus ? 7 : 10 }, (_, index) => {
                 const level = index + 1
                 const levelData = orbitLevels[`level${level}`] || {}
                 return (
@@ -493,7 +649,7 @@ const shouldShowUpgradeProgress =
             </p>
 
             <div className="account-network__members">
-              {directReferrals.length ? visibleDirectReferrals.map((item) => (
+              {accountDirectReferrals.length ? visibleDirectReferrals.map((item) => (
                 <div key={`${item.user}-${item.txHash || item.blockNumber || ''}`} className="account-network__member">
                   <div>
                     <span>{accountT('network.member', 'Member')}</span>
@@ -510,7 +666,7 @@ const shouldShowUpgradeProgress =
                 </div>
               )}
             </div>
-            {directReferrals.length > 6 && (
+            {accountDirectReferrals.length > 6 && (
               <button
                 type="button"
                 className="account-network__toggle"
@@ -527,19 +683,19 @@ const shouldShowUpgradeProgress =
           <section className="account-surface rewards-center">
             <div className="section-title-group">
               <FaCoins />
-              <h2>{accountT('rewards.title', 'F-Freedom Rewards')}</h2>
+              <h2>{isFreedomPlus ? 'Freedom-Plus Rewards' : accountT('rewards.title', 'F-Freedom Rewards')}</h2>
             </div>
             <div className="reward-grid">
               <div className="reward-tile inner-surface">
-                <span className="tile-label">{accountT('rewards.fgtActivation', 'FGT (Activation)')}</span>
-                <strong className="tile-value glow-blue">{formatDisplay(summary?.tokens?.FGT?.total)}</strong>
+                <span className="tile-label">{isFreedomPlus ? 'FPT (Activation)' : accountT('rewards.fgtActivation', 'FGT (Activation)')}</span>
+                <strong className="tile-value glow-blue">{formatDisplay(rewardTokens.primary)}</strong>
               </div>
               <div className="reward-tile inner-surface">
-                <span className="tile-label">{accountT('rewards.fgtrRecycle', 'FGTr (Recycle)')}</span>
-                <strong className="tile-value glow-teal">{formatDisplay(summary?.tokens?.FGTr?.total)}</strong>
+                <span className="tile-label">{isFreedomPlus ? 'FPTr (Recycle)' : accountT('rewards.fgtrRecycle', 'FGTr (Recycle)')}</span>
+                <strong className="tile-value glow-teal">{formatDisplay(rewardTokens.recycle)}</strong>
               </div>
             </div>
-            <button className="nav-action-btn" onClick={() => navigate('/my-tokens')}>
+            <button className="nav-action-btn" onClick={() => navigate(tokenHistoryPath)}>
               {accountT('actions.seeTokenHistory', 'See full token history')} <FaArrowRight />
             </button>
           </section>
@@ -554,10 +710,10 @@ const shouldShowUpgradeProgress =
             </div>
 
             <div className="earnings-hero">
-              <span className="hero-label">{accountT('financial.totalGenerated', 'Total Generated')}</span>
+              <span className="hero-label">{isFreedomPlus ? 'Total USDT Received' : accountT('financial.totalGenerated', 'Total Generated')}</span>
               <h2 className="hero-value">${getMoney(totalGenerated)}</h2>
               <p className="earnings-truth-note">
-                {accountT('financial.totalGeneratedNote', 'Full value generated for this account before wallet/escrow split.')}
+                {isFreedomPlus ? 'Indexed Freedom-Plus payment components credited to this wallet.' : accountT('financial.totalGeneratedNote', 'Full value generated for this account before wallet/escrow split.')}
               </p>
             </div>
 
@@ -569,30 +725,34 @@ const shouldShowUpgradeProgress =
               </div>
 
               <div className="truth-tile inner-surface">
-                <span>{accountT('financial.escrowLockedLifetime', 'Escrow Locked Lifetime')}</span>
-                <strong className="truth-value escrow">${getMoney(escrowLockedLifetime)}</strong>
-                <small>{accountT('financial.escrowLockedText', 'Total USDT ever routed into upgrade escrow.')}</small>
+                <span>{isFreedomPlus ? 'Manual Activation Value' : accountT('financial.escrowLockedLifetime', 'Escrow Locked Lifetime')}</span>
+                <strong className="truth-value escrow">${getMoney(isFreedomPlus ? freedomPlusActivationValue : escrowLockedLifetime)}</strong>
+                <small>{isFreedomPlus ? 'Combined price of the active Freedom-Plus levels.' : accountT('financial.escrowLockedText', 'Total USDT ever routed into upgrade escrow.')}</small>
               </div>
 
               <div className="truth-tile inner-surface">
-                <span>{accountT('financial.currentlyLocked', 'Currently Locked')}</span>
+                <span>{isFreedomPlus ? 'Upgrade Escrow' : accountT('financial.currentlyLocked', 'Currently Locked')}</span>
                 <strong className="truth-value locked">${getMoney(currentEscrowLocked)}</strong>
-                <small>{accountT('financial.currentlyLockedText', 'Still locked toward the next activation.')}</small>
+                <small>{isFreedomPlus ? 'Freedom-Plus uses manual progression and does not lock upgrade escrow.' : accountT('financial.currentlyLockedText', 'Still locked toward the next activation.')}</small>
               </div>
 
               <div className="truth-tile inner-surface">
-                <span>{accountT('financial.autoUpgradeUsed', 'Auto-upgrade Used')}</span>
+                <span>{isFreedomPlus ? 'Auto-upgrade Used' : accountT('financial.autoUpgradeUsed', 'Auto-upgrade Used')}</span>
                 <strong className="truth-value used">${getMoney(autoUpgradeUsed)}</strong>
-                <small>{accountT('financial.autoUpgradeUsedText', 'Escrow already consumed to activate higher levels.')}</small>
+                <small>{isFreedomPlus ? 'Not used by Freedom-Plus manual level activation.' : accountT('financial.autoUpgradeUsedText', 'Escrow already consumed to activate higher levels.')}</small>
               </div>
 
               <div className="truth-tile inner-surface">
-                <span>{accountT('financial.remainingToNextUpgrade', 'Remaining to Next Upgrade')}</span>
+                <span>{isFreedomPlus ? 'Next Level Price' : accountT('financial.remainingToNextUpgrade', 'Remaining to Next Upgrade')}</span>
                 <strong className="truth-value remaining">${getMoney(remainingToNextUpgrade)}</strong>
                 <small>
-                  {highestActiveLock?.nextLevel
-                    ? accountT('financial.neededForLevel', 'Needed for Level {{level}}.', { level: highestActiveLock.nextLevel })
-                    : accountT('financial.noPendingAutoUpgrade', 'No pending auto-upgrade requirement.')}
+                  {isFreedomPlus
+                    ? freedomPlusNextDefinition
+                      ? 'Required for Level ' + freedomPlusNextDefinition.level + ' manual activation.'
+                      : 'All Freedom-Plus levels are active.'
+                    : highestActiveLock?.nextLevel
+                      ? accountT('financial.neededForLevel', 'Needed for Level {{level}}.', { level: highestActiveLock.nextLevel })
+                      : accountT('financial.noPendingAutoUpgrade', 'No pending auto-upgrade requirement.')}
                 </small>
               </div>
             </div>
@@ -628,7 +788,7 @@ const shouldShowUpgradeProgress =
               </div>
             )}
 
-            <button className="nav-action-btn" onClick={() => navigate('/orbits')}>
+            <button className="nav-action-btn" onClick={() => navigate(orbitEarningsPath)}>
               {accountT('actions.inspectOrbitEarnings', 'Inspect Orbit Earnings')} <FaArrowRight />
             </button>
           </section>
@@ -649,7 +809,7 @@ const shouldShowUpgradeProgress =
 
             <div className="snapshot-list snapshot-list--clean">
               <div className="snapshot-row snapshot-row--featured">
-                <span>{accountT('wallet.polBalance', 'POL Balance')}</span>
+                <span>{isViewingConnectedWallet ? 'POL Balance' : 'Connected Wallet POL Balance'}</span>
                 <strong>{Number(polBalance || 0).toFixed(4)}</strong>
               </div>
 
@@ -659,7 +819,7 @@ const shouldShowUpgradeProgress =
               {/* </div> */}
 
               <div className="snapshot-row">
-                <span>{accountT('wallet.walletCreditedUsdt', 'Wallet Credited USDT')}</span>
+                <span>{isFreedomPlus ? 'Freedom-Plus USDT Received' : accountT('wallet.walletCreditedUsdt', 'Wallet Credited USDT')}</span>
                 <strong>{getMoney(walletCredited)}</strong>
               </div>
             </div>
@@ -676,15 +836,21 @@ const shouldShowUpgradeProgress =
                     <div className="level-finance-row inner-surface" key={item.level}>
                       <div>
                         <strong>{accountT('levelBreakdown.level', 'Level {{level}}', { level: item.level })}</strong>
-                        <span>{accountT('levelBreakdown.orbitReceipts', '{{orbitType}} � {{count}} receipts', { orbitType: item.orbitType, count: item.receiptCount })}</span>
+                        <span>{accountT('levelBreakdown.orbitReceipts', '{{orbitType}} - {{count}} receipts', { orbitType: item.orbitType, count: item.receiptCount })}</span>
                       </div>
 
                       <div className="level-finance-values">
                         <span>{accountT('levelBreakdown.totalGenerated', 'Total Generated: ${{amount}}', { amount: getMoney(item.generatedGross || item.generated) })}</span>
                         <span>{accountT('levelBreakdown.walletCredited', 'Wallet Credited: ${{amount}}', { amount: getMoney(item.walletCreditedLiquid || item.liquid) })}</span>
-                        <span>{accountT('levelBreakdown.escrowLocked', 'Escrow Locked: ${{amount}}', { amount: getMoney(item.escrowLockedLifetime || item.receiptEscrowLocked) })}</span>
-                        <span>{accountT('levelBreakdown.autoUpgradeUsed', 'Auto-upgrade Used: ${{amount}}', { amount: getMoney(item.autoUpgradeUsed || item.escrowUsed) })}</span>
-                        <span>{accountT('levelBreakdown.currentlyLocked', 'Currently Locked: ${{amount}}', { amount: getMoney(item.currentEscrowLocked || item.currentLocked) })}</span>
+                        <span>{isFreedomPlus
+                          ? 'Manual level price: $' + getMoney(FREEDOM_PLUS_LEVELS.find((level) => level.level === item.level)?.price || 0)
+                          : accountT('levelBreakdown.escrowLocked', 'Escrow Locked: ${{amount}}', { amount: getMoney(item.escrowLockedLifetime || item.receiptEscrowLocked) })}</span>
+                        <span>{isFreedomPlus
+                          ? 'Status: ' + (item.active ? 'Active' : 'Inactive')
+                          : accountT('levelBreakdown.autoUpgradeUsed', 'Auto-upgrade Used: ${{amount}}', { amount: getMoney(item.autoUpgradeUsed || item.escrowUsed) })}</span>
+                        <span>{isFreedomPlus
+                          ? 'Progression: Manual'
+                          : accountT('levelBreakdown.currentlyLocked', 'Currently Locked: ${{amount}}', { amount: getMoney(item.currentEscrowLocked || item.currentLocked) })}</span>
                       </div>
                     </div>
                   ))}
@@ -697,8 +863,11 @@ const shouldShowUpgradeProgress =
           </section>
       </div>
       
+
       <footer className="account-footer">
-        {accountT('footer.verifiedSync', 'Verified on-chain synchronization: {{time}}', { time: lastUpdated })}
+        {isFreedomPlus
+          ? 'Indexed Freedom-Plus data updated: ' + lastUpdated
+          : accountT('footer.verifiedSync', 'Verified on-chain synchronization: {{time}}', { time: lastUpdated })}
       </footer>
       </>
       )}

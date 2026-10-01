@@ -7,14 +7,18 @@ import { web3Service } from '../Services/web3';
 import { ethers } from 'ethers';
 import { useTranslation } from 'react-i18next';
 import { getApiUrl } from '../Services/apiConfig';
+import { getProfileSessionAuth } from '../Services/profilePrivacyApi';
 import { NETWORK_CONFIG } from '../constants/addresses';
 import { useToast } from '../components/feedback';
 import { normalizeError } from '../utils/errorMap';
+import AdminNotificationComposer from '../components/admin/AdminNotificationComposer';
+import AdminOfficialVideo from '../components/admin/AdminOfficialVideo';
+import AdminTasksManager from '../components/admin/AdminTasksManager';
 import './AdminPanel.css';
 import {
   Key, Crown, BarChart3, Clock, AlertTriangle, Plus, Edit, Trash2,
   Eye, EyeOff, RefreshCw, Globe, Users, Calendar, Link2, FileText,
-  Megaphone, ExternalLink, X, Check, Wallet,
+  Megaphone, ExternalLink, X, Check, Wallet, BellRing,
   ShieldCheck, LayoutDashboard, Settings, Activity } from
 'lucide-react';
 
@@ -28,15 +32,13 @@ const MULTISIG_DEFAULT_SCAN_LIMIT = 15;
 const GAS_BUFFER_BPS = 12000n;
 const GAS_BUFFER_DENOMINATOR = 10000n;
 
-const withGasBuffer = (estimate, bufferBps = GAS_BUFFER_BPS) => {
+const withGasBuffer = (estimate) => {
   try {
-    return (BigInt(estimate) * bufferBps) / GAS_BUFFER_DENOMINATOR;
+    return (BigInt(estimate) * GAS_BUFFER_BPS) / GAS_BUFFER_DENOMINATOR;
   } catch {
     return estimate;
   }
 };
-
-const sameAddress = (a, b) => Boolean(a && b && String(a).toLowerCase() === String(b).toLowerCase());
 
 const getRuntimeAdminKey = () => {
   if (typeof window === 'undefined') return '';
@@ -86,8 +88,7 @@ const multisigSelfIface = new ethers.Interface([
 'function addOwner(address owner)',
 'function removeOwner(address owner)',
 'function replaceOwner(address oldOwner,address newOwner)',
-'function changeRequirement(uint256 _requiredConfirmations)',
-'function setProposalSubmitter(address submitter,bool allowed)']
+'function changeRequirement(uint256 _requiredConfirmations)']
 );
 
 const operationsVaultIface = new ethers.Interface([
@@ -99,50 +100,9 @@ const nftPoolVaultIface = new ethers.Interface([
 'function distribute(address recipient,uint256 amount,bytes32 distributionId,string reason)']
 );
 
-const migrationOwnableIface = new ethers.Interface([
-'function transferOwnership(address newOwner)',
-'function acceptOwnership()',
-'function owner() view returns (address)',
-'function pendingOwner() view returns (address)']
+const fgtAdminIface = new ethers.Interface([
+'function setAuthorizedOperator(address operator,bool authorized)']
 );
-
-const productionMigrationIface = new ethers.Interface([
-'function seedMatrixParents(address[] occupants,uint8[] levels,address[] parents)',
-'function configureLegacyP12Transitions(address[] owners,uint8[] levels,uint256[] expectedPositions,uint256[] remainingQualifyingPayments)',
-'function setSettlementRouter(address router)']
-);
-
-const migrationMultisigAbi = [
-'function isOwner(address account) view returns (bool)',
-'function getOwners() view returns (address[])',
-'function requiredConfirmations() view returns (uint256)',
-'function approved(uint256 txId,address owner) view returns (bool)',
-'function transactions(uint256 txId) view returns (address to,uint256 value,bytes data,bool executed,bool cancelled,uint256 confirmations,uint256 submittedAt,uint256 executeAfter)',
-'function approveTransaction(uint256 txId)',
-'function executeTransaction(uint256 txId)',
-'function submitTransaction(address to,uint256 value,bytes data) returns (uint256)',
-'event Submit(uint256 indexed txId)'
-];
-
-const PRODUCTION_OLD_MULTISIG = '0xCE38722a72c9099D9237897E18B0cfb6D51c4470';
-const PRODUCTION_NEW_MULTISIG = '0x785cC854ce9e13CE1140cbFD7C08620713E1711d';
-const PRODUCTION_ID1_WALLET = PRODUCTION_OLD_MULTISIG;
-const ZERO_ADDRESS = '0x0000000000000000000000000000000000000000';
-
-const GOVERNANCE_MIGRATION_CONTRACTS = [
-  { key: 'guardian', name: 'Guardian', address: '0x290c2300296379BD0048aFe9099Ed6Fc81BF75fC', twoStep: false },
-  { key: 'levelManager', name: 'LevelManager', address: '0x0E9De0F24eB4774834A2c4A63eaBa8356A4A4B53', twoStep: false },
-  { key: 'registration', name: 'Registration', address: '0x02ECA97e944Ac66b0444fd5F61A716917E83CfF5', twoStep: false },
-  { key: 'escrow', name: 'Escrow', address: '0x8b3db2AC7e30749479f2dbad14105C8eD4a377d4', twoStep: false },
-  { key: 'p4', name: 'P4Orbit', address: '0x1ED0b443c880Ba88F732c3F5915561A07B21F6B4', twoStep: false },
-  { key: 'p12', name: 'P12Orbit', address: '0xCF998d8f7E9DD4f3FacFbA45e656dE07142f824b', twoStep: false },
-  { key: 'p39', name: 'P39Orbit', address: '0xEaD39819B8C4DBb0669320542B6B847D4c31b8Fb', twoStep: false },
-  { key: 'fgt', name: 'FGTToken', address: '0x615201edaddB5CFD839Cc4eE693Dc464F6E2B5E4', twoStep: false },
-  { key: 'fgtr', name: 'FGTrToken', address: '0xAaD41296b6Ec358b9C16dD7161C555fD3a464Bc3', twoStep: false },
-  { key: 'controller', name: 'FreedomTokenController', address: '0x2Ee32EDfE1990408FE70bcADBDBDA8c2f9AdBb62', twoStep: false },
-  { key: 'nftVault', name: 'NFTPoolVault', address: '0xf8F60Da42681b73DFeCa7731E78b29C8707C184b', twoStep: true },
-  { key: 'opsVault', name: 'OperationsVault', address: '0x3ee9B4913e175c15B2Ef76Ac352B6737210248Fb', twoStep: true },
-];
 
 const boolText = (v) => v ? 'Yes' : 'No';
 const readHiddenMultisigTxs = () => {
@@ -237,20 +197,30 @@ const formatMoney = (value) => {
 };
 
 // Admin API helper
-const adminApi = async (endpoint, options = {}) => {
-  const adminKey = getRuntimeAdminKey();
-  if (!adminKey) {
-    throw new Error('Admin API key is required for this action');
+const adminApiRequest = async (endpoint, options = {}, account = '') => {
+  const stagingTestAdminEnabled = String(import.meta.env.VITE_STAGING_TEST_ADMIN_ENABLED || 'false').toLowerCase() === 'true';
+  const walletAuth = stagingTestAdminEnabled && account
+    ? await getProfileSessionAuth(account)
+    : {};
+  const adminKey = stagingTestAdminEnabled ? '' : getRuntimeAdminKey();
+  if (!adminKey && !walletAuth.Authorization) {
+    throw new Error('Admin authorization is required for this action');
   }
 
+  const { responseType, ...fetchOptions } = options;
   const response = await fetch(getApiUrl(endpoint), {
+    ...fetchOptions,
     headers: {
       'Content-Type': 'application/json',
-      [ADMIN_API_HEADER]: adminKey,
-      ...(options.headers || {})
-    },
-    ...options
+      ...(adminKey ? { [ADMIN_API_HEADER]: adminKey } : {}),
+      ...walletAuth,
+      ...(fetchOptions.headers || {})
+    }
   });
+  if (responseType === 'blob') {
+    if (!response.ok) throw new Error(`Request failed: ${response.status}`);
+    return response.blob();
+  }
   const payload = await response.json().catch(() => null);
   if (!response.ok) {
     if (response.status === 401 || response.status === 403) {
@@ -278,7 +248,7 @@ const tourSteps = [
 {
   id: 1,
   title: "🎯 Navigation Dock",
-  description: "This sidebar gives you access to all 7 sections of the admin panel. Click any button to switch between Dashboard, Queue, Security, Founders, Community, Multisig controls, and Migration.",
+  description: "This sidebar gives you access to all 6 sections of the admin panel. Click any button to switch between Dashboard, Queue, Security, Founders, Community, and Multisig controls.",
   targetSelector: ".command-dock",
   tab: null, // No tab switching needed
   position: "right"
@@ -667,11 +637,13 @@ const TourManager = ({ isOwner, activeTab, setActiveTab }) => {
 // ============================================================
 // COMPONENT
 // ============================================================
-export const AdminPanel = () => {
+export const AdminPanel = ({ canPerformOnchainAdmin = false }) => {
   const { isConnected, account, connect } = useWallet();
   const { contracts, isLoading, error, loadContracts } = useContracts();
   const { t } = useTranslation();
   const toast = useToast();
+  const adminApi = useCallback((endpoint, options = {}) => adminApiRequest(endpoint, options, account), [account]);
+  const hasStagingTestAccess = String(import.meta.env.VITE_STAGING_TEST_ADMIN_ENABLED || 'false').toLowerCase() === 'true';
 
   // ========== VIEW NAVIGATION STATE ==========
   const adminT = useCallback((key, fallback, options) => t(`adminPanel.${key}`, fallback, options), [t]);const boolLabel = useCallback((value) => value ? adminT('common.yes', 'Yes') : adminT('common.no', 'No'), [adminT]);const [activeTab, setActiveTab] = useState('dashboard');
@@ -689,7 +661,6 @@ export const AdminPanel = () => {
 
   const [txStatus, setTxStatus] = useState({ loading: false, hash: null, error: null, note: null });
   const [isOwner, setIsOwner] = useState(false);
-  const [isProposalSubmitter, setIsProposalSubmitter] = useState(false);
   const [ownerCheckComplete, setOwnerCheckComplete] = useState(false);
 
   const [txIdInput, setTxIdInput] = useState('');
@@ -757,22 +728,8 @@ export const AdminPanel = () => {
   const [showChargeModal, setShowChargeModal] = useState(false);
   const [financialTruth, setFinancialTruth] = useState(emptyFinancialTruth);
   const [financialTruthError, setFinancialTruthError] = useState('');
-  const [migrationRows, setMigrationRows] = useState({});
-  const [migrationAuthority, setMigrationAuthority] = useState({
-    oldMultisigOwner: false,
-    newMultisigOwner: false
-  });
-  const [migrationId1State, setMigrationId1State] = useState({
-    levelManager: '',
-    registration: '',
-    safe: false
-  });
-  const [migrationLoading, setMigrationLoading] = useState(false);
-  const [migrationTxIds, setMigrationTxIds] = useState({});
-  const [migrationAcceptTxIdInput, setMigrationAcceptTxIdInput] = useState('');
-  const [migrationAcceptTx, setMigrationAcceptTx] = useState(null);
-  const [migrationAcceptApprovals, setMigrationAcceptApprovals] = useState([]);
   const txActionInFlightRef = useRef(false);
+  const autoRefreshPausedRef = useRef(false);
 
   const totalRatio = useMemo(
     () => ratioInputs.reduce((sum, r) => sum + parseInt(r || 0, 10), 0),
@@ -890,8 +847,7 @@ export const AdminPanel = () => {
     { iface: multisigSelfIface, name: 'Multisig' },
     { iface: operationsVaultIface, name: 'OperationsVault' },
     { iface: nftPoolVaultIface, name: 'NFTPoolVault' },
-    { iface: productionMigrationIface, name: 'ProductionMigration' },
-    { iface: migrationOwnableIface, name: 'Ownable' }];
+    { iface: fgtAdminIface, name: 'FGT' }];
 
 
     for (const entry of tries) {
@@ -966,32 +922,13 @@ export const AdminPanel = () => {
           }
         }
 
-        if (entry.name === 'ProductionMigration') {
-          switch (name) {
-            case 'seedMatrixParents':
-              return {
-                label: 'Seed matrix parents',
-                details: `${args[0]?.length || 0} preserved parent record(s)`,
-                category: 'Migration',
-                targetLabel: 'Orbit migration'
-              };
-            case 'configureLegacyP12Transitions':
-              return {
-                label: 'Configure legacy P12 transitions',
-                details: `${args[0]?.length || 0} approved transition record(s)`,
-                category: 'Migration',
-                targetLabel: 'LevelManager'
-              };
-            case 'setSettlementRouter':
-              return {
-                label: 'Set settlement router',
-                details: shortAddress(args[0]),
-                category: 'Migration',
-                targetLabel: 'LevelManager'
-              };
-            default:
-              break;
-          }
+        if (entry.name === 'FGT' && name === 'setAuthorizedOperator') {
+          return {
+            label: args[1] ? 'Authorize FGT operator' : 'Revoke FGT operator',
+            details: `${shortAddress(args[0])} -> ${boolLabel(args[1])}`,
+            category: 'Token security',
+            targetLabel: 'FGT Token'
+          };
         }
 
         if (entry.name === 'Multisig') {
@@ -1006,17 +943,6 @@ export const AdminPanel = () => {
               return { label: 'Change requirement', details: `${args[0]?.toString?.() || String(args[0])} confirmations`, category: 'Multisig', targetLabel: 'SimpleMultiSig' };
             default:
               return { label: name, details: JSON.stringify(args), category: 'Multisig', targetLabel: 'SimpleMultiSig' };
-          }
-        }
-
-        if (entry.name === 'Ownable') {
-          switch (name) {
-            case 'transferOwnership':
-              return { label: 'Transfer ownership', details: `New owner ${shortAddress(args[0])}`, category: 'Governance Migration', targetLabel: 'Ownable Contract' };
-            case 'acceptOwnership':
-              return { label: 'Accept ownership', details: 'Finalize two-step ownership transfer', category: 'Governance Migration', targetLabel: 'Ownable Contract' };
-            default:
-              return { label: name, details: JSON.stringify(args), category: 'Governance Migration', targetLabel: 'Ownable Contract' };
           }
         }
       } catch {
@@ -1065,40 +991,6 @@ export const AdminPanel = () => {
       ...decodeTransactionAction(raw)
     };
   }, [contracts, ownerList, account, decodeTransactionAction]);
-
-  const readMigrationAcceptTransaction = useCallback(async (txId) => {
-    if (txId === null || txId === undefined || txId === '') return null;
-
-    const provider = contracts?.levelManager?.runner?.provider || web3Service.getReadProvider();
-    const multisig = new ethers.Contract(PRODUCTION_NEW_MULTISIG, migrationMultisigAbi, provider);
-    const [tx, owners] = await Promise.all([
-      multisig.transactions(Number(txId)),
-      multisig.getOwners()
-    ]);
-
-    const approvals = await Promise.all(owners.map(async (owner) => ({
-      owner,
-      approved: await multisig.approved(Number(txId), owner).catch(() => false)
-    })));
-
-    const raw = {
-      txId: Number(txId),
-      to: tx.to,
-      value: tx.value.toString(),
-      data: tx.data,
-      executed: tx.executed,
-      cancelled: tx.cancelled,
-      confirmations: tx.confirmations.toString(),
-      submittedAt: tx.submittedAt.toString(),
-      executeAfter: tx.executeAfter.toString(),
-      approvals
-    };
-
-    return {
-      ...raw,
-      ...decodeTransactionAction(raw)
-    };
-  }, [contracts, decodeTransactionAction]);
 
   const loadGuardianChecks = useCallback(async (proxyAddress, implementationAddress) => {
     if (!contracts?.guardian) {
@@ -1294,16 +1186,13 @@ export const AdminPanel = () => {
   // ============================================================
   // EXISTING FUNCTIONS
   // ============================================================
-  const refreshGovernanceData = useCallback(async () => {
+  const refreshGovernanceData = useCallback(async (options = {}) => {
     if (!contracts || !account) return;
+    if (autoRefreshPausedRef.current && !options.force) return;
 
     try {
       const ownerMatch = contracts.simpleMultiSig ? await contracts.simpleMultiSig.isOwner(account) : false;
-      const submitterMatch = contracts.simpleMultiSig?.isProposalSubmitter
-        ? await contracts.simpleMultiSig.isProposalSubmitter(account).catch(() => false)
-        : false;
       setIsOwner(ownerMatch);
-      setIsProposalSubmitter(submitterMatch);
 
       const [
       requiredConfirmations,
@@ -1337,12 +1226,12 @@ export const AdminPanel = () => {
       const levelManagerPaused = contracts.levelManager?.paused ? await contracts.levelManager.paused() : false;
       setSystemState({ levelManagerPaused });
 
-      if ((ownerMatch || submitterMatch) && contracts.levelManager) {
+      if (ownerMatch && contracts.levelManager) {
         const [wallets, ratios] = await contracts.levelManager.getFounderWallets();
         setFounderWallets(wallets);
         setFounderRatios(ratios.map((r) => r.toString()));
 
-        if (!skipAutoRefresh) {
+        if (!autoRefreshPausedRef.current) {
           const currentNftPool = await contracts.levelManager.nftPool();
           const currentOpsWallet = await contracts.levelManager.operationsWallet();
           setNftPool(currentNftPool);
@@ -1394,7 +1283,7 @@ export const AdminPanel = () => {
     } finally {
       setOwnerCheckComplete(true);
     }
-  }, [contracts, account, multisigTx?.txId, readTransaction, loadGuardianChecks, levelManagerAddress, fetchFounderPayouts, refreshFinancialTruth, skipAutoRefresh]);
+  }, [contracts, account, multisigTx?.txId, readTransaction, loadGuardianChecks, levelManagerAddress, fetchFounderPayouts, refreshFinancialTruth]);
 
   useEffect(() => {
     if (contracts) {
@@ -1428,9 +1317,9 @@ export const AdminPanel = () => {
     const interval = setInterval(() => {
       setMultisigStats((prev) => ({
         ...prev,
-        currentTimestamp: Math.floor(Date.now() / 1000)
+        currentTimestamp: Number(prev.currentTimestamp || Math.floor(Date.now() / 1000)) + 1
       }));
-    }, 15000);
+    }, 1000);
 
     return () => clearInterval(interval);
   }, []);
@@ -1464,34 +1353,6 @@ export const AdminPanel = () => {
     try {
       ensureActionIdle();
       setCheckingTx(`Checking proposal: ${note}`);
-      if (!isOwner) {
-        if (!isProposalSubmitter) {
-          throw new Error('This wallet is not authorized to submit governance proposals.');
-        }
-
-        const selector = String(data || '').slice(0, 10).toLowerCase();
-        const allowedGuardianSelectors = [
-          guardianIface.getFunction('setApprovedProxy').selector.toLowerCase(),
-          guardianIface.getFunction('setApprovedImplementation').selector.toLowerCase(),
-          guardianIface.getFunction('batchSetApprovedImplementations').selector.toLowerCase(),
-        ];
-        const allowedUpgradeSelectors = [
-          levelManagerAdminIface.getFunction('upgradeToAndCall').selector.toLowerCase(),
-          levelManagerAdminIface.getFunction('upgradeTo').selector.toLowerCase(),
-        ];
-        const isGuardianUpgradeProposal =
-          guardianAddress &&
-          target?.toLowerCase?.() === guardianAddress.toLowerCase() &&
-          allowedGuardianSelectors.includes(selector);
-        const isProxyUpgradeProposal =
-          target &&
-          ethers.isAddress(target) &&
-          allowedUpgradeSelectors.includes(selector);
-
-        if (!isGuardianUpgradeProposal && !isProxyUpgradeProposal) {
-          throw new Error('Proposal submitters can submit upgrade-related proposals only.');
-        }
-      }
       const writeContracts = await getWriteContracts();
       const gasEstimate = await writeContracts.simpleMultiSig.submitTransaction.estimateGas(target, 0, data);
       const tx = await writeContracts.simpleMultiSig.submitTransaction(target, 0, data, {
@@ -1500,7 +1361,7 @@ export const AdminPanel = () => {
       setLoadingTx(tx.hash, note);
       await tx.wait();
       setDoneTx(tx.hash, note);
-      await refreshGovernanceData();
+      await refreshGovernanceData({ force: true });
       return tx;
     } catch (err) {
       setNormalizedErrorTx(err, `${note} failed`);
@@ -1551,197 +1412,6 @@ export const AdminPanel = () => {
     return submitRawProposal(target, data, note);
   };
 
-  const parseSubmitTxId = (receipt, contract) => {
-    for (const log of receipt?.logs || []) {
-      try {
-        const parsed = contract.interface.parseLog(log);
-        if (parsed?.name === 'Submit') return parsed.args?.txId?.toString?.() || String(parsed.args?.[0]);
-      } catch {
-        // Ignore logs emitted by target contracts.
-      }
-    }
-    return '';
-  };
-
-  const refreshMigrationStatus = useCallback(async () => {
-    if (!contracts?.levelManager || !account) return;
-
-    setMigrationLoading(true);
-    try {
-      const provider = contracts.levelManager.runner?.provider || web3Service.getReadProvider();
-      const oldMultisig = new ethers.Contract(PRODUCTION_OLD_MULTISIG, migrationMultisigAbi, provider);
-      const newMultisig = new ethers.Contract(PRODUCTION_NEW_MULTISIG, migrationMultisigAbi, provider);
-
-      const [
-        oldMultisigOwner,
-        newMultisigOwner,
-        levelManagerId1,
-        registrationId1
-      ] = await Promise.all([
-        oldMultisig.isOwner(account).catch(() => false),
-        newMultisig.isOwner(account).catch(() => false),
-        contracts.levelManager.id1Wallet().catch(() => ''),
-        contracts.registration?.id1Wallet ? contracts.registration.id1Wallet().catch(() => '') : Promise.resolve('')
-      ]);
-
-      const id1Safe =
-        sameAddress(levelManagerId1, PRODUCTION_ID1_WALLET) &&
-        (!registrationId1 || sameAddress(registrationId1, PRODUCTION_ID1_WALLET));
-
-      setMigrationAuthority({ oldMultisigOwner, newMultisigOwner });
-      setMigrationId1State({
-        levelManager: levelManagerId1,
-        registration: registrationId1,
-        safe: id1Safe
-      });
-
-      const rows = {};
-      await Promise.all(GOVERNANCE_MIGRATION_CONTRACTS.map(async (item) => {
-        const ownable = new ethers.Contract(item.address, migrationOwnableIface, provider);
-        try {
-          const [owner, pendingOwner] = await Promise.all([
-            ownable.owner(),
-            ownable.pendingOwner().catch(() => ZERO_ADDRESS)
-          ]);
-          rows[item.key] = { owner, pendingOwner, error: '' };
-        } catch (err) {
-          rows[item.key] = { owner: '', pendingOwner: '', error: err?.shortMessage || err?.message || 'Read failed' };
-        }
-      }));
-
-      setMigrationRows(rows);
-    } finally {
-      setMigrationLoading(false);
-    }
-  }, [contracts, account]);
-
-  const getMigrationRowState = useCallback((item) => {
-    const row = migrationRows[item.key] || {};
-    if (row.error) {
-      return { label: 'Read failed', variant: 'danger', canTransfer: false, canAccept: false };
-    }
-
-    const owner = row.owner || '';
-    const pendingOwner = row.pendingOwner || ZERO_ADDRESS;
-    const ownerIsOld = sameAddress(owner, PRODUCTION_OLD_MULTISIG);
-    const ownerIsNew = sameAddress(owner, PRODUCTION_NEW_MULTISIG);
-    const pendingIsEmpty = !pendingOwner || sameAddress(pendingOwner, ZERO_ADDRESS);
-    const pendingIsNew = sameAddress(pendingOwner, PRODUCTION_NEW_MULTISIG);
-    const id1Safe = migrationId1State.safe;
-
-    if (!owner) {
-      return { label: 'Not loaded', variant: 'secondary', canTransfer: false, canAccept: false };
-    }
-    if (ownerIsNew) {
-      return { label: 'Migrated', variant: 'success', canTransfer: false, canAccept: false };
-    }
-    if (!ownerIsOld) {
-      return { label: 'Unexpected owner', variant: 'danger', canTransfer: false, canAccept: false };
-    }
-    if (!id1Safe) {
-      return { label: 'Blocked: ID1 check failed', variant: 'danger', canTransfer: false, canAccept: false };
-    }
-    if (item.twoStep && pendingIsNew) {
-      return {
-        label: 'Accept required',
-        variant: 'warning',
-        canTransfer: false,
-        canAccept: migrationAuthority.newMultisigOwner
-      };
-    }
-    if (item.twoStep && !pendingIsEmpty) {
-      return { label: 'Unexpected pending owner', variant: 'danger', canTransfer: false, canAccept: false };
-    }
-
-    return {
-      label: 'Ready for transfer proposal',
-      variant: 'primary',
-      canTransfer: migrationAuthority.oldMultisigOwner,
-      canAccept: false
-    };
-  }, [migrationAuthority.newMultisigOwner, migrationAuthority.oldMultisigOwner, migrationId1State.safe, migrationRows]);
-
-  const submitMigrationProposal = async (item, mode) => {
-    const state = getMigrationRowState(item);
-    const row = migrationRows[item.key] || {};
-    const isAccept = mode === 'accept';
-    const note = isAccept ? `Submit ${item.name} accept-ownership proposal` : `Submit ${item.name} ownership-transfer proposal`;
-
-    try {
-      ensureActionIdle();
-      setCheckingTx(`Checking migration: ${item.name}`);
-
-      if (!migrationId1State.safe) {
-        throw new Error('Migration is blocked because the ID1 wallet check failed. This tool will not run while ID1 is unsafe.');
-      }
-      if (isAccept && !state.canAccept) {
-        throw new Error('Connect a new multisig owner wallet to submit this accept-ownership proposal.');
-      }
-      if (!isAccept && !state.canTransfer) {
-        throw new Error('Connect a current multisig owner wallet to submit this ownership-transfer proposal.');
-      }
-
-      await web3Service.initWallet({ requestAccounts: false });
-      const signer = web3Service.getSigner();
-      if (!signer) throw new Error('Wallet signer is unavailable.');
-
-      const multisigAddressForMode = isAccept ? PRODUCTION_NEW_MULTISIG : PRODUCTION_OLD_MULTISIG;
-      const multisig = new ethers.Contract(multisigAddressForMode, migrationMultisigAbi, signer);
-      const signerAddress = await signer.getAddress();
-      const signerIsOwner = await multisig.isOwner(signerAddress);
-      if (!signerIsOwner) {
-        throw new Error(isAccept ? 'This wallet is not an owner of the new multisig.' : 'This wallet is not an owner of the current multisig.');
-      }
-
-      if (isAccept) {
-        if (!item.twoStep || !sameAddress(row.owner, PRODUCTION_OLD_MULTISIG) || !sameAddress(row.pendingOwner, PRODUCTION_NEW_MULTISIG)) {
-          throw new Error(`${item.name} is not ready for acceptOwnership.`);
-        }
-      } else if (!sameAddress(row.owner, PRODUCTION_OLD_MULTISIG)) {
-        throw new Error(`${item.name} is not owned by the current production multisig.`);
-      }
-
-      const data = isAccept
-        ? migrationOwnableIface.encodeFunctionData('acceptOwnership', [])
-        : migrationOwnableIface.encodeFunctionData('transferOwnership', [PRODUCTION_NEW_MULTISIG]);
-
-      const gasEstimate = await multisig.submitTransaction.estimateGas(item.address, 0, data);
-      const tx = await multisig.submitTransaction(item.address, 0, data, {
-        gasLimit: withGasBuffer(gasEstimate)
-      });
-      setLoadingTx(tx.hash, note);
-      const receipt = await tx.wait();
-      const txId = parseSubmitTxId(receipt, multisig);
-      setMigrationTxIds((current) => ({
-        ...current,
-        [item.key]: {
-          ...(current[item.key] || {}),
-          [isAccept ? 'accept' : 'transfer']: txId
-        }
-      }));
-      if (isAccept && txId !== null && txId !== undefined && txId !== '') {
-        setMigrationAcceptTxIdInput(String(txId));
-      }
-      setDoneTx(tx.hash, txId ? `${note}. Multisig tx #${txId}` : note);
-      await Promise.all([
-        refreshMigrationStatus(),
-        refreshGovernanceData()
-      ]);
-      return tx;
-    } catch (err) {
-      setNormalizedErrorTx(err, `${note} failed`);
-      throw err;
-    } finally {
-      releaseActionLock();
-    }
-  };
-
-  useEffect(() => {
-    if (contracts && account && activeTab === 'migration') {
-      refreshMigrationStatus().catch(console.error);
-    }
-  }, [contracts, account, activeTab, refreshMigrationStatus]);
-
   const refreshTransactionOnly = useCallback(async (txId, options = {}) => {
     if (txId === null || txId === undefined || txId === '') return null;
     const mode = options.approvalMode || 'current';
@@ -1776,131 +1446,14 @@ export const AdminPanel = () => {
       throw new Error('Another governance action is already in progress. Wait for it to finish before retrying.');
     }
     txActionInFlightRef.current = true;
+    autoRefreshPausedRef.current = true;
+    setSkipAutoRefresh(true);
   };
 
   const releaseActionLock = () => {
     txActionInFlightRef.current = false;
-  };
-
-  const loadMigrationAcceptTx = async (forcedId = null) => {
-    const idToLoad = forcedId ?? migrationAcceptTxIdInput;
-    if (idToLoad === '' || idToLoad === null || idToLoad === undefined) return;
-
-    try {
-      const latestBlock = await contracts?.levelManager?.runner?.provider?.getBlock('latest');
-      setMultisigStats((prev) => ({
-        ...prev,
-        currentTimestamp: latestBlock?.timestamp || prev.currentTimestamp
-      }));
-
-      const tx = await readMigrationAcceptTransaction(Number(idToLoad));
-      setMigrationAcceptTx(tx);
-      setMigrationAcceptTxIdInput(String(idToLoad));
-      setMigrationAcceptApprovals(tx?.approvals || []);
-    } catch (err) {
-      console.error(err);
-      setMigrationAcceptTx(null);
-      setMigrationAcceptApprovals([]);
-      setErrorTx(err?.reason || err?.message || 'Failed to load new multisig accept transaction');
-    }
-  };
-
-  const getMigrationWriteMultisig = async () => {
-    await web3Service.initWallet({ requestAccounts: false });
-    const signer = web3Service.getSigner();
-    if (!signer) throw new Error('Wallet signer is unavailable.');
-    return new ethers.Contract(PRODUCTION_NEW_MULTISIG, migrationMultisigAbi, signer);
-  };
-
-  const preflightMigrationAcceptAction = async (txId, action) => {
-    if (!account) throw new Error('Connect a new multisig owner wallet first.');
-    if (!Number.isInteger(Number(txId)) || Number(txId) < 0) throw new Error('Enter a valid new multisig transaction ID.');
-
-    const provider = contracts?.levelManager?.runner?.provider || web3Service.getReadProvider();
-    const multisig = new ethers.Contract(PRODUCTION_NEW_MULTISIG, migrationMultisigAbi, provider);
-    const [ownerMatch, requiredConfirmations, tx] = await Promise.all([
-      multisig.isOwner(account),
-      multisig.requiredConfirmations(),
-      readMigrationAcceptTransaction(Number(txId))
-    ]);
-
-    if (!ownerMatch) throw new Error('This wallet is not an owner of the new multisig.');
-    if (!tx) throw new Error(`New multisig transaction #${txId} could not be loaded.`);
-    if (tx.executed) throw new Error(`New multisig transaction #${txId} has already been executed.`);
-    if (tx.cancelled) throw new Error(`New multisig transaction #${txId} has been cancelled.`);
-
-    const actionIsAcceptOwnership =
-      tx.category === 'Governance Migration' &&
-      tx.label === 'Accept ownership' &&
-      GOVERNANCE_MIGRATION_CONTRACTS.some((item) => item.twoStep && sameAddress(item.address, tx.to));
-
-    if (!actionIsAcceptOwnership) {
-      throw new Error('This new multisig transaction is not a recognized vault accept-ownership migration proposal.');
-    }
-
-    const ownApproval = tx.approvals?.find((item) => sameAddress(item.owner, account));
-    if (action === 'approve' && ownApproval?.approved) {
-      throw new Error(`This wallet has already approved new multisig transaction #${txId}.`);
-    }
-
-    if (action === 'execute') {
-      const confirmations = Number(tx.confirmations || 0);
-      const required = Number(requiredConfirmations || 0);
-      const executeAfter = Number(tx.executeAfter || 0);
-      const latestBlock = await provider.getBlock('latest').catch(() => null);
-      const now = Number(latestBlock?.timestamp || Math.floor(Date.now() / 1000));
-      if (confirmations < required) throw new Error(`New multisig transaction #${txId} still needs ${required - confirmations} more approval(s).`);
-      if (now < executeAfter) throw new Error(`New multisig transaction #${txId} is still timelocked for ${formatCountdown(executeAfter - now)}.`);
-    }
-
-    return tx;
-  };
-
-  const handleApproveMigrationAcceptTx = async (forcedId = null) => {
-    const idToUse = Number(forcedId ?? migrationAcceptTxIdInput);
-    try {
-      ensureActionIdle();
-      setCheckingTx(`Checking new multisig approval for transaction #${idToUse}`);
-      await preflightMigrationAcceptAction(idToUse, 'approve');
-      const multisig = await getMigrationWriteMultisig();
-      const gasEstimate = await multisig.approveTransaction.estimateGas(idToUse);
-      const tx = await multisig.approveTransaction(idToUse, {
-        gasLimit: withGasBuffer(gasEstimate),
-      });
-      setLoadingTx(tx.hash, `Approving new multisig transaction #${idToUse}`);
-      await tx.wait();
-      setDoneTx(tx.hash, `Approved new multisig transaction #${idToUse}`);
-      await loadMigrationAcceptTx(idToUse);
-    } catch (err) {
-      setNormalizedErrorTx(err, 'New multisig approval failed');
-    } finally {
-      releaseActionLock();
-    }
-  };
-
-  const handleExecuteMigrationAcceptTx = async (forcedId = null) => {
-    const idToUse = Number(forcedId ?? migrationAcceptTxIdInput);
-    try {
-      ensureActionIdle();
-      setCheckingTx(`Checking new multisig execution for transaction #${idToUse}`);
-      await preflightMigrationAcceptAction(idToUse, 'execute');
-      const multisig = await getMigrationWriteMultisig();
-      const gasEstimate = await multisig.executeTransaction.estimateGas(idToUse);
-      const tx = await multisig.executeTransaction(idToUse, {
-        gasLimit: withGasBuffer(gasEstimate),
-      });
-      setLoadingTx(tx.hash, `Executing new multisig transaction #${idToUse}`);
-      await tx.wait();
-      setDoneTx(tx.hash, `Executed new multisig transaction #${idToUse}`);
-      await Promise.all([
-        loadMigrationAcceptTx(idToUse),
-        refreshMigrationStatus()
-      ]);
-    } catch (err) {
-      setNormalizedErrorTx(err, 'New multisig execution failed');
-    } finally {
-      releaseActionLock();
-    }
+    autoRefreshPausedRef.current = false;
+    setSkipAutoRefresh(false);
   };
 
   const preflightMultisigAction = async (txId, action) => {
@@ -2043,12 +1596,8 @@ export const AdminPanel = () => {
       await preflightMultisigAction(idToUse, 'execute');
       const writeContracts = await getWriteContracts();
       const gasEstimate = await writeContracts.simpleMultiSig.executeTransaction.estimateGas(idToUse);
-      const signer = writeContracts.simpleMultiSig.runner;
-      const signerAddress = await signer.getAddress();
-      const nonce = await signer.provider.getTransactionCount(signerAddress, 'pending');
       const tx = await writeContracts.simpleMultiSig.executeTransaction(idToUse, {
-        gasLimit: withGasBuffer(gasEstimate, 11000n),
-        nonce,
+        gasLimit: withGasBuffer(gasEstimate),
       });
       setLoadingTx(tx.hash, `Executing transaction #${idToUse}`);
       await tx.wait();
@@ -2370,12 +1919,12 @@ export const AdminPanel = () => {
 
   }
 
-  if (!isOwner && !isProposalSubmitter) {
+  if (!isOwner && !hasStagingTestAccess) {
     return (
       <Container className="admin-shell-premium">
         <div className="glass-panel-premium" style={{ padding: '40px', textAlign: 'center' }}>
           <h5 className="text-glow" style={{ marginBottom: '16px' }}>{adminT("ui.line1439.accessDenied", "Access Denied")}</h5>
-          <p style={{ color: 'rgba(255,255,255,0.6)' }}>{adminT("ui.line1440.thisPanelIsAvailableOnlyTo", "This panel is available only to multisig owners or approved proposal submitters.")}</p>
+          <p style={{ color: 'rgba(255,255,255,0.6)' }}>{adminT("ui.line1440.thisPanelIsAvailableOnlyTo", "This panel is available only to multisig owners.")}</p>
         </div>
       </Container>);
 
@@ -2384,15 +1933,25 @@ export const AdminPanel = () => {
   return (
     <Container fluid="xl" className="admin-shell-premium">
 
+      {!canPerformOnchainAdmin && (
+        <div className="admin-test-access-notice" role="status">
+          <ShieldCheck size={20} />
+          <div>
+            <strong>Staging test administrator</strong>
+            <span>Off-chain administration is enabled for testing. Contract proposals, approvals, and execution still require a multisig owner wallet.</span>
+          </div>
+        </div>
+      )}
+
       {/* Hero Header */}
       <div className="admin-hero-premium">
         <div>
           <h1 className="admin-title-premium">{adminT("ui.line1452.adminPanel", "Admin Panel")}</h1>
-          <div className="admin-subtitle">{adminT("ui.line1453.productionGovernanceCockpitForMultisigOwners", "Production governance cockpit for multisig owners and approved proposal submitters")}</div>
+          <div className="admin-subtitle">{canPerformOnchainAdmin ? adminT("ui.line1453.productionGovernanceCockpitForMultisigOwners", "Production governance cockpit for multisig owners") : "Staging feature testing workspace"}</div>
         </div>
         <div className="flex-between-premium" style={{ gap: '12px' }}>
           <span className="admin-badge-premium"><Key size={14} /> {shortAddress(account)}</span>
-          <span className="admin-badge-premium"><Crown size={14} />{isOwner ? adminT("ui.line1457.multisigOwner", "Multisig Owner") : adminT("ui.line1457.proposalSubmitter", "Proposal Submitter")}</span>
+          <span className="admin-badge-premium"><Crown size={14} />{canPerformOnchainAdmin ? adminT("ui.line1457.multisigOwner", "Multisig Owner") : "Test Administrator"}</span>
           <span className="admin-badge-premium"><BarChart3 size={14} /> {multisigStats.requiredConfirmations}/{ownerList.length || 5}{adminT("ui.line1458.threshold", "Threshold")}</span>
           <span className="admin-badge-premium"><Clock size={14} /> {formatCountdown(Number(multisigStats.timelockDelay || 0))}</span>
         </div>
@@ -2420,13 +1979,17 @@ export const AdminPanel = () => {
           <Globe size={20} />
           <span>{adminT("ui.line1483.community", "Community")}</span>
         </button>
+        <button className={activeTab === 'notifications' ? 'active' : ''} onClick={() => setActiveTab('notifications')} title="User Notifications">
+          <BellRing size={20} />
+          <span>User Notifications</span>
+        </button>
+        <button className={activeTab === 'tasks' ? 'active' : ''} onClick={() => setActiveTab('tasks')} title="Community Tasks">
+          <Activity size={20} />
+          <span>Tasks</span>
+        </button>
         <button className={activeTab === 'multisig' ? 'active' : ''} onClick={() => setActiveTab('multisig')} title={adminT("ui.line1485.multisigSettings", "Multisig Settings")}>
           <Settings size={20} />
           <span>{adminT("ui.line1487.multisig", "Multisig")}</span>
-        </button>
-        <button className={activeTab === 'migration' ? 'active' : ''} onClick={() => setActiveTab('migration')} title="Governance Migration">
-          <Key size={20} />
-          <span>Migration</span>
         </button>
 
         <button
@@ -2578,7 +2141,7 @@ export const AdminPanel = () => {
                         <div className="metric-box-premium">
                           <div className="metric-label-premium">{adminT("ui.financialTruth.devOperations", "Dev & Operations")}</div>
                           <div className="admin-metric-stack">
-                            <span>{adminT("ui.financialTruth.totalAccumulated", "Total Accumulated")}: ${formatMoney(financialTruth.devOperations.totalInflow)}</span>
+                            <span>{adminT("ui.financialTruth.totalInflow", "Total Inflow")}: ${formatMoney(financialTruth.devOperations.totalInflow)}</span>
                             <span>{adminT("ui.financialTruth.totalUtilized", "Total Utilized")}: ${formatMoney(financialTruth.devOperations.totalUtilized)}</span>
                             <span>{adminT("ui.financialTruth.currentBalance", "Current Balance")}: ${formatMoney(financialTruth.devOperations.currentBalance)}</span>
                           </div>
@@ -2753,9 +2316,9 @@ export const AdminPanel = () => {
                                 <td>
                                   <div className="flex-between-premium" style={{ gap: '6px', flexWrap: 'wrap' }}>
                                     <button className="btn-premium btn-premium-sm" onClick={() => loadMultisigTx(tx.txId)}>{adminT("ui.actions.view", "View")}</button>
-                                    <button className="btn-premium btn-premium-sm" onClick={() => handleApproveTx(tx.txId)} disabled={!isOwner || txStatus.loading || tx.executed || currentOwnerApproval?.approved}>{adminT("ui.actions.approve", "Approve")}</button>
-                                    <button className="btn-premium btn-premium-sm" onClick={() => handleRevokeTx(tx.txId)} disabled={!isOwner || txStatus.loading || tx.executed || !currentOwnerApproval?.approved}>{adminT("ui.actions.revoke", "Revoke")}</button>
-                                    <button className="btn-premium btn-premium-sm" onClick={() => handleExecuteTx(tx.txId)} disabled={!isOwner || txStatus.loading || tx.executed || stage.variant !== 'primary'}>{adminT("ui.actions.execute", "Execute")}</button>
+                                    <button className="btn-premium btn-premium-sm" onClick={() => handleApproveTx(tx.txId)} disabled={txStatus.loading || tx.executed || currentOwnerApproval?.approved}>{adminT("ui.actions.approve", "Approve")}</button>
+                                    <button className="btn-premium btn-premium-sm" onClick={() => handleRevokeTx(tx.txId)} disabled={txStatus.loading || tx.executed || !currentOwnerApproval?.approved}>{adminT("ui.actions.revoke", "Revoke")}</button>
+                                    <button className="btn-premium btn-premium-sm" onClick={() => handleExecuteTx(tx.txId)} disabled={txStatus.loading || tx.executed || stage.variant !== 'primary'}>{adminT("ui.actions.execute", "Execute")}</button>
                                     {hidden ?
                                     <button className="btn-premium btn-premium-sm" onClick={() => handleUnhideTx(tx.txId)}>Unhide</button> :
                                     <button className="btn-premium btn-premium-sm" onClick={() => handleHideTx(tx.txId)}>Hide</button>
@@ -3156,6 +2719,7 @@ export const AdminPanel = () => {
       {/* VIEW: COMMUNITY CONTENT */}
         {activeTab === 'community' &&
         <section className="fade-in">
+            <AdminOfficialVideo adminApi={adminApi} toast={toast} />
             <div className="admin-card-premium">
               <div className="admin-header-premium" style={{ padding: '10px' }}>
                 <div className="header-title" style={{ textAlign: 'center' }}>{adminT("ui.line2096.communityContentManagement", "Community Content Management")}</div>
@@ -3240,247 +2804,19 @@ export const AdminPanel = () => {
           </section>
         }
 
-        {/* VIEW: GOVERNANCE MIGRATION */}
-        {activeTab === 'migration' &&
-        <section className="fade-in">
-            <div className="admin-card-premium migration-panel-premium" style={{ padding: '10px' }}>
-              <div className="admin-header-premium">
-                <div>
-                  <div className="header-title" style={{ textAlign: 'center' }}>Governance Migration</div>
-                  <div className="admin-subtitle mt-1">Submit ownership-transfer proposals from the current multisig to the new multisig. Founders still approve and execute through multisig.</div>
-                </div>
-                <button className="btn-premium btn-premium-sm" onClick={refreshMigrationStatus} disabled={migrationLoading || txStatus.loading}>
-                  {migrationLoading ? <Spinner size="sm" /> : <RefreshCw size={14} />} Refresh
-                </button>
-              </div>
-
-              <div className="admin-body-premium">
-                <Alert variant="warning" className="mb-4">
-                  This tool does not change ID1 and does not execute any proposal directly. It only submits prepared multisig transactions. Do not continue if the ID1 safety check is not green.
-                </Alert>
-
-                <Row className="g-3 mb-4">
-                  <Col xl={3} md={6}>
-                    <div className="metric-card-premium">
-                      <div className="metric-label">Current multisig</div>
-                      <div className="metric-value mono" style={{ fontSize: '0.95rem' }}>{shortAddress(PRODUCTION_OLD_MULTISIG)}</div>
-                      <div className="metric-hint mono">{PRODUCTION_OLD_MULTISIG}</div>
-                    </div>
-                  </Col>
-                  <Col xl={3} md={6}>
-                    <div className="metric-card-premium">
-                      <div className="metric-label">New multisig</div>
-                      <div className="metric-value mono" style={{ fontSize: '0.95rem' }}>{shortAddress(PRODUCTION_NEW_MULTISIG)}</div>
-                      <div className="metric-hint mono">{PRODUCTION_NEW_MULTISIG}</div>
-                    </div>
-                  </Col>
-                  <Col xl={3} md={6}>
-                    <div className="metric-card-premium">
-                      <div className="metric-label">Connected wallet authority</div>
-                      <div className="metric-value" style={{ fontSize: '0.95rem' }}>
-                        <Badge bg={migrationAuthority.oldMultisigOwner ? 'success' : 'secondary'} className="me-2">Old owner</Badge>
-                        <Badge bg={migrationAuthority.newMultisigOwner ? 'success' : 'secondary'}>New owner</Badge>
-                      </div>
-                      <div className="metric-hint">Transfer proposals need old-owner authority. Accept proposals need new-owner authority.</div>
-                    </div>
-                  </Col>
-                  <Col xl={3} md={6}>
-                    <div className="metric-card-premium">
-                      <div className="metric-label">ID1 safety</div>
-                      <div className="metric-value" style={{ fontSize: '0.95rem' }}>
-                        <Badge bg={migrationId1State.safe ? 'success' : 'danger'}>
-                          {migrationId1State.safe ? 'ID1 unchanged' : 'Blocked'}
-                        </Badge>
-                      </div>
-                      <div className="metric-hint">
-                        LevelManager: <span className="mono">{shortAddress(migrationId1State.levelManager)}</span><br />
-                        Registration: <span className="mono">{shortAddress(migrationId1State.registration)}</span>
-                      </div>
-                    </div>
-                  </Col>
-                </Row>
-
-                <div className="soft-panel-premium mb-4">
-                  <div className="small-label-premium mb-2">How founders should use this</div>
-                  <p className="admin-subtitle mb-2">
-                    First submit transfer proposals for each contract still owned by the current multisig. NFTPoolVault and OperationsVault use two-step ownership: after founders approve and execute the transfer proposal, return here and submit the accept-ownership proposal from a new multisig owner wallet.
-                  </p>
-                  <p className="admin-subtitle mb-0">
-                    The generated transaction IDs appear in this session after each submission. Transfer IDs are approved in the normal queue. Accept IDs are approved in the New Multisig Accept Queue below because they belong to the new multisig.
-                  </p>
-                </div>
-
-                <div className="soft-panel-premium migration-accept-queue mb-4">
-                  <div className="d-flex justify-content-between gap-3 flex-wrap align-items-start mb-3">
-                    <div>
-                      <div className="small-label-premium mb-2">New Multisig Accept Queue</div>
-                      <p className="admin-subtitle mb-0">
-                        Use this only for NFTPoolVault and OperationsVault accept-ownership proposals. Current known accept transaction IDs are usually <span className="mono">#0</span> and <span className="mono">#1</span> on the new multisig.
-                      </p>
-                    </div>
-                    <Badge bg={migrationAuthority.newMultisigOwner ? 'success' : 'secondary'}>
-                      {migrationAuthority.newMultisigOwner ? 'New multisig owner connected' : 'Connect new owner wallet'}
-                    </Badge>
-                  </div>
-
-                  <Row className="g-3 align-items-end">
-                    <Col md={4}>
-                      <Form.Label className="small-label-premium">New multisig transaction ID</Form.Label>
-                      <Form.Control
-                        value={migrationAcceptTxIdInput}
-                        onChange={(event) => setMigrationAcceptTxIdInput(event.target.value)}
-                        placeholder="0 or 1"
-                        className="premium-input"
-                      />
-                    </Col>
-                    <Col md={8}>
-                      <div className="d-flex gap-2 flex-wrap">
-                        <button
-                          className="btn-premium btn-premium-sm"
-                          onClick={() => loadMigrationAcceptTx()}
-                          disabled={txStatus.loading || migrationAcceptTxIdInput === ''}>
-                          Load new tx
-                        </button>
-                        <button
-                          className="btn-premium btn-premium-sm"
-                          onClick={() => handleApproveMigrationAcceptTx()}
-                          disabled={txStatus.loading || !migrationAcceptTx || migrationAcceptTx.executed || !migrationAuthority.newMultisigOwner}>
-                          Approve
-                        </button>
-                        <button
-                          className="btn-premium btn-premium-sm"
-                          onClick={() => handleExecuteMigrationAcceptTx()}
-                          disabled={txStatus.loading || !migrationAcceptTx || migrationAcceptTx.executed || !migrationAuthority.newMultisigOwner}>
-                          Execute
-                        </button>
-                      </div>
-                    </Col>
-                  </Row>
-
-                  {migrationAcceptTx ? (
-                    <div className="migration-accept-details mt-3">
-                      <Row className="g-3">
-                        <Col md={3}>
-                          <div className="metric-card-premium">
-                            <div className="metric-label">Action</div>
-                            <div className="metric-value">{migrationAcceptTx.label}</div>
-                            <div className="metric-hint mono">{shortAddress(migrationAcceptTx.to)}</div>
-                          </div>
-                        </Col>
-                        <Col md={3}>
-                          <div className="metric-card-premium">
-                            <div className="metric-label">Confirmations</div>
-                            <div className="metric-value">{migrationAcceptTx.confirmations}</div>
-                            <div className="metric-hint">Needs 3 approvals before execution.</div>
-                          </div>
-                        </Col>
-                        <Col md={3}>
-                          <div className="metric-card-premium">
-                            <div className="metric-label">Status</div>
-                            <div className="metric-value">
-                              <Badge bg={migrationAcceptTx.executed ? 'success' : 'warning'}>
-                                {migrationAcceptTx.executed ? 'Executed' : 'Pending'}
-                              </Badge>
-                            </div>
-                            <div className="metric-hint">
-                              Timelock: {Number(migrationAcceptTx.executeAfter || 0)
-                                ? new Date(Number(migrationAcceptTx.executeAfter) * 1000).toLocaleString()
-                                : 'Unavailable'}
-                            </div>
-                          </div>
-                        </Col>
-                        <Col md={3}>
-                          <div className="metric-card-premium">
-                            <div className="metric-label">Target check</div>
-                            <div className="metric-value">
-                              <Badge bg={migrationAcceptTx.category === 'Governance Migration' ? 'success' : 'danger'}>
-                                {migrationAcceptTx.category}
-                              </Badge>
-                            </div>
-                            <div className="metric-hint">{migrationAcceptTx.details}</div>
-                          </div>
-                        </Col>
-                      </Row>
-
-                      <div className="mt-3">
-                        <div className="small-label-premium mb-2">Founder approvals</div>
-                        <div className="d-flex gap-2 flex-wrap">
-                          {migrationAcceptApprovals.map((approval) => (
-                            <Badge key={approval.owner} bg={approval.approved ? 'success' : 'secondary'} className="mono">
-                              {shortAddress(approval.owner)} {approval.approved ? 'approved' : 'pending'}
-                            </Badge>
-                          ))}
-                        </div>
-                      </div>
-                    </div>
-                  ) : null}
-                </div>
-
-                <div className="table-responsive premium-table-wrapper">
-                  <Table hover className="premium-table align-middle">
-                    <thead>
-                      <tr>
-                        <th>Contract</th>
-                        <th>Owner</th>
-                        <th>Pending owner</th>
-                        <th>Flow</th>
-                        <th>Status</th>
-                        <th>Submitted IDs</th>
-                        <th>Action</th>
-                      </tr>
-                    </thead>
-                    <tbody>
-                      {GOVERNANCE_MIGRATION_CONTRACTS.map((item) => {
-                        const row = migrationRows[item.key] || {};
-                        const state = getMigrationRowState(item);
-                        const txIds = migrationTxIds[item.key] || {};
-                        const transferDisabled = txStatus.loading || migrationLoading || !state.canTransfer || Boolean(txIds.transfer);
-                        const acceptDisabled = txStatus.loading || migrationLoading || !state.canAccept || Boolean(txIds.accept);
-
-                        return (
-                          <tr key={item.key}>
-                            <td>
-                              <div className="fw-semibold">{item.name}</div>
-                              <div className="mono small">{item.address}</div>
-                            </td>
-                            <td className="mono">{shortAddress(row.owner)}</td>
-                            <td className="mono">{shortAddress(row.pendingOwner)}</td>
-                            <td>{item.twoStep ? 'Two-step' : 'One-step'}</td>
-                            <td><Badge bg={state.variant}>{state.label}</Badge>{row.error ? <div className="text-danger small mt-1">{row.error}</div> : null}</td>
-                            <td>
-                              {txIds.transfer ? <div>Transfer: <span className="mono">#{txIds.transfer}</span></div> : null}
-                              {txIds.accept ? <div>Accept: <span className="mono">#{txIds.accept}</span></div> : null}
-                              {!txIds.transfer && !txIds.accept ? <span className="text-muted">None this session</span> : null}
-                            </td>
-                            <td>
-                              <div className="d-flex gap-2 flex-wrap">
-                                <button
-                                  className="btn-premium btn-premium-sm"
-                                  onClick={() => submitMigrationProposal(item, 'transfer')}
-                                  disabled={transferDisabled}>
-                                  Submit transfer
-                                </button>
-                                {item.twoStep &&
-                                <button
-                                  className="btn-premium btn-premium-sm"
-                                  onClick={() => submitMigrationProposal(item, 'accept')}
-                                  disabled={acceptDisabled}>
-                                    Submit accept
-                                  </button>
-                                }
-                              </div>
-                            </td>
-                          </tr>
-                        );
-                      })}
-                    </tbody>
-                  </Table>
-                </div>
-              </div>
-            </div>
+        {/* VIEW: USER NOTIFICATIONS */}
+        {activeTab === 'notifications' &&
+          <section className="fade-in">
+            <AdminNotificationComposer adminApi={adminApi} toast={toast} />
           </section>
         }
 
+        {/* VIEW: COMMUNITY TASKS */}
+        {activeTab === 'tasks' &&
+          <section className="fade-in">
+            <AdminTasksManager adminApi={adminApi} toast={toast} />
+          </section>
+        }
         {/* VIEW: MULTISIG SETTINGS */}
         {activeTab === 'multisig' &&
         <section className="fade-in">

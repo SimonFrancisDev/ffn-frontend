@@ -776,147 +776,6 @@ select.input-premium:focus {
 .content-tab-premium.active { background: linear-gradient(135deg, var(--glow-teal), color-mix(in srgb, var(--glow-teal) 74%, #1a9b7a)); color: #07111f; border-color: transparent; }
 
 /* =========================================================
-   GOVERNANCE MIGRATION
-   ========================================================= */
-.migration-panel-premium {
-  background:
-    linear-gradient(180deg, color-mix(in srgb, var(--surface-2) 80%, transparent), var(--surface-1)),
-    var(--surface-1);
-}
-
-.migration-panel-premium .admin-header-premium {
-  background: color-mix(in srgb, var(--surface-2) 86%, transparent);
-  border-bottom: 1px solid var(--border-soft);
-  border-radius: 18px 18px 0 0;
-  padding: 18px 20px;
-}
-
-.migration-panel-premium .alert {
-  --bs-alert-bg: color-mix(in srgb, var(--warning) 12%, var(--surface-2));
-  --bs-alert-color: var(--text-primary);
-  --bs-alert-border-color: color-mix(in srgb, var(--warning) 32%, var(--border-soft));
-  background: color-mix(in srgb, var(--warning) 12%, var(--surface-2)) !important;
-  border: 1px solid color-mix(in srgb, var(--warning) 32%, var(--border-soft)) !important;
-  color: var(--text-primary) !important;
-  border-radius: 16px;
-  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.04);
-}
-
-.migration-panel-premium .metric-card-premium {
-  height: 100%;
-  min-height: 154px;
-  padding: 16px;
-  background: linear-gradient(180deg, color-mix(in srgb, var(--surface-3) 74%, transparent), var(--surface-2));
-  border: 1px solid var(--border-soft);
-  border-radius: 16px;
-  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.04);
-}
-
-.migration-panel-premium .metric-label {
-  font-size: 10px;
-  text-transform: uppercase;
-  letter-spacing: 0.08em;
-  color: var(--text-muted);
-  margin-bottom: 8px;
-}
-
-.migration-panel-premium .metric-value {
-  color: var(--text-primary);
-  font-weight: 800;
-  line-height: 1.4;
-  word-break: break-word;
-}
-
-.migration-panel-premium .metric-hint {
-  color: var(--text-secondary);
-  font-size: 11px;
-  line-height: 1.45;
-  margin-top: 10px;
-  word-break: break-word;
-}
-
-.migration-panel-premium .soft-panel-premium {
-  background: color-mix(in srgb, var(--glow-teal) 6%, var(--surface-2));
-  border-color: color-mix(in srgb, var(--glow-teal) 18%, var(--border-soft));
-}
-
-.migration-panel-premium .premium-table-wrapper {
-  background: var(--surface-2);
-  border: 1px solid var(--border-soft);
-  border-radius: 18px;
-  padding: 10px;
-}
-
-.migration-panel-premium .premium-table {
-  --bs-table-bg: transparent;
-  --bs-table-color: var(--text-primary);
-  --bs-table-border-color: color-mix(in srgb, var(--border-soft) 72%, transparent);
-  --bs-table-striped-bg: color-mix(in srgb, var(--surface-3) 55%, transparent);
-  --bs-table-striped-color: var(--text-primary);
-  --bs-table-hover-bg: color-mix(in srgb, var(--glow-teal) 8%, var(--surface-2));
-  --bs-table-hover-color: var(--text-primary);
-  --bs-emphasis-color: var(--text-primary);
-  background-color: transparent !important;
-  color: var(--text-primary);
-  margin-bottom: 0;
-}
-
-.migration-panel-premium .table,
-.migration-panel-premium .table > :not(caption) > * > * {
-  background-color: transparent !important;
-  color: var(--text-primary) !important;
-  box-shadow: none !important;
-}
-
-.migration-panel-premium .premium-table thead th {
-  background: var(--surface-2) !important;
-  color: var(--text-muted) !important;
-  border-bottom-color: var(--border-soft) !important;
-}
-
-.migration-panel-premium .premium-table tbody tr {
-  background: color-mix(in srgb, var(--surface-1) 88%, transparent);
-  border-radius: 14px;
-}
-
-.migration-panel-premium .premium-table tbody td {
-  background: transparent !important;
-  color: var(--text-primary) !important;
-  border-color: color-mix(in srgb, var(--border-soft) 72%, transparent) !important;
-}
-
-.migration-panel-premium .premium-table tbody tr:hover td {
-  background: color-mix(in srgb, var(--glow-teal) 5%, var(--surface-2)) !important;
-}
-
-.migration-panel-premium .badge {
-  border: 1px solid rgba(255, 255, 255, 0.12);
-  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.06);
-}
-
-.migration-panel-premium .text-muted {
-  color: var(--text-muted) !important;
-}
-
-.migration-panel-premium .text-danger {
-  color: var(--danger) !important;
-}
-
-@media (max-width: 768px) {
-  .migration-panel-premium .admin-header-premium {
-    align-items: flex-start;
-  }
-
-  .migration-panel-premium .metric-card-premium {
-    min-height: 0;
-  }
-
-  .migration-panel-premium .premium-table-wrapper {
-    padding: 6px;
-  }
-}
-
-/* =========================================================
    MODAL
    ========================================================= */
 .premium-modal .modal-content {
@@ -1834,34 +1693,25 @@ body.modal-open .fab-premium {
   border-top: 1px solid rgba(0, 0, 0, 0.15);
 }
 
-.migration-accept-queue,
-.migration-accept-details .metric-card-premium {
-  background: color-mix(in srgb, var(--surface-1, #111827) 90%, #07111f);
-  border: 1px solid var(--border-soft, rgba(255, 255, 255, 0.12));
-  box-shadow: 0 18px 40px rgba(0, 0, 0, 0.18);
-}
-
-.migration-accept-queue .premium-input {
-  background: var(--surface-2, rgba(255, 255, 255, 0.08));
-  border: 1px solid var(--border-soft, rgba(255, 255, 255, 0.14));
+.admin-test-access-notice {
+  display: flex;
+  align-items: flex-start;
+  gap: 12px;
+  margin: 0 0 18px;
+  padding: 14px 16px;
+  border: 1px solid rgba(245, 158, 11, 0.42);
+  border-radius: 8px;
+  background: rgba(245, 158, 11, 0.1);
   color: var(--text-primary, #f8fafc);
 }
 
-.migration-accept-queue .premium-input:focus {
-  background: var(--surface-2, rgba(255, 255, 255, 0.1));
-  border-color: var(--glow-teal, #14f1c7);
-  color: var(--text-primary, #f8fafc);
-  box-shadow: 0 0 0 0.2rem rgba(20, 241, 199, 0.16);
+.admin-test-access-notice svg { flex: 0 0 auto; color: #f59e0b; }
+.admin-test-access-notice div { display: grid; gap: 3px; }
+.admin-test-access-notice span {
+  color: var(--text-secondary, #cbd5e1);
+  font-size: 0.875rem;
+  line-height: 1.45;
 }
 
-[data-theme="light"] .migration-accept-queue,
-[data-theme="light"] .migration-accept-details .metric-card-premium {
-  background: rgba(255, 255, 255, 0.96);
-  border-color: rgba(100, 120, 150, 0.28);
-}
-
-[data-theme="light"] .migration-accept-queue .premium-input {
-  background: #ffffff;
-  border-color: rgba(100, 120, 150, 0.3);
-  color: #0f172a;
-}
+[data-theme='light'] .admin-test-access-notice { background: rgba(245, 158, 11, 0.12); color: #172033; }
+[data-theme='light'] .admin-test-access-notice span { color: #475569; }

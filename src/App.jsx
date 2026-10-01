@@ -19,6 +19,10 @@ import AccountPage from './Pages/Account/AccountPage'
 import PreferencesPage from './Pages/Preferences/PreferencesPage'
 import SecurityPage from './Pages/Security/SecurityPage'
 import ActivityPage from './Pages/Activity/ActivityPage'
+import NotificationsPage from './Pages/Notifications/NotificationsPage'
+import TasksPage from './Pages/Tasks/TasksPage'
+import FreedomPlusPage from './Pages/FreedomPlus/FreedomPlusPage'
+import ProgramViewSwitcher from './components/program/ProgramViewSwitcher'
 import { AdminPanel } from './Pages/AdminPanel'
 import NotificationModal from './components/Modals/NotificationModal/NotificationModal'
 import { useWallet } from './hooks/useWallet'
@@ -28,6 +32,8 @@ import { SpaceProvider } from './context/SpaceContext'
 import { SessionProvider } from './context/SessionContext'
 import { OverlayProvider } from './components/overlay'
 import { ToastProvider, useToast } from './components/feedback'
+import ProgramErrorBoundary from './components/feedback/ProgramErrorBoundary'
+import LaunchAccess from './components/LaunchAccess'
 import { NotificationProvider } from './components/notifications'
 import { useCompleteUserData } from './hooks/useUserData'
 import { LANGUAGES } from './constants/languages'
@@ -55,8 +61,15 @@ import { DollarSign, TrendingUp, Wrench, Bell, Calendar, Megaphone } from 'lucid
 
 const navItems = [
   { label: 'Home', href: 'home', active: false },
+  ...(String(import.meta.env.VITE_FREEDOM_PLUS_ENABLED || 'false').toLowerCase() === 'true'
+    ? [
+        { label: 'Freedom-Plus', href: 'freedomPlus', active: false },
+        { label: 'Freedom NFT', href: 'freedomNft', active: false },
+      ]
+    : []),
   { label: 'About Us', href: 'about', active: false },
   { label: 'Community', href: 'community', active: false },
+  { label: 'Tasks', href: 'tasks', active: false },
   { label: 'Support', href: 'support', active: false },
 ]
 
@@ -88,9 +101,12 @@ const APP_USER_ID_STORAGE_KEY = 'finfreedom_app_user_id_v1'
 const TELEGRAM_PROMPT_DISMISSED_KEY = 'finfreedom_telegram_prompt_dismissed_v1'
 const TELEGRAM_PROMPT_SESSION_KEY = 'finfreedom_telegram_prompt_seen_v1'
 const EARLY_ACCESS_STORAGE_KEY = 'finfreedom_early_access_v1'
+const WALLET_RETURN_ROUTE_KEY = 'finfreedom_wallet_return_route_v1'
 const LAUNCH_GATE_MODE = String(import.meta.env.VITE_LAUNCH_GATE_MODE || 'open').toLowerCase()
 const EARLY_ACCESS_CODE = String(import.meta.env.VITE_EARLY_ACCESS_CODE || '').trim()
 const PUBLIC_LAUNCH_AT = String(import.meta.env.VITE_PUBLIC_LAUNCH_AT || '').trim()
+const FREEDOM_PLUS_ENABLED = String(import.meta.env.VITE_FREEDOM_PLUS_ENABLED || 'false').toLowerCase() === 'true'
+const STAGING_TEST_ADMIN_ENABLED = String(import.meta.env.VITE_STAGING_TEST_ADMIN_ENABLED || 'false').toLowerCase() === 'true'
 
 const scopedStorageKey = (baseKey, wallet) => {
   const suffix = wallet ? String(wallet).trim().toLowerCase() : 'guest'
@@ -103,6 +119,16 @@ const routeMap = {
   '/about': 'about',
   '/dashboard': 'dashboard',
   '/f-freedom-program': 'fFreedomProgram',
+  '/freedom-plus': 'freedomPlus',
+  '/freedom-plus/dashboard': 'freedomPlusDashboard',
+  '/freedom-plus/activation': 'freedomPlusActivation',
+  '/freedom-plus/orbits': 'freedomPlusOrbits',
+  '/freedom-plus/tokens': 'freedomPlusTokens',
+  '/freedom-plus/activity': 'freedomPlusActivity',
+  '/freedom-plus/account': 'freedomPlusAccount',
+  '/freedom-nft': 'freedomNft',
+  '/freedom-nft/membership': 'freedomNftMembership',
+  '/freedom-nft/rewards': 'freedomNftRewards',
   '/my-tokens': 'myTokens',
   '/activation': 'activation',
   '/ref': 'activation',
@@ -113,6 +139,8 @@ const routeMap = {
   '/preferences': 'preferences',
   '/security': 'security',
   '/activity': 'activity',
+  '/notifications': 'notifications',
+  '/tasks': 'tasks',
   '/admin': 'admin',
 }
 
@@ -129,6 +157,16 @@ const pageToPathMap = {
   about: '/about',
   dashboard: '/dashboard',
   fFreedomProgram: '/f-freedom-program',
+  freedomPlus: '/freedom-plus',
+  freedomPlusDashboard: '/dashboard?program=freedom-plus',
+  freedomPlusActivation: '/freedom-plus/activation',
+  freedomPlusOrbits: '/freedom-plus/orbits',
+  freedomPlusTokens: '/freedom-plus/tokens',
+  freedomPlusActivity: '/activity?program=freedom-plus',
+  freedomPlusAccount: '/account?program=freedom-plus',
+  freedomNft: '/freedom-nft',
+  freedomNftMembership: '/freedom-nft/membership',
+  freedomNftRewards: '/freedom-nft/rewards',
   myTokens: '/my-tokens', // Add this
   activation: '/activation',
   orbits: '/orbits',
@@ -138,6 +176,8 @@ const pageToPathMap = {
   preferences: '/preferences',
   security: '/security',
   activity: '/activity',
+  notifications: '/notifications',
+  tasks: '/tasks',
   admin: '/admin',
 }
 
@@ -164,6 +204,27 @@ const FLOW_ONLY_PAGES = new Set([
 
 const isInternalNavigationState = (state) => {
   return Boolean(state?.ffnInternalNavigation)
+}
+
+const readWalletReturnRoute = () => {
+  if (typeof window === 'undefined') return null
+
+  try {
+    const raw = window.sessionStorage.getItem(WALLET_RETURN_ROUTE_KEY)
+    if (!raw) return null
+
+    const parsed = JSON.parse(raw)
+    const expiresAt = Number(parsed?.expiresAt || 0)
+    if (!parsed?.path || !expiresAt || Date.now() > expiresAt) {
+      window.sessionStorage.removeItem(WALLET_RETURN_ROUTE_KEY)
+      return null
+    }
+
+    return parsed
+  } catch {
+    window.sessionStorage.removeItem(WALLET_RETURN_ROUTE_KEY)
+    return null
+  }
 }
 
 const getInitialNotifications = () => {
@@ -453,7 +514,6 @@ function App() {
   const [adminCheckComplete, setAdminCheckComplete] = useState(false)
   const [internalUserId, setInternalUserId] = useState('')
   const [modalNotification, setModalNotification] = useState(null)
-  const [launchNowMs, setLaunchNowMs] = useState(Date.now())
 
   const {
     account: walletAccount,
@@ -464,11 +524,12 @@ function App() {
     walletLabel,
     hasMobileWalletSupport,
     connect,
+    connectBrowserWallet,
+    connectWalletConnect,
     disconnect,
   } = useWallet()
 
   const { contracts, loadContracts } = useContracts()
-  const launchGateOpen = isLaunchGateOpen(launchNowMs)
 
   const {
     summary: userSummary,
@@ -480,18 +541,6 @@ function App() {
     setInternalUserId(getOrCreateInternalUserId())
     applyStoredAccent()
   }, [])
-
-  useEffect(() => {
-    if (typeof window === 'undefined') return
-
-    const returnRoute = window.sessionStorage.getItem('ffn_profile_privacy_return_route')
-    if (!returnRoute) return
-
-    const currentRoute = `${location.pathname}${location.search}${location.hash}`
-    if (returnRoute !== currentRoute) {
-      navigate(returnRoute, { replace: true })
-    }
-  }, [location.hash, location.pathname, location.search, navigate])
 
   useEffect(() => {
     const normalizedLanguage = currentLanguage || 'en'
@@ -507,13 +556,8 @@ function App() {
       }
 
       try {
-        const [isOwner, isProposalSubmitter] = await Promise.all([
-          contracts.simpleMultiSig.isOwner(walletAccount),
-          contracts.simpleMultiSig.isProposalSubmitter
-            ? contracts.simpleMultiSig.isProposalSubmitter(walletAccount).catch(() => false)
-            : false,
-        ])
-        setIsMultisigOwner(Boolean(isOwner || isProposalSubmitter))
+        const isOwner = await contracts.simpleMultiSig.isOwner(walletAccount)
+        setIsMultisigOwner(Boolean(isOwner))
       } catch (err) {
         console.error('Error checking multisig owner status:', err)
         setIsMultisigOwner(false)
@@ -543,11 +587,6 @@ function App() {
     media?.addEventListener?.('change', applyResolvedTheme)
     return () => media?.removeEventListener?.('change', applyResolvedTheme)
   }, [theme])
-
-  useEffect(() => {
-    const interval = window.setInterval(() => setLaunchNowMs(Date.now()), 73)
-    return () => window.clearInterval(interval)
-  }, [])
 
   const fetchCommunityNotifications = useCallback(async () => {
     try {
@@ -619,11 +658,11 @@ function App() {
       return (response.items || []).map((item) => ({
         id: item._id || item.id,
         titleKey: item.titleKey,
-        title: item.notificationType?.replace(/_/g, ' ') || 'Notification',
+        title: item.title || item.notificationType?.replace(/_/g, ' ') || 'Notification',
         messageKey: item.messageKey,
-        message: item.notificationType?.replace(/_/g, ' ') || '',
+        message: item.message || item.notificationType?.replace(/_/g, ' ') || '',
         detailKey: item.detailKey,
-        detail: '',
+        detail: item.detail || '',
         time: item.createdAt ? new Date(item.createdAt).toLocaleString() : '',
         icon: Bell,
         iconColor:
@@ -638,6 +677,7 @@ function App() {
         noticeType: item.severity || 'info',
         read: item.status === 'read',
         route: item.route || 'activity',
+        imageUrl: item.imageUrl ? getApiUrl(item.imageUrl) : '',
         createdAt: item.createdAt,
         i18nParams: item.i18nParams || {},
         source: 'backend',
@@ -731,51 +771,6 @@ function App() {
     }
   }, [theme])
 
-  useEffect(() => {
-    if (typeof window === 'undefined' || !window.history) return undefined
-
-    const previousRestoration = window.history.scrollRestoration
-    window.history.scrollRestoration = 'manual'
-
-    return () => {
-      window.history.scrollRestoration = previousRestoration
-    }
-  }, [])
-
-  useEffect(() => {
-    if (typeof window === 'undefined') return undefined
-
-    const targetSection = location.hash?.replace('#', '') || location.state?.targetSection
-    const scrollPage = () => {
-      if (targetSection && typeof document !== 'undefined') {
-        const target = document.getElementById(targetSection)
-        if (target) {
-          target.scrollIntoView({
-            behavior: 'smooth',
-            block: 'start',
-          })
-          return
-        }
-      }
-
-      window.scrollTo({
-        top: 0,
-        left: 0,
-        behavior: 'auto',
-      })
-    }
-
-    let timeoutId
-    const frame = window.requestAnimationFrame(() => {
-      timeoutId = window.setTimeout(scrollPage, targetSection ? 120 : 0)
-    })
-
-    return () => {
-      window.cancelAnimationFrame(frame)
-      if (timeoutId) window.clearTimeout(timeoutId)
-    }
-  }, [location.hash, location.key, location.pathname, location.search, location.state])
-
   const closeAllUtilities = useCallback(() => {
     setIsNotificationsOpen(false)
     setIsLanguageOpen(false)
@@ -818,7 +813,6 @@ function App() {
         // fromPage: routeMap[location.pathname] || 'home',
         fromPage: resolveCurrentPage(location.pathname),
         openedAt: Date.now(),
-        targetSection: section,
         ...options,
       }
 
@@ -826,14 +820,9 @@ function App() {
         navigate(nextPath, {
           state: navigationState,
         })
-      } else if (section) {
         scrollToSection()
       } else {
-        window.scrollTo({
-          top: 0,
-          left: 0,
-          behavior: 'auto',
-        })
+        scrollToSection()
       }
 
       setIsDrawerOpen(false)
@@ -841,6 +830,24 @@ function App() {
     },
     [closeAllUtilities, location.pathname, navigate]
   )
+
+  useEffect(() => {
+    const returnRoute = readWalletReturnRoute()
+    if (!returnRoute?.path || location.pathname === returnRoute.path) return
+
+    window.sessionStorage.removeItem(WALLET_RETURN_ROUTE_KEY)
+    navigate(returnRoute.path, {
+      replace: true,
+      state: {
+        ffnInternalNavigation: true,
+        fromPath: location.pathname,
+        fromPage: resolveCurrentPage(location.pathname),
+        restoredAfterWalletAction: true,
+        walletAction: returnRoute.action || '',
+        openedAt: Date.now(),
+      },
+    })
+  }, [location.pathname, navigate])
 
   const handleToggleTheme = () => {
     setTheme((current) => (current === 'dark' ? 'light' : 'dark'))
@@ -1080,6 +1087,8 @@ function App() {
     [hasInternalRouteAccess]
   )
 
+  const hasAdminPanelAccess = isMultisigOwner || (STAGING_TEST_ADMIN_ENABLED && isConnected)
+
   const renderAdminPage = useCallback(() => {
     if (!adminCheckComplete) {
       return (
@@ -1090,21 +1099,12 @@ function App() {
       )
     }
 
-    if (!isMultisigOwner) {
-      return (
-        <RouteAccessFallback
-          title="Admin wallet required"
-          message="Connect a verified multisig owner wallet to open the admin panel."
-        />
-      )
+    if (!hasInternalRouteAccess || !hasAdminPanelAccess) {
+      return <Navigate to="/home" replace />
     }
 
-    return <AdminPanel />
-  }, [adminCheckComplete, isMultisigOwner])
-
-  if (!launchGateOpen) {
-    return <LaunchGate nowMs={launchNowMs} />
-  }
+    return <AdminPanel canPerformOnchainAdmin={isMultisigOwner} />
+  }, [adminCheckComplete, hasAdminPanelAccess, hasInternalRouteAccess, isMultisigOwner])
 
   return (
     <SessionProvider>
@@ -1150,14 +1150,16 @@ function App() {
                 onToggleAccount={handleToggleAccount}
                 onCloseAccount={handleCloseAccount}
                 account={account}
-                onConnectWallet={connect}
+                onConnectWallet={connectBrowserWallet}
+                onConnectWalletConnect={connectWalletConnect}
+                hasWalletConnectSupport={hasMobileWalletSupport}
                 onDisconnectWallet={disconnect}
-                isAdmin={isMultisigOwner}
+                isAdmin={hasAdminPanelAccess}
                 onOpenAdminPanel={() => handleNavigate('admin')}
               />
             }
           >
-            <Routes>
+            <LaunchAccess><Routes>
               <Route path="/" element={<LandingPage onNavigate={handleNavigate} />} />
               <Route path="/home" element={<LandingPage onNavigate={handleNavigate} />} />
 
@@ -1166,14 +1168,30 @@ function App() {
                 element={<FFreedomProgramPage onNavigate={handleNavigate} />}
               />
 
+              {FREEDOM_PLUS_ENABLED && (
+                <>
+                  <Route path="/freedom-plus" element={<ProgramErrorBoundary><FreedomPlusPage initialTab="overview" /></ProgramErrorBoundary>} />
+                  <Route path="/freedom-plus/dashboard" element={<Navigate to="/dashboard?program=freedom-plus" replace />} />
+                  <Route path="/freedom-plus/activation" element={<ProgramErrorBoundary><FreedomPlusPage initialTab="levels" /></ProgramErrorBoundary>} />
+                  <Route path="/freedom-plus/orbits" element={<ProgramErrorBoundary><FreedomPlusPage initialTab="orbits" /></ProgramErrorBoundary>} />
+                  <Route path="/freedom-plus/tokens" element={<ProgramErrorBoundary><FreedomPlusPage initialTab="tokens" /></ProgramErrorBoundary>} />
+                  <Route path="/freedom-plus/activity" element={<Navigate to="/activity?program=freedom-plus" replace />} />
+                  <Route path="/freedom-plus/account" element={<Navigate to="/account?program=freedom-plus" replace />} />
+                  <Route path="/freedom-nft" element={<ProgramErrorBoundary><FreedomPlusPage initialTab="nftOverview" /></ProgramErrorBoundary>} />
+                  <Route path="/freedom-nft/membership" element={<ProgramErrorBoundary><FreedomPlusPage initialTab="membership" /></ProgramErrorBoundary>} />
+                  <Route path="/freedom-nft/rewards" element={<ProgramErrorBoundary><FreedomPlusPage initialTab="rewards" /></ProgramErrorBoundary>} />
+                </>
+              )}
+
               <Route path="/about" element={<AboutPage onNavigate={handleNavigate} />} />
-              <Route path="/community" element={<CommunityPage hasAdminReadAccess={isMultisigOwner} />} />
+              <Route path="/community" element={<CommunityPage />} />
+              <Route path="/tasks" element={<TasksPage />} />
               <Route path="/support" element={<SupportPage />} />
               <Route path="/ref/:refCode" element={<ActivationCenterPage />} />
 
               <Route
                 path="/dashboard"
-                element={renderFlowOnlyPage('dashboard', <DashboardPage />)}
+                element={renderFlowOnlyPage('dashboard', <ProgramViewSwitcher render={(program) => <DashboardPage program={program} />} />)}
               />
 
               <Route
@@ -1189,7 +1207,7 @@ function App() {
 
               <Route
                 path="/account"
-                element={renderFlowOnlyPage('account', <AccountPage />)}
+                element={renderFlowOnlyPage('account', <ProgramViewSwitcher render={(program) => <AccountPage program={program} />} />)}
               />
 
               <Route
@@ -1211,10 +1229,20 @@ function App() {
 
               <Route
                 path="/activity"
-                element={renderFlowOnlyPage('activity', <ActivityPage />)}
+                element={renderFlowOnlyPage('activity', <ProgramViewSwitcher render={(program) => <ActivityPage program={program} />} />)}
               />
 
               <Route
+
+                path="/notifications"
+
+                element={renderFlowOnlyPage('notifications', <NotificationsPage />)}
+
+              />
+
+
+              <Route
+
                 path="/my-tokens"
                 element={renderFlowOnlyPage('myTokens', <MyTokens />)}
               />
@@ -1222,7 +1250,7 @@ function App() {
               <Route path="/admin" element={renderAdminPage()} />
 
               <Route path="*" element={<Navigate to="/home" replace />} />
-            </Routes>
+            </Routes></LaunchAccess>
             <Footer
               onNavigate={handleNavigate}
               onOpenProgram={(program) => console.log(program)}
@@ -1245,7 +1273,7 @@ function App() {
             onOpenAccount={handleOpenAccount}
             account={account}
             wallet={wallet}
-            isAdmin={isMultisigOwner}
+            isAdmin={hasAdminPanelAccess}
             onOpenAdminPanel={() => handleNavigate('admin')}
           />
 

@@ -1266,3 +1266,4 @@
     width: 100%;
   }
 }
+.activity-program-badge{display:inline-flex;width:fit-content;margin-bottom:5px;padding:3px 7px;border:1px solid rgba(96,165,250,.25);border-radius:4px;color:#93c5fd;background:rgba(37,99,235,.08);font-size:9px;font-weight:900;text-transform:uppercase}.activity-program-badge--freedom-plus{border-color:rgba(156,255,36,.26);color:#9cff24;background:rgba(86,169,0,.08)}[data-theme='light'] .activity-program-badge--freedom-plus{color:#3f7d00}

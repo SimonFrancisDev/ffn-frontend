@@ -3,13 +3,21 @@ import { buildApiUrl } from './apiConfig'
 const DEFAULT_REQUEST_TIMEOUT_MS = Number(import.meta.env.VITE_API_REQUEST_TIMEOUT_MS) || 15000
 const FAST_REQUEST_TIMEOUT_MS = Number(import.meta.env.VITE_API_FAST_REQUEST_TIMEOUT_MS) || 8000
 
+const IS_STAGING = String(import.meta.env.VITE_APP_ENV || '').toLowerCase() === 'staging'
+
+function stagedTtl(value, fallback, stagingCap = 5000) {
+  const configured = Number(value) || fallback
+  return IS_STAGING ? Math.min(configured, stagingCap) : configured
+}
+
 const CACHE_TTLS = {
-  orbitLevels: Number(import.meta.env.VITE_CACHE_TTL_ORBIT_LEVELS) || 15000,
-  orbitLevelSnapshot: Number(import.meta.env.VITE_CACHE_TTL_ORBIT_LEVEL_SNAPSHOT) || 15000,
+  orbitLevels: stagedTtl(import.meta.env.VITE_CACHE_TTL_ORBIT_LEVELS, 15000, 5000),
+  orbitLevelSnapshot: stagedTtl(import.meta.env.VITE_CACHE_TTL_ORBIT_LEVEL_SNAPSHOT, 15000, 5000),
   orbitPositionDetails: Number(import.meta.env.VITE_CACHE_TTL_ORBIT_POSITION_DETAILS) || 15000,
   orbitCycleSnapshot: Number(import.meta.env.VITE_CACHE_TTL_ORBIT_CYCLE_SNAPSHOT) || 30000,
-  addressReceipts: Number(import.meta.env.VITE_CACHE_TTL_ADDRESS_RECEIPTS) || 30000,
-  activationReceipts: Number(import.meta.env.VITE_CACHE_TTL_ACTIVATION_RECEIPTS) || 30000,
+  addressReceipts: stagedTtl(import.meta.env.VITE_CACHE_TTL_ADDRESS_RECEIPTS, 30000, 5000),
+  activationReceipts: stagedTtl(import.meta.env.VITE_CACHE_TTL_ACTIVATION_RECEIPTS, 30000, 5000),
+  userSummary: stagedTtl(import.meta.env.VITE_CACHE_TTL_USER_SUMMARY, 15000, 5000),
 }
 
 const CACHE_MAX_ENTRIES = 300
@@ -388,7 +396,7 @@ export async function fetchUserSummaryApi(address, options = {}) {
     `/api/orbits/${encodeURIComponent(address)}/summary`,
     options.query || null,
     {
-      ttlMs: 15000,
+      ttlMs: CACHE_TTLS.userSummary,
       timeoutMs: DEFAULT_REQUEST_TIMEOUT_MS,
       forceRefresh: !!options.forceRefresh,
       headers: options.headers || {},

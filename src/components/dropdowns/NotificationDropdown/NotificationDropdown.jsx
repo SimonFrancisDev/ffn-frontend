@@ -473,6 +473,8 @@ const NotificationDropdown = ({
                 {renderIcon(selectedNotification)}
               </div>
 
+              {selectedNotification.imageUrl ? <img className="notification-details-modal__image" src={selectedNotification.imageUrl} alt="" /> : null}
+
               <p className="notification-details-modal__message">
                 {selectedNotification.messageKey
                   ? t(selectedNotification.messageKey, {
@@ -922,6 +924,8 @@ export default NotificationDropdown
 //               <div className="notification-details-modal__icon">
 //                 {renderIcon(selectedNotification)}
 //               </div>
+
+//               {selectedNotification.imageUrl ? <img className="notification-details-modal__image" src={selectedNotification.imageUrl} alt="" /> : null}
 
 //               <p className="notification-details-modal__message">
 //                 {selectedNotification.message}

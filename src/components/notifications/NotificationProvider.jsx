@@ -6,6 +6,7 @@ import {
   markAllNotificationsRead,
   markNotificationRead,
 } from '../../Services/notificationsApi'
+import { getApiUrl } from '../../Services/apiConfig'
 
 export const NOTIFICATION_TYPES = {
   PAYOUT: 'payout',
@@ -46,6 +47,7 @@ const normalizeNotification = (notification) => {
     detail: notification.detail || '',
     detailKey: notification.detailKey || '',
     route: notification.route || '',
+    imageUrl: notification.imageUrl || '',
     eventKey: notification.eventKey || id,
     read: Boolean(notification.read),
     createdAt,
@@ -93,13 +95,14 @@ export function NotificationProvider({ children, walletAddress = '' }) {
           eventKey: item.dedupeKey || item._id || item.id,
           type: item.notificationType,
           severity: item.severity,
-          title: item.notificationType?.replace(/_/g, ' ') || 'Notification',
+          title: item.title || item.notificationType?.replace(/_/g, ' ') || 'Notification',
           titleKey: item.titleKey,
-          message: item.notificationType?.replace(/_/g, ' ') || '',
+          message: item.message || item.notificationType?.replace(/_/g, ' ') || '',
           messageKey: item.messageKey,
-          detail: '',
+          detail: item.detail || '',
           detailKey: item.detailKey,
           route: item.route,
+          imageUrl: item.imageUrl ? getApiUrl(item.imageUrl) : '',
           read: item.status === 'read',
           createdAt: item.createdAt,
           payload: item.routeParams || {},

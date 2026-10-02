@@ -294,7 +294,7 @@ function WalletProgramPage({ initialTab = 'overview' }) {
     } catch (error) {
       if (isCurrent()) {
         setReadIssues(['Wallet data', 'NFT membership'])
-        toast.error(error?.shortMessage || error?.message || 'Unable to load Freedom-Plus data.')
+        toast.danger(error?.shortMessage || error?.message || 'Unable to load Freedom-Plus data.')
       }
     } finally {
       if (isCurrent()) setLoading(false)
@@ -340,7 +340,7 @@ function WalletProgramPage({ initialTab = 'overview' }) {
     } catch (error) {
       if (isCurrent()) {
         setOrbit([])
-        toast.error(error?.message || 'Unable to load this orbit.')
+        toast.danger(error?.message || 'Unable to load this orbit.')
       }
     } finally {
       if (isCurrent()) setLoading(false)
@@ -425,7 +425,7 @@ function WalletProgramPage({ initialTab = 'overview' }) {
       toast.success(note)
     } catch (error) {
       setTxState(txErrorState(error, 'Freedom-Plus registration did not complete.', hash))
-      toast.error(normalizeError(error, 'Freedom-Plus registration did not complete.').message)
+      toast.danger(normalizeError(error, 'Freedom-Plus registration did not complete.').message)
     } finally { activationInFlight.current = false; setBusy("") }
   }
 
@@ -459,7 +459,7 @@ function WalletProgramPage({ initialTab = 'overview' }) {
       toast.success(note)
     } catch (error) {
       setTxState(txErrorState(error, 'Level ' + level + ' activation did not complete.', hash))
-      toast.error(normalizeError(error, 'Level ' + level + ' activation did not complete.').message)
+      toast.danger(normalizeError(error, 'Level ' + level + ' activation did not complete.').message)
     } finally { activationInFlight.current = false; setBusy("") }
   }
   const transact = async (key, operation, success) => {
@@ -481,7 +481,7 @@ function WalletProgramPage({ initialTab = 'overview' }) {
       if (tab === 'orbits' || tab === 'levels') await loadOrbit()
     } catch (error) {
       setTxState(txErrorState(error, 'Transaction did not complete.', hash))
-      toast.error(normalizeError(error, 'Transaction did not complete.').message)
+      toast.danger(normalizeError(error, 'Transaction did not complete.').message)
     } finally { setBusy("") }
   }
   const submitMembership = () => {

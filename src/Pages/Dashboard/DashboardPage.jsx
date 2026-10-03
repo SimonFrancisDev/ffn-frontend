@@ -149,6 +149,7 @@ const emptyCommunityStats = {
   escrowReleasedToUser: '0.00',
   nftPoolAllocated: '0.00',
   operationsAllocated: '0.00',
+  systemChargeTotal: '0.00',
   nftPoolDistributed: '0.00',
   operationsUtilized: '0.00',
   nftPoolLiveBalance: '0.00',
@@ -718,6 +719,7 @@ const DashboardPage = ({ program = 'f-freedom' }) => {
     const walletCredited = toUnits(totals.walletCreditedRaw)
     const systemCharges = toUnits(totals.systemChargesRaw)
     const nftInflow = toUnits(totals.nftInflowRaw)
+    const operationsInflow = toUnits(totals.operationsInflowRaw)
     const nftDistributed = toUnits(totals.nftDistributedRaw)
     const sync = data?.sync || []
     const hasSyncError = sync.some((item) => item.status === 'error')
@@ -748,17 +750,18 @@ const DashboardPage = ({ program = 'f-freedom' }) => {
       nftPoolAllocated: String(nftInflow),
       nftPoolDistributed: String(nftDistributed),
       nftPoolLiveBalance: String(Math.max(0, nftInflow - nftDistributed)),
-      operationsAllocated: String(systemCharges),
-      operationsLiveBalance: String(systemCharges),
+      operationsAllocated: String(operationsInflow),
+      systemChargeTotal: String(systemCharges),
+      operationsLiveBalance: String(operationsInflow),
       nftRewardPool: {
         totalInflow: String(nftInflow),
         totalDistributed: String(nftDistributed),
         currentBalance: String(Math.max(0, nftInflow - nftDistributed)),
       },
       devOperations: {
-        totalInflow: String(systemCharges),
+        totalInflow: String(operationsInflow),
         totalUtilized: '0.00',
-        currentBalance: String(systemCharges),
+        currentBalance: String(operationsInflow),
       },
     })
     setIndexedTreasury((prev) => ({
@@ -1193,10 +1196,11 @@ const DashboardPage = ({ program = 'f-freedom' }) => {
             </span>
             <span className="dashboard-stats__label soft-text">{dashboardT('stats.nftPool.label', 'NFT Pool')}</span>
             <strong className="dashboard-stats__value dashboard-stats__value--animated">
-              <AnimatedNumber value={communityStats.nftRewardPool?.totalInflow || communityStats.nftPoolAllocated} prefix="$" decimals={2} />
+              <AnimatedNumber value={communityStats.nftRewardPool?.totalInflow ?? communityStats.nftPoolAllocated} prefix="$" decimals={2} />
             </strong>
             <div className="dashboard-stats__breakdown">
-              <span>{dashboardT('stats.nftPool.totalAccumulated', 'Total accumulated')}: ${formatNumber(communityStats.nftRewardPool?.totalInflow || communityStats.nftPoolAllocated, 2)}</span>
+              <span>Total Accumulated: ${formatNumber(communityStats.nftRewardPool?.totalInflow || communityStats.nftPoolAllocated, 2)}</span>
+              <span>{dashboardT('stats.nftPool.totalDistributed', 'Total Distributed')}: ${formatNumber(communityStats.nftRewardPool?.totalDistributed || communityStats.nftPoolDistributed, 2)}</span>
             </div>
             <small className="dashboard-stats__note soft-text">
               {dashboardT('stats.nftPool.note', 'Indexed NFT Reward Pool truth from the backend.')}
@@ -1211,10 +1215,11 @@ const DashboardPage = ({ program = 'f-freedom' }) => {
             </span>
             <span className="dashboard-stats__label soft-text">{isFreedomPlus ? 'Indexed System Charges' : dashboardT('stats.operations.label', 'Ecosystem Dev & Operations')}</span>
             <strong className="dashboard-stats__value dashboard-stats__value--animated">
-              <AnimatedNumber value={communityStats.devOperations?.totalInflow || communityStats.operationsAllocated} prefix="$" decimals={2} />
+              <AnimatedNumber value={isFreedomPlus ? communityStats.systemChargeTotal : (communityStats.devOperations?.totalInflow ?? communityStats.operationsAllocated)} prefix="$" decimals={2} />
             </strong>
             <div className="dashboard-stats__breakdown">
-              <span>{dashboardT('stats.operations.totalAccumulated', 'Total accumulated')}: ${formatNumber(communityStats.devOperations?.totalInflow || communityStats.operationsAllocated, 2)}</span>
+              <span>Total Accumulated: ${formatNumber(communityStats.devOperations?.totalInflow || communityStats.operationsAllocated, 2)}</span>
+              <span>{dashboardT('stats.operations.totalUtilized', 'Total Utilized')}: ${formatNumber(communityStats.devOperations?.totalUtilized || communityStats.operationsUtilized, 2)}</span>
             </div>
             <small className="dashboard-stats__note soft-text">
               {isFreedomPlus ? 'Gross Freedom-Plus system charges recorded by the indexer.' : dashboardT('stats.operations.note', 'Indexed Dev & Operations truth from the backend.')}

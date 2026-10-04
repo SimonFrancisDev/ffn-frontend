@@ -196,6 +196,10 @@ const formatMoney = (value) => {
   return num.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 });
 };
 
+const formatVerifiedMoney = (value) => (
+  value === null || value === undefined ? 'Unavailable' : `$${formatMoney(value)}`
+);
+
 // Admin API helper
 const adminApiRequest = async (endpoint, options = {}, account = '') => {
   const stagingTestAdminEnabled = String(import.meta.env.VITE_STAGING_TEST_ADMIN_ENABLED || 'false').toLowerCase() === 'true';
@@ -2133,7 +2137,7 @@ export const AdminPanel = ({ canPerformOnchainAdmin = false }) => {
                           <div className="admin-metric-stack">
                             <span>{adminT("ui.financialTruth.totalInflow", "Total Inflow")}: ${formatMoney(financialTruth.nftRewardPool.totalInflow)}</span>
                             <span>{adminT("ui.financialTruth.totalDistributed", "Total Distributed")}: ${formatMoney(financialTruth.nftRewardPool.totalDistributed)}</span>
-                            <span>{adminT("ui.financialTruth.currentBalance", "Current Balance")}: ${formatMoney(financialTruth.nftRewardPool.currentBalance)}</span>
+                            <span>{adminT("ui.financialTruth.currentBalance", "Current Balance")}: {formatVerifiedMoney(financialTruth.nftRewardPool.currentBalance)}</span>
                           </div>
                         </div>
                       </Col>
@@ -2143,7 +2147,7 @@ export const AdminPanel = ({ canPerformOnchainAdmin = false }) => {
                           <div className="admin-metric-stack">
                             <span>{adminT("ui.financialTruth.totalInflow", "Total Inflow")}: ${formatMoney(financialTruth.devOperations.totalInflow)}</span>
                             <span>{adminT("ui.financialTruth.totalUtilized", "Total Utilized")}: ${formatMoney(financialTruth.devOperations.totalUtilized)}</span>
-                            <span>{adminT("ui.financialTruth.currentBalance", "Current Balance")}: ${formatMoney(financialTruth.devOperations.currentBalance)}</span>
+                            <span>{adminT("ui.financialTruth.currentBalance", "Current Balance")}: {formatVerifiedMoney(financialTruth.devOperations.currentBalance)}</span>
                           </div>
                         </div>
                       </Col>

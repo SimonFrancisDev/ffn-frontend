@@ -723,8 +723,8 @@ const CommunityPage = ({ onNavigate }) => {
 
       setEscrowBalance(globalMetrics.currentEscrowLocked)
       
-      setNftBalance(globalMetrics.nftPool)
-      setOpsBalance(globalMetrics.operations)
+      setNftBalance(globalMetrics.nftPoolAllocated)
+      setOpsBalance(globalMetrics.operationsAllocated)
 
       setCommunityFeedStatus((prev) => ({
         ...prev,
@@ -1344,7 +1344,7 @@ const CommunityPage = ({ onNavigate }) => {
                 <div className="community-metrics__icon">
                   <FaShieldAlt size={18} />
                 </div>
-                <span className="community-metrics__label muted-text">{communityT('metrics.nftPoolBalance', 'Live NFT Pool Balance')}</span>
+                <span className="community-metrics__label muted-text">{communityT('metrics.nftPoolBalance', 'NFT Pool Total Accumulated')}</span>
                 <strong className="community-metrics__value gradient-text-gold">
                   ${formatToken(nftBalance)}
                 </strong>
@@ -1354,7 +1354,7 @@ const CommunityPage = ({ onNavigate }) => {
                 <div className="community-metrics__icon">
                   <FaWallet size={18} />
                 </div>
-                <span className="community-metrics__label muted-text">{communityT('metrics.operationsBalance', 'Live Operations Balance')}</span>
+                <span className="community-metrics__label muted-text">{communityT('metrics.operationsBalance', 'Operations Total Accumulated')}</span>
                 <strong className="community-metrics__value gradient-text-blue">
                   ${formatToken(opsBalance)}
                 </strong>

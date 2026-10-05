@@ -861,3 +861,28 @@
   display: block;
   height: env(safe-area-inset-bottom, 0px);
 }
+
+.mobile-drawer__wallet-cta {
+  width: 100%;
+  min-height: 48px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  padding: 0 16px;
+  border: 1px solid rgba(29, 233, 182, 0.4);
+  border-radius: 8px;
+  color: #03131d;
+  background: #1de9b6;
+  font-weight: 700;
+}
+
+.mobile-drawer__wallet-cta:active {
+  transform: scale(0.99);
+}
+
+[data-theme='light'] .mobile-drawer__wallet-cta {
+  color: #ffffff;
+  background: #0072bc;
+  border-color: #0072bc;
+}

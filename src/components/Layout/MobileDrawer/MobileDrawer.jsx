@@ -328,6 +328,20 @@ const MobileDrawer = ({
           </div>
         </div>
 
+        <button
+          type="button"
+          className="mobile-drawer__wallet-cta"
+          onClick={handleWalletClick}
+          aria-label={t('mobileDrawer.openWalletAriaLabel', 'Open wallet panel')}
+        >
+          <Wallet size={18} />
+          <span>
+            {wallet?.status === 'Connected'
+              ? t('mobileDrawer.wallet', 'Wallet')
+              : t('mobileDrawer.connectWallet', 'Connect Wallet')}
+          </span>
+        </button>
+
         <nav className="mobile-drawer__nav" aria-label={t('mobileDrawer.mobileNavAriaLabel', 'Mobile navigation')}>
           {navItems
             .filter((item) => item.href === 'home' || item.href === 'about')
@@ -462,7 +476,7 @@ const MobileDrawer = ({
           </div>
 
           {navItems
-            .filter((item) => item.href === 'community' || item.href === 'support')
+            .filter((item) => ['community', 'tasks', 'support'].includes(item.href))
             .map((item) => (
               <button
                 key={item.href}

@@ -502,6 +502,15 @@ function App() {
 
   useAppDirection()
 
+  useEffect(() => {
+    if (typeof window === 'undefined') return
+
+    window.scrollTo({ top: 0, left: 0, behavior: 'auto' })
+    if (document.scrollingElement) {
+      document.scrollingElement.scrollTop = 0
+    }
+  }, [location.pathname])
+
   const [isDrawerOpen, setIsDrawerOpen] = useState(false)
   const [theme, setTheme] = useState(getInitialTheme)
   const [isNotificationsOpen, setIsNotificationsOpen] = useState(false)
@@ -794,7 +803,12 @@ function App() {
       const nextPath = pageToPathMap[page] || '/home'
 
       const scrollToSection = () => {
-        if (!section || typeof document === 'undefined') return
+        if (!section || typeof document === 'undefined') {
+          if (typeof window !== 'undefined') {
+            window.scrollTo({ top: 0, left: 0, behavior: 'auto' })
+          }
+          return
+        }
 
         window.setTimeout(() => {
           const target = document.getElementById(section)

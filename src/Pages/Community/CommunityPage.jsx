@@ -28,7 +28,6 @@ import {
   Trophy,
   Users,
   RefreshCw,
-  X,
   Orbit,
   TrendingUp,
   DollarSign,
@@ -1651,21 +1650,15 @@ const CommunityPage = ({ onNavigate }) => {
         </>
       )}
 
-      {/* Leaderboard Modal */}
-      {isLeaderboardModalOpen && (
-        <div className="leaderboard-modal-backdrop" onClick={() => setIsLeaderboardModalOpen(false)}>
-          <div className="leaderboard-modal" onClick={(event) => event.stopPropagation()}>
-            <div className="leaderboard-modal__header">
-              <div>
-                <h3>{communityT('leaderboard.modalTitle', 'Full Leaderboard')}</h3>
-                <p>{communityT(`leaderboard.tabs.${activeLeaderboardTab}`, LEADERBOARD_TABS.find((item) => item.id === activeLeaderboardTab)?.label)}</p>
-              </div>
-              <button type="button" className="leaderboard-modal__close" onClick={() => setIsLeaderboardModalOpen(false)}>
-                <X size={16} />
-              </button>
-            </div>
-
-            <div className="leaderboard-modal__body">
+      <Modal
+        open={isLeaderboardModalOpen}
+        onClose={() => setIsLeaderboardModalOpen(false)}
+        title={communityT('leaderboard.modalTitle', 'Full Leaderboard')}
+        description={communityT(`leaderboard.tabs.${activeLeaderboardTab}`, LEADERBOARD_TABS.find((item) => item.id === activeLeaderboardTab)?.label)}
+        closeLabel={communityT('leaderboard.closeLabel', 'Close leaderboard')}
+        className="leaderboard-modal"
+      >
+        <div className="leaderboard-modal__body">
               {leaderboardDataByTab.map((entry) => {
                 const fullAddress = entry.address || ''
                 const isViewer = currentUserLower && currentUserLower === String(fullAddress).toLowerCase()
@@ -1697,10 +1690,8 @@ const CommunityPage = ({ onNavigate }) => {
                   </div>
                 )
               })}
-            </div>
-          </div>
         </div>
-      )}
+      </Modal>
     </section>
   )
 }

@@ -617,7 +617,7 @@ const CommunityPage = ({ onNavigate }) => {
         setCopied(true)
         setTimeout(() => setCopied(false), 2000)
       }
-      if (type === 'address') {
+      if (type === 'address' || type === 'identity') {
         setCopiedAddress(value)
         setTimeout(() => setCopiedAddress(''), 2000)
       }
@@ -658,6 +658,17 @@ const CommunityPage = ({ onNavigate }) => {
       toast.danger(message, { dedupeKey: 'community-profile-resolve-failed' })
     }
   }, [profileInput, switchToVisitor, communityT, toast])
+
+  const handleLeaderboardProfile = useCallback((walletAddress) => {
+    if (!walletAddress) return
+
+    setProfileError('')
+    switchToVisitor?.(walletAddress)
+    setIsLeaderboardModalOpen(false)
+    window.requestAnimationFrame(() => {
+      window.scrollTo({ top: 0, left: 0, behavior: 'smooth' })
+    })
+  }, [switchToVisitor])
 
   const handleReturnToMyProfile = useCallback(() => {
     setProfileError('')
@@ -1659,37 +1670,112 @@ const CommunityPage = ({ onNavigate }) => {
         className="leaderboard-modal"
       >
         <div className="leaderboard-modal__body">
-              {leaderboardDataByTab.map((entry) => {
-                const fullAddress = entry.address || ''
-                const isViewer = currentUserLower && currentUserLower === String(fullAddress).toLowerCase()
-                return (
-                  <div key={`modal-${activeLeaderboardTab}-${entry.rank}-${fullAddress}`} className={`leaderboard-item ${isViewer ? 'leaderboard-item--viewer' : ''}`}>
+          <div className="leaderboard-modal-grid leaderboard-modal-grid--header" aria-hidden="true">
+            <span>{communityT('leaderboard.columns.rank', 'Rank')}</span>
+            <span>{communityT('leaderboard.columns.referralId', 'FFN ID')}</span>
+            <span>{communityT('leaderboard.columns.wallet', 'Wallet')}</span>
+            <span>{communityT('leaderboard.columns.funds', 'Funds')}</span>
+            <span>{communityT('leaderboard.columns.activity', 'Activity')}</span>
+          </div>
+
+          <div className="leaderboard-modal-rows" role="list">
+            {leaderboardDataByTab.map((entry) => {
+              const fullAddress = entry.address || ''
+              const referralId = entry.referralId || entry.addressReferralId || entry.shortCode || ''
+              const isViewer = currentUserLower && currentUserLower === String(fullAddress).toLowerCase()
+              const funds = activeLeaderboardTab === 'topReferrers'
+                ? entry.commissionEarned
+                : activeLeaderboardTab === 'mostActive'
+                  ? (entry.totalVolume || entry.totalEarned)
+                  : entry.totalEarned
+              const fundsLabel = activeLeaderboardTab === 'mostActive'
+                ? communityT('leaderboard.columns.volume', 'Volume')
+                : communityT('leaderboard.columns.funds', 'Funds')
+              const activity = activeLeaderboardTab === 'topReferrers'
+                ? formatWhole(entry.totalReferrals || 0)
+                : formatWhole(entry.receiptCount || 0)
+              const activityLabel = activeLeaderboardTab === 'topReferrers'
+                ? communityT('leaderboard.columns.referrals', 'Referrals')
+                : communityT('leaderboard.columns.receipts', 'Receipts')
+
+              return (
+                <div
+                  key={`modal-${activeLeaderboardTab}-${entry.rank}-${fullAddress}`}
+                  className={`leaderboard-modal-grid leaderboard-modal-row ${isViewer ? 'leaderboard-item--viewer' : ''}`}
+                  role="listitem"
+                >
+                  <div className="leaderboard-modal-field leaderboard-modal-field--rank">
+                    <span className="leaderboard-modal-field__label">{communityT('leaderboard.columns.rank', 'Rank')}</span>
                     <div className={`rank-badge rank-${entry.rank}`}>
                       <RankMedal rank={entry.rank} />
                     </div>
-                    <div className="leaderboard-address-wrap leaderboard-address-wrap--modal">
-                      <div className="leaderboard-address-full-inline">{fullAddress}</div>
-                    </div>
-                    <div className="leaderboard-earnings">
-                      {activeLeaderboardTab === 'topEarners' && `$${formatToken(entry.totalEarned || 0)}`}
-                      {activeLeaderboardTab === 'topReferrers' && formatWhole(entry.totalReferrals || 0)}
-                      {activeLeaderboardTab === 'mostActive' && formatWhole(entry.receiptCount || 0)}
-                    </div>
-                    <div className="leaderboard-referrals">
-                      {activeLeaderboardTab === 'topEarners' && communityT('leaderboard.receiptsLabel', '{{count}} receipts', { count: entry.receiptCount || 0 })}
-                      {activeLeaderboardTab === 'topReferrers' && communityT('leaderboard.earnedAmount', '${{amount}}', { amount: formatToken(entry.commissionEarned || 0) })}
-                      {activeLeaderboardTab === 'mostActive' && communityT('leaderboard.volumeAmount', '${{amount}}', { amount: formatToken(entry.totalVolume || entry.totalEarned || 0) })}
-                    </div>
-                    <button
-                      type="button"
-                      className="leaderboard-copy-btn leaderboard-copy-btn--modal"
-                      onClick={() => copyText(fullAddress, 'address')}
-                    >
-                      {copiedAddress === fullAddress ? <ShieldCheck size={12} /> : <Copy size={12} />}
-                    </button>
                   </div>
-                )
-              })}
+
+                  <div className="leaderboard-modal-field leaderboard-modal-field--id">
+                    <span className="leaderboard-modal-field__label">{communityT('leaderboard.columns.referralId', 'FFN ID')}</span>
+                    <div className="leaderboard-modal-value-row">
+                      {referralId ? (
+                        <button
+                          type="button"
+                          className="leaderboard-modal-profile-link"
+                          onClick={() => handleLeaderboardProfile(fullAddress)}
+                          title={communityT('leaderboard.openProfile', 'Open community profile')}
+                        >
+                          {referralId}
+                        </button>
+                      ) : (
+                        <span className="leaderboard-modal-value--muted">{communityT('leaderboard.idUnavailable', 'ID unavailable')}</span>
+                      )}
+                      {referralId && (
+                        <button
+                          type="button"
+                          className="leaderboard-copy-btn leaderboard-copy-btn--modal"
+                          onClick={() => copyText(referralId, 'identity')}
+                          aria-label={communityT('leaderboard.copyReferralId', 'Copy FFN ID')}
+                          title={communityT('leaderboard.copyReferralId', 'Copy FFN ID')}
+                        >
+                          {copiedAddress === referralId ? <ShieldCheck size={14} /> : <Copy size={14} />}
+                        </button>
+                      )}
+                    </div>
+                  </div>
+
+                  <div className="leaderboard-modal-field leaderboard-modal-field--wallet">
+                    <span className="leaderboard-modal-field__label">{communityT('leaderboard.columns.wallet', 'Wallet')}</span>
+                    <div className="leaderboard-modal-value-row">
+                      <button
+                        type="button"
+                        className="leaderboard-modal-profile-link leaderboard-modal-profile-link--wallet"
+                        onClick={() => handleLeaderboardProfile(fullAddress)}
+                        title={communityT('leaderboard.openProfile', 'Open community profile')}
+                      >
+                        {fullAddress}
+                      </button>
+                      <button
+                        type="button"
+                        className="leaderboard-copy-btn leaderboard-copy-btn--modal"
+                        onClick={() => copyText(fullAddress, 'address')}
+                        aria-label={communityT('leaderboard.copyWallet', 'Copy wallet address')}
+                        title={communityT('leaderboard.copyWallet', 'Copy wallet address')}
+                      >
+                        {copiedAddress === fullAddress ? <ShieldCheck size={14} /> : <Copy size={14} />}
+                      </button>
+                    </div>
+                  </div>
+
+                  <div className="leaderboard-modal-field leaderboard-modal-field--funds">
+                    <span className="leaderboard-modal-field__label">{fundsLabel}</span>
+                    <strong className="leaderboard-modal-funds">${formatToken(funds || 0)}</strong>
+                  </div>
+
+                  <div className="leaderboard-modal-field leaderboard-modal-field--activity">
+                    <span className="leaderboard-modal-field__label">{activityLabel}</span>
+                    <span className="leaderboard-modal-activity">{activity}</span>
+                  </div>
+                </div>
+              )
+            })}
+          </div>
         </div>
       </Modal>
     </section>

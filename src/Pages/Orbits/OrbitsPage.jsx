@@ -1723,14 +1723,14 @@ const OrbitsPage = () => {
 
     setIdentityLookupState({
       status: 'loading',
-        message: orbitsT('identity.resolving', 'Resolving wallet address or Referral ID...'),
+        message: orbitsT('identity.resolving', 'Resolving wallet address, FFN ID, or referral link...'),
     })
 
     try {
       const identity = await resolveIdentity(inputAddress, { signal: controller.signal })
 
       if (!identity.ok || !identity.walletAddress) {
-        const message = identity.message || orbitsT('errors.invalidWalletOrReferral', 'Enter a valid wallet address or Referral ID')
+        const message = identity.message || orbitsT('errors.invalidWalletOrReferral', 'Enter a valid wallet address, FFN ID, or referral link')
         setOrbitError(message)
         setIdentityLookupState({ status: 'error', message })
         toast.warning(message, { dedupeKey: 'orbit-identity-invalid' })
@@ -1753,7 +1753,7 @@ const OrbitsPage = () => {
       })
     } catch (error) {
       if (error?.name === 'AbortError') return
-      const message = orbitsT('identity.resolveFailed', 'Unable to resolve that identity right now.')
+      const message = error?.message || orbitsT('identity.resolveFailed', 'Unable to resolve that identity right now.')
       setOrbitError(message)
       setIdentityLookupState({ status: 'error', message })
       toast.danger(message, { dedupeKey: 'orbit-identity-error' })
@@ -2926,18 +2926,28 @@ const OrbitsPage = () => {
             <input
               type="text"
               className="address-input"
-              placeholder={orbitsT('controls.identityPlaceholder', 'Wallet address or Referral ID')}
+              placeholder={orbitsT('controls.identityPlaceholder', 'Wallet address, FFN ID, or referral link')}
               value={inputAddress}
-              onChange={(e) => setInputAddress(e.target.value)}
+              onChange={(event) => {
+                setInputAddress(event.target.value)
+                setOrbitError('')
+                setIdentityLookupState({ status: 'idle', message: '' })
+              }}
+              onKeyDown={(event) => {
+                if (event.key !== 'Enter') return
+                event.preventDefault()
+                applyViewerAddress()
+              }}
+              autoComplete="off"
             />
-            <button className="address-btn" onClick={applyViewerAddress} disabled={identityLookupState.status === 'loading'}>
+            <button type="button" className="address-btn" onClick={applyViewerAddress} disabled={identityLookupState.status === 'loading'}>
               {identityLookupState.status === 'loading' ? orbitsT('actions.resolving', 'Resolving...') : orbitsT('actions.loadAddress', 'Load Address')}
             </button>
-            <button className="address-btn secondary" onClick={viewMyOrbit}>{orbitsT('actions.myOrbits', 'My Orbits')}</button>
-            <button className="address-btn secondary" onClick={() => navigate('/activation')}>
+            <button type="button" className="address-btn secondary" onClick={viewMyOrbit}>{orbitsT('actions.myOrbits', 'My Orbits')}</button>
+            <button type="button" className="address-btn secondary" onClick={() => navigate('/activation')}>
               {orbitsT('actions.activationCenter', 'Activation Center')}
             </button>
-            <button className="refresh-btn" onClick={refreshData} disabled={isRefreshing}>{orbitsT('actions.refresh', 'Refresh')}</button>
+            <button type="button" className="refresh-btn" onClick={refreshData} disabled={isRefreshing}>{orbitsT('actions.refresh', 'Refresh')}</button>
             <span className="last-sync">{orbitsT('controls.lastSync', 'Last sync: {{time}}', { time: lastUpdated })}</span>
           </div>
 

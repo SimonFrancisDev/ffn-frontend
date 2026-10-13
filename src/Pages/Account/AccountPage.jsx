@@ -1,5 +1,5 @@
 import './AccountPage.css'
-import { useEffect, useState, useCallback, useMemo } from 'react'
+import { useEffect, useState, useCallback, useMemo, useRef } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { useTranslation } from 'react-i18next'
 import { useWallet } from '../../hooks/useWallet'
@@ -26,6 +26,7 @@ const AccountProfileSwitcher = ({
   setProfileInput,
   handleViewProfile,
   profileError,
+  profileLoading,
 }) => (
   <div className="account-surface profile-switcher-box">
     <div className="switcher-header">
@@ -36,16 +37,18 @@ const AccountProfileSwitcher = ({
         </button>
       )}
     </div>
-    <div className="switcher-input-group">
+    <form className="switcher-input-group" onSubmit={(event) => { event.preventDefault(); handleViewProfile() }}>
       <input
         value={profileInput}
         onChange={(event) => setProfileInput(event.target.value)}
-        placeholder={accountT('switcher.placeholder', 'Wallet address or Referral ID')}
+        placeholder={accountT('switcher.placeholder', 'Wallet address, FFN ID, or referral link')}
+        autoComplete="off"
+        disabled={profileLoading}
       />
-      <button type="button" onClick={handleViewProfile}>
-        {accountT('actions.viewAccount', 'View Account')}
+      <button type="submit" disabled={profileLoading}>
+        {profileLoading ? 'Searching...' : accountT('actions.viewAccount', 'View Account')}
       </button>
-    </div>
+    </form>
     {profileError && <p className="error-text">{profileError}</p>}
   </div>
 )
@@ -64,6 +67,8 @@ const AccountPage = ({ program = 'f-freedom' }) => {
   const [summary, setSummary] = useState(null)
   const [profileInput, setProfileInput] = useState('')
   const [profileError, setProfileError] = useState('')
+  const [profileLoading, setProfileLoading] = useState(false)
+  const profileLookupAbortRef = useRef(null)
   const [lastUpdated, setLastUpdated] = useState(new Date().toLocaleTimeString())
   const [copySuccess, setCopySuccess] = useState(false)
   const [referralShortCode, setReferralShortCode] = useState('')
@@ -333,7 +338,11 @@ const AccountPage = ({ program = 'f-freedom' }) => {
     }
 
     try {
-      const identity = await resolveIdentity(value)
+      profileLookupAbortRef.current?.abort()
+      const controller = new AbortController()
+      profileLookupAbortRef.current = controller
+      setProfileLoading(true)
+      const identity = await resolveIdentity(value, { signal: controller.signal })
       if (!identity.ok || !identity.walletAddress) {
         throw new Error(identity.message || accountT('errors.referralNotFound', 'Referral ID not found'))
       }
@@ -342,12 +351,17 @@ const AccountPage = ({ program = 'f-freedom' }) => {
       switchToVisitor?.(identity.walletAddress)
       setProfileInput('')
       toast.success(accountT('profile.viewingAccount', 'Viewing another account.'), { dedupeKey: 'account-profile-loaded' })
-    } catch {
-      const message = accountT('errors.enterValidWalletOrReferral', 'Enter a valid wallet address or Referral ID')
+    } catch (error) {
+      if (error?.name === 'AbortError') return
+      const message = error?.message || accountT('errors.enterValidWalletOrReferral', 'Enter a valid wallet address, FFN ID, or referral link')
       setProfileError(message)
       toast.danger(message, { dedupeKey: 'account-profile-invalid' })
+    } finally {
+      setProfileLoading(false)
     }
   }
+
+  useEffect(() => () => profileLookupAbortRef.current?.abort(), [])
 
   const handleViewAddress = useCallback((walletAddress) => {
     if (!walletAddress || !ethers.isAddress(walletAddress)) return
@@ -522,9 +536,10 @@ const AccountPage = ({ program = 'f-freedom' }) => {
         isOwnSpace={isOwnSpace}
         switchToSelf={switchToSelf}
         profileInput={profileInput}
-        setProfileInput={setProfileInput}
+        setProfileInput={(value) => { setProfileInput(value); setProfileError('') }}
         handleViewProfile={handleViewProfile}
         profileError={profileError}
+        profileLoading={profileLoading}
       />
 
       {profileLocked ? (

@@ -6,7 +6,8 @@ import { getApiUrl } from '../../Services/apiConfig'
 import { getProfileReadAuthIfLocked } from '../../Services/profilePrivacyApi'
 import { useToast } from '../../components/feedback'
 import { useSpace } from '../../context/SpaceContext'
-import { MetricSparkline } from '../../components/charts/InstitutionalCharts'
+import { ParticipantGrowthChart } from '../../components/charts/InstitutionalCharts'
+import AnimatedMetricValue from '../../components/metrics/AnimatedMetricValue'
 import { FREEDOM_PLUS_ADDRESSES, freedomPlusApi } from '../../Services/freedomPlus'
 import { CONTRACT_ADDRESSES, NETWORK_CONFIG } from '../../constants/addresses'
 import {
@@ -345,52 +346,17 @@ function buildGlobalMetrics(publicData = {}, statsData = {}) {
   }
 }
 
-const AnimatedNumber = ({ value = 0, decimals = 0, prefix = '', suffix = '' }) => {
-  const [displayValue, setDisplayValue] = useState(0)
-
-  useEffect(() => {
-    const target = Number(value || 0)
-    const duration = 1200
-    const startTime = performance.now()
-    let frameId
-
-    const tick = (now) => {
-      const progress = Math.min((now - startTime) / duration, 1)
-      const eased = 1 - Math.pow(1 - progress, 3)
-      const current = target * eased
-      setDisplayValue(current)
-
-      if (progress < 1) {
-        frameId = requestAnimationFrame(tick)
-      }
-    }
-
-    frameId = requestAnimationFrame(tick)
-    return () => cancelAnimationFrame(frameId)
-  }, [value])
-
-  return (
-    <>
-      {prefix}
-      {Number(displayValue).toLocaleString(undefined, {
-        minimumFractionDigits: decimals,
-        maximumFractionDigits: decimals,
-      })}
-      {suffix}
-    </>
-  )
-}
-
-const DashboardLineChart = ({ series = [] }) => {
+const DashboardLineChart = ({ series = [], totalParticipants = 0 }) => {
   const { t } = useTranslation()
 
   return (
-    <MetricSparkline
-      data={Array.isArray(series) ? series.slice(-7) : []}
-      valueKey="registrations"
-      labelKey="date"
+    <ParticipantGrowthChart
+      data={series}
+      totalParticipants={totalParticipants}
+      defaultRange={7}
       emptyLabel={t('dashboardPage.chart.initializing', 'Growth data initializing...')}
-      ariaLabel={t('dashboardPage.chart.ariaLabel', 'Seven day registration trend')}
+      ariaLabel={t('dashboardPage.chart.ariaLabel', 'Fin Freedom participant growth chart')}
+      compact
     />
   )
 }
@@ -634,12 +600,28 @@ const DashboardPage = ({ program = 'f-freedom' }) => {
 }, [])
 
   const fetchGrowthData = useCallback(async () => {
-    const payload = await fetchJson('/api/community/growth?days=7')
+    const payload = await fetchJson('/api/community/growth?days=30')
     const data = payload?.data || {}
 
     setGrowthData({
       series: Array.isArray(data.series) ? data.series : [],
-      rangeDays: Number(data.rangeDays || 7),
+      rangeDays: Number(data.rangeDays || 30),
+    })
+  }, [])
+
+  const fetchCanonicalParticipantData = useCallback(async () => {
+    const [summaryPayload, growthPayload] = await Promise.all([
+      fetchJson('/api/community/summary'),
+      fetchJson('/api/community/growth?days=30'),
+    ])
+    const total = Number(summaryPayload?.data?.public?.totalParticipants || 0)
+    const growth = growthPayload?.data || {}
+
+    setTotalParticipants(total)
+    setPublicSummary((prev) => ({ ...prev, totalParticipants: total }))
+    setGrowthData({
+      series: Array.isArray(growth.series) ? growth.series : [],
+      rangeDays: Number(growth.rangeDays || 30),
     })
   }, [])
 
@@ -812,6 +794,7 @@ const DashboardPage = ({ program = 'f-freedom' }) => {
     try {
       if (isFreedomPlus) {
         await fetchFreedomPlusDashboard()
+        await fetchCanonicalParticipantData()
         if (!silent) toastRef.current.success('Freedom-Plus dashboard refreshed.', { dedupeKey: 'dashboard-refresh-success' })
         setLastUpdated(new Date())
         return
@@ -853,6 +836,7 @@ const DashboardPage = ({ program = 'f-freedom' }) => {
     targetWallet,
     isFreedomPlus,
     fetchFreedomPlusDashboard,
+    fetchCanonicalParticipantData,
     fetchAnnouncements,
     fetchCommunityStats,
     fetchCommunitySummary,
@@ -1110,9 +1094,11 @@ const DashboardPage = ({ program = 'f-freedom' }) => {
           <div className="dashboard-hero__visual-grid">
             <div className="dashboard-hero__mini-card dashboard-surface dashboard-surface--inner">
               <span className="dashboard-hero__mini-label soft-text">
-                <Users size={12} /> {dashboardT('overview.communityMembers', 'Community Members')}
+                <Users size={12} /> Fin Freedom Participant
               </span>
-              <strong className="dashboard-hero__mini-value">{formatNumber(totalParticipants, 0)}</strong>
+              <strong className="dashboard-hero__mini-value">
+                <AnimatedMetricValue value={totalParticipants} format="participant" />
+              </strong>
             </div>
 
             <div className="dashboard-hero__mini-card dashboard-surface dashboard-surface--inner">
@@ -1120,7 +1106,7 @@ const DashboardPage = ({ program = 'f-freedom' }) => {
                 <Coins size={12} /> {dashboardT('overview.walletCredited', 'Wallet Credited')}
               </span>
               <strong className="dashboard-hero__mini-value">
-                ${formatNumber(communityStats.totalWalletCreditedPayouts)}
+                <AnimatedMetricValue value={communityStats.totalWalletCreditedPayouts} prefix="$" decimals={2} />
               </strong>
             </div>
 
@@ -1129,14 +1115,14 @@ const DashboardPage = ({ program = 'f-freedom' }) => {
                 <PiggyBank size={12} /> {isFreedomPlus ? 'System Charges' : dashboardT('overview.currentEscrow', 'Current Escrow')}
               </span>
               <strong className="dashboard-hero__mini-value">
-                ${formatNumber(indexedTreasury.currentEscrowLocked)}
+                <AnimatedMetricValue value={indexedTreasury.currentEscrowLocked} prefix="$" decimals={2} />
               </strong>
             </div>
           </div>
 
           <div className="dashboard-hero__growth-sparkline">
-            <DashboardLineChart series={growthData.series} />
-            <span className="soft-text">{dashboardT('overview.registrationTrend', '{{count}}-day registration trend', { count: growthData.rangeDays })}</span>
+            <DashboardLineChart series={growthData.series} totalParticipants={totalParticipants} />
+            <span className="soft-text">{dashboardT('overview.registrationTrend', '{{count}}-day participant growth', { count: 7 })}</span>
           </div>
         </div>
       </div>
@@ -1149,9 +1135,9 @@ const DashboardPage = ({ program = 'f-freedom' }) => {
             <span className="dashboard-stats__icon">
               <Users size={20} className="text-glow-blue" />
             </span>
-            <span className="dashboard-stats__label soft-text">{dashboardT('stats.registeredMembers.label', 'Registered Members')}</span>
+            <span className="dashboard-stats__label soft-text">Fin Freedom Participant</span>
             <strong className="dashboard-stats__value dashboard-stats__value--animated">
-              <AnimatedNumber value={totalParticipants} decimals={0} suffix="+" />
+              <AnimatedMetricValue value={totalParticipants} format="participant" />
             </strong>
             <small className="dashboard-stats__note soft-text">
               {isFreedomPlus ? 'Indexed Freedom-Plus participants.' : dashboardT('stats.registeredMembers.note', 'Indexed F-Freedom participants.')}
@@ -1166,7 +1152,7 @@ const DashboardPage = ({ program = 'f-freedom' }) => {
             </span>
             <span className="dashboard-stats__label soft-text">{dashboardT('stats.walletPayouts.label', 'Wallet Credited Payouts')}</span>
             <strong className="dashboard-stats__value dashboard-stats__value--animated">
-      <AnimatedNumber value={communityStats.totalWalletCreditedPayouts} prefix="$" decimals={2} />
+              <AnimatedMetricValue value={communityStats.totalWalletCreditedPayouts} prefix="$" decimals={2} />
             </strong>
             <small className="dashboard-stats__note soft-text">
               {dashboardT('stats.walletPayouts.note', 'Indexed total distributions.')}
@@ -1181,7 +1167,7 @@ const DashboardPage = ({ program = 'f-freedom' }) => {
             </span>
             <span className="dashboard-stats__label soft-text">{isFreedomPlus ? 'Manual Progression' : dashboardT('stats.currentEscrow.label', 'Current Escrow Locked')}</span>
             <strong className="dashboard-stats__value dashboard-stats__value--animated">
-              <AnimatedNumber value={communityStats.currentEscrowLocked} prefix="$" decimals={2} />
+              <AnimatedMetricValue value={communityStats.currentEscrowLocked} prefix="$" decimals={2} />
             </strong>
             <small className="dashboard-stats__note soft-text">
               {isFreedomPlus ? 'Freedom-Plus levels use manual sequential activation.' : dashboardT('stats.currentEscrow.note', 'Live indexed escrow still waiting for upgrade.')}
@@ -1196,7 +1182,7 @@ const DashboardPage = ({ program = 'f-freedom' }) => {
             </span>
             <span className="dashboard-stats__label soft-text">{dashboardT('stats.nftPool.label', 'NFT Pool')}</span>
             <strong className="dashboard-stats__value dashboard-stats__value--animated">
-              <AnimatedNumber value={communityStats.nftRewardPool?.totalInflow ?? communityStats.nftPoolAllocated} prefix="$" decimals={2} />
+              <AnimatedMetricValue value={communityStats.nftRewardPool?.totalInflow ?? communityStats.nftPoolAllocated} prefix="$" decimals={2} />
             </strong>
             <div className="dashboard-stats__breakdown">
               <span>Total Accumulated: ${formatNumber(communityStats.nftRewardPool?.totalInflow || communityStats.nftPoolAllocated, 2)}</span>
@@ -1215,7 +1201,7 @@ const DashboardPage = ({ program = 'f-freedom' }) => {
             </span>
             <span className="dashboard-stats__label soft-text">{isFreedomPlus ? 'Indexed System Charges' : dashboardT('stats.operations.label', 'Ecosystem Dev & Operations')}</span>
             <strong className="dashboard-stats__value dashboard-stats__value--animated">
-              <AnimatedNumber value={isFreedomPlus ? communityStats.systemChargeTotal : (communityStats.devOperations?.totalInflow ?? communityStats.operationsAllocated)} prefix="$" decimals={2} />
+              <AnimatedMetricValue value={isFreedomPlus ? communityStats.systemChargeTotal : (communityStats.devOperations?.totalInflow ?? communityStats.operationsAllocated)} prefix="$" decimals={2} />
             </strong>
             <div className="dashboard-stats__breakdown">
               <span>Total Accumulated: ${formatNumber(communityStats.devOperations?.totalInflow || communityStats.operationsAllocated, 2)}</span>

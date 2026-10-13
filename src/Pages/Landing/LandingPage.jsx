@@ -59,7 +59,8 @@ import { useWallet } from '../../hooks/useWallet'
 import { useSession } from '../../context/SessionContext'
 import { getApiUrl } from '../../Services/apiConfig'
 import { useToast } from '../../components/feedback'
-import { MetricSparkline } from '../../components/charts/InstitutionalCharts'
+import { ParticipantGrowthChart } from '../../components/charts/InstitutionalCharts'
+import AnimatedMetricValue from '../../components/metrics/AnimatedMetricValue'
 import { LANGUAGES } from '../../constants/languages'
 import { lockBodyScroll } from '../../utils/bodyScrollLock'
 import './LandingPage.css'
@@ -78,7 +79,7 @@ async function fetchJson(path, options = {}) {
   return payload
 }
 
-function formatNumber(value) {
+function FORMAT_NUMBER(value) {
   if (typeof value !== 'number') return '—'
   if (value >= 1_000_000) return `${(value / 1_000_000).toFixed(1)}M`
   if (value >= 1_000) return `${(value / 1_000).toFixed(1)}K`
@@ -1426,15 +1427,15 @@ function ProgramDetails({ program }) {
 
 
 
-function MiniGrowthChart({ data = [] }) {
+function MiniGrowthChart({ data = [], totalParticipants = 0 }) {
   const { t } = useTranslation()
   return (
-    <MetricSparkline
-      data={Array.isArray(data) ? data.slice(-14) : []}
-      valueKey="registrations"
-      labelKey="date"
+    <ParticipantGrowthChart
+      data={data}
+      totalParticipants={totalParticipants}
+      defaultRange={14}
       emptyLabel={t('landingPage.metrics.chartSyncing', 'Chart syncing')}
-      ariaLabel={t('landingPage.metrics.chartAriaLabel', 'Registration growth chart')}
+      ariaLabel={t('landingPage.metrics.chartAriaLabel', 'Fin Freedom participant growth chart')}
       compact
     />
   )
@@ -1507,7 +1508,7 @@ function LandingPage({ onNavigate }) {
 
         const [summary, growth] = await Promise.all([
           fetchJson('/api/community/summary'),
-          fetchJson('/api/community/growth?days=14'),
+          fetchJson('/api/community/growth?days=30'),
         ])
 
         if (!isMounted) return
@@ -1968,15 +1969,17 @@ const handleProgramModalImagePointerUp = (event) => {
 
             <div className="live-layer-metrics">
               <div className="metric-card">
-                <h3>{pageT('metrics.currentParticipants', 'Current F-Freedom Participants')}</h3>
+                <h3>Fin Freedom Participant</h3>
                 <span className="metric-number">
-                  {statsLoading ? '...' : formatNumber(publicStats.totalParticipants)}
+                  {statsLoading ? '...' : (
+                    <AnimatedMetricValue value={publicStats.totalParticipants} format="participant" />
+                  )}
                 </span>
               </div>
 
               <div className="metric-card">
                 <span>{pageT('metrics.growthLast14Days', 'Growth (Last 14 Days)')}</span>
-                <MiniGrowthChart data={growthSeries} />
+                <MiniGrowthChart data={growthSeries} totalParticipants={publicStats.totalParticipants} />
               </div>
             </div>
           </div>

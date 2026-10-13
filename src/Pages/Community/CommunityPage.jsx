@@ -1,5 +1,5 @@
 import './CommunityPage.css'
-import { useEffect, useMemo, useState, useCallback } from 'react'
+import { useEffect, useMemo, useState, useCallback, useRef } from 'react'
 import { useTranslation } from 'react-i18next'
 import { useNavigate } from 'react-router-dom'
 import { useWallet } from '../../hooks/useWallet'
@@ -10,7 +10,8 @@ import { resolveIdentity } from '../../utils/identityResolver'
 import { Modal } from '../../components/overlay'
 import { useToast } from '../../components/feedback'
 import OfficialVideoSection from '../../components/community/OfficialVideoSection'
-import { GrowthBarChart } from '../../components/charts/InstitutionalCharts'
+import { ParticipantGrowthChart } from '../../components/charts/InstitutionalCharts'
+import AnimatedMetricValue from '../../components/metrics/AnimatedMetricValue'
 import { ethers } from 'ethers'
 import {
   ArrowRight,
@@ -285,6 +286,8 @@ const CommunityPage = ({ onNavigate }) => {
   const [isLeaderboardModalOpen, setIsLeaderboardModalOpen] = useState(false)
   const [profileInput, setProfileInput] = useState('')
   const [profileError, setProfileError] = useState('')
+  const [profileLoading, setProfileLoading] = useState(false)
+  const profileLookupAbortRef = useRef(null)
   const [profileLocked, setProfileLocked] = useState(false)
   const [profileLockedMessage, setProfileLockedMessage] = useState('')
   
@@ -319,7 +322,7 @@ const CommunityPage = ({ onNavigate }) => {
   const [eventState, setEventState] = useState({ status: 'unavailable', items: [] })
   const [socialLinkState, setSocialLinkState] = useState({ status: 'unavailable', items: [] })
   const [resourceState, setResourceState] = useState({ status: 'unavailable', items: [] })
-  const [communityGrowth, setCommunityGrowth] = useState({ rangeDays: 14, series: [] })
+  const [communityGrowth, setCommunityGrowth] = useState({ rangeDays: 30, series: [] })
   const [communityGlobalStats, setCommunityGlobalStats] = useState({
     totalUsers: 0,
     totalReceipts: 0,
@@ -357,7 +360,6 @@ const CommunityPage = ({ onNavigate }) => {
   const [nftBalance, setNftBalance] = useState('0.00')
   const [opsBalance, setOpsBalance] = useState('0.00')
   const [escrowBalance, setEscrowBalance] = useState('0.00')
-  const [liveParticipantCount, setLiveParticipantCount] = useState(0)
 
   const formatToken = useCallback((value) => {
     const numeric = Number(value)
@@ -639,7 +641,11 @@ const CommunityPage = ({ onNavigate }) => {
     }
 
     try {
-      const identity = await resolveIdentity(nextValue)
+      profileLookupAbortRef.current?.abort()
+      const controller = new AbortController()
+      profileLookupAbortRef.current = controller
+      setProfileLoading(true)
+      const identity = await resolveIdentity(nextValue, { signal: controller.signal })
       if (!identity.ok || !identity.walletAddress) {
         const message = identity.message || communityT('profile.errors.invalid', 'Enter a valid wallet address or Referral ID.')
         setProfileError(message)
@@ -653,9 +659,12 @@ const CommunityPage = ({ onNavigate }) => {
       setProfileModalOpen(false)
       toast.success(communityT('profile.loadedToast', 'Community profile loaded.'), { dedupeKey: 'community-profile-loaded' })
     } catch (error) {
-      const message = communityT('profile.errors.invalid', 'Enter a valid wallet address or Referral ID.')
+      if (error?.name === 'AbortError') return
+      const message = error?.message || communityT('profile.errors.invalid', 'Enter a valid wallet address, FFN ID, or referral link.')
       setProfileError(message)
       toast.danger(message, { dedupeKey: 'community-profile-resolve-failed' })
+    } finally {
+      setProfileLoading(false)
     }
   }, [profileInput, switchToVisitor, communityT, toast])
 
@@ -682,8 +691,12 @@ const CommunityPage = ({ onNavigate }) => {
   }, [])
 
   const handleCloseProfileModal = useCallback(() => {
+    profileLookupAbortRef.current?.abort()
+    setProfileLoading(false)
     setProfileModalOpen(false)
   }, [])
+
+  useEffect(() => () => profileLookupAbortRef.current?.abort(), [])
 
   const handleCloseJoinPrompt = useCallback(() => {
     setIsJoinPromptOpen(false)
@@ -946,10 +959,10 @@ const CommunityPage = ({ onNavigate }) => {
 
   const fetchCommunityGrowthStats = useCallback(async () => {
     try {
-      const payload = await fetchJson('/api/community/growth?days=14')
+      const payload = await fetchJson('/api/community/growth?days=30')
       const data = payload?.data || {}
       setCommunityGrowth({
-        rangeDays: Number(data.rangeDays || 14),
+        rangeDays: Number(data.rangeDays || 30),
         series: Array.isArray(data.series) ? data.series : [],
       })
       setCommunityFeedStatus((prev) => ({
@@ -958,7 +971,7 @@ const CommunityPage = ({ onNavigate }) => {
       }))
     } catch (err) {
       console.error('Error fetching community growth stats:', err)
-      setCommunityGrowth({ rangeDays: 14, series: [] })
+      setCommunityGrowth({ rangeDays: 30, series: [] })
       setCommunityFeedStatus((prev) => ({
         ...prev,
         growth: 'unavailable',
@@ -1175,26 +1188,28 @@ const CommunityPage = ({ onNavigate }) => {
                 </div>
               </div>
 
-              <div className="community-profile-switcher__row">
+              <form className="community-profile-switcher__row" onSubmit={(event) => { event.preventDefault(); handleViewProfile() }}>
                 <div className="community-profile-switcher__input-wrap">
                   <Globe size={16} />
                   <input
                     type="text"
                     className="community-profile-switcher__input"
                     value={profileInput}
-                    onChange={(event) => setProfileInput(event.target.value)}
-                    placeholder={communityT('profile.placeholder', 'Wallet address or Referral ID')}
+                    onChange={(event) => { setProfileInput(event.target.value); setProfileError('') }}
+                    placeholder={communityT('profile.placeholder', 'Wallet address, FFN ID, or referral link')}
+                    autoComplete="off"
+                    disabled={profileLoading}
                   />
                 </div>
 
                 <button
-                  type="button"
+                  type="submit"
                   className="community-profile-switcher__submit"
-                  onClick={handleViewProfile}
+                  disabled={profileLoading}
                 >
-                  {communityT('profile.actions.view', 'View Profile')}
+                  {profileLoading ? 'Searching...' : communityT('profile.actions.view', 'View Profile')}
                 </button>
-              </div>
+              </form>
 
               {profileError ? (
                 <p className="community-profile-switcher__error">{profileError}</p>
@@ -1283,11 +1298,14 @@ const CommunityPage = ({ onNavigate }) => {
             </div>
 
             <span className="community-metrics__label muted-text">
-              {communityT('metrics.participants', 'F-Freedom Participants')}
+              Fin Freedom Participant
             </span>
 
             <strong className="community-metrics__value gradient-text-teal">
-              {formatWhole(liveParticipantCount || publicReadStats.totalParticipants || communityGlobalStats.totalUsers)}
+              <AnimatedMetricValue
+                value={publicReadStats.totalParticipants || communityGlobalStats.totalUsers}
+                format="participant"
+              />
             </strong>
 
             {shouldShowPublicOnlyMetrics && (
@@ -1316,7 +1334,7 @@ const CommunityPage = ({ onNavigate }) => {
                 </div>
                 <span className="community-metrics__label muted-text">{communityT('metrics.totalGeneratedVolume', 'Total Generated Volume')}</span>
                 <strong className="community-metrics__value gradient-text-blue">
-                  ${formatToken(communityGlobalStats.totalGeneratedVolume)}
+                  <AnimatedMetricValue value={communityGlobalStats.totalGeneratedVolume} prefix="$" decimals={2} />
                 </strong>
               </div>
 
@@ -1326,7 +1344,7 @@ const CommunityPage = ({ onNavigate }) => {
                 </span>
                 <span className="community-metrics__label muted-text">{communityT('metrics.currentEscrowLocked', 'Current Escrow Locked')}</span>
                 <strong className="community-metrics__value gradient-text-gold">
-                  ${formatToken(communityGlobalStats.currentEscrowLocked)}
+                  <AnimatedMetricValue value={communityGlobalStats.currentEscrowLocked} prefix="$" decimals={2} />
                 </strong>
               </div>
 
@@ -1336,7 +1354,7 @@ const CommunityPage = ({ onNavigate }) => {
                 </span>
                 <span className="community-metrics__label muted-text">{communityT('metrics.escrowLockedLifetime', 'Escrow Locked Lifetime')}</span>
                 <strong className="community-metrics__value gradient-text-gold">
-                  ${formatToken(communityGlobalStats.totalEscrowLockedLifetime)}
+                  <AnimatedMetricValue value={communityGlobalStats.totalEscrowLockedLifetime} prefix="$" decimals={2} />
                 </strong>
               </div>
 
@@ -1346,7 +1364,7 @@ const CommunityPage = ({ onNavigate }) => {
                 </span>
                 <span className="community-metrics__label muted-text">{communityT('metrics.autoUpgradeUsed', 'Auto-upgrade Used')}</span>
                 <strong className="community-metrics__value gradient-text-blue">
-                  ${formatToken(communityGlobalStats.totalAutoUpgradeUsed)}
+                  <AnimatedMetricValue value={communityGlobalStats.totalAutoUpgradeUsed} prefix="$" decimals={2} />
                 </strong>
               </div>
 
@@ -1356,7 +1374,7 @@ const CommunityPage = ({ onNavigate }) => {
                 </div>
                 <span className="community-metrics__label muted-text">{communityT('metrics.nftPoolBalance', 'NFT Pool Total Accumulated')}</span>
                 <strong className="community-metrics__value gradient-text-gold">
-                  ${formatToken(nftBalance)}
+                  <AnimatedMetricValue value={nftBalance} prefix="$" decimals={2} />
                 </strong>
               </div>
 
@@ -1366,7 +1384,7 @@ const CommunityPage = ({ onNavigate }) => {
                 </div>
                 <span className="community-metrics__label muted-text">{communityT('metrics.operationsBalance', 'Operations Total Accumulated')}</span>
                 <strong className="community-metrics__value gradient-text-blue">
-                  ${formatToken(opsBalance)}
+                  <AnimatedMetricValue value={opsBalance} prefix="$" decimals={2} />
                 </strong>
               </div>
             </>
@@ -1384,17 +1402,16 @@ const CommunityPage = ({ onNavigate }) => {
           <section className="community-growth">
             {communityGrowth.series.length ? (
               <>
-                <GrowthBarChart
+                <ParticipantGrowthChart
                   data={communityGrowth.series}
-                  valueKey="registrations"
-                  labelKey="date"
-                  amountKey="earningsLiquid"
+                  totalParticipants={publicReadStats.totalParticipants || communityGlobalStats.totalUsers}
+                  defaultRange={14}
                   emptyLabel={communityT('growth.syncing', 'Growth data syncing')}
-                  ariaLabel={communityT('growth.ariaLabel', 'Daily community registration trend')}
+                  ariaLabel={communityT('growth.ariaLabel', 'Fin Freedom participant growth chart')}
                 />
 
                 <p className="chart-note">
-                  {communityT('growth.note', 'Daily registrations over the last {{count}} days', { count: communityGrowth.rangeDays })}
+                  {communityT('growth.note', 'Switch between cumulative participation and daily registrations.')}
                 </p>
               </>
             ) : (

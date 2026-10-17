@@ -79,7 +79,9 @@ const NFT_MEMBERSHIP_ABI = [
 const NFT_REWARD_DISTRIBUTOR_ABI = [
   'function claim(uint32 periodId,uint8 tier,bytes32[] proof)',
   'function claimed(uint32 periodId,address member) view returns (bool)',
-  'function periodOf(uint32 periodId) view returns ((uint64 cutoff,uint256 poolAmount,uint256 reservedAmount,bytes32[3] eligibleRoots,uint256[3] eligibleCounts,uint256[3] rewardPerMember,bool created))',
+  'function rewardExcluded(address member) view returns (bool)',
+  'function firstDistributionAt() view returns (uint64)',
+  'function periodOf(uint32 periodId) view returns ((uint64 cutoff,uint256 poolAmount,uint256 reservedAmount,bytes32[3] eligibleRoots,uint256[3] eligibleCounts,uint256[3] rewardPerMember,bool created,uint64 distributionAt))',
 ]
 
 function assertEnabled() {
@@ -150,6 +152,7 @@ export const freedomPlusApi = {
   orbit: (wallet, level, cycle) => fetchJson(`/api/freedom-plus/orbit/${wallet}/level/${level}${cycle === '' ? '' : `?cycle=${cycle}`}`),
   payments: (wallet, level = '') => fetchJson(`/api/freedom-plus/payments/${wallet}${level ? `?level=${level}` : ''}`),
   rewardPeriods: () => fetchJson('/api/freedom-plus/rewards/periods'),
+  rewardCycleStatus: (wallet) => fetchJson(`/api/freedom-plus/rewards/status/${wallet}`),
   rewardProof: (periodId, wallet) => fetchJson(`/api/freedom-plus/rewards/${periodId}/${wallet}`),
   referralForWallet: (wallet) => fetchJson(`/api/referral/code/${wallet}`),
   resolveReferral: (referralId) => fetchJson(`/api/referral/resolve/${encodeURIComponent(referralId)}`),

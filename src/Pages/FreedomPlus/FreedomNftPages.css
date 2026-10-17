@@ -94,3 +94,35 @@
 .fn-unlock-review label{display:flex;align-items:flex-start;gap:8px;margin-top:12px;font-size:13px}
 .fn-unlock-review label input{width:auto;margin:2px 0 0}
 @media(max-width:680px){.fn-unlock-review dl{grid-template-columns:1fr}.fn-membership-status__mark{width:46px;height:46px}}
+
+/* Fixed-cycle eligibility and downloadable reward receipts. */
+.fn-cycle-status{display:flex;align-items:flex-start;gap:16px;padding:20px 22px;border:1px solid var(--ffn-border);border-left:4px solid #d97706;background:var(--ffn-surface)}
+.fn-cycle-status>svg{flex:none;width:26px;height:26px;color:#d97706}
+.fn-cycle-status span{color:var(--ffn-text-muted);font-size:12px;font-weight:800;text-transform:uppercase}
+.fn-cycle-status h2{margin:4px 0 6px;font-size:22px}
+.fn-cycle-status p{margin:0;color:var(--ffn-text-muted);line-height:1.55}
+.fn-cycle-status.eligible{border-left-color:var(--ffn-primary)}
+.fn-cycle-status.eligible>svg{color:var(--ffn-primary)}
+.fn-cycle-status.inactive{border-left-color:#dc4c4c}
+.fn-cycle-status.inactive>svg{color:#dc4c4c}
+.fn-cycle-status.next{border-left-color:#3b82f6}
+.fn-cycle-status.next>svg{color:#3b82f6}
+.fn-reward-periods__actions{display:flex;align-items:flex-end;gap:8px;flex-direction:column}
+.fn-reward-periods__actions>span{display:flex;align-items:center;gap:5px;color:var(--ffn-primary);font-weight:800}
+.fn-reward-periods__actions>span svg{width:16px}
+.fn-reward-periods__actions button{padding:9px 12px;font-size:12px}
+.fn-receipt-modal{position:relative;width:min(720px,100%);padding:20px;border:1px solid var(--ffn-border);border-radius:8px;background:var(--ffn-surface);box-shadow:var(--ffn-elevation-3)}
+.fn-receipt-card{padding:32px;border-left:8px solid var(--ffn-primary);background:#0d2530;color:#fff}
+.fn-receipt-card__brand{display:flex;align-items:center;gap:10px;margin-bottom:28px;color:#76e6c3;font-size:18px;font-weight:800}
+.fn-receipt-card__brand svg{width:28px;height:28px}
+.fn-receipt-card>small{text-transform:uppercase;color:#76e6c3;font-weight:800}
+.fn-receipt-card h2{margin:8px 0 4px;font-size:48px}
+.fn-receipt-card>p{margin:0;color:#c5d4da}
+.fn-receipt-card dl{display:grid;gap:10px;margin:30px 0 0}
+.fn-receipt-card dl>div{display:grid;grid-template-columns:130px minmax(0,1fr);gap:16px;padding-top:10px;border-top:1px solid rgba(255,255,255,.14)}
+.fn-receipt-card dt{color:#76e6c3;font-size:12px;font-weight:800;text-transform:uppercase}
+.fn-receipt-card dd{display:flex;align-items:center;gap:5px;min-width:0;margin:0;overflow-wrap:anywhere}
+.fn-receipt-card dd svg{width:16px}
+.fn-receipt-download{display:flex;align-items:center;justify-content:center;gap:8px;width:100%;margin-top:14px;padding:12px;border:1px solid #20a77d;border-radius:6px;background:#087f5b;color:#fff;font-weight:800}
+.fn-receipt-download svg{width:18px}
+@media(max-width:680px){.fn-cycle-status{padding:16px}.fn-reward-periods__actions{grid-column:1/-1;align-items:stretch}.fn-receipt-modal{padding:12px}.fn-receipt-card{padding:24px 18px}.fn-receipt-card h2{font-size:36px}.fn-receipt-card dl>div{grid-template-columns:1fr;gap:4px}}

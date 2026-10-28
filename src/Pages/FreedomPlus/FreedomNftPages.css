@@ -126,3 +126,27 @@
 .fn-receipt-download{display:flex;align-items:center;justify-content:center;gap:8px;width:100%;margin-top:14px;padding:12px;border:1px solid #20a77d;border-radius:6px;background:#087f5b;color:#fff;font-weight:800}
 .fn-receipt-download svg{width:18px}
 @media(max-width:680px){.fn-cycle-status{padding:16px}.fn-reward-periods__actions{grid-column:1/-1;align-items:stretch}.fn-receipt-modal{padding:12px}.fn-receipt-card{padding:24px 18px}.fn-receipt-card h2{font-size:36px}.fn-receipt-card dl>div{grid-template-columns:1fr;gap:4px}}
+/* Official NFT card presentation: source artwork remains uncropped and unaltered. */
+.fn-page>.fn-page-hero,.fn-page>.fn-overview-hero{height:600px;min-height:600px;aspect-ratio:auto;isolation:isolate;background:#03080d}
+.fn-page>.fn-page-hero .fn-theme-media img,.fn-page>.fn-overview-hero .fn-theme-media img{width:100%;height:100%;object-fit:contain;object-position:right center;transform:none}
+.fn-page>.fn-page-hero .fn-page-hero__shade,.fn-page>.fn-overview-hero .fn-page-hero__shade{background:linear-gradient(90deg,#03080d 0%,rgba(3,8,13,.98) 35%,rgba(3,8,13,.76) 53%,rgba(3,8,13,.08) 76%)}
+.fn-page>.fn-page-hero .fn-page-hero__copy,.fn-page>.fn-overview-hero .fn-page-hero__copy{width:min(50%,640px);height:100%;min-height:600px}
+[data-theme='light'] .fn-page>.fn-page-hero,[data-theme='light'] .fn-page>.fn-overview-hero{background:#03080d}
+[data-theme='light'] .fn-page>.fn-page-hero .fn-page-hero__shade,[data-theme='light'] .fn-page>.fn-overview-hero .fn-page-hero__shade{background:linear-gradient(90deg,#03080d 0%,rgba(3,8,13,.98) 35%,rgba(3,8,13,.76) 53%,rgba(3,8,13,.08) 76%)}
+[data-theme='light'] .fn-page>.fn-page-hero .fn-page-hero__copy,[data-theme='light'] .fn-page>.fn-overview-hero .fn-page-hero__copy{color:#fff}
+[data-theme='light'] .fn-page>.fn-page-hero .fn-page-hero__copy>p,[data-theme='light'] .fn-page>.fn-overview-hero .fn-page-hero__copy>p{color:#d6dee4}
+[data-theme='light'] .fn-page>.fn-page-hero .fn-page-hero__facts,[data-theme='light'] .fn-page>.fn-overview-hero .fn-page-hero__facts{border-color:rgba(255,255,255,.2)}
+.fn-overview-tiers .fn-tier-art,.fn-tier-selector .fn-tier-art{aspect-ratio:4/5;background:#03080d}
+.fn-overview-tiers .fn-tier-art img,.fn-tier-selector .fn-tier-art img{object-fit:contain;object-position:center;transform:none}
+.fn-allocation .fn-tier-art{flex:none;width:88px;aspect-ratio:4/5;border:1px solid var(--ffn-border);border-radius:6px;background:#03080d}
+.fn-allocation .fn-tier-art img{object-fit:contain;object-position:center;transform:none}
+@media(max-width:900px) and (min-width:681px){.fn-page>.fn-page-hero .fn-page-hero__copy,.fn-page>.fn-overview-hero .fn-page-hero__copy{width:58%;padding:40px}}
+@media(max-width:680px){
+ .fn-page>.fn-page-hero,.fn-page>.fn-overview-hero{display:grid;grid-template-rows:auto auto;width:calc(100% + 28px);height:auto;min-height:0;margin-left:-14px;margin-right:-14px;aspect-ratio:auto}
+ .fn-page>.fn-page-hero .fn-theme-media,.fn-page>.fn-overview-hero .fn-theme-media{position:relative;grid-row:1;height:auto;aspect-ratio:4/5}
+ .fn-page>.fn-page-hero .fn-theme-media picture,.fn-page>.fn-overview-hero .fn-theme-media picture{position:absolute;inset:0}
+ .fn-page>.fn-page-hero .fn-theme-media img,.fn-page>.fn-overview-hero .fn-theme-media img{object-position:center}
+ .fn-page>.fn-page-hero .fn-page-hero__shade,.fn-page>.fn-overview-hero .fn-page-hero__shade{display:none}
+ .fn-page>.fn-page-hero .fn-page-hero__copy,.fn-page>.fn-overview-hero .fn-page-hero__copy{grid-row:2;justify-content:flex-start;width:100%;height:auto;min-height:0;padding:26px 22px 30px;background:#03080d}
+ .fn-page>.fn-page-hero .fn-page-hero__copy h1,.fn-page>.fn-overview-hero .fn-page-hero__copy h1{font-size:38px}
+}

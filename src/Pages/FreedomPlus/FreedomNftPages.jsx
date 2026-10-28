@@ -4,13 +4,15 @@ import { NFT_TIERS } from '../../Services/freedomPlus'
 import { qualificationPreview, formatQualificationAmount } from '../../utils/nftQualification.js'
 import { nftCycleStatusCopy } from './FreedomNftCycleStatus.js'
 
-export const NFT_HERO_MEDIA={dark:'/images/landing/hero-03-dark.png',light:'/images/landing/hero-03-light.png',mobileDark:'/images/landing/cards/nft-card-mobile-dark.png',mobileLight:'/images/landing/cards/nft-card-mobile-light.png'}
-export const NFT_CARD_MEDIA={dark:'/images/freedom-nft/membership-rewards-hero-dark-v2.png',light:'/images/freedom-nft/membership-rewards-hero-light-v2.png',mobileDark:'/images/freedom-nft/membership-rewards-hero-mobile-dark-v2.png',mobileLight:'/images/freedom-nft/membership-rewards-hero-mobile-light-v2.png'}
+const officialNftMedia=(src)=>({dark:src,light:src,mobileDark:src,mobileLight:src})
+
+export const NFT_HERO_MEDIA=officialNftMedia('/images/freedom-nft/official-cards/general-nft.png')
+export const NFT_CARD_MEDIA=NFT_HERO_MEDIA
 export const TIER_META={1:{tone:'foundation'},2:{tone:'intermediate'},3:{tone:'advance'}}
 export const TIER_MEDIA={
-  1:{dark:'/images/freedom-nft/tier-foundation-dark.png',light:'/images/freedom-nft/tier-foundation-light.png'},
-  2:{dark:'/images/freedom-nft/tier-intermediate-dark.png',light:'/images/freedom-nft/tier-intermediate-light.png'},
-  3:{dark:'/images/freedom-nft/tier-advance-dark.png',light:'/images/freedom-nft/tier-advance-light.png'},
+  1:officialNftMedia('/images/freedom-nft/official-cards/foundation-tier.png'),
+  2:officialNftMedia('/images/freedom-nft/official-cards/intermediate-tier.png'),
+  3:officialNftMedia('/images/freedom-nft/official-cards/advance-tier.png'),
 }
 
 const cycleDate=(value)=>value?new Date(value).toLocaleString(undefined,{day:'2-digit',month:'short',year:'numeric',hour:'2-digit',minute:'2-digit',timeZone:'UTC',timeZoneName:'short'}):'Awaiting schedule'

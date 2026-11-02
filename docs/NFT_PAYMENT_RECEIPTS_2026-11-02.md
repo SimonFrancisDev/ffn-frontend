@@ -65,5 +65,52 @@ pending or uncertain payment into a successful receipt.
   `_ui-verification/nft-receipt` in the parent workspace, not production assets.
 - Browser fixtures are not imported into the production app.
 
-These tests validate receipt behavior, not completion of a live NFT payout.
-The first live receipt still depends on a confirmed and indexed payment.
+## Production receipt correction
+
+The isolated browser fixture missed a global rule in
+`src/Pages/Security/SecurityPage.css` that sets `.modal-content` to `display:none`.
+Production verification succeeded and receipt content rendered, but was invisible.
+The receipt now explicitly uses `display:flex`; scoped background overrides also
+preserve contrast against landing-page and light-theme CSS. Other modals, payout
+logic, environment variables and Render services are unchanged.
+
+Regression coverage now loads the actual Security, Admin, Landing, foundation
+and variable styles and checks both themes, visibility and PNG export.
+The opt-in read-only live browser check uses production configuration and CSS:
+
+```text
+node test/verifyNftReceiptLive.mjs <paid-wallet> <cycle> [playwright-module] [--local-css]
+```
+
+This invokes the actual receipt component and chain verifier without a signing
+wallet. `--local-css` previews the local receipt stylesheet before deployment;
+without it, the served CSS must pass desktop/mobile visibility and PNG checks.
+
+## Confirmed distribution
+
+Polygon mainnet, chain **137**, checked at block **96611387**, November 2, 2026:
+
+- Proposals **129 and 128** both executed, each with three confirmations.
+- Cycle 1 funding **5,023.84 USDT**; eligible counts **[4, 0, 0]**.
+- Four Foundational wallets received **627.98 USDT each**, **2,511.92 USDT total**.
+- Shared vault retained **2,511.92 USDT** for the empty Intermediate/Advanced tiers.
+- Previous vault balance **0 USDT**, after the approved consolidation.
+- ID 1 and the late-mint wallet were not paid in cycle 1.
+
+Successful payout transaction:
+`0xad9f57a1fd7c276c3a41d0fe9ab5a822345e584b1264aef667387d5dc5738a3f`
+
+Block **96607964**, timestamp **2026-11-02 11:03:22 UTC**.
+
+| Paid wallet | USDT |
+| --- | ---: |
+| `0x117C9258a95775Ecf448fd086D00cA22506Ea79d` | 627.98 |
+| `0xAa254e8e177dE104D9F87211b0f4a6B7eC71306A` | 627.98 |
+| `0xb673c9D14Da920f187d25Cc793f1955a43284622` | 627.98 |
+| `0xE8b1ac47231651cCc38326a59645a8D976D0Eabf` | 627.98 |
+
+For all four wallets, the claim state, published per-member amount, indexed
+RewardClaimed event and actual USDT transfer from the shared vault matched.
+The receipt verifier succeeded for each. The production API reports cycle 1
+published and returns the matching events. No proposal or payout transaction was
+submitted by this receipt-fix pass; distribution had already completed.

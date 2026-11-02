@@ -8,12 +8,14 @@ import { build } from 'esbuild'
 
 const root = fileURLToPath(new URL('../', import.meta.url))
 const require = createRequire(import.meta.url)
-const { chromium } = require(process.env.PLAYWRIGHT_MODULE || 'playwright')
+const { chromium } = require(process.env.PLAYWRIGHT_MODULE || process.argv[2] || 'playwright')
+process.env.PW_TEST_SCREENSHOT_NO_FONTS_READY = '1'
 const output = path.resolve(root, '../_ui-verification/nft-receipt')
 await mkdir(output, { recursive: true })
 const bundle = await build({
   entryPoints: [path.join(root, 'test/fixtures/nftReceiptBrowser.jsx')], bundle: true, write: false,
   outfile: 'receipt.js', jsx: 'automatic', define: { 'process.env.NODE_ENV': '"development"' },
+  external: ['/images/*', '/assets/*'],
   plugins: [{ name: 'no-live-services', setup(builder) {
     builder.onResolve({ filter: /Services\/freedomPlus$/ }, () => ({ path: 'stub', namespace: 'test' }))
     builder.onLoad({ filter: /.*/, namespace: 'test' }, () => ({ contents: 'export const loadNftReceipt = () => { throw new Error("Live service forbidden in browser fixtures") }' }))
@@ -53,11 +55,22 @@ try {
     const downloadButton = page.getByRole('button', { name: 'Download receipt' })
     await downloadButton.waitFor()
     await page.waitForFunction(() => !document.querySelector('.modal-footer button')?.disabled)
+    assert.equal(await page.locator('.fn-payment-modal .modal-content').evaluate(el => getComputedStyle(el).display), 'flex', 'global Security page CSS must not hide receipt content')
+    assert.equal(await page.locator('.fn-payment-card').isVisible(), true)
     assert.equal(await page.locator('.fn-payment-card').getByText('123.456789').count(), 1)
     assert.equal(await page.locator('.fn-payment-card img').evaluate(img => img.complete && img.naturalWidth > 0), true)
     assert.equal(await page.locator('.modal-body').evaluate(el => el.scrollWidth <= el.clientWidth), true, `horizontal overflow at ${width}`)
     assert.equal(await page.locator('.fn-payment-card').evaluate(el => el.scrollWidth <= el.clientWidth), true)
     await page.screenshot({ path: path.join(output, `receipt-${width}.png`) })
+    await page.evaluate(() => { document.documentElement.dataset.theme = 'light' })
+    assert.equal(await page.locator('.fn-payment-modal .modal-content').evaluate(el => getComputedStyle(el).display), 'flex')
+    assert.equal(await page.locator('.fn-payment-modal .modal-content').evaluate(el => getComputedStyle(el).backgroundColor), 'rgb(17, 27, 26)', 'light-theme overrides must not erase receipt contrast')
+    assert.equal(await page.locator('.fn-payment-modal .modal-content').evaluate(el => getComputedStyle(el).backgroundImage), 'none')
+    assert.equal(await page.locator('.fn-payment-card h2').evaluate(el => getComputedStyle(el).color), 'rgb(237, 246, 242)')
+    assert.equal(await page.locator('.fn-payment-card__heading strong').evaluate(el => getComputedStyle(el).color), 'rgb(79, 223, 177)')
+    assert.equal(await downloadButton.evaluate(el => getComputedStyle(el).color), 'rgb(16, 34, 26)')
+    assert.equal(await page.getByRole('button', { name: 'Share', exact: true }).evaluate(el => getComputedStyle(el).color), 'rgb(237, 246, 242)')
+    await page.screenshot({ path: path.join(output, `receipt-${width}-light.png`) })
     const downloadEvent = page.waitForEvent('download')
     await downloadButton.click()
     const download = await downloadEvent
@@ -87,7 +100,7 @@ try {
     await page.getByRole('button', { name: 'Retry verification' }).waitFor()
     assert.equal(await page.locator('.fn-payment-card').count(), 0, 'previous wallet receipt must disappear')
     await page.close()
-    console.log(`PASS ${width}x${height}: layout, artwork, PNG, share/cancel, Escape/focus, failed verification, retry, wallet switch`)
+    console.log(`PASS ${width}x${height}: global CSS visibility, both themes, layout, artwork, PNG, share/cancel, Escape/focus, failed verification, retry, wallet switch`)
   }
   assert.deepEqual(errors, [])
   console.log(`Screenshots and PNG receipts: ${output}`)

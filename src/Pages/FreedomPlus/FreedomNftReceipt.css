@@ -1,15 +1,17 @@
-.fn-payment-modal{z-index:2300;color:#edf6f2;letter-spacing:0}
+.fn-payment-modal{--ffn-text:#edf6f2;--ffn-border:#40514b;z-index:2300;color:#edf6f2;letter-spacing:0}
+.fn-payment-modal.modal[role="dialog"]{background:transparent!important;border:0;border-radius:0;backdrop-filter:none;box-shadow:none}
 .fn-payment-backdrop{z-index:2290;background:#000;opacity:.8!important}
-.fn-payment-modal .modal-dialog{max-width:740px;margin:20px auto;padding:0 12px;min-height:calc(100% - 40px)}
-.fn-payment-modal .modal-content{background:#111b1a;border:1px solid #40514b;border-radius:8px;color:#edf6f2;box-shadow:0 20px 70px #0008}
+.fn-payment-modal.modal .modal-dialog{max-width:740px;margin:20px auto;padding:0 12px;min-height:calc(100% - 40px);background:transparent!important;border:0;box-shadow:none}
+/* Legacy page styles hide generic modal content. Keep this receipt visible. */
+.fn-payment-modal.modal .modal-content{display:flex;flex-direction:column;background:#111b1a!important;border:1px solid #40514b;border-color:#40514b!important;border-radius:8px;color:#edf6f2!important;box-shadow:0 20px 70px #0008}
 .fn-payment-modal .modal-header{border-bottom:1px solid #354340;padding:14px 20px;gap:16px}
 .fn-payment-modal .modal-title{font-size:18px;line-height:1.4}
 .fn-payment-modal .modal-body{padding:0;overscroll-behavior:contain}
 .fn-payment-modal .modal-footer{border-top:1px solid #354340;padding:14px 20px;gap:10px;flex-wrap:wrap}
 .fn-payment-close{display:grid;place-items:center;flex:none;width:36px;height:36px;margin-left:auto;padding:6px;background:#23312c;color:#fff;border:1px solid #52675d;border-radius:6px}
 .fn-payment-modal button:focus-visible,.fn-payment-card a:focus-visible{outline:3px solid #d5b7ff;outline-offset:3px}
-.fn-payment-modal .modal-footer button,.fn-payment-state button{display:flex;align-items:center;justify-content:center;gap:8px;margin:0;padding:11px 16px;background:#4fdfb1;color:#10221a;border:1px solid #4fdfb1;border-radius:6px;font-size:14px;font-weight:700;min-height:44px}
-.fn-payment-modal .modal-footer button.secondary{background:transparent;color:#edf6f2;border-color:#82978e}
+.fn-payment-modal .modal-footer button,.fn-payment-state button{--ffn-text:#10221a;display:flex;align-items:center;justify-content:center;gap:8px;margin:0;padding:11px 16px;background:#4fdfb1;color:#10221a;border:1px solid #4fdfb1;border-radius:6px;font-size:14px;font-weight:700;min-height:44px}
+.fn-payment-modal .modal-footer button.secondary{--ffn-text:#edf6f2;background:transparent;color:#edf6f2;border-color:#82978e}
 .fn-payment-modal .modal-footer button:disabled{opacity:.55}
 .fn-payment-modal button svg{width:18px;height:18px;flex:none}
 .fn-payment-card{padding:28px;color:#edf6f2;letter-spacing:0}
@@ -21,7 +23,7 @@
 .fn-payment-card__heading h2{margin:8px 0;font-size:36px;line-height:1.2;overflow-wrap:anywhere;letter-spacing:0}
 .fn-payment-card__heading h2 small{display:inline-block;font-size:18px}
 .fn-payment-card__heading p{margin:0 0 12px;color:#c0ceca;font-size:14px}
-.fn-payment-card__heading strong{display:flex;align-items:center;gap:6px;color:#4fdfb1;font-size:13px}
+.fn-payment-card__heading strong{--ffn-text:#4fdfb1;display:flex;align-items:center;gap:6px;color:#4fdfb1;font-size:13px}
 .fn-payment-card__heading strong svg{width:18px;flex:none}
 .fn-payment-card dl{margin:24px 0 0;display:grid;gap:0}
 .fn-payment-card dl>div{display:grid;grid-template-columns:136px minmax(0,1fr);gap:16px;padding:13px 0;border-top:1px solid #354340}

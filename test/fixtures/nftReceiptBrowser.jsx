@@ -2,6 +2,11 @@ import { useState } from 'react'
 import { createRoot } from 'react-dom/client'
 import 'bootstrap/dist/css/bootstrap.min.css'
 import FreedomNftReceipt from '../../src/Pages/FreedomPlus/FreedomNftReceipt.jsx'
+import '../../src/styles/variables.css'
+import '../../src/styles/foundation.css'
+import '../../src/Pages/Landing/LandingPage.css'
+import '../../src/Pages/AdminPanel.css'
+import '../../src/Pages/Security/SecurityPage.css'
 
 const receipt = {
   chainId: 137, network: 'Browser test fixture (not a payment)',

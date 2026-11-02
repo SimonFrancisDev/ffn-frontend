@@ -1,0 +1,40 @@
+.fn-payment-modal{z-index:2300;color:#edf6f2;letter-spacing:0}
+.fn-payment-backdrop{z-index:2290;background:#000;opacity:.8!important}
+.fn-payment-modal .modal-dialog{max-width:740px;margin:20px auto;padding:0 12px;min-height:calc(100% - 40px)}
+.fn-payment-modal .modal-content{background:#111b1a;border:1px solid #40514b;border-radius:8px;color:#edf6f2;box-shadow:0 20px 70px #0008}
+.fn-payment-modal .modal-header{border-bottom:1px solid #354340;padding:14px 20px;gap:16px}
+.fn-payment-modal .modal-title{font-size:18px;line-height:1.4}
+.fn-payment-modal .modal-body{padding:0;overscroll-behavior:contain}
+.fn-payment-modal .modal-footer{border-top:1px solid #354340;padding:14px 20px;gap:10px;flex-wrap:wrap}
+.fn-payment-close{display:grid;place-items:center;flex:none;width:36px;height:36px;margin-left:auto;padding:6px;background:#23312c;color:#fff;border:1px solid #52675d;border-radius:6px}
+.fn-payment-modal button:focus-visible,.fn-payment-card a:focus-visible{outline:3px solid #d5b7ff;outline-offset:3px}
+.fn-payment-modal .modal-footer button,.fn-payment-state button{display:flex;align-items:center;justify-content:center;gap:8px;margin:0;padding:11px 16px;background:#4fdfb1;color:#10221a;border:1px solid #4fdfb1;border-radius:6px;font-size:14px;font-weight:700;min-height:44px}
+.fn-payment-modal .modal-footer button.secondary{background:transparent;color:#edf6f2;border-color:#82978e}
+.fn-payment-modal .modal-footer button:disabled{opacity:.55}
+.fn-payment-modal button svg{width:18px;height:18px;flex:none}
+.fn-payment-card{padding:28px;color:#edf6f2;letter-spacing:0}
+.fn-payment-card__brand{font-size:15px;font-weight:800;color:#4fdfb1;margin-bottom:24px}
+.fn-payment-card__heading{display:grid;grid-template-columns:minmax(0,1fr) 100px;gap:16px;align-items:center}
+.fn-payment-card__heading>div{min-width:0}
+.fn-payment-card__heading>img{width:100%;height:145px;object-fit:contain}
+.fn-payment-card__heading span{font-size:12px;font-weight:700;text-transform:uppercase;color:#c0ceca}
+.fn-payment-card__heading h2{margin:8px 0;font-size:36px;line-height:1.2;overflow-wrap:anywhere;letter-spacing:0}
+.fn-payment-card__heading h2 small{display:inline-block;font-size:18px}
+.fn-payment-card__heading p{margin:0 0 12px;color:#c0ceca;font-size:14px}
+.fn-payment-card__heading strong{display:flex;align-items:center;gap:6px;color:#4fdfb1;font-size:13px}
+.fn-payment-card__heading strong svg{width:18px;flex:none}
+.fn-payment-card dl{margin:24px 0 0;display:grid;gap:0}
+.fn-payment-card dl>div{display:grid;grid-template-columns:136px minmax(0,1fr);gap:16px;padding:13px 0;border-top:1px solid #354340}
+.fn-payment-card dt{font-size:12px;font-weight:600;color:#a5bcb2;line-height:1.5}
+.fn-payment-card dd{margin:0;min-width:0;font-size:14px;line-height:1.6;overflow-wrap:anywhere;color:#fff}
+.fn-payment-card__address,.fn-payment-card dd a{font-family:monospace}
+.fn-payment-card dd a{color:#91e5ca;text-decoration:underline;overflow-wrap:anywhere}
+.fn-payment-card dd a svg{display:inline;margin-left:5px;vertical-align:middle}
+.fn-payment-card__note{font-size:12px;line-height:1.6;color:#c0ceca;margin:18px 0 0}
+.fn-payment-state{display:grid;place-items:center;gap:12px;min-height:220px;padding:32px 24px;text-align:center}
+.fn-payment-state p{max-width:420px;margin:0;color:#edf6f2}
+.fn-payment-export-error{flex-basis:100%;color:#ffd9b8;font-size:13px;margin:0}
+.fn-payment-loading{color:#4fdfb1;animation:fn-payment-spin 1.2s linear infinite}
+@keyframes fn-payment-spin{to{transform:rotate(360deg)}}
+@media(prefers-reduced-motion:reduce){.fn-payment-loading{animation:none}}
+@media(max-width:540px){.fn-payment-modal .modal-dialog{margin:10px auto;min-height:calc(100% - 20px);padding:0 8px}.fn-payment-modal .modal-header,.fn-payment-modal .modal-footer{padding:12px 16px}.fn-payment-card{padding:20px 16px}.fn-payment-card__heading{grid-template-columns:minmax(0,1fr) 70px;gap:10px}.fn-payment-card__heading>img{height:108px}.fn-payment-card__heading h2{font-size:28px}.fn-payment-card dl>div{grid-template-columns:1fr;gap:4px;padding:10px 0}.fn-payment-modal .modal-footer button{flex:1;min-width:130px}}

@@ -1,8 +1,9 @@
 import { useMemo, useState } from 'react'
-import { AlertTriangle, CalendarClock, Check, CircleCheckBig, Download, LockKeyhole, ReceiptText, ShieldCheck, Trophy, X } from 'lucide-react'
+import { AlertTriangle, CalendarClock, Check, CircleCheckBig, LockKeyhole, ReceiptText, ShieldCheck, Trophy, X } from 'lucide-react'
 import { NFT_TIERS } from '../../Services/freedomPlus'
 import { qualificationPreview, formatQualificationAmount } from '../../utils/nftQualification.js'
 import { nftCycleStatusCopy } from './FreedomNftCycleStatus.js'
+import FreedomNftReceipt from './FreedomNftReceipt.jsx'
 
 const officialNftMedia=(src)=>({dark:src,light:src,mobileDark:src,mobileLight:src})
 
@@ -41,29 +42,6 @@ export function FreedomNftMembership({membership,membershipVerified,rewardCycleS
  </div>
 }
 
-function downloadNftReceipt({period,wallet,ffnId,formatToken}){
- const canvas=document.createElement('canvas');canvas.width=1400;canvas.height=800
- const ctx=canvas.getContext('2d');if(!ctx)return
- const tier=NFT_TIERS.find(item=>item.tier===Number(period.proof?.tier))
- ctx.fillStyle='#07131b';ctx.fillRect(0,0,1400,800)
- ctx.fillStyle='#0d2530';ctx.fillRect(48,48,1304,704)
- ctx.fillStyle='#20c997';ctx.fillRect(48,48,14,704)
- ctx.fillStyle='#ffffff';ctx.font='700 34px Arial';ctx.fillText('FIN FREEDOM NETWORK',100,125)
- ctx.fillStyle='#76e6c3';ctx.font='700 22px Arial';ctx.fillText('FREEDOM NFT REWARD RECEIPT',100,170)
- ctx.fillStyle='#ffffff';ctx.font='700 76px Arial';ctx.fillText(`${formatToken(period.reward)} USDT`,100,300)
- ctx.fillStyle='#9fb5bf';ctx.font='28px Arial';ctx.fillText(`${tier?.name||'Freedom NFT'} / Cycle ${period.cycleId||period.periodId}`,100,355)
- const rows=[['FFN ID',ffnId||'Not available'],['Wallet',wallet||'Not available'],['Distribution',cycleDate(period.distributionAt)],['Status','Paid directly to wallet']]
- rows.forEach(([label,value],index)=>{const y=455+index*66;ctx.fillStyle='#76e6c3';ctx.font='700 20px Arial';ctx.fillText(label.toUpperCase(),100,y);ctx.fillStyle='#ffffff';ctx.font=value.length>44?'22px monospace':'26px Arial';ctx.fillText(value,330,y)})
- ctx.fillStyle='#9fb5bf';ctx.font='20px Arial';ctx.fillText('On-chain reward record / Fin Freedom NFT Program',100,715)
- const link=document.createElement('a');link.download=`freedom-nft-cycle-${period.cycleId||period.periodId}-${ffnId||'receipt'}.png`;link.href=canvas.toDataURL('image/png');link.click()
-}
-
-function FreedomNftReceiptModal({period,wallet,ffnId,formatToken,onClose}){
- if(!period)return null
- const tier=NFT_TIERS.find(item=>item.tier===Number(period.proof?.tier))
- return <div className="fn-success-backdrop" role="presentation" onMouseDown={event=>{if(event.target===event.currentTarget)onClose()}}><section className="fn-receipt-modal" role="dialog" aria-modal="true" aria-labelledby="fn-receipt-title"><button type="button" className="fn-success-modal__close" onClick={onClose} aria-label="Close"><X/></button><div className="fn-receipt-card"><div className="fn-receipt-card__brand"><ShieldCheck/><span>Fin Freedom Network</span></div><small>Freedom NFT reward receipt</small><h2 id="fn-receipt-title">{formatToken(period.reward)} USDT</h2><p>{tier?.name||'Freedom NFT'} / Cycle {period.cycleId||period.periodId}</p><dl><div><dt>FFN ID</dt><dd>{ffnId||'Not available'}</dd></div><div><dt>Wallet</dt><dd>{wallet}</dd></div><div><dt>Distribution</dt><dd>{cycleDate(period.distributionAt)}</dd></div><div><dt>Status</dt><dd><Check/> Paid directly to wallet</dd></div></dl></div><button type="button" className="fn-receipt-download" onClick={()=>downloadNftReceipt({period,wallet,ffnId,formatToken})}><Download/>Download receipt</button></section></div>
-}
-
 export function FreedomNftRewards({membership,membershipVerified,rewardCycleStatus,rewardPeriodsVerified,rewardPeriods,formatToken,wallet,ffnId}){
  const current=NFT_TIERS.find(x=>x.tier===membership.tier)
  const cycleStatus=nftCycleStatusCopy(membership,membershipVerified,rewardCycleStatus)
@@ -73,7 +51,7 @@ export function FreedomNftRewards({membership,membershipVerified,rewardCycleStat
   <section className={'fn-cycle-status '+cycleStatus.tone}><CalendarClock/><div><span>Upcoming distribution</span><h2>{cycleStatus.title}</h2><p>{cycleStatus.detail}</p></div></section>
   <section className="fn-section"><header><span>Pool structure</span><h2>Transparent allocation by membership tier</h2></header><div className="fn-allocation">{NFT_TIERS.map(t=><article className={'fn-tier-card--'+TIER_META[t.tier].tone} key={t.tier}><FreedomNftTierArt tier={t.tier} alt={t.name+' Freedom NFT tier'}/><div><span>{t.name}</span><strong>{t.poolShare}%</strong><small>Tier {t.tier} cycle allocation</small></div></article>)}</div></section>
   <section className="fn-section"><header><span>Reward history</span><h2>30-day cycle payments</h2><p>Eligibility is fixed 24 hours before each distribution. Empty-tier allocations remain in the NFT pool.</p></header><div className="fn-reward-periods">{!rewardPeriodsVerified?<div className="fn-empty-rewards" role="status"><Trophy/><h3>Reward history awaiting verification</h3><p>Refresh to verify cycle payments.</p></div>:rewardPeriods.length?rewardPeriods.map(p=><article key={p.periodId}><div className="fn-reward-periods__icon"><Trophy/></div><div><span>Cycle {p.cycleId||p.periodId} / {cycleDate(p.distributionAt)}</span><strong>{p.readError?'Reward details temporarily unavailable':p.proof?.eligible?formatToken(p.reward)+' USDT':p.proof?.snapshotAvailable===false?'Proof archive unavailable':'Not eligible at cutoff'}</strong><small>{p.readError?'Retry to verify this cycle':p.status==='published'?'Published on-chain':'Eligibility snapshot fixed'}</small></div>{!p.readError&&p.proof?.eligible&&p.status==='published'&&<div className="fn-reward-periods__actions"><span role="status">{p.claimed?<><Check/> Paid</>:<>Payment queued</>}</span>{p.claimed&&<button type="button" onClick={()=>setReceipt(p)}><ReceiptText/>Generate receipt</button>}</div>}</article>):<div className="fn-empty-rewards"><Trophy/><h3>No reward cycle is available yet</h3><p>Published 30-day cycles will appear here.</p></div>}</div></section>
-  <FreedomNftReceiptModal period={receipt} wallet={wallet} ffnId={ffnId} formatToken={formatToken} onClose={()=>setReceipt(null)}/>
+  {receipt && <FreedomNftReceipt key={`${wallet}-${receipt.periodId}`} period={receipt} wallet={wallet} ffnId={ffnId} onClose={()=>setReceipt(null)}/>}
  </div>
 }
 

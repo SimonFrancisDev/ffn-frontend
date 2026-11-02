@@ -3,6 +3,8 @@ import { getApiUrl } from './apiConfig'
 import { earlyAccessHeaders } from './earlyAccess'
 import { web3Service } from './web3'
 import USDT_ABI from '../abis/USDT.json'
+import { NETWORK_CONFIG } from '../constants/addresses'
+import { verifyNftReceipt } from '../utils/nftReceipt.js'
 
 const env = import.meta.env
 
@@ -77,6 +79,8 @@ const NFT_MEMBERSHIP_ABI = [
 ]
 
 const NFT_REWARD_DISTRIBUTOR_ABI = [
+  'function vault() view returns (address)',
+  'function rewardToken() view returns (address)',
   'function claim(uint32 periodId,uint8 tier,bytes32[] proof)',
   'function claimed(uint32 periodId,address member) view returns (bool)',
   'function rewardExcluded(address member) view returns (bool)',
@@ -154,8 +158,20 @@ export const freedomPlusApi = {
   rewardPeriods: () => fetchJson('/api/freedom-plus/rewards/periods'),
   rewardCycleStatus: (wallet) => fetchJson(`/api/freedom-plus/rewards/status/${wallet}`),
   rewardProof: (periodId, wallet) => fetchJson(`/api/freedom-plus/rewards/${periodId}/${wallet}`),
+  rewardPayments: (wallet, page) => fetchJson(`/api/freedom-plus/events/${wallet}?eventName=RewardClaimed&limit=50&page=${page}`),
   referralForWallet: (wallet) => fetchJson(`/api/referral/code/${wallet}`),
   resolveReferral: (referralId) => fetchJson(`/api/referral/resolve/${encodeURIComponent(referralId)}`),
+}
+
+export async function loadNftReceipt({ wallet, period }) {
+  const contracts = getFreedomPlusReadContracts({ includeNft: true })
+  const identity = await freedomPlusApi.referralForWallet(wallet).catch(() => null)
+  return verifyNftReceipt({
+    provider: web3Service.getReadProvider(), distributor: contracts.nftRewardDistributor,
+    tokenAddress: env.VITE_USDT_ADDRESS, chainId: NETWORK_CONFIG.chainId, wallet, period,
+    ffnId: identity?.referralId || identity?.shortCode || '',
+    loadEvents: (page) => freedomPlusApi.rewardPayments(wallet, page),
+  })
 }
 
 export function tokenUnits(value) {

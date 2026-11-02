@@ -10,14 +10,15 @@ const periodId = Number(process.argv[3] || 1)
 if (!/^0x[0-9a-f]{40}$/i.test(wallet || '') || !Number.isSafeInteger(periodId) || periodId < 1) {
   throw Error('Usage: node test/verifyNftReceiptLive.mjs <paid-wallet> <cycle> [playwright-module] [--local-css]')
 }
-const { chromium } = require(process.env.PLAYWRIGHT_MODULE || process.argv[4] || 'playwright')
+const modulePath = process.argv[4]?.startsWith('--') ? undefined : process.argv[4]
+const { chromium } = require(process.env.PLAYWRIGHT_MODULE || modulePath || 'playwright')
 const site = 'https://www.finfreedomnetwork.io'
 const output = new URL('../../_ui-verification/nft-receipt-live/', import.meta.url)
 await mkdir(output, { recursive: true })
 process.env.PW_TEST_SCREENSHOT_NO_FONTS_READY = '1'
 const browser = await chromium.launch({ headless: true })
 try {
-  const page = await browser.newPage()
+  const page = await browser.newPage({ acceptDownloads: true })
   const html = await (await page.request.get(site)).text()
   const asset = html.match(/src="(\/assets\/index-[^"]+\.js)"/)[1]
   const script = await (await page.request.get(site + asset)).text()
@@ -34,12 +35,28 @@ try {
   // app RPC reads. This isolates the receipt while preserving global CSS conflicts.
   const styles = (html.match(/<link\b[^>]*rel="stylesheet"[^>]*>/g) || []).join('')
   assert.ok(styles, 'production stylesheet links are required')
+  await page.route(/https:\/\/fonts\.(googleapis|gstatic)\.com\//, route => route.abort())
   await page.route(site + '/freedom-nft/rewards', route => route.fulfill({ contentType: 'text/html', body: `<!doctype html><html><head><meta name="viewport" content="width=device-width,initial-scale=1">${styles}</head><body></body></html>` }))
-  await page.goto(site + '/freedom-nft/rewards', { waitUntil: 'load' })
+  await page.goto(site + '/freedom-nft/rewards', { waitUntil: 'domcontentloaded' })
+  await page.waitForFunction(() => [...document.querySelectorAll('link[rel="stylesheet"]')].every(link => Boolean(link.sheet)), null, { timeout: 40000 })
   if (process.argv.includes('--local-css')) await page.addStyleTag({ content: await readFile(new URL('../src/Pages/FreedomPlus/FreedomNftReceipt.css', import.meta.url), 'utf8') })
   page.on('pageerror', error => console.log('UI_ERROR', error.message))
+  page.on('request', request => {
+    const url = new URL(request.url())
+    if (url.hostname.endsWith('quiknode.pro')) {
+      try { const data = request.postDataJSON(); console.log('RPC_START', [].concat(data).map(item => item.method).join(',')) } catch { /* Not JSON-RPC. */ }
+    } else if (url.hostname.endsWith('onrender.com')) console.log('API_START', url.pathname)
+  })
+  page.on('response', response => {
+    const host = new URL(response.url()).hostname
+    if (host.endsWith('quiknode.pro') || host.endsWith('onrender.com')) console.log('HTTP_RESULT', host, response.status())
+  })
+  page.on('requestfailed', request => console.log('REQUEST_FAILED', new URL(request.url()).hostname, request.failure()?.errorText))
   await page.addScriptTag({ content: bundle.outputFiles[0].text })
-  await page.waitForFunction(() => document.querySelector('.fn-payment-modal .modal-footer') || document.querySelector('.fn-payment-state button'), null, { timeout: 40000 })
+  await page.waitForFunction(() => document.querySelector('.fn-payment-modal .modal-footer') || document.querySelector('.fn-payment-state button'), null, { timeout: 40000, polling: 100 }).catch(async error => {
+    console.log('RECEIPT_STATE', await page.locator('body').innerText())
+    throw error
+  })
   assert.equal(await page.locator('.fn-payment-modal .modal-content').evaluate(el => getComputedStyle(el).display), 'flex', 'receipt must be visible under production global CSS')
   console.log('LIVE_UI_RESULT', await page.locator('.fn-payment-modal').innerText())
   if (await page.getByRole('button', { name: 'Retry verification' }).count()) {
@@ -56,9 +73,10 @@ try {
     assert.equal(await page.locator('.fn-payment-card img').evaluate(el => el.complete && el.naturalWidth > 0), true)
     await page.screenshot({ path: fileURLToPath(new URL(`receipt-${width}.png`, output)), timeout: 10000 })
   }
-  const event = page.waitForEvent('download', { timeout: 20000 })
-  await download.click({ timeout: 20000 })
-  const file = await event
+  const [file] = await Promise.all([
+    page.waitForEvent('download', { timeout: 60000 }),
+    download.click({ timeout: 45000 }),
+  ])
   const pngPath = fileURLToPath(new URL('download.png', output))
   await file.saveAs(pngPath)
   const png = await readFile(pngPath)

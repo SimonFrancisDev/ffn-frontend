@@ -114,3 +114,15 @@ RewardClaimed event and actual USDT transfer from the shared vault matched.
 The receipt verifier succeeded for each. The production API reports cycle 1
 published and returns the matching events. No proposal or payout transaction was
 submitted by this receipt-fix pass; distribution had already completed.
+
+## Release verification
+
+- Fix committed and pushed as `b5ae8db` to production frontend `main`.
+- Official domain serves `/assets/index-CWsiZ27v.css` with the scoped fix.
+- 43 focused unit/rendering tests passed. Browser regression checks passed at
+  1440, 390 and 320 pixels, including both themes and download/share controls.
+- The read-only live browser check passed with no local CSS override: real
+  cycle 1 payment, FFN-DV6RA9, actual chain verification, visible desktop/mobile
+  receipt, original tier artwork and downloaded 1400 x 1360 PNG.
+- The live harness blocks unrelated external fonts and explicitly enables browser
+  downloads. Earlier local browser/network timeouts did not change any payment.

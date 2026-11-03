@@ -12,7 +12,7 @@ Suspended staging services remain untouched.
 
 - A published, eligible, claimed cycle offers **Generate receipt**.
 - Unpaid cycles remain **Payment queued** and cannot produce a paid receipt.
-- The modal shows full FFN ID and wallet, historical payout tier, cycle,
+- The modal shows full FFN ID and a masked wallet, historical payout tier, cycle,
   exact USDT amount, actual payment timestamp in UTC, scheduled cycle date,
   network, block number, and a full transaction link.
 - The approved tier artwork is reused without alteration.
@@ -126,3 +126,15 @@ submitted by this receipt-fix pass; distribution had already completed.
   receipt, original tier artwork and downloaded 1400 x 1360 PNG.
 - The live harness blocks unrelated external fonts and explicitly enables browser
   downloads. Earlier local browser/network timeouts did not change any payment.
+
+## Wallet display privacy - November 3, 2026
+
+- The receipt modal and downloaded/shared PNG show the first five wallet
+  characters, `***`, the last three characters, then `...`, for example
+  `0x117***79d...`. The `0x` prefix counts toward the first five characters.
+- The full address stays in the verified receipt model and all chain checks.
+  Only its presentation changes. The transaction link and FFN ID remain visible;
+  this is visual masking, not blockchain anonymity.
+- Filenames retain the FFN ID when available, otherwise use `receipt` instead
+  of exposing the full wallet address.
+- No payment, eligibility, contract, backend, environment or styling changes.

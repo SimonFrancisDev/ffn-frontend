@@ -1,7 +1,8 @@
 import test from 'node:test'
 import assert from 'node:assert/strict'
 import { Interface } from 'ethers'
-import { verifyNftReceipt, formatReceiptAmount } from '../src/utils/nftReceipt.js'
+import { verifyNftReceipt, formatReceiptAmount, formatReceiptWallet } from '../src/utils/nftReceipt.js'
+import { receiptFilename } from '../src/utils/nftReceiptImage.js'
 
 const wallet = '0x1111111111111111111111111111111111111111'
 const address = '0x2222222222222222222222222222222222222222'
@@ -46,6 +47,24 @@ test('receipt uses actual transfer amount, historical tier and paid timestamp, n
   assert.equal(result.paidAt, '2026-11-02T05:00:00.000Z')
   assert.equal(result.distributionAt, '2026-11-02T00:00:00.000Z')
   assert.equal(result.explorerUrl, `https://polygonscan.com/tx/${txHash}`)
+})
+
+test('wallet display keeps only the first five and last three characters', () => {
+  assert.equal(formatReceiptWallet(wallet), '0x111***111...')
+  assert.equal(formatReceiptWallet('0x1234567890abcdef1234567890abcdef12345AbC'), '0x123***AbC...')
+})
+
+test('masking does not change the verified wallet or transaction link', async () => {
+  const { params } = fixture()
+  const result = await verifyNftReceipt(params)
+  assert.equal(formatReceiptWallet(result.wallet), '0x111***111...')
+  assert.equal(result.wallet, wallet)
+  assert.equal(result.explorerUrl, `https://polygonscan.com/tx/${txHash}`)
+})
+
+test('receipt filenames never fall back to the full wallet address', () => {
+  assert.equal(receiptFilename({ periodId: '1', ffnId: 'FFN-ABC123', wallet }), 'freedom-nft-cycle-1-FFN-ABC123.png')
+  assert.equal(receiptFilename({ periodId: '1', ffnId: '', wallet }), 'freedom-nft-cycle-1-receipt.png')
 })
 
 test('all contract reads are pinned to the payout block', async () => {

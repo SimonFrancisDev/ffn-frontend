@@ -6,6 +6,8 @@ const same = (a, b) => String(a).toLowerCase() === String(b).toLowerCase()
 const hashPattern = /^0x[0-9a-f]{64}$/i
 const tierNames = ['Foundational', 'Intermediate', 'Advanced']
 
+export const formatReceiptWallet = (wallet) => `${wallet.slice(0, 5)}***${wallet.slice(-3)}...`
+
 export function formatReceiptAmount(raw) {
   const [whole, fraction = ''] = formatUnits(raw, 6).split('.')
   return `${whole.replace(/\B(?=(\d{3})+(?!\d))/g, ',')}.${fraction.replace(/0+$/, '').padEnd(2, '0')}`

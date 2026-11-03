@@ -2,7 +2,7 @@ import { useEffect, useState } from 'react'
 import { Modal } from 'react-bootstrap'
 import { Check, Download, ExternalLink, LoaderCircle, RefreshCw, Share2, X } from 'lucide-react'
 import { loadNftReceipt } from '../../Services/freedomPlus'
-import { receiptDate } from '../../utils/nftReceipt.js'
+import { formatReceiptWallet, receiptDate } from '../../utils/nftReceipt.js'
 import { createNftReceiptImage, downloadReceiptImage, receiptFilename, receiptTierImage } from '../../utils/nftReceiptImage.js'
 import './FreedomNftReceipt.css'
 
@@ -15,7 +15,7 @@ export function NftReceiptCard({ receipt }) {
     </div>
     <dl>
       <div><dt>FFN ID</dt><dd>{receipt.ffnId || 'Not available'}</dd></div>
-      <div><dt>Wallet</dt><dd className="fn-payment-card__address">{receipt.wallet}</dd></div>
+      <div><dt>Wallet</dt><dd className="fn-payment-card__address">{formatReceiptWallet(receipt.wallet)}</dd></div>
       <div><dt>Paid at</dt><dd>{receiptDate(receipt.paidAt)}</dd></div>
       <div><dt>Cycle scheduled for</dt><dd>{receiptDate(receipt.distributionAt)}</dd></div>
       <div><dt>Network</dt><dd>{receipt.network}</dd></div>

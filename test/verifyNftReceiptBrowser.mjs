@@ -44,10 +44,17 @@ try {
     const page = await browser.newPage({ viewport: { width, height }, acceptDownloads: true })
     page.on('pageerror', error => errors.push(error.message))
     await page.addInitScript(() => {
+      window.receiptCanvasText = []
+      const fillText = CanvasRenderingContext2D.prototype.fillText
+      CanvasRenderingContext2D.prototype.fillText = function (text, ...args) {
+        window.receiptCanvasText.push(String(text))
+        return fillText.call(this, text, ...args)
+      }
       Object.defineProperty(navigator, 'canShare', { value: () => true, configurable: true })
       Object.defineProperty(navigator, 'share', { value: async ({ files }) => {
         if (window.cancelShare) throw new DOMException('Share cancelled', 'AbortError')
         window.sharedReceiptType = files[0].type
+        window.sharedReceiptName = files[0].name
       }, configurable: true })
     })
     await page.goto(`http://127.0.0.1:${server.address().port}`)
@@ -57,6 +64,11 @@ try {
     await page.waitForFunction(() => !document.querySelector('.modal-footer button')?.disabled)
     assert.equal(await page.locator('.fn-payment-modal .modal-content').evaluate(el => getComputedStyle(el).display), 'flex', 'global Security page CSS must not hide receipt content')
     assert.equal(await page.locator('.fn-payment-card').isVisible(), true)
+    assert.equal(await page.locator('.fn-payment-card__address').textContent(), '0x111***111...')
+    assert.equal((await page.locator('.fn-payment-card').innerHTML()).includes('0x1111111111111111111111111111111111111111'), false, 'full wallet must not appear in receipt text or attributes')
+    const canvasText = await page.evaluate(() => window.receiptCanvasText)
+    assert.ok(canvasText.includes('0x111***111...'), 'PNG must use the same masked wallet as the modal')
+    assert.equal(canvasText.some(text => text.includes('0x1111111111111111111111111111111111111111')), false, 'PNG must not draw the full wallet')
     assert.equal(await page.locator('.fn-payment-card').getByText('123.456789').count(), 1)
     assert.equal(await page.locator('.fn-payment-card img').evaluate(img => img.complete && img.naturalWidth > 0), true)
     assert.equal(await page.locator('.modal-body').evaluate(el => el.scrollWidth <= el.clientWidth), true, `horizontal overflow at ${width}`)
@@ -83,6 +95,7 @@ try {
     assert.match(download.suggestedFilename(), /cycle-1-FFN-SAMPLE\.png$/)
     await page.getByRole('button', { name: 'Share', exact: true }).click()
     await page.waitForFunction(() => window.sharedReceiptType === 'image/png')
+    assert.equal(await page.evaluate(() => window.sharedReceiptName), download.suggestedFilename())
     await page.evaluate(() => { window.cancelShare = true })
     await page.getByRole('button', { name: 'Share', exact: true }).click()
     assert.equal(await page.getByRole('alert').count(), 0)
@@ -100,7 +113,7 @@ try {
     await page.getByRole('button', { name: 'Retry verification' }).waitFor()
     assert.equal(await page.locator('.fn-payment-card').count(), 0, 'previous wallet receipt must disappear')
     await page.close()
-    console.log(`PASS ${width}x${height}: global CSS visibility, both themes, layout, artwork, PNG, share/cancel, Escape/focus, failed verification, retry, wallet switch`)
+    console.log(`PASS ${width}x${height}: masked wallet in modal/PNG, global CSS visibility, both themes, layout, artwork, PNG, share/cancel, Escape/focus, failed verification, retry, wallet switch`)
   }
   assert.deepEqual(errors, [])
   console.log(`Screenshots and PNG receipts: ${output}`)

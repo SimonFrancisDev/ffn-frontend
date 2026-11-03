@@ -1,7 +1,7 @@
-import { receiptDate } from './nftReceipt.js'
+import { formatReceiptWallet, receiptDate } from './nftReceipt.js'
 
 export const receiptTierImage = (tier) => `/images/freedom-nft/official-cards/${['foundation', 'intermediate', 'advance'][tier - 1]}-tier.png`
-export const receiptFilename = (receipt) => `freedom-nft-cycle-${receipt.periodId}-${receipt.ffnId || receipt.wallet}.png`
+export const receiptFilename = (receipt) => `freedom-nft-cycle-${receipt.periodId}-${receipt.ffnId || 'receipt'}.png`
 
 function loadImage(src) {
   return new Promise((resolve) => {
@@ -39,7 +39,7 @@ export async function createNftReceiptImage(receipt) {
   }
   const rows = [
     ['FFN ID', receipt.ffnId || 'Not available'],
-    ['WALLET', receipt.wallet],
+    ['WALLET', formatReceiptWallet(receipt.wallet)],
     ['PAID AT', receiptDate(receipt.paidAt)],
     ['CYCLE SCHEDULED FOR', receiptDate(receipt.distributionAt)],
     ['TRANSACTION', receipt.txHash],

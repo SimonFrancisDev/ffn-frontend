@@ -49,15 +49,15 @@ test('receipt uses actual transfer amount, historical tier and paid timestamp, n
   assert.equal(result.explorerUrl, `https://polygonscan.com/tx/${txHash}`)
 })
 
-test('wallet display keeps only the first five and last three characters', () => {
-  assert.equal(formatReceiptWallet(wallet), '0x111***111...')
-  assert.equal(formatReceiptWallet('0x1234567890abcdef1234567890abcdef12345AbC'), '0x123***AbC...')
+test('wallet display uses six leading characters, six stars and seven trailing characters without dots', () => {
+  assert.equal(formatReceiptWallet(wallet), '0x1111******1111111')
+  assert.equal(formatReceiptWallet('0x1234567890abcdef1234567890abcdef12345AbC'), '0x1234******2345AbC')
 })
 
 test('masking does not change the verified wallet or transaction link', async () => {
   const { params } = fixture()
   const result = await verifyNftReceipt(params)
-  assert.equal(formatReceiptWallet(result.wallet), '0x111***111...')
+  assert.equal(formatReceiptWallet(result.wallet), '0x1111******1111111')
   assert.equal(result.wallet, wallet)
   assert.equal(result.explorerUrl, `https://polygonscan.com/tx/${txHash}`)
 })

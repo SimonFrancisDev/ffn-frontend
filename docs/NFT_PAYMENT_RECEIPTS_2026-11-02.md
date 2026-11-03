@@ -129,9 +129,10 @@ submitted by this receipt-fix pass; distribution had already completed.
 
 ## Wallet display privacy - November 3, 2026
 
-- The receipt modal and downloaded/shared PNG show the first five wallet
-  characters, `***`, the last three characters, then `...`, for example
-  `0x117***79d...`. The `0x` prefix counts toward the first five characters.
+- The receipt modal and downloaded/shared PNG show the first six wallet
+  characters, `******`, then the last seven characters, with no dots, for example
+  `0x117C******06Ea79d`. The `0x` prefix counts toward the first six characters.
+  This replaces the earlier five/three-character format and removes its ellipsis.
 - The full address stays in the verified receipt model and all chain checks.
   Only its presentation changes. The transaction link and FFN ID remain visible;
   this is visual masking, not blockchain anonymity.

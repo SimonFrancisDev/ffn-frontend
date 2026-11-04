@@ -8,6 +8,8 @@ import { useToast } from '../../components/feedback'
 import { useSpace } from '../../context/SpaceContext'
 import { ParticipantGrowthChart } from '../../components/charts/InstitutionalCharts'
 import AnimatedMetricValue from '../../components/metrics/AnimatedMetricValue'
+import NftPoolSummary from '../../components/metrics/NftPoolSummary'
+import { fetchCommunitySummary as fetchSharedCommunitySummary } from '../../Services/communitySummary'
 import { FREEDOM_PLUS_ADDRESSES, freedomPlusApi } from '../../Services/freedomPlus'
 import { CONTRACT_ADDRESSES, NETWORK_CONFIG } from '../../constants/addresses'
 import {
@@ -87,6 +89,7 @@ const getActivityTimestamp = (item) => {
 }
 
 async function fetchJson(path, options = {}) {
+  if (path === '/api/community/summary') return fetchSharedCommunitySummary()
   const { timeoutMs = DASHBOARD_REQUEST_TIMEOUT_MS, signal, headers, ...fetchOptions } = options
   const controller = new AbortController()
   const timeoutId = window.setTimeout(() => controller.abort(), timeoutMs)
@@ -1180,17 +1183,7 @@ const DashboardPage = ({ program = 'f-freedom' }) => {
             <span className="dashboard-stats__icon">
               <Shield size={20} className="text-warning" />
             </span>
-            <span className="dashboard-stats__label soft-text">{dashboardT('stats.nftPool.label', 'NFT Pool')}</span>
-            <strong className="dashboard-stats__value dashboard-stats__value--animated">
-              <AnimatedMetricValue value={communityStats.nftRewardPool?.totalInflow ?? communityStats.nftPoolAllocated} prefix="$" decimals={2} />
-            </strong>
-            <div className="dashboard-stats__breakdown">
-              <span>Total Accumulated: ${formatNumber(communityStats.nftRewardPool?.totalInflow || communityStats.nftPoolAllocated, 2)}</span>
-              <span>{dashboardT('stats.nftPool.totalDistributed', 'Total Distributed')}: ${formatNumber(communityStats.nftRewardPool?.totalDistributed || communityStats.nftPoolDistributed, 2)}</span>
-            </div>
-            <small className="dashboard-stats__note soft-text">
-              {dashboardT('stats.nftPool.note', 'Indexed NFT Reward Pool truth from the backend.')}
-            </small>
+            <NftPoolSummary showDistributed />
           </div>
 
           <div

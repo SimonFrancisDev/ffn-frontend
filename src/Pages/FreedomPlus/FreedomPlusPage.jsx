@@ -17,6 +17,7 @@ import FreedomPlusFocusedOrbit from './FreedomPlusFocusedOrbit'
 import FreedomPlusOverview from './FreedomPlusOverview'
 import FreedomPlusTokens from './FreedomPlusTokens'
 import FreedomNftOverview from './FreedomNftOverview'
+import NftPoolSummary from '../../components/metrics/NftPoolSummary'
 import { FreedomNftMembership, FreedomNftRewards, FreedomNftSuccessModal } from './FreedomNftPages'
 import {
   FREEDOM_PLUS_ADDRESSES,
@@ -618,6 +619,8 @@ function WalletProgramPage({ initialTab = 'overview' }) {
               <button type="button" className={tab === value ? 'active' : ''} onClick={() => openView(value)} key={value}>{icon}{label}</button>
             ))}
       </nav>}
+
+      {isNftView && tab !== 'nftOverview' && <section className="fn-pool-band"><NftPoolSummary layout="wide" /></section>}
 
       {isConnected && (data?.chain?.registered || tab === 'levels' || isNftView) && <TransactionStatus txState={txState} onReset={() => setTxState({ status: 'idle', stage: 'idle', hash: '', note: '', error: null })} explorerBaseUrl={`${NETWORK_CONFIG.blockExplorerUrls[0]}/tx`} />}
 

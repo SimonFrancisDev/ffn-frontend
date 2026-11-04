@@ -1,0 +1,56 @@
+.nft-pool-summary {
+  width: 100%;
+  min-width: 0;
+  color: var(--text-primary, #edf6f2);
+  text-align: left;
+  letter-spacing: 0;
+}
+.nft-pool-summary .nft-pool-summary__heading {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  margin-bottom: 12px;
+  font-size: 14px;
+  font-weight: 600;
+}
+.nft-pool-summary .nft-pool-summary__heading button {
+  display: grid;
+  place-items: center;
+  width: 32px;
+  height: 32px;
+  flex: 0 0 32px;
+  padding: 0;
+  color: inherit;
+  background: transparent;
+  border: 1px solid currentColor;
+  border-radius: 6px;
+  cursor: pointer;
+}
+.nft-pool-summary .nft-pool-summary__heading button:disabled { opacity: .45; cursor: wait; }
+.nft-pool-summary .nft-pool-summary__heading button:focus-visible { outline: 2px solid currentColor; outline-offset: 3px; }
+.nft-pool-summary dl {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  gap: 16px;
+  margin: 0;
+}
+.nft-pool-summary dl > div { min-width: 0; }
+.nft-pool-summary dt { font-size: 13px; font-weight: 400; line-height: 1.5; opacity: .8; }
+.nft-pool-summary dd {
+  margin: 4px 0 0;
+  font-size: 22px;
+  line-height: 1.3;
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+  min-height: 1.3em;
+  overflow-wrap: anywhere;
+}
+.nft-pool-summary .nft-pool-summary__status { font-size: 14px; font-weight: 400; }
+.nft-pool-summary--wide { padding-block: 20px; border-block: 1px solid rgba(128, 128, 128, .3); }
+.nft-pool-summary--wide dl { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+.fn-pool-band { width: 100%; min-width: 0; margin-block: 20px; }
+@media (max-width: 600px) {
+  .nft-pool-summary--wide dl { grid-template-columns: minmax(0, 1fr); }
+  .nft-pool-summary dd { font-size: 20px; }
+}

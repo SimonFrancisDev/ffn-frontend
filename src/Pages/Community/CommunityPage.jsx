@@ -12,6 +12,8 @@ import { useToast } from '../../components/feedback'
 import OfficialVideoSection from '../../components/community/OfficialVideoSection'
 import { ParticipantGrowthChart } from '../../components/charts/InstitutionalCharts'
 import AnimatedMetricValue from '../../components/metrics/AnimatedMetricValue'
+import NftPoolSummary from '../../components/metrics/NftPoolSummary'
+import { fetchCommunitySummary } from '../../Services/communitySummary'
 import { ethers } from 'ethers'
 import {
   ArrowRight,
@@ -109,6 +111,7 @@ function HeroSlide({ slide, active }) {
 }
 
 async function fetchJson(path, options = {}) {
+  if (path === '/api/community/summary') return fetchCommunitySummary()
   const url = /^https?:\/\//i.test(path) ? path : getApiUrl(path)
   const response = await fetch(url, {
     headers: {
@@ -357,7 +360,6 @@ const CommunityPage = ({ onNavigate }) => {
   const [mostActiveData, setMostActiveData] = useState([])
   const [isLoadingTabData, setIsLoadingTabData] = useState(false)
   const [orbitNetwork, setOrbitNetwork] = useState({})
-  const [nftBalance, setNftBalance] = useState('0.00')
   const [opsBalance, setOpsBalance] = useState('0.00')
   const [escrowBalance, setEscrowBalance] = useState('0.00')
 
@@ -746,7 +748,6 @@ const CommunityPage = ({ onNavigate }) => {
 
       setEscrowBalance(globalMetrics.currentEscrowLocked)
       
-      setNftBalance(globalMetrics.nftPoolAllocated)
       setOpsBalance(globalMetrics.operationsAllocated)
 
       setCommunityFeedStatus((prev) => ({
@@ -1084,7 +1085,6 @@ const CommunityPage = ({ onNavigate }) => {
     communityGlobalStats.totalGross,
     communityGlobalStats.totalLiquid,
     communityGlobalStats.totalEscrow,
-    nftBalance,
     opsBalance,
     leaderboardDataByTab.length,
     communityGrowth.series.length,
@@ -1372,10 +1372,7 @@ const CommunityPage = ({ onNavigate }) => {
                 <div className="community-metrics__icon">
                   <FaShieldAlt size={18} />
                 </div>
-                <span className="community-metrics__label muted-text">{communityT('metrics.nftPoolBalance', 'NFT Pool Total Accumulated')}</span>
-                <strong className="community-metrics__value gradient-text-gold">
-                  <AnimatedMetricValue value={nftBalance} prefix="$" decimals={2} />
-                </strong>
+                <NftPoolSummary />
               </div>
 
               <div className="community-metrics__card glass-panel">

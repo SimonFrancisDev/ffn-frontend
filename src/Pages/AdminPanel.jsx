@@ -14,6 +14,8 @@ import { normalizeError } from '../utils/errorMap';
 import AdminNotificationComposer from '../components/admin/AdminNotificationComposer';
 import AdminOfficialVideo from '../components/admin/AdminOfficialVideo';
 import AdminTasksManager from '../components/admin/AdminTasksManager';
+import NftPoolSummary from '../components/metrics/NftPoolSummary';
+import { fetchCommunitySummary } from '../Services/communitySummary';
 import './AdminPanel.css';
 import {
   Key, Crown, BarChart3, Clock, AlertTriangle, Plus, Edit, Trash2,
@@ -832,9 +834,7 @@ export const AdminPanel = ({ canPerformOnchainAdmin = false }) => {
 
   const refreshFinancialTruth = useCallback(async () => {
     try {
-      const response = await fetch(getApiUrl('/api/community/summary'));
-      const payload = await response.json().catch(() => null);
-      if (!response.ok) throw new Error(payload?.message || `Request failed: ${response.status}`);
+      const payload = await fetchCommunitySummary();
       setFinancialTruth(buildAdminFinancialTruth(unwrapCommunitySummary(payload)));
       setFinancialTruthError('');
     } catch (err) {
@@ -2133,12 +2133,7 @@ export const AdminPanel = ({ canPerformOnchainAdmin = false }) => {
                       </Col>
                       <Col md={6} xl={3}>
                         <div className="metric-box-premium">
-                          <div className="metric-label-premium">{adminT("ui.financialTruth.nftPool", "NFT Reward Pool")}</div>
-                          <div className="admin-metric-stack">
-                            <span>{adminT("ui.financialTruth.totalInflow", "Total Inflow")}: ${formatMoney(financialTruth.nftRewardPool.totalInflow)}</span>
-                            <span>{adminT("ui.financialTruth.totalDistributed", "Total Distributed")}: ${formatMoney(financialTruth.nftRewardPool.totalDistributed)}</span>
-                            <span>{adminT("ui.financialTruth.currentBalance", "Current Balance")}: {formatVerifiedMoney(financialTruth.nftRewardPool.currentBalance)}</span>
-                          </div>
+                          <NftPoolSummary showDistributed />
                         </div>
                       </Col>
                       <Col md={6} xl={3}>

@@ -11,6 +11,7 @@ import { getProfileSessionAuth } from '../Services/profilePrivacyApi';
 import { NETWORK_CONFIG } from '../constants/addresses';
 import { useToast } from '../components/feedback';
 import { normalizeError } from '../utils/errorMap';
+import { isWithdrawnProposal, proposalActionBlock, isArchivedProposal, WITHDRAWN_ID1_PACKAGE } from '../utils/governanceProposalPolicy';
 import AdminNotificationComposer from '../components/admin/AdminNotificationComposer';
 import AdminOfficialVideo from '../components/admin/AdminOfficialVideo';
 import AdminTasksManager from '../components/admin/AdminTasksManager';
@@ -87,6 +88,7 @@ const guardianIface = new ethers.Interface([
 );
 
 const multisigSelfIface = new ethers.Interface([
+'function cancelTransaction(uint256 txId)',
 'function addOwner(address owner)',
 'function removeOwner(address owner)',
 'function replaceOwner(address oldOwner,address newOwner)',
@@ -718,6 +720,7 @@ export const AdminPanel = ({ canPerformOnchainAdmin = false }) => {
   const [founderRefreshing, setFounderRefreshing] = useState(false);
   const [totalFounderPayout, setTotalFounderPayout] = useState('0.00');
   const [skipAutoRefresh, setSkipAutoRefresh] = useState(false);
+  const [showArchivedProposals, setShowArchivedProposals] = useState(false);
 
   // ========== NEW STATE: Community Content Management ==========
   const [announcements, setAnnouncements] = useState([]);
@@ -779,6 +782,8 @@ export const AdminPanel = ({ canPerformOnchainAdmin = false }) => {
     const now = Number(multisigStats.currentTimestamp || 0);
     const executed = Boolean(tx.executed);
     if (executed) return { label: 'Executed', variant: 'success' };
+    if (tx.cancelled) return { label: 'Cancelled on chain', variant: 'secondary' };
+    if (tx.withdrawn) return { label: 'Withdrawn; cancellation pending', variant: 'warning' };
     if (confirmations < required) return { label: 'Waiting for approvals', variant: 'warning' };
     if (now < executeAfter) return { label: 'Waiting for timelock', variant: 'info' };
     return { label: 'Ready to execute', variant: 'primary' };
@@ -800,6 +805,7 @@ export const AdminPanel = ({ canPerformOnchainAdmin = false }) => {
 
   const visibleRecentTxs = useMemo(() => {
     return recentTxs.filter((tx) => {
+      if (isArchivedProposal(tx)) return showArchivedProposals;
       const txId = String(tx.txId);
       const hidden = hiddenTxIds.includes(txId);
       if (hidden && !showHiddenTxs) return false;
@@ -809,7 +815,7 @@ export const AdminPanel = ({ canPerformOnchainAdmin = false }) => {
 
       return true;
     });
-  }, [hiddenTxIds, recentTxs, showExecutedTxs, showHiddenTxs]);
+  }, [hiddenTxIds, recentTxs, showExecutedTxs, showHiddenTxs, showArchivedProposals]);
 
   const persistHiddenTxIds = useCallback((nextIds) => {
     const normalized = Array.from(new Set(nextIds.map(String)));
@@ -937,6 +943,8 @@ export const AdminPanel = ({ canPerformOnchainAdmin = false }) => {
 
         if (entry.name === 'Multisig') {
           switch (name) {
+            case 'cancelTransaction':
+              return { label: `Cancel proposal #${args[0]}`, details: 'Permanently prevents execution; preserves on-chain history', category: 'Multisig', targetLabel: 'SimpleMultiSig' };
             case 'addOwner':
               return { label: 'Add owner', details: shortAddress(args[0]), category: 'Multisig', targetLabel: 'SimpleMultiSig' };
             case 'removeOwner':
@@ -964,6 +972,8 @@ export const AdminPanel = ({ canPerformOnchainAdmin = false }) => {
       ownersOverride = ownerList
     } = options;
     const tx = await contracts.simpleMultiSig.transactions(Number(txId));
+    const chainId = Number((await contracts.simpleMultiSig.runner.provider.getNetwork()).chainId);
+    const withdrawn = isWithdrawnProposal(chainId, await contracts.simpleMultiSig.getAddress(), txId);
 
     let approvals = [];
     if (approvalMode === 'all' && ownersOverride.length > 0) {
@@ -984,6 +994,8 @@ export const AdminPanel = ({ canPerformOnchainAdmin = false }) => {
       value: tx.value.toString(),
       data: tx.data,
       executed: tx.executed,
+      cancelled: Boolean(tx.cancelled),
+      withdrawn,
       confirmations: tx.confirmations.toString(),
       submittedAt: tx.submittedAt.toString(),
       executeAfter: tx.executeAfter.toString(),
@@ -1255,7 +1267,7 @@ export const AdminPanel = ({ canPerformOnchainAdmin = false }) => {
       const validTxs = txs.filter(Boolean);
       setRecentTxs(txs.filter(Boolean));
 
-      const queuedTxCount = validTxs.filter((tx) => !tx.executed).length;
+      const queuedTxCount = validTxs.filter((tx) => !tx.executed && !isArchivedProposal(tx)).length;
       const executedTxCount = validTxs.filter((tx) => tx.executed).length;
 
       setMultisigStats((prev) => ({
@@ -1470,7 +1482,8 @@ export const AdminPanel = ({ canPerformOnchainAdmin = false }) => {
 
     const tx = await readTransaction(Number(txId), { approvalMode: 'all' });
     if (!tx) throw new Error(`Transaction #${txId} could not be loaded.`);
-    if (tx.executed) throw new Error(`Transaction #${txId} has already been executed.`);
+    const blocked = proposalActionBlock(tx, action);
+    if (blocked) throw new Error(blocked);
 
     const ownApproval = tx.approvals?.find((item) => item.owner?.toLowerCase() === account.toLowerCase());
     if (action === 'approve' && ownApproval?.approved) {
@@ -2268,6 +2281,9 @@ export const AdminPanel = ({ canPerformOnchainAdmin = false }) => {
                         Showing active proposals and executed history from the last 7 days.
                       </div>
                       <div className="flex-between-premium" style={{ gap: '6px', flexWrap: 'wrap' }}>
+                        <button className="btn-premium btn-premium-sm" onClick={() => setShowArchivedProposals((value) => !value)}>
+                          {showArchivedProposals ? 'Hide withdrawn / cancelled' : 'View withdrawn / cancelled'}
+                        </button>
                         <button className="btn-premium btn-premium-sm" onClick={() => setShowExecutedTxs((value) => !value)}>
                           {showExecutedTxs ? 'Hide old executed' : 'Show all executed'}
                         </button>
@@ -2315,9 +2331,9 @@ export const AdminPanel = ({ canPerformOnchainAdmin = false }) => {
                                 <td>
                                   <div className="flex-between-premium" style={{ gap: '6px', flexWrap: 'wrap' }}>
                                     <button className="btn-premium btn-premium-sm" onClick={() => loadMultisigTx(tx.txId)}>{adminT("ui.actions.view", "View")}</button>
-                                    <button className="btn-premium btn-premium-sm" onClick={() => handleApproveTx(tx.txId)} disabled={txStatus.loading || tx.executed || currentOwnerApproval?.approved}>{adminT("ui.actions.approve", "Approve")}</button>
-                                    <button className="btn-premium btn-premium-sm" onClick={() => handleRevokeTx(tx.txId)} disabled={txStatus.loading || tx.executed || !currentOwnerApproval?.approved}>{adminT("ui.actions.revoke", "Revoke")}</button>
-                                    <button className="btn-premium btn-premium-sm" onClick={() => handleExecuteTx(tx.txId)} disabled={txStatus.loading || tx.executed || stage.variant !== 'primary'}>{adminT("ui.actions.execute", "Execute")}</button>
+                                    <button className="btn-premium btn-premium-sm" onClick={() => handleApproveTx(tx.txId)} disabled={txStatus.loading || Boolean(proposalActionBlock(tx, 'approve')) || currentOwnerApproval?.approved}>{adminT("ui.actions.approve", "Approve")}</button>
+                                    <button className="btn-premium btn-premium-sm" onClick={() => handleRevokeTx(tx.txId)} disabled={txStatus.loading || Boolean(proposalActionBlock(tx, 'revoke')) || !currentOwnerApproval?.approved}>{adminT("ui.actions.revoke", "Revoke")}</button>
+                                    <button className="btn-premium btn-premium-sm" onClick={() => handleExecuteTx(tx.txId)} disabled={txStatus.loading || Boolean(proposalActionBlock(tx, 'execute')) || stage.variant !== 'primary'}>{adminT("ui.actions.execute", "Execute")}</button>
                                     {hidden ?
                                     <button className="btn-premium btn-premium-sm" onClick={() => handleUnhideTx(tx.txId)}>Unhide</button> :
                                     <button className="btn-premium btn-premium-sm" onClick={() => handleHideTx(tx.txId)}>Hide</button>
@@ -2370,6 +2386,9 @@ export const AdminPanel = ({ canPerformOnchainAdmin = false }) => {
 
                     {multisigTx &&
                   <>
+                        {multisigTx.withdrawn && !multisigTx.cancelled && !multisigTx.executed &&
+                          <Alert variant="warning">{WITHDRAWN_ID1_PACKAGE.reason}</Alert>}
+                        {multisigTx.cancelled && <Alert variant="secondary">Cancelled on chain. This proposal cannot execute.</Alert>}
                         <Row className="g-2 mb-3">
                           <Col md={6}>
                             <div className="metric-box-premium">

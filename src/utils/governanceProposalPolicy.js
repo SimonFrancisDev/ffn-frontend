@@ -20,6 +20,7 @@ export function proposalActionBlock(tx, action) {
   if (tx.executed) return 'Proposal has already been executed.';
   if (tx.cancelled) return 'Proposal has been cancelled on chain.';
   if (tx.withdrawn && action !== 'revoke') return WITHDRAWN_ID1_PACKAGE.reason;
+  if (tx.reviewRequired && action !== 'revoke') return 'This maintenance proposal has not matched a verified target and repair manifest. Review it before approval or execution.';
   return '';
 }
 

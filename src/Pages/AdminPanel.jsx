@@ -12,6 +12,8 @@ import { NETWORK_CONFIG } from '../constants/addresses';
 import { useToast } from '../components/feedback';
 import { normalizeError } from '../utils/errorMap';
 import { isWithdrawnProposal, proposalActionBlock, isArchivedProposal, WITHDRAWN_ID1_PACKAGE } from '../utils/governanceProposalPolicy';
+import { governanceTargets, describeGovernanceMaintenance } from '../utils/governanceMaintenance';
+import repairProposalManifest from '../constants/repairProposalManifest.json';
 import AdminNotificationComposer from '../components/admin/AdminNotificationComposer';
 import AdminOfficialVideo from '../components/admin/AdminOfficialVideo';
 import AdminTasksManager from '../components/admin/AdminTasksManager';
@@ -32,6 +34,7 @@ const ADMIN_API_HEADER = 'x-admin-key';
 const ADMIN_SESSION_KEY = 'ffn_admin_api_key_session';
 const HIDDEN_MULTISIG_TXS_KEY = 'ffn_hidden_multisig_txs';
 const MULTISIG_DEFAULT_SCAN_LIMIT = 15;
+const GOVERNANCE_TARGETS = governanceTargets(import.meta.env);
 const GAS_BUFFER_BPS = 12000n;
 const GAS_BUFFER_DENOMINATOR = 10000n;
 
@@ -745,7 +748,7 @@ export const AdminPanel = ({ canPerformOnchainAdmin = false }) => {
     [ratioInputs]
   );
 
-  const levelManagerAddress = import.meta.env.VITE_LEVELMANAGER_ADDRESS;
+  const levelManagerAddress = import.meta.env.VITE_LEVEL_MANAGER_ADDRESS || import.meta.env.VITE_LEVELMANAGER_ADDRESS;
   const guardianAddress = import.meta.env.VITE_GUARDIAN_ADDRESS || '';
   const multisigAddress = import.meta.env.VITE_MULTISIG_ADDRESS || '';
   const nftPoolVaultAddress = import.meta.env.VITE_NFT_POOL_VAULT_ADDRESS || import.meta.env.VITE_NFT_POOL_ADDRESS || '';
@@ -851,13 +854,17 @@ export const AdminPanel = ({ canPerformOnchainAdmin = false }) => {
   const decodeTransactionAction = useCallback((tx) => {
     if (!tx?.data) return { label: 'Unknown action', details: '', category: 'Unknown', targetLabel: shortAddress(tx?.to || '') };
 
+    const maintenance = describeGovernanceMaintenance(tx, GOVERNANCE_TARGETS, repairProposalManifest);
+    if (maintenance) return maintenance;
+    const targetKind = GOVERNANCE_TARGETS[String(tx.to).toLowerCase()]?.kind;
+
     const tries = [
-    { iface: levelManagerAdminIface, name: 'LevelManager' },
-    { iface: guardianIface, name: 'Guardian' },
-    { iface: multisigSelfIface, name: 'Multisig' },
-    { iface: operationsVaultIface, name: 'OperationsVault' },
-    { iface: nftPoolVaultIface, name: 'NFTPoolVault' },
-    { iface: fgtAdminIface, name: 'FGT' }];
+    { iface: levelManagerAdminIface, name: 'LevelManager', kind: 'manager' },
+    { iface: guardianIface, name: 'Guardian', kind: 'guardian' },
+    { iface: multisigSelfIface, name: 'Multisig', kind: 'multisig' },
+    { iface: operationsVaultIface, name: 'OperationsVault', kind: 'operations' },
+    { iface: nftPoolVaultIface, name: 'NFTPoolVault', kind: 'nft' },
+    { iface: fgtAdminIface, name: 'FGT', kind: 'fgt' }].filter(entry => entry.kind === targetKind);
 
 
     for (const entry of tries) {
@@ -990,6 +997,8 @@ export const AdminPanel = ({ canPerformOnchainAdmin = false }) => {
 
     const raw = {
       txId: Number(txId),
+      chainId,
+      multisig: await contracts.simpleMultiSig.getAddress(),
       to: tx.to,
       value: tx.value.toString(),
       data: tx.data,
@@ -1224,7 +1233,9 @@ export const AdminPanel = ({ canPerformOnchainAdmin = false }) => {
       contracts.levelManager?.runner?.provider?.getBlock?.('latest')]
       );
 
-      setOwnerList(owners);
+      setOwnerList(previous => previous.length === owners.length &&
+        previous.every((owner, index) => owner.toLowerCase() === owners[index].toLowerCase())
+        ? previous : owners);
       setMultisigStats({
         requiredConfirmations: requiredConfirmations.toString(),
         txCount: txCount.toString(),
@@ -2414,7 +2425,7 @@ export const AdminPanel = ({ canPerformOnchainAdmin = false }) => {
                           <div className="admin-subtitle mt-1">{Math.round(approvalPercent)}%</div>
                         </div>
 
-                        <div className="table-responsive mb-3">
+                        <div className="table-responsive mb-3 admin-proposal-details">
                           <table className="premium-table">
                             <tbody>
                               <tr><th style={{ width: '40%' }}>{adminT("ui.line1773.transactionID", "Transaction ID")}</th><td>{multisigTx.txId}</td></tr>

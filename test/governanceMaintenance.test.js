@@ -1,5 +1,6 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
+import { readFileSync } from 'node:fs';
 import { Interface } from 'ethers';
 import { governanceTargets, describeGovernanceMaintenance, matchedRepairAction } from '../src/utils/governanceMaintenance.js';
 import { proposalActionBlock } from '../src/utils/governanceProposalPolicy.js';
@@ -56,4 +57,25 @@ test('canonical manager environment name takes precedence and malformed calldata
   assert.equal(governanceTargets({ VITE_LEVEL_MANAGER_ADDRESS: manager, VITE_LEVELMANAGER_ADDRESS: orbit })[manager].kind, 'manager');
   assert.deepEqual(governanceTargets({ VITE_GUARDIAN_ADDRESS: 'not-an-address' }), {});
   assert.equal(describeGovernanceMaintenance({ data: '0x1234' }, targets), null);
+});
+
+test('published mainnet repair manifest recognizes the two exact deployed executor plans', () => {
+  const manifest = JSON.parse(readFileSync(new URL('../src/constants/repairProposalManifest.json', import.meta.url), 'utf8'));
+  assert.equal(manifest.status, 'verified-mainnet-deployments');
+  assert.equal(manifest.chainId, 137);
+  assert.equal(manifest.deployments.length, 11);
+  assert.equal(new Set(manifest.deployments.map(d => d.address.toLowerCase())).size, 11);
+  assert.equal(manifest.actions.length, 67);
+  assert(manifest.actions.every(a => a.value === '0'));
+  const repairs = manifest.actions.filter(a => a.phase === 'REPAIR');
+  assert.equal(repairs.length, 2);
+  for (const action of repairs) {
+    const deployed = manifest.deployments.find(d => d.address.toLowerCase() === action.target.toLowerCase());
+    assert(deployed && /^0x[0-9a-f]{64}$/i.test(deployed.txHash));
+    const proposal = { to: action.target, value: action.value, data: action.data, chainId: 137, multisig: manifest.governance };
+    const decoded = describeGovernanceMaintenance(proposal, {}, manifest);
+    assert.equal(decoded.reviewRequired, false);
+    assert.equal(decoded.label, action.label);
+    assert.equal(matchedRepairAction({ ...proposal, chainId: 80002 }, manifest), null);
+  }
 });

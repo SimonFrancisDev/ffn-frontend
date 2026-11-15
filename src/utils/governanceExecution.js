@@ -1,6 +1,7 @@
-import { repairExecutionHold } from './governanceProposalPolicy.js';
+import { repairExecutionHold, WITHDRAWN_ID1_PACKAGE } from './governanceProposalPolicy.js';
+import { prepareRepair224 } from './governanceRepairAccessList.js';
 
-export async function prepareGovernanceExecution(multisig, txId, _manifest, readProvider) {
+export async function prepareGovernanceExecution(multisig, txId, manifest, readProvider) {
   if (Number(txId) >= 224 && Number(txId) <= 256) {
     const provider = multisig.runner?.provider;
     if (!provider) throw new Error('Connect a founder wallet before executing a governance proposal.');
@@ -8,11 +9,14 @@ export async function prepareGovernanceExecution(multisig, txId, _manifest, read
     const network = await provider.getNetwork();
     const readNetwork = readProvider ? await readProvider.getNetwork() : network;
     if (network.chainId !== readNetwork.chainId) throw new Error('Wallet and read network do not match.');
+    if (Number(txId) === 224 && Number(network.chainId) === 137 &&
+      address.toLowerCase() === WITHDRAWN_ID1_PACKAGE.multisig) {
+      return prepareRepair224(multisig, manifest, readProvider);
+    }
     const hold = repairExecutionHold(network.chainId, address, txId);
     if (hold) throw new Error(hold);
   }
-  // A successful eth_call above the protocol transaction cap is not proof that
-  // the transaction is admissible. Never bypass estimation with a larger limit.
+  // Other proposals retain their original estimation path.
   const estimate = await multisig.executeTransaction.estimateGas(txId);
   return { gasLimit: (BigInt(estimate) * 12000n) / 10000n };
 }

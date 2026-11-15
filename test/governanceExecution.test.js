@@ -16,23 +16,23 @@ function fixture(chainId = 137n, address = WITHDRAWN_ID1_PACKAGE.multisig) {
   return { calls, contract, provider };
 }
 
-test('224 and every dependent repair/reopening proposal fail closed before estimation or signing', async () => {
-  for (let id = 224; id <= 256; id++) {
+test('225 and every dependent repair/reopening proposal fail closed before estimation or signing', async () => {
+  for (let id = 225; id <= 256; id++) {
     const f = fixture();
-    await assert.rejects(prepareGovernanceExecution(f.contract, id, {}, f.provider), /transaction gas cap/);
+    await assert.rejects(prepareGovernanceExecution(f.contract, id, {}, f.provider), /verify the successful on-chain result/);
     assert.deepEqual(f.calls, { estimates: 0, simulations: 0, sends: 0 });
   }
 });
 
-test('even a successful high-gas simulation cannot authorize 224', async () => {
+test('even a successful unrelated simulation cannot release dependent proposals', async () => {
   const f = fixture();
   assert.equal(await f.contract.executeTransaction.staticCall(), '0x');
-  await assert.rejects(prepareGovernanceExecution(f.contract, 224, {}, f.provider), /on hold/);
+  await assert.rejects(prepareGovernanceExecution(f.contract, 225, {}, f.provider), /on hold/);
   assert.equal(f.calls.sends, 0);
 });
 
 test('held proposals cannot be approved or executed in the UI; revocation remains available', () => {
-  for (let id = 224; id <= 256; id++) {
+  for (let id = 225; id <= 256; id++) {
     const tx = { txId: String(id), chainId: 137, multisig: WITHDRAWN_ID1_PACKAGE.multisig };
     assert.match(proposalActionBlock(tx, 'approve'), /on hold/);
     assert.match(proposalActionBlock(tx, 'execute'), /on hold/);

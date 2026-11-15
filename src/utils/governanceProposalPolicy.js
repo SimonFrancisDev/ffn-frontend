@@ -15,14 +15,14 @@ export function isWithdrawnProposal(chainId, multisig, txId) {
     id >= WITHDRAWN_ID1_PACKAGE.firstId && id <= WITHDRAWN_ID1_PACKAGE.lastId;
 }
 
-// This is an execution hold, not an on-chain cancellation. Do not reopen while
-// the atomic repair exceeds Polygon's 32-million per-transaction gas cap.
+// 224 now has an exact-payload, size/gas-bounded access-list execution path.
+// Dependent proposals remain held pending verification of its actual receipt.
 export function repairExecutionHold(chainId, multisig, txId) {
   const id = Number(txId);
   return Number(chainId) === 137 &&
     String(multisig).toLowerCase() === WITHDRAWN_ID1_PACKAGE.multisig &&
-    Number.isInteger(id) && id >= 224 && id <= 256
-    ? 'Repair execution on hold: proposal 224 exceeds the Polygon transaction gas cap. Do not retry, add gas, or execute later repair/reopening proposals until the revised execution is verified.'
+    Number.isInteger(id) && id >= 225 && id <= 256
+    ? 'Repair execution on hold: verify the successful on-chain result of proposal 224 before executing later repair or reopening proposals.'
     : '';
 }
 

@@ -1,5 +1,11 @@
 # Mainnet 224: transaction gas cap hold
 
+UPDATE: [Bounded access-list validation](GOVERNANCE_224_BOUNDED_ACCESS_LIST_2026-11-15.md)
+supersedes the hold on 224 only. The unchanged repair passes at 30,602,763 gas;
+225-256 remain held pending actual receipt verification. Bor's exact protocol
+constant is 33,554,432 gas; the earlier "32 million" description below follows
+the announcement's shorthand. The new signing ceiling is stricter: 31,800,000.
+
 ## Correction
 
 The preceding explicit-50-million-gas workaround was incorrect. It verified the

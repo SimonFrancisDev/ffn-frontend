@@ -15,6 +15,7 @@ import { isWithdrawnProposal, proposalActionBlock, isArchivedProposal, WITHDRAWN
 import { governanceTargets, describeGovernanceMaintenance } from '../utils/governanceMaintenance';
 import repairProposalManifest from '../constants/repairProposalManifest.json';
 import { prepareGovernanceExecution } from '../utils/governanceExecution';
+import { governanceExecutionFailure } from '../utils/governanceRepairAccessList';
 import AdminNotificationComposer from '../components/admin/AdminNotificationComposer';
 import AdminOfficialVideo from '../components/admin/AdminOfficialVideo';
 import AdminTasksManager from '../components/admin/AdminTasksManager';
@@ -1634,7 +1635,7 @@ export const AdminPanel = ({ canPerformOnchainAdmin = false }) => {
       setDoneTx(tx.hash, `Executed transaction #${idToUse}`);
       await refreshTransactionOnly(idToUse, { approvalMode: 'all' });
     } catch (err) {
-      setNormalizedErrorTx(err, 'Execution failed');
+      setErrorTx(governanceExecutionFailure(err, normalizeError(err, 'Execution failed').message));
     } finally {
       releaseActionLock();
     }

@@ -15,11 +15,26 @@ export function isWithdrawnProposal(chainId, multisig, txId) {
     id >= WITHDRAWN_ID1_PACKAGE.firstId && id <= WITHDRAWN_ID1_PACKAGE.lastId;
 }
 
+// This is an execution hold, not an on-chain cancellation. Do not reopen while
+// the atomic repair exceeds Polygon's 32-million per-transaction gas cap.
+export function repairExecutionHold(chainId, multisig, txId) {
+  const id = Number(txId);
+  return Number(chainId) === 137 &&
+    String(multisig).toLowerCase() === WITHDRAWN_ID1_PACKAGE.multisig &&
+    Number.isInteger(id) && id >= 224 && id <= 256
+    ? 'Repair execution on hold: proposal 224 exceeds the Polygon transaction gas cap. Do not retry, add gas, or execute later repair/reopening proposals until the revised execution is verified.'
+    : '';
+}
+
 export function proposalActionBlock(tx, action) {
   if (!tx) return 'Proposal is unavailable.';
   if (tx.executed) return 'Proposal has already been executed.';
   if (tx.cancelled) return 'Proposal has been cancelled on chain.';
   if (tx.withdrawn && action !== 'revoke') return WITHDRAWN_ID1_PACKAGE.reason;
+  if (action !== 'revoke') {
+    const hold = repairExecutionHold(tx.chainId, tx.multisig, tx.txId);
+    if (hold) return hold;
+  }
   if (tx.reviewRequired && action !== 'revoke') return 'This maintenance proposal has not matched a verified target and repair manifest. Review it before approval or execution.';
   return '';
 }

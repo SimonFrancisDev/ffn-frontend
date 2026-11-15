@@ -11,7 +11,7 @@ import { getProfileSessionAuth } from '../Services/profilePrivacyApi';
 import { NETWORK_CONFIG } from '../constants/addresses';
 import { useToast } from '../components/feedback';
 import { normalizeError } from '../utils/errorMap';
-import { isWithdrawnProposal, proposalActionBlock, isArchivedProposal, WITHDRAWN_ID1_PACKAGE } from '../utils/governanceProposalPolicy';
+import { isWithdrawnProposal, proposalActionBlock, isArchivedProposal, WITHDRAWN_ID1_PACKAGE, repairExecutionHold } from '../utils/governanceProposalPolicy';
 import { governanceTargets, describeGovernanceMaintenance } from '../utils/governanceMaintenance';
 import repairProposalManifest from '../constants/repairProposalManifest.json';
 import { prepareGovernanceExecution } from '../utils/governanceExecution';
@@ -2336,6 +2336,8 @@ export const AdminPanel = ({ canPerformOnchainAdmin = false }) => {
                                 <td>
                                   <div className="fw-bold">{tx.label}</div>
                                   <div className="admin-subtitle">{tx.details}</div>
+                                  {repairExecutionHold(tx.chainId, tx.multisig, tx.txId) &&
+                                    <div className="text-warning" role="status">{repairExecutionHold(tx.chainId, tx.multisig, tx.txId)}</div>}
                                 </td>
                                 <td><span className="premium-badge premium-badge-dark">{tx.category}</span></td>
                                 <td><span className={`premium-badge premium-badge-${stage.variant === 'success' ? 'success' : stage.variant === 'warning' ? 'warning' : stage.variant === 'info' ? 'info' : 'dark'}`}>{stage.label}</span></td>

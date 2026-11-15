@@ -1,5 +1,12 @@
 # Mainnet proposal 224 execution preflight
 
+> SUPERSEDED: DO NOT RETRY 224. The 50-million-gas workaround below was invalid.
+> Polygon's per-transaction cap is 32 million, independently of its 160-million
+> block gas limit. The ~44.1-million simulation was not proof of admissibility.
+> The override has been removed and approvals/executions 224-256 are held in
+> the production UI. This is not an on-chain cancellation. See the correction
+> record `GOVERNANCE_224_TRANSACTION_CAP_HOLD_2026-11-15.md`.
+
 ## Scope and diagnosis
 
 This is a production admin execution fix only. It changes no proposal payload,

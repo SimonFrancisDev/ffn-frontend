@@ -32,7 +32,7 @@ test('removal release is tied to the verified mined repair; later repair steps s
   assert.equal(relay.repairExecutionTx, '0xf60d906cc61369abb59881abf3ebb98cf37dbf1b999e8812347ad7af5d0ceff4');
   for (const action of ['approve', 'execute']) {
     assert.equal(proposalActionBlock(proposal(258), action), '');
-    assert.match(proposalActionBlock({ ...proposal(258), txId: 225 }, action), /on hold/);
+    assert.match(proposalActionBlock({ ...proposal(258), txId: 226 }, action), /on hold/);
     assert.match(proposalActionBlock({ ...proposal(257), executed: true }, action), /already been executed/);
   }
   assert.equal(proposalActionBlock(proposal(258), 'revoke'), '');

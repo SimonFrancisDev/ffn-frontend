@@ -1,5 +1,6 @@
 import { repairExecutionHold } from './governanceProposalPolicy.js';
 import { REPAIR224_RELAY as relay } from '../constants/repair224Relay.js';
+import { prepareRepair225Execution } from './governanceRepair225.js';
 
 export async function prepareGovernanceExecution(multisig, txId, manifest, readProvider) {
   if (Number(txId) >= 224 && Number(txId) <= 258) {
@@ -11,6 +12,8 @@ export async function prepareGovernanceExecution(multisig, txId, manifest, readP
     if (network.chainId !== readNetwork.chainId) throw new Error('Wallet and read network do not match.');
     const hold = repairExecutionHold(network.chainId, address, txId);
     if (hold) throw new Error(hold);
+    if (Number(network.chainId) === relay.chainId && address.toLowerCase() === relay.governance.toLowerCase() &&
+      Number(txId) === 225) return prepareRepair225Execution(multisig, manifest);
     if (Number(network.chainId) === relay.chainId && address.toLowerCase() === relay.governance.toLowerCase() &&
       Number(txId) === relay.removeId) {
       const repair = await multisig.transactions(224);

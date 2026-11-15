@@ -1,5 +1,6 @@
 import { relay224ExecutionHold } from './governanceRelay224.js';
 import { REPAIR225_RELEASE } from '../constants/repair225Release.js';
+import { REPAIR_INSTALL_RELEASE } from '../constants/repairInstallRelease.js';
 
 // Proposal IDs are immutable within this exact mainnet multisig.
 export const WITHDRAWN_ID1_PACKAGE = Object.freeze({
@@ -18,15 +19,16 @@ export function isWithdrawnProposal(chainId, multisig, txId) {
     id >= WITHDRAWN_ID1_PACKAGE.firstId && id <= WITHDRAWN_ID1_PACKAGE.lastId;
 }
 
-// 224 and helper removal 258 are verified. Release 225 only; no automatic reopening.
+// User approved one ordered release. Execution validates prerequisites and final bindings.
 export function repairExecutionHold(chainId, multisig, txId) {
   const relayHold = relay224ExecutionHold(chainId, multisig, txId);
   if (relayHold) return relayHold;
   const id = Number(txId);
   return Number(chainId) === 137 &&
     String(multisig).toLowerCase() === WITHDRAWN_ID1_PACKAGE.multisig &&
-    Number.isInteger(id) && id >= 224 && id <= 256 && !(id === 225 && REPAIR225_RELEASE.released)
-    ? 'Repair execution on hold: 224 and helper removal 258 are verified. Execute proposal 225 only, then stop for verification before later upgrades or reopening. Do not retry 224.'
+    Number.isInteger(id) && id >= 224 && id <= 256 && !(id === 225 && REPAIR225_RELEASE.released) &&
+    !(REPAIR_INSTALL_RELEASE.released && id >= REPAIR_INSTALL_RELEASE.firstId && id <= REPAIR_INSTALL_RELEASE.lastId)
+    ? 'Repair execution on hold: proposal 224 is already verified. Do not retry 224. Remaining proposals 226-256 must execute in order.'
     : '';
 }
 

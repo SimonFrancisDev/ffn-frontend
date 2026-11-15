@@ -34,7 +34,7 @@ function fixture() {
   return { state, manifest, contract, provider };
 }
 
-test('225-only release is pinned to the actual approved mainnet proposal and removal receipt', () => {
+test('225 release is pinned to the actual approved mainnet proposal and removal receipt', () => {
   const action = liveManifest.actions.find(row => row.index === 35);
   assert.equal(action.target, release.target);
   assert.equal(keccak256(action.data), release.payloadHash);
@@ -44,7 +44,7 @@ test('225-only release is pinned to the actual approved mainnet proposal and rem
   assert.equal(proposalActionBlock(tx, 'approve'), '');
   assert.equal(proposalActionBlock(tx, 'execute'), '');
   assert.match(proposalActionBlock({ ...tx, executed: true }, 'execute'), /already been executed/);
-  for (let id = 226; id <= 256; id++) assert.match(proposalActionBlock({ ...tx, txId: id }, 'execute'), /on hold/);
+  for (let id = 226; id <= 256; id++) assert.equal(proposalActionBlock({ ...tx, txId: id }, 'approve'), '');
 });
 
 test('225 executes through the ordinary founder path only after bounded simulation', async () => {

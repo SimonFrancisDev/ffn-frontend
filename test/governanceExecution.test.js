@@ -16,24 +16,22 @@ function fixture(chainId = 137n, address = WITHDRAWN_ID1_PACKAGE.multisig) {
   return { calls, contract, provider };
 }
 
-test('every proposal after 225 stays held before estimation or signing', async () => {
+test('all remaining proposals are available for approval under the single-release policy', () => {
   for (let id = 226; id <= 256; id++) {
-    const f = fixture();
-    await assert.rejects(prepareGovernanceExecution(f.contract, id, {}, f.provider), /Execute proposal 225 only/);
-    assert.deepEqual(f.calls, { estimates: 0, simulations: 0, sends: 0 });
+    assert.equal(proposalActionBlock({ txId: id, chainId: 137, multisig: WITHDRAWN_ID1_PACKAGE.multisig }, 'approve'), '');
   }
 });
 
 test('even a successful unrelated simulation cannot release dependent proposals', async () => {
   const f = fixture();
   assert.equal(await f.contract.executeTransaction.staticCall(), '0x');
-  await assert.rejects(prepareGovernanceExecution(f.contract, 226, {}, f.provider), /on hold/);
+  await assert.rejects(prepareGovernanceExecution(f.contract, 224, {}, f.provider), /on hold/);
   assert.equal(f.calls.sends, 0);
 });
 
 test('held proposals cannot be approved or executed in the UI; revocation remains available', () => {
   for (let id = 224; id <= 256; id++) {
-    if (id === 225) continue;
+    if (id >= 225) continue;
     const tx = { txId: String(id), chainId: 137, multisig: WITHDRAWN_ID1_PACKAGE.multisig };
     assert.match(proposalActionBlock(tx, 'approve'), /on hold/);
     assert.match(proposalActionBlock(tx, 'execute'), /on hold/);

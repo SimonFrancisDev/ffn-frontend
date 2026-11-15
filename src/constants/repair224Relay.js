@@ -6,5 +6,7 @@ export const REPAIR224_RELAY = Object.freeze({
   deploymentTx: '0x68b7345b487be9ac68ffee0a75ff6866f0644e87c33804c0c61d1478f4ce017d',
   authorizeId: 257,
   removeId: 258,
-  removalReleased: false,
+  removalReleased: true,
+  repairExecutionTx: '0xf60d906cc61369abb59881abf3ebb98cf37dbf1b999e8812347ad7af5d0ceff4',
+  repairExecutionBlock: 97368395,
 });

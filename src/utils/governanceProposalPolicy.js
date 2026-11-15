@@ -17,8 +17,8 @@ export function isWithdrawnProposal(chainId, multisig, txId) {
     id >= WITHDRAWN_ID1_PACKAGE.firstId && id <= WITHDRAWN_ID1_PACKAGE.lastId;
 }
 
-// Founder sign-only submission failed; direct execution stays held while a
-// separately authorized, restricted execution route is reviewed.
+// 224 is now mined and verified. Later steps stay held until helper removal
+// and the next explicit verification gate; no automatic reopening.
 export function repairExecutionHold(chainId, multisig, txId) {
   const relayHold = relay224ExecutionHold(chainId, multisig, txId);
   if (relayHold) return relayHold;
@@ -26,7 +26,7 @@ export function repairExecutionHold(chainId, multisig, txId) {
   return Number(chainId) === 137 &&
     String(multisig).toLowerCase() === WITHDRAWN_ID1_PACKAGE.multisig &&
     Number.isInteger(id) && id >= 224 && id <= 256
-    ? 'Repair execution on hold: direct execution of 224 is disabled pending approval of a restricted execution route. Do not retry or proceed to later repair/reopening proposals.'
+    ? 'Repair execution on hold: proposal 224 succeeded and was verified. Complete proposal 258, then wait for verification before later repair or reopening proposals. Do not retry 224.'
     : '';
 }
 

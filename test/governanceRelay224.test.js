@@ -26,22 +26,35 @@ test('only verified helper proposals receive their specific governance descripti
   }
 });
 
-test('authorize is available; premature removal is held; revocation stays available', () => {
+test('removal release is tied to the verified mined repair; later repair steps stay held', () => {
+  assert.equal(relay.removalReleased, true);
+  assert.equal(relay.repairExecutionBlock, 97368395);
+  assert.equal(relay.repairExecutionTx, '0xf60d906cc61369abb59881abf3ebb98cf37dbf1b999e8812347ad7af5d0ceff4');
   for (const action of ['approve', 'execute']) {
-    assert.equal(proposalActionBlock(proposal(), action), '');
-    assert.match(proposalActionBlock(proposal(258), action), /until proposal 224 succeeds/);
+    assert.equal(proposalActionBlock(proposal(258), action), '');
+    assert.match(proposalActionBlock({ ...proposal(258), txId: 225 }, action), /on hold/);
+    assert.match(proposalActionBlock({ ...proposal(257), executed: true }, action), /already been executed/);
   }
   assert.equal(proposalActionBlock(proposal(258), 'revoke'), '');
   assert.equal(relay224ExecutionHold(80002, relay.governance, 258), '');
   assert.equal(relay224ExecutionHold(137, relay.address, 258), '');
 });
 
-test('public execution also blocks removal before gas estimation or submission', async () => {
+test('live repair completion and active helper authorization are checked before removal estimation', async () => {
   const provider = { getNetwork: async () => ({ chainId: 137n }) };
+  let executed = false, owner = true, estimates = 0;
   const c = { getAddress: async () => relay.governance, runner: { provider },
-    executeTransaction: Object.assign(async () => assert.fail('Unexpected submission'), {
-      estimateGas: async () => assert.fail('Unexpected estimate'),
+    transactions: async id => { assert.equal(id, 224); return { executed, cancelled: false }; },
+    isOwner: async address => { assert.equal(address, relay.address); return owner; },
+    executeTransaction: Object.assign(async (id, options) => ({ id, options }), {
+      estimateGas: async () => { estimates++; return 100000n; },
     }),
   };
-  await assert.rejects(executeGovernanceTransaction(c, 258, {}, provider), /until proposal 224 succeeds/);
+  await assert.rejects(executeGovernanceTransaction(c, 258, {}, provider), /must be successfully executed/);
+  executed = true; owner = false;
+  await assert.rejects(executeGovernanceTransaction(c, 258, {}, provider), /no longer an owner/);
+  assert.equal(estimates, 0);
+  owner = true;
+  assert.deepEqual(await executeGovernanceTransaction(c, 258, {}, provider), { id: 258, options: { gasLimit: 120000n } });
+  assert.equal(estimates, 1);
 });

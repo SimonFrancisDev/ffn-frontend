@@ -19,7 +19,7 @@ function fixture(chainId = 137n, address = WITHDRAWN_ID1_PACKAGE.multisig) {
 test('225 and every dependent repair/reopening proposal fail closed before estimation or signing', async () => {
   for (let id = 225; id <= 256; id++) {
     const f = fixture();
-    await assert.rejects(prepareGovernanceExecution(f.contract, id, {}, f.provider), /pending approval of a restricted execution route/);
+    await assert.rejects(prepareGovernanceExecution(f.contract, id, {}, f.provider), /Complete proposal 258/);
     assert.deepEqual(f.calls, { estimates: 0, simulations: 0, sends: 0 });
   }
 });
@@ -42,7 +42,7 @@ test('held proposals cannot be approved or executed in the UI; revocation remain
 
 test('224 cannot fall back to ordinary wallet submission even with valid simulation', async () => {
   const f = fixture();
-  await assert.rejects(prepareGovernanceExecution(f.contract, 224, {}, f.provider), /direct execution of 224 is disabled/);
+  await assert.rejects(prepareGovernanceExecution(f.contract, 224, {}, f.provider), /Do not retry 224/);
   assert.deepEqual(f.calls, { estimates: 0, simulations: 0, sends: 0 });
 });
 

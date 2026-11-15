@@ -1,4 +1,5 @@
 import { repairExecutionHold } from './governanceProposalPolicy.js';
+import { REPAIR224_RELAY as relay } from '../constants/repair224Relay.js';
 
 export async function prepareGovernanceExecution(multisig, txId, manifest, readProvider) {
   if (Number(txId) >= 224 && Number(txId) <= 258) {
@@ -10,6 +11,12 @@ export async function prepareGovernanceExecution(multisig, txId, manifest, readP
     if (network.chainId !== readNetwork.chainId) throw new Error('Wallet and read network do not match.');
     const hold = repairExecutionHold(network.chainId, address, txId);
     if (hold) throw new Error(hold);
+    if (Number(network.chainId) === relay.chainId && address.toLowerCase() === relay.governance.toLowerCase() &&
+      Number(txId) === relay.removeId) {
+      const repair = await multisig.transactions(224);
+      if (!repair.executed || repair.cancelled) throw new Error('Proposal 224 must be successfully executed before removing its helper.');
+      if (!await multisig.isOwner(relay.address)) throw new Error('The repair helper is no longer an owner. Refresh the proposal status.');
+    }
   }
   // Other proposals retain their original estimation path.
   const estimate = await multisig.executeTransaction.estimateGas(txId);

@@ -22,6 +22,6 @@ export function describeRepair224Relay(tx) {
     label: adding ? 'Authorize restricted helper for proposal 224' : 'Remove proposal 224 helper permission',
     details: adding
       ? `Temporarily add contract ${relay.address} as an owner. It can execute only the already-approved proposal 224; it cannot approve proposals or manage owners. The three-founder confirmation threshold stays unchanged. This action does not execute the repair. Execute 257, then stop.`
-      : `Remove contract ${relay.address} from the owner list after proposal 224 succeeds and its repair is verified. Do not execute this before the repair, or the helper will lose permission to execute it.`,
+      : `Proposal 224 succeeded in block ${relay.repairExecutionBlock}; its repair events and records were verified. Remove only contract ${relay.address} from the owner list. The four founder owners remain and the confirmation threshold stays three. Execute 258, then stop for verification.`,
   };
 }

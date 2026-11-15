@@ -14,7 +14,7 @@ import { normalizeError } from '../utils/errorMap';
 import { isWithdrawnProposal, proposalActionBlock, isArchivedProposal, WITHDRAWN_ID1_PACKAGE, repairExecutionHold } from '../utils/governanceProposalPolicy';
 import { governanceTargets, describeGovernanceMaintenance } from '../utils/governanceMaintenance';
 import repairProposalManifest from '../constants/repairProposalManifest.json';
-import { prepareGovernanceExecution } from '../utils/governanceExecution';
+import { executeGovernanceTransaction } from '../utils/governanceExecution';
 import { governanceExecutionFailure } from '../utils/governanceRepairAccessList';
 import AdminNotificationComposer from '../components/admin/AdminNotificationComposer';
 import AdminOfficialVideo from '../components/admin/AdminOfficialVideo';
@@ -1625,11 +1625,11 @@ export const AdminPanel = ({ canPerformOnchainAdmin = false }) => {
       setCheckingTx(`Checking execution for transaction #${idToUse}`);
       await preflightMultisigAction(idToUse, 'execute');
       const writeContracts = await getWriteContracts();
-      const executionOptions = await prepareGovernanceExecution(
+      const tx = await executeGovernanceTransaction(
         writeContracts.simpleMultiSig, idToUse, repairProposalManifest,
         contracts.simpleMultiSig.runner?.provider,
+        hash => setLoadingTx(hash, `Submitting verified transaction #${idToUse}`),
       );
-      const tx = await writeContracts.simpleMultiSig.executeTransaction(idToUse, executionOptions);
       setLoadingTx(tx.hash, `Executing transaction #${idToUse}`);
       await tx.wait();
       setDoneTx(tx.hash, `Executed transaction #${idToUse}`);

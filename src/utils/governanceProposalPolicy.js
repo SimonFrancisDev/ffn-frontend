@@ -15,14 +15,14 @@ export function isWithdrawnProposal(chainId, multisig, txId) {
     id >= WITHDRAWN_ID1_PACKAGE.firstId && id <= WITHDRAWN_ID1_PACKAGE.lastId;
 }
 
-// Mined retries omitted the required access list. Simulating a prepared request
-// cannot prove a wallet will preserve it when signing/broadcasting.
+// 224 can only use verified sign-only output, never eth_sendTransaction.
+// Dependents remain held until its actual receipt and repaired state are checked.
 export function repairExecutionHold(chainId, multisig, txId) {
   const id = Number(txId);
   return Number(chainId) === 137 &&
     String(multisig).toLowerCase() === WITHDRAWN_ID1_PACKAGE.multisig &&
-    Number.isInteger(id) && id >= 224 && id <= 256
-    ? 'Repair execution on hold: mined attempts omitted the required access list and reverted. Do not retry 224 or execute later repair/reopening proposals until a verified submission path is released.'
+    Number.isInteger(id) && id >= 225 && id <= 256
+    ? 'Repair execution on hold: verify the successful on-chain result of proposal 224 before executing later repair or reopening proposals.'
     : '';
 }
 

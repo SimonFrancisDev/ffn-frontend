@@ -1,5 +1,10 @@
 # Proposal 224: mined retries omitted the access list
 
+SUCCESSOR: [Verified signed-output path](GOVERNANCE_224_VERIFY_SIGNED_BEFORE_BROADCAST_2026-11-15.md).
+The old broadcast-first execution remains disabled. Its replacement cannot
+broadcast unless the wallet returns exact, verified signed bytes; unsupported
+wallets stop before broadcast. Actual repair execution is still not confirmed.
+
 The preceding production execution release is withdrawn. Prepared-request and
 read-only simulation checks did not establish that the founder's actual wallet
 submission would retain the access list. The public execution path for 224-256

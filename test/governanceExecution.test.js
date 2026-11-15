@@ -16,10 +16,10 @@ function fixture(chainId = 137n, address = WITHDRAWN_ID1_PACKAGE.multisig) {
   return { calls, contract, provider };
 }
 
-test('224 and every dependent repair/reopening proposal fail closed before estimation or signing', async () => {
-  for (let id = 224; id <= 256; id++) {
+test('225 and every dependent repair/reopening proposal fail closed before estimation or signing', async () => {
+  for (let id = 225; id <= 256; id++) {
     const f = fixture();
-    await assert.rejects(prepareGovernanceExecution(f.contract, id, {}, f.provider), /mined attempts omitted/);
+    await assert.rejects(prepareGovernanceExecution(f.contract, id, {}, f.provider), /verify the successful on-chain result/);
     assert.deepEqual(f.calls, { estimates: 0, simulations: 0, sends: 0 });
   }
 });
@@ -32,12 +32,18 @@ test('even a successful unrelated simulation cannot release dependent proposals'
 });
 
 test('held proposals cannot be approved or executed in the UI; revocation remains available', () => {
-  for (let id = 224; id <= 256; id++) {
+  for (let id = 225; id <= 256; id++) {
     const tx = { txId: String(id), chainId: 137, multisig: WITHDRAWN_ID1_PACKAGE.multisig };
     assert.match(proposalActionBlock(tx, 'approve'), /on hold/);
     assert.match(proposalActionBlock(tx, 'execute'), /on hold/);
     assert.equal(proposalActionBlock(tx, 'revoke'), '');
   }
+});
+
+test('224 cannot fall back to ordinary wallet submission even with valid simulation', async () => {
+  const f = fixture();
+  await assert.rejects(prepareGovernanceExecution(f.contract, 224, {}, f.provider), /Direct wallet submission is disabled/);
+  assert.deepEqual(f.calls, { estimates: 0, simulations: 0, sends: 0 });
 });
 
 test('hold is restricted to this mainnet governance package', async () => {

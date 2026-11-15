@@ -14,6 +14,7 @@ import { normalizeError } from '../utils/errorMap';
 import { isWithdrawnProposal, proposalActionBlock, isArchivedProposal, WITHDRAWN_ID1_PACKAGE } from '../utils/governanceProposalPolicy';
 import { governanceTargets, describeGovernanceMaintenance } from '../utils/governanceMaintenance';
 import repairProposalManifest from '../constants/repairProposalManifest.json';
+import { prepareGovernanceExecution } from '../utils/governanceExecution';
 import AdminNotificationComposer from '../components/admin/AdminNotificationComposer';
 import AdminOfficialVideo from '../components/admin/AdminOfficialVideo';
 import AdminTasksManager from '../components/admin/AdminTasksManager';
@@ -1623,10 +1624,11 @@ export const AdminPanel = ({ canPerformOnchainAdmin = false }) => {
       setCheckingTx(`Checking execution for transaction #${idToUse}`);
       await preflightMultisigAction(idToUse, 'execute');
       const writeContracts = await getWriteContracts();
-      const gasEstimate = await writeContracts.simpleMultiSig.executeTransaction.estimateGas(idToUse);
-      const tx = await writeContracts.simpleMultiSig.executeTransaction(idToUse, {
-        gasLimit: withGasBuffer(gasEstimate),
-      });
+      const executionOptions = await prepareGovernanceExecution(
+        writeContracts.simpleMultiSig, idToUse, repairProposalManifest,
+        contracts.simpleMultiSig.runner?.provider,
+      );
+      const tx = await writeContracts.simpleMultiSig.executeTransaction(idToUse, executionOptions);
       setLoadingTx(tx.hash, `Executing transaction #${idToUse}`);
       await tx.wait();
       setDoneTx(tx.hash, `Executed transaction #${idToUse}`);

@@ -15,14 +15,14 @@ export function isWithdrawnProposal(chainId, multisig, txId) {
     id >= WITHDRAWN_ID1_PACKAGE.firstId && id <= WITHDRAWN_ID1_PACKAGE.lastId;
 }
 
-// 224 can only use verified sign-only output, never eth_sendTransaction.
-// Dependents remain held until its actual receipt and repaired state are checked.
+// Founder sign-only submission failed; direct execution stays held while a
+// separately authorized, restricted execution route is reviewed.
 export function repairExecutionHold(chainId, multisig, txId) {
   const id = Number(txId);
   return Number(chainId) === 137 &&
     String(multisig).toLowerCase() === WITHDRAWN_ID1_PACKAGE.multisig &&
-    Number.isInteger(id) && id >= 225 && id <= 256
-    ? 'Repair execution on hold: verify the successful on-chain result of proposal 224 before executing later repair or reopening proposals.'
+    Number.isInteger(id) && id >= 224 && id <= 256
+    ? 'Repair execution on hold: direct execution of 224 is disabled pending approval of a restricted execution route. Do not retry or proceed to later repair/reopening proposals.'
     : '';
 }
 

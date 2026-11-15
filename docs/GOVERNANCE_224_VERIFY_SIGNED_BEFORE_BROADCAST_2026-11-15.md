@@ -1,5 +1,10 @@
 # Repair 224: verify signed bytes before broadcast
 
+LIVE EXECUTION HELD: the founder subsequently reported a sign-only failure.
+The public entry point no longer offers this path. See
+[the replacement hold record](GOVERNANCE_224_SIGNING_COMPATIBILITY_HOLD_2026-11-15.md).
+The description below records the prior implementation, not permission to retry.
+
 ## Reason
 
 The two [mined failed attempts](GOVERNANCE_224_MINED_REVERT_2026-11-15.md) omitted

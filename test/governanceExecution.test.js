@@ -1,6 +1,6 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import { prepareGovernanceExecution } from '../src/utils/governanceExecution.js';
+import { executeGovernanceTransaction, prepareGovernanceExecution } from '../src/utils/governanceExecution.js';
 import { repairExecutionHold, proposalActionBlock, WITHDRAWN_ID1_PACKAGE } from '../src/utils/governanceProposalPolicy.js';
 
 function fixture(chainId = 137n, address = WITHDRAWN_ID1_PACKAGE.multisig) {
@@ -19,7 +19,7 @@ function fixture(chainId = 137n, address = WITHDRAWN_ID1_PACKAGE.multisig) {
 test('225 and every dependent repair/reopening proposal fail closed before estimation or signing', async () => {
   for (let id = 225; id <= 256; id++) {
     const f = fixture();
-    await assert.rejects(prepareGovernanceExecution(f.contract, id, {}, f.provider), /verify the successful on-chain result/);
+    await assert.rejects(prepareGovernanceExecution(f.contract, id, {}, f.provider), /pending approval of a restricted execution route/);
     assert.deepEqual(f.calls, { estimates: 0, simulations: 0, sends: 0 });
   }
 });
@@ -32,7 +32,7 @@ test('even a successful unrelated simulation cannot release dependent proposals'
 });
 
 test('held proposals cannot be approved or executed in the UI; revocation remains available', () => {
-  for (let id = 225; id <= 256; id++) {
+  for (let id = 224; id <= 256; id++) {
     const tx = { txId: String(id), chainId: 137, multisig: WITHDRAWN_ID1_PACKAGE.multisig };
     assert.match(proposalActionBlock(tx, 'approve'), /on hold/);
     assert.match(proposalActionBlock(tx, 'execute'), /on hold/);
@@ -42,7 +42,14 @@ test('held proposals cannot be approved or executed in the UI; revocation remain
 
 test('224 cannot fall back to ordinary wallet submission even with valid simulation', async () => {
   const f = fixture();
-  await assert.rejects(prepareGovernanceExecution(f.contract, 224, {}, f.provider), /Direct wallet submission is disabled/);
+  await assert.rejects(prepareGovernanceExecution(f.contract, 224, {}, f.provider), /direct execution of 224 is disabled/);
+  assert.deepEqual(f.calls, { estimates: 0, simulations: 0, sends: 0 });
+});
+
+test('public execution entry point holds 224 before sign-only or ordinary submission', async () => {
+  const f = fixture();
+  f.contract.runner.signTransaction = async () => assert.fail('Must not request a signature');
+  await assert.rejects(executeGovernanceTransaction(f.contract, 224, {}, f.provider), /on hold/);
   assert.deepEqual(f.calls, { estimates: 0, simulations: 0, sends: 0 });
 });
 

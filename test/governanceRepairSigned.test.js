@@ -2,8 +2,7 @@ import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { readFileSync } from 'node:fs';
 import { BrowserProvider, Interface, Transaction, Wallet } from 'ethers';
-import { verifySignedRepairTransaction } from '../src/utils/governanceRepairSigned.js';
-import { executeGovernanceTransaction } from '../src/utils/governanceExecution.js';
+import { executeSignedRepair224, verifySignedRepairTransaction } from '../src/utils/governanceRepairSigned.js';
 
 const read = name => JSON.parse(readFileSync(new URL(name, import.meta.url), 'utf8'));
 const manifest = read('../src/constants/repairProposalManifest.json');
@@ -50,7 +49,7 @@ function fixture(change = {}) {
     getAddress: async () => manifest.governance, interface: abi, connect: () => c,
     transactions: async () => proposal, isOwner: async () => true, requiredConfirmations: async () => 3n,
   };
-  return { calls, run: () => executeGovernanceTransaction(c, 224, manifest, provider, hash => calls.attempts.push(hash)) };
+  return { calls, run: () => executeSignedRepair224(c, manifest, provider, hash => calls.attempts.push(hash)) };
 }
 
 test('verify every signed field and sender before broadcast', async () => {

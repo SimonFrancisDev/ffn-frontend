@@ -2,7 +2,6 @@ import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { readFileSync } from 'node:fs';
 import { BrowserProvider, Interface, getBytes, toQuantity, Transaction } from 'ethers';
-import { prepareGovernanceExecution } from '../src/utils/governanceExecution.js';
 import { boundedRepairAccessList, prepareRepair224, governanceExecutionFailure, REPAIR_GAS_LIMIT, MAX_ACCESS_KEYS, MAX_PACKET_BYTES } from '../src/utils/governanceRepairAccessList.js';
 
 const read = file => JSON.parse(readFileSync(new URL(file, import.meta.url), 'utf8'));
@@ -54,9 +53,9 @@ function fixture(change = {}) {
   return { calls, provider, c, run: () => prepareRepair224(c, change.manifest ?? manifest, provider) };
 }
 
-test('full public entry point prepares unchanged 224 with gas and packet bounded below both limits', async () => {
+test('read-only diagnostic prepares bounded 224 options; this does not establish wallet submission compatibility', async () => {
   const f = fixture();
-  const options = await prepareGovernanceExecution(f.c, 224, manifest, f.provider);
+  const options = await prepareRepair224(f.c, manifest, f.provider);
   assert.equal(options.type, 2);
   assert.equal(options.gasLimit, REPAIR_GAS_LIMIT);
   assert(options.gasLimit < 32_000_000n);

@@ -1,5 +1,10 @@
 # Proposal 224: bounded access-list execution
 
+SUPERSEDED FOR LIVE EXECUTION: [Two mined retries omitted the access list](GOVERNANCE_224_MINED_REVERT_2026-11-15.md).
+The simulations below remain valid diagnostics, but do not establish actual
+wallet submission compatibility. 224-256 are held again; do not follow the retry
+instructions in this historical record.
+
 ## Scope and status
 
 Polygon mainnet only, chain ID 137. Governance:

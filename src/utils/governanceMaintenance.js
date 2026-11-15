@@ -1,4 +1,5 @@
 import { Interface, isAddress, keccak256 } from 'ethers';
+import { describeRepair224Relay } from './governanceRelay224.js';
 
 const iface = new Interface([
   'function pause()', 'function unpause()',
@@ -39,6 +40,8 @@ export function matchedRepairAction(tx, manifest) {
 
 // A matching selector is not proof of the target's identity or the repair's provenance.
 export function describeGovernanceMaintenance(tx, targets = {}, manifest = {}) {
+  const relay = describeRepair224Relay(tx);
+  if (relay) return relay;
   let parsed;
   try { parsed = iface.parseTransaction({ data: tx.data }); } catch { return null; }
   if (!parsed) return null;

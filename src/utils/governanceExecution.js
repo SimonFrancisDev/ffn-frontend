@@ -1,7 +1,7 @@
 import { repairExecutionHold } from './governanceProposalPolicy.js';
 
 export async function prepareGovernanceExecution(multisig, txId, manifest, readProvider) {
-  if (Number(txId) >= 224 && Number(txId) <= 256) {
+  if (Number(txId) >= 224 && Number(txId) <= 258) {
     const provider = multisig.runner?.provider;
     if (!provider) throw new Error('Connect a founder wallet before executing a governance proposal.');
     const address = await multisig.getAddress();

@@ -1,3 +1,5 @@
+import { relay224ExecutionHold } from './governanceRelay224.js';
+
 // Proposal IDs are immutable within this exact mainnet multisig.
 export const WITHDRAWN_ID1_PACKAGE = Object.freeze({
   chainId: 137,
@@ -18,6 +20,8 @@ export function isWithdrawnProposal(chainId, multisig, txId) {
 // Founder sign-only submission failed; direct execution stays held while a
 // separately authorized, restricted execution route is reviewed.
 export function repairExecutionHold(chainId, multisig, txId) {
+  const relayHold = relay224ExecutionHold(chainId, multisig, txId);
+  if (relayHold) return relayHold;
   const id = Number(txId);
   return Number(chainId) === 137 &&
     String(multisig).toLowerCase() === WITHDRAWN_ID1_PACKAGE.multisig &&
